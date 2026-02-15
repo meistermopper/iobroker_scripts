@@ -1,2 +1,2 @@
 # iobroker_scripts
-Meine Smarhome-Skripts
+Meine Smarthome-Skripts
