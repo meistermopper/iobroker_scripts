@@ -32,7 +32,7 @@ function sendSyncNotify(msg, priority = 1) {
     }
 }
 
-schedule("21 23 * * *", () => {
+schedule("30 8 * * *", () => {
     const exec = require('child_process').exec;
     const timestamp = formatDate(new Date(), "YYYY-MM-DD hh:mm");
     

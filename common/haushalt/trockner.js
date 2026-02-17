@@ -1,118 +1,119 @@
 /**
- * Name:   Trockner-Wächter
- * Zweck:  Überwachung von Laufzeit und Verbrauch (Präzisions-Korrektur)
+ * Name:   Waschmaschinen-Wächter (Total-Energy-Edition)
+ * Zweck:  Überwachung von Laufzeit und Verbrauch mittels Gesamtzählerstand.
  */
 
-let timeout_trockner = null;
-let start_zeit = 0;
-let energie_start = 0;
-let strompreis = getState('0_userdata.0.Energie.Strompreise.akt_Preis').val || 0.30;
+// --- KONFIGURATION ---
+const GrenzWertInWatt = 3;      // Schwellwert für Standby/Betrieb
+const timeout_zeit = 300000;    // 5 Minuten (300.000 ms) Puffer gegen Spülpausen
 
-const ID_POWER   = 'alias.0.waschen.trocknen.ENERGY_Power';
-const ID_TOTAL   = 'alias.0.waschen.trocknen.ENERGY_Total';
-const ID_TODAY   = 'alias.0.waschen.trocknen.ENERGY_Today';
-const ID_RUNNING = '0_userdata.0.Haushalt.trocknen';
+const ID_POWER = 'alias.0.waschen.wasch.ENERGY_Power';
+const ID_TOTAL = 'alias.0.waschen.wasch.ENERGY_Total';
+const ID_TODAY = 'alias.0.waschen.wasch.ENERGY_Today';
+const ID_RUNNING = '0_userdata.0.Haushalt.waschen';
 
-// Strompreis-Update
-on({ id: '0_userdata.0.Energie.Strompreise.akt_Preis', change: 'ne' }, obj => {
-    strompreis = obj.state.val;
-});
+// Speicherpunkte in userdata (überstehen Neustarts)
+const ID_START_VAL = '0_userdata.0.Haushalt.waschen_energie_start';
+const ID_START_TIME = '0_userdata.0.Haushalt.waschen_zeit_start';
+
+const GOTIFY_SERVER = 'mygotify.meistermopper.de';
+const ID_GOTIFY_TOKEN = '0_userdata.0.gotifytoken.iobroker';
+
+let timeout_waschmaschine = null;
+
+// Sicherstellen, dass die Speicherpunkte existieren
+async function erstelleDatenpunkte() {
+    if (!existsState(ID_START_TIME)) await createStateAsync(ID_START_TIME, 0, {type: 'number', name: 'Waschmaschine Startzeit'});
+    if (!existsState(ID_START_VAL))  await createStateAsync(ID_START_VAL, 0, {type: 'number', name: 'Waschmaschine Start-Energie (Total)'});
+}
+erstelleDatenpunkte();
 
 // TRIGGER: Überwachung der Leistung (Watt)
 on({ id: ID_POWER, change: 'ne' }, async (obj) => {
     const watt = obj.state.val;
     const laeuft = getState(ID_RUNNING).val;
 
-    // START: Nur wenn er nicht schon als "laufend" markiert ist
-    if (watt > 10 && !laeuft) {
-        start_zeit = Date.now();
-        energie_start = getState(ID_TOTAL).val;
+    // START: Waschmaschine beginnt zu arbeiten
+    if (watt > GrenzWertInWatt && !laeuft) {
+        const aktuellerZaehler = Number(getState(ID_TOTAL).val);
+        const jetzt = Date.now();
+
+        setState(ID_START_VAL, aktuellerZaehler, true);
+        setState(ID_START_TIME, jetzt, true);
         setState(ID_RUNNING, true, true);
-        console.log(`[Trockner] Start erkannt: Zählerstand ${energie_start} kWh`);
+        
+        console.log(`[Waschmaschine] Start erkannt: Gesamtzählerstand ${aktuellerZaehler} kWh gespeichert.`);
     } 
     
-    // FERTIG-CHECK: Wenn Verbrauch niedrig, starte Timer (Knitterschutz-Überbrückung)
-    else if (watt < 5 && laeuft) {
-        checkFertig(true);
+    // FERTIG-CHECK: Leistung sinkt unter Schwellwert
+    else if (watt < GrenzWertInWatt && laeuft) {
+        if (!timeout_waschmaschine) {
+            console.log(`[Waschmaschine] Leistung unter Schwellwert. Warte ${timeout_zeit/60000} Min auf Abschluss...`);
+            checkWaschmaschineFertig(true);
+        }
     } 
     
-    // MASCHINE ARBEITET NOCH (Timer abbrechen)
-    else if (watt >= 5 && laeuft) {
-        if (timeout_trockner) {
-            clearTimeout(timeout_trockner);
-            timeout_trockner = null;
+    // MASCHINE ARBEITET NOCH (Timer löschen)
+    else if (watt >= GrenzWertInWatt && laeuft) {
+        if (timeout_waschmaschine) {
+            console.log(`[Waschmaschine] Maschine arbeitet weiter. Timer gelöscht.`);
+            clearTimeout(timeout_waschmaschine);
+            timeout_waschmaschine = null;
         }
     }
 });
 
-async function checkFertig(startTimer) {
-    if (timeout_trockner) {
-        clearTimeout(timeout_trockner);
-        timeout_trockner = null;
-    }
-
+async function checkWaschmaschineFertig(startTimer) {
     if (startTimer) {
-        // 1 Minute Pufferzeit
-        timeout_trockner = setTimeout(async () => {
-            const energie_ende = getState(ID_TOTAL).val;
-            const dauerMinTotal = Math.round((Date.now() - start_zeit) / 60000);
+        timeout_waschmaschine = setTimeout(async () => {
+            const energie_ende = Number(getState(ID_TOTAL).val);
+            const energie_start = Number(getState(ID_START_VAL).val);
+            const start_zeit = Number(getState(ID_START_TIME).val);
             
-            // Berechnung des Verbrauchs
-            const kwh = Number(energie_ende) - Number(energie_start);
-            const kwhHeute = getState(ID_TODAY).val;
+            // Dauer berechnen (Abzug der Pufferzeit für korrekte Laufzeitangabe)
+            const dauerMinTotal = Math.round((Date.now() - start_zeit - timeout_zeit) / 60000);
             
-            setState(ID_RUNNING, false, true);
+            // Differenzmessung über Gesamtzähler (Total)
+            let kwhWaschgang = Math.max(0, energie_ende - energie_start);
+            const kwhHeute = getState(ID_TODAY).val || 0;
             
-            await MeldenTrockner(dauerMinTotal, kwh, kwhHeute);
+            if (kwhWaschgang < 0.01) {
+                console.warn(`[Waschmaschine] Differenzmessung sehr niedrig (${kwhWaschgang.toFixed(3)} kWh).`);
+            }
 
-            // Variablen-Reset für den nächsten Gang
-            start_zeit = 0;
-            energie_start = 0;
-            timeout_trockner = null;
-        }, 60000);
+            setState(ID_RUNNING, false, true);
+            await MeldenWaschen(dauerMinTotal, kwhWaschgang, kwhHeute);
+            
+            timeout_waschmaschine = null;
+        }, timeout_zeit); 
     }
 }
 
-async function MeldenTrockner(min, kwh, kwhHeute) {
+async function MeldenWaschen(min, kwh, kwhHeute) {
     const std = Math.floor(min / 60);
     const m = (min % 60).toString().padStart(2, '0');
+    const strompreis = getState('0_userdata.0.Energie.Strompreise.akt_Preis').val || 0.30;
     
-    // Plausibilitäts-Check (falls kwh fast 0 ist)
-    const kwhFix = kwh > 0 ? kwh : 0.00;
+    const kwhFix = Number(kwh.toFixed(3)); 
     const euro = (kwhFix * strompreis).toFixed(2);
-    const euroHeute = (kwhHeute * strompreis).toFixed(2);
-    const gotifyToken = getState('0_userdata.0.gotifytoken.iobroker').val;
-
-    const textRaw = `💨 Der Trockner ist fertig. Dauer: ${std}:${m} Std. Verbrauch: ${kwhFix.toFixed(2)} kWh (${euro} €). Heute gesamt: ${kwhHeute.toFixed(2)} kWh (${euroHeute} €).`;
-
-    console.log(`[Trockner] Abschlussmeldung: ${textRaw}`);
-
-    // 1. Telegram (HTML)
-    sendTo('telegram', 'send', { 
-        text: `<pre>${textRaw}</pre>`, 
-        parse_mode: 'HTML' 
-    });
+    const euroHeute = (Number(kwhHeute) * strompreis).toFixed(2);
     
-    // 2. Gotify (Modern)
-    if (gotifyToken) {
-        httpPost(`https://mygotify.meistermopper.de/message?token=${gotifyToken}`, {
-            title: "ioBroker: Trockner",
-            message: textRaw,
-            priority: 1
-        });
+    const msgRaw = `Die Waschmaschine ist fertig. Dauer: ${std}:${m} Std. Verbrauch: ${kwhFix.toFixed(2)} kWh (${euro} €). Heute gesamt: ${Number(kwhHeute).toFixed(2)} kWh (${euroHeute} €).`;
+    
+    console.log(`[Waschmaschine] Abschlussmeldung: ${msgRaw}`);
+    
+    // 1. Telegram
+    sendTo('telegram', 'send', { text: `💦🧺 ${msgRaw}` });
+    
+    // 2. Gotify
+    const token = getState(ID_GOTIFY_TOKEN).val;
+    if (token) {
+        const url = `https://${GOTIFY_SERVER}/message?token=${token}`;
+        httpPost(url, { title: "Waschmaschine", message: msgRaw, priority: 1 });
     }
 
-    // 3. Sprachausgabe (Nur tagsüber)
+    // 3. Sprachausgabe (08:00 - 20:00 Uhr)
     if (compareTime('08:00', '20:00', 'between')) {
-        sendTo("sayit", "say", { text: 'Der Trockner ist fertig.' });
-    } 
-    
-    // 4. Enigma2 (Nur abends/nachts)
-    else {
-        sendTo('enigma2.0', 'send', {
-            message: textRaw,
-            timeout: 15,
-            msgType: 1
-        });
+        sendTo("sayit", "say", { text: 'Die Waschmaschine ist fertig.' });
     }
 }
