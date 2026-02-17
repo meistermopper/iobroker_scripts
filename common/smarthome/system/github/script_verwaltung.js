@@ -32,43 +32,41 @@ function sendSyncNotify(msg, priority = 1) {
     }
 }
 
-schedule("30 8 * * *", () => {
+schedule("38 8 * * *", () => {
     const exec = require('child_process').exec;
-    const timestamp = formatDate(new Date(), "YYYY-MM-DD hh:mm");
+    const timestamp = formatDate(new Date(), "YYYY-MM-DD HH:mm");
     
     log(`[Git-Sync] Starte automatische Synchronisation...`, 'info');
 
-    const cmd = `cd ${PATH_SCRIPTS} && git pull origin main && git add . && git commit -m "Auto-Sync: ${timestamp}" && git push origin main`;
+    // Wir führen am Ende ein 'git status' aus, um die Rückmeldung zu erzwingen
+    const cmd = `cd ${PATH_SCRIPTS} && git pull origin main && git add . && git commit -m "Auto-Sync: ${timestamp}" && git push origin main && git status`;
     
     exec(cmd, (error, stdout, stderr) => {
-        if (error) {
-            if (error.message.includes("nothing to commit")) {
-                const msg = `Alles aktuell (nichts zu committen) am ${timestamp}`;
-                log(`[Git-Sync] ${msg}`, 'info');
-                setState(STATE_STATUS, msg, true);
-            } else {
-                log(`[Git-Sync] Kritischer Fehler: ${error.message}`, 'error');
-                sendSyncNotify(`⚠️ Fehler: ${error.message}`, 5);
-                return;
-            }
-        } else {
-            // Erfolgsauswertung
-            let infoMsg = "";
-            if (stdout.includes("Updating") || stdout.includes("Fast-forward")) {
-                infoMsg = `Erfolgreich: Neue Daten von GitHub geladen (${timestamp})`;
-            } else if (stdout.includes("file changed")) {
-                infoMsg = `Erfolgreich: Lokale Änderungen hochgeladen (${timestamp})`;
-            } else {
-                infoMsg = `Synchronisation geprüft: Alles aktuell (${timestamp})`;
-            }
-
-            log(`[Git-Sync] ${infoMsg}`, 'info');
-            setState(STATE_STATUS, infoMsg, true);
-
-            // Benachrichtigung nur bei echten Änderungen
-            if (stdout.includes("Updating") || stdout.includes("file changed")) {
-                sendSyncNotify(`✅ ${infoMsg}`);
-            }
+        // Wir fassen alles zusammen für die Analyse
+        const fullOutput = (stdout + stderr).toLowerCase();
+        
+        if (error && !fullOutput.includes("nothing to commit")) {
+            log(`[Git-Sync] Kritischer Fehler: ${error.message}`, 'error');
+            sendSyncNotify(`⚠️ Fehler: ${error.message}`, 5);
+            return;
         }
+
+        let infoMsg = "";
+        
+        // Verbesserte Erkennung von Änderungen
+        if (fullOutput.includes("file changed") || fullOutput.includes("files changed") || fullOutput.includes("insertions")) {
+            infoMsg = `Erfolgreich: Lokale Änderungen hochgeladen (${timestamp})`;
+            sendSyncNotify(`✅ ${infoMsg}`);
+        } 
+        else if (fullOutput.includes("updating") || fullOutput.includes("fast-forward")) {
+            infoMsg = `Erfolgreich: Neue Daten von GitHub geladen (${timestamp})`;
+            sendSyncNotify(`✅ ${infoMsg}`);
+        } 
+        else {
+            infoMsg = `Synchronisation geprüft: Alles aktuell (${timestamp})`;
+        }
+
+        log(`[Git-Sync] ${infoMsg}`, 'info');
+        setState(STATE_STATUS, infoMsg, true);
     });
 });
