@@ -1,13 +1,17 @@
 // --- KONFIGURATION ---
-const WARTEZEIT_MS = 1800000; // 30 Minuten in Millisekunden
-const TEMP_LIMIT = 6;         // Meldung nur, wenn Außentemperatur unter X Grad
+const WARTEZEIT_MS = 1800000; // 30 Minuten
+const TEMP_LIMIT = 6;         // Meldung nur unter X Grad
 const POSTKASTEN_SN = '0000DA499F3C4A';
 const AUSSENTEMPERATUR_ID = 'alias.0.draussen.thermometer.ACTUAL_TEMPERATURE';
+
+// Dunstabzug-Sonderfall
+const KUECHE_FENSTER_ID = 'hm-rpc.1.0000DA498D6099'; // Deine neue Sensor-ID
+const DUNSTABZUG_POWER_ID = 'alias.0.kueche.dunstabzug.ENERGY_Power';
+const DUNSTABZUG_THRESHOLD = 17; // Watt
 // ----------------------
 
 const timeouts = {};
 
-// Trigger auf alle STATE-Datenpunkte der Instanz hm-rpc.1
 on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
     const id = obj.id;
     const status = obj.state.val; // true = offen / false = geschlossen
@@ -20,20 +24,25 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
     if (status === true || status === 1) {
         const aktuelleTemp = getState(AUSSENTEMPERATUR_ID).val;
 
-        // Prüfung: Ist es draußen kalt genug für eine Warnung?
         if (aktuelleTemp < TEMP_LIMIT) {
-            
-            // Falls bereits ein Timer läuft (z.B. durch kurzes Schließen/Öffnen), löschen
             if (timeouts[id]) clearTimeout(timeouts[id]);
-
-            //console.log(`Timer gestartet für: ${nameRaw} (Draußen: ${aktuelleTemp}°C)`);
 
             timeouts[id] = setTimeout(async () => {
                 
-                // Name aufbereiten (8 Zeichen am Ende entfernen)
+                // --- PRÜFUNG SONDERFALL KÜCHE ---
+                // Wir prüfen, ob die ID des triggernden Geräts zum Küchenfenster gehört
+                if (id.includes(KUECHE_FENSTER_ID)) {
+                    const essePower = getState(DUNSTABZUG_POWER_ID).val;
+                    
+                    if (essePower > DUNSTABZUG_THRESHOLD) {
+                        console.log(`[Fenster] Küche offen, aber Dunstabzug läuft (${essePower}W). Warnung unterdrückt.`);
+                        delete timeouts[id];
+                        return; // Skript bricht hier ab, keine Meldung
+                    }
+                }
+                // -------------------------------
+
                 let nameKlartext = nameRaw.substring(0, nameRaw.length - 8);
-                
-                // Artikel dynamisch bestimmen
                 let artikel = 'Das';
                 if (nameKlartext.includes('Terrassentuer')) {
                     artikel = 'Die';
@@ -44,7 +53,6 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
                 const meldung = `${nameKlartext} steht seit 30 Minuten offen und sollte geschlossen werden. Die Außentemperatur beträgt ${aktuelleTemp} Grad Celsius.`;
                 const volltext = `${artikel} ${meldung}`;
 
-                // Versand & Ausgabe
                 sendTo('telegram', 'send', { text: volltext });
                 sendTo("sayit", "say", { text: meldung });
                 console.warn(`Lüftungswarnung gesendet: ${volltext}`);
@@ -58,7 +66,6 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
         if (timeouts[id]) {
             clearTimeout(timeouts[id]);
             delete timeouts[id];
-            //console.log(`Timer für ${nameRaw} gelöscht, da geschlossen.`);
         }
     }
 });
