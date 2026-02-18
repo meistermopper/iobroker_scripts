@@ -1,202 +1,205 @@
 // =============================================================================
-// UNIVERSAL MASTER v2.5 (DYNAMIC LOAD MANAGEMENT & PRECISION YIELD)
+// UNIVERSAL MASTER v2.6.1 (TYPE-SAFE & STRATEGY EDITION)
 // =============================================================================
+// Zentrale Steuerung für PV, Batterie, Wallbox und Sauna.
+// Dieses Skript koordiniert die Energieverteilung auf deiner VM 101.
 
-// --- 1. KONFIGURATION ---
+// --- 1. KONFIGURATION (Datenpunkt-Adressbuch) ---
 const PATH_PV = "0_userdata.0.Energie.PV.";
 const PATH_SAUNA = "0_userdata.0.Haushalt.";
 
 const IDS = {
-    pvPower: "solax.0.data.acpower",
-    pvYieldToday: "solax.0.data.yieldtoday", 
-    netPower: "smartmeter.0.1-0:16_7_0__255.value",
-    batPower: "modbus.0.inputRegisters.100.842_Battery_Power_(System)",
-    batSoc: "modbus.0.inputRegisters.100.843_Battery_State_of_Charge_(System)",
-    speicherMax: "0_userdata.0.Energie.PV.Speichergroesse",
-    saunaLogik: PATH_SAUNA + "sauna_laeuft",
-    saunaTuer: "alias.0.sauna.tuer.opened",
-    minSocSet: "modbus.0.holdingRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
-    minSocRead: "modbus.0.inputRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
-    heos: {
-        saunaStatus: "0_userdata.0.heos.Sauna.radio_status",
-        saunaSender: "0_userdata.0.heos.Sauna.sender",
-        badStatus: "0_userdata.0.heos.Bad.radio_status",
-        badSender: "0_userdata.0.heos.Bad.sender"
-    },
-    wallboxStatus: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.status",
-    wallboxCurrentLimit: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.configuration.evb_MaximumStationCurrent",
-    verbraucherWatt: [
-        "alias.0.kueche.boiler.ENERGY_Power", "alias.0.kueche.geschirr.ENERGY_Power",
-        "alias.0.waschen.wasch.ENERGY_Power", "alias.0.waschen.trocknen.ENERGY_Power",
-        "alias.0.kueche.backofen.ENERGY_Power"
-    ]
+    pvP: "solax.0.data.acpower",
+    pvY: "solax.0.data.yieldtoday",
+    net: "smartmeter.0.1-0:16_7_0__255.value",
+    batP: "modbus.0.inputRegisters.100.842_Battery_Power_(System)",
+    soc: "modbus.0.inputRegisters.100.843_Battery_State_of_Charge_(System)",
+    sMax: "0_userdata.0.Energie.PV.Speichergroesse",
+    sLog: PATH_SAUNA + "sauna_laeuft",
+    sTuer: "alias.0.sauna.tuer.opened",
+    mSocS: "modbus.0.holdingRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
+    mSocR: "modbus.0.inputRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
+    wbSt: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.status",
+    wbLim: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.configuration.evb_MaximumStationCurrent"
 };
 
-const SAYIT_INSTANCES = ["sayit.0", "sayit.2", "sayit.3", "sayit.4", "sayit.5"];
-const SAUNA_POWER = 7500; 
-const RADIO_SENDER = "smoothjazz";
-const GOTIFY_TOKEN_ID = "0_userdata.0.gotifytoken.iobroker";
-const GOTIFY_SERVER = "mygotify.meistermopper.de";
+// Globale Variablen für Echtzeit-Werte
+let pvPower = 0, netPower = 0, batPower = 0, batSoc = 0, speicherMax = 0;
+let tVerbrauchWh = 0, tLadungWh = 0, tNetzWh = 0, lastTs = Date.now();
+let originalMinSoc = null, tSaunaStart = null, tSaunaReset = null;
 
-// Variablen & Zähler
-let pvP = 0, netP = 0, batP = 0, soc = 0, sMax = 0;
-let tVerbrauchWh = 0, tLadungWh = 0, tNetzWh = 0;
-let lastTs = Date.now(), originalMinSoc = null, tempMeldungGesendet = false;
-let tSaunaStart = null, tSaunaReset = null, tRadioBad = null, tTuerWarn = null;
-
-// --- 2. AUTO-INIT ---
+// --- 2. AUTO-INIT (Systemstart & Typ-Sicherheit) ---
 async function initSystem() {
+    // Hier definieren wir exakt, welcher Punkt welchen Typ (number/boolean) hat
     const states = [
-        { id: PATH_PV + "Hausverbrauch", unit: "W", def: 0 },
-        { id: PATH_PV + "Netzbezug", unit: "W", def: 0 },
-        { id: PATH_PV + "Einspeisung", unit: "W", def: 0 },
-        { id: PATH_PV + "Autarkie", unit: "%", def: 0 },
-        { id: PATH_PV + "Tagesverbrauch", unit: "Wh", def: 0 },
-        { id: PATH_PV + "Tageserzeugung", unit: "Wh", def: 0 },
-        { id: PATH_PV + "Tagesladung", unit: "Wh", def: 0 },
-        { id: PATH_PV + "TagesNetzbezug", unit: "Wh", def: 0 },
-        { id: PATH_PV + "lade_kwh", unit: "kWh", def: 0 },
-        { id: PATH_PV + "Restladezeit", unit: "", def: "n. n." },
-        { id: PATH_PV + "Restladezeit_final", unit: "", def: "n. n." }
+        { id: PATH_PV + "Hausverbrauch", unit: "W", type: "number" },
+        { id: PATH_PV + "Netzbezug", unit: "W", type: "number" },
+        { id: PATH_PV + "Einspeisung", unit: "W", type: "number" },
+        { id: PATH_PV + "Autarkie", unit: "%", type: "number" },
+        { id: PATH_PV + "Tagesverbrauch", unit: "Wh", type: "number" },
+        { id: PATH_PV + "Tageserzeugung", unit: "Wh", type: "number" },
+        { id: PATH_PV + "Tagesladung", unit: "Wh", type: "number" },
+        { id: PATH_PV + "TagesNetzbezug", unit: "Wh", type: "number" },
+        { id: PATH_PV + "lade_kwh", unit: "kWh", type: "number" },
+        { id: PATH_PV + "Restladezeit", unit: "", type: "string" },
+        { id: PATH_PV + "Restladezeit_final", unit: "", type: "string" },
+        { id: PATH_PV + "Wallbox_Freigabe", unit: "", type: "boolean" } // JETZT KORREKT ALS BOOLEAN
     ];
-    for (const s of states) { 
+
+    for (let s of states) {
         if (!existsState(s.id)) {
-            await createStateAsync(s.id, s.def, { type: typeof s.def, unit: s.unit }); 
+            await createStateAsync(s.id, s.type === "boolean" ? false : 0, { 
+                type: s.type, 
+                unit: s.unit,
+                name: s.id.split('.').pop() 
+            });
         }
     }
-    sMax = (getState(IDS.speicherMax).val) || 9.6;
-    tVerbrauchWh = (getState(PATH_PV + "Tagesverbrauch").val) || 0;
-    tLadungWh = (getState(PATH_PV + "Tagesladung").val) || 0;
-    tNetzWh = (getState(PATH_PV + "TagesNetzbezug").val) || 0;
-    console.log("[Master] v2.5 bereit.");
+    
+    // Bestehende Werte einlesen, damit Zähler nicht bei 0 starten
+    speicherMax = getState(IDS.sMax).val || 9.6;
+    tVerbrauchWh = getState(PATH_PV + "Tagesverbrauch").val || 0;
+    tLadungWh = getState(PATH_PV + "Tagesladung").val || 0;
+    tNetzWh = getState(PATH_PV + "TagesNetzbezug").val || 0;
+    console.log("[Master] v2.6.1 (Typ-Fix) bereit.");
 }
 initSystem();
 
-// --- 3. HILFSFUNKTIONEN ---
-function formatMins(m) { 
-    if (isNaN(m) || m <= 0 || !isFinite(m)) return "n. n."; 
-    return Math.floor(m / 60) + ":" + ((m % 60) < 10 ? "0" + Math.floor(m % 60) : Math.floor(m % 60)); 
-}
+// --- 3. HILFSFUNKTIONEN (Logik-Werkzeuge) ---
 
-function announce(t) { 
-    SAYIT_INSTANCES.forEach(function(i) { sendTo(i, "say", { text: t, volume: 70 }); }); 
-}
-
-function notify(title, msg, prio) {
-    prio = prio || 1;
-    sendTo("telegram", "send", { text: msg });
-    let token = getState(GOTIFY_TOKEN_ID).val;
-    if (token) {
-        let url = "https://" + GOTIFY_SERVER + "/message?token=" + token;
-        httpPost(url, { title: title, message: msg, priority: prio });
-    }
-}
-
+// Berechnet die "Nutzlast" des Hauses ohne Großverbraucher und ohne Wallbox
 function getBereinigteLast() {
-    let totalHausV = (Number(getState(PATH_PV + "Hausverbrauch").val) || 0);
-    let sumAbzug = 0; 
-    IDS.verbraucherWatt.forEach(function(id) { sumAbzug += (Number(getState(id).val) || 0); });
+    let hausV = Number(getState(PATH_PV + "Hausverbrauch").val) || 0;
+    let abzug = 0;
     
-    if (getState(IDS.wallboxStatus).val === "Charging") {
-        let currentLimitVal = Number(getState(IDS.wallboxCurrentLimit).val) || 60;
-        let dynamicWallboxWatt = (currentLimitVal / 10) * 230 * 3; 
-        sumAbzug += dynamicWallboxWatt;
+    // Großverbraucher einzeln abfragen (Linearer Stil für Stabilität)
+    let g1 = getState("alias.0.kueche.boiler.ENERGY_Power").val; if (g1) abzug += Number(g1);
+    let g2 = getState("alias.0.kueche.geschirr.ENERGY_Power").val; if (g2) abzug += Number(g2);
+    let g3 = getState("alias.0.waschen.wasch.ENERGY_Power").val; if (g3) abzug += Number(g3);
+    let g4 = getState("alias.0.waschen.trocknen.ENERGY_Power").val; if (g4) abzug += Number(g4);
+    let g5 = getState("alias.0.kueche.backofen.ENERGY_Power").val; if (g5) abzug += Number(g5);
+
+    // Wallbox-Leistung dynamisch berechnen
+    if (getState(IDS.wbSt).val === "Charging") {
+        let lim = Number(getState(IDS.wbLim).val) || 60;
+        abzug += (lim / 10) * 230 * 3;
     }
-    return totalHausV - sumAbzug;
+    return (hausV - abzug);
 }
 
-// --- 4. HAUPT-LOGIK ---
-function runMasterUpdate() {
+// Prüft die Sommer-Strategie: April-Sept, nach 14 Uhr, SoC > 85%
+function checkSommerStrategie() {
+    const d = new Date();
+    const monat = d.getMonth(); // 3 = April, 8 = Sept
+    const stunde = d.getHours();
+    
+    // Logik: Ist Sommerhalbjahr UND Nachmittag UND Batterie ausreichend voll?
+    const freigabe = (monat >= 3 && monat <= 8 && stunde >= 14 && batSoc >= 85);
+    
+    // Schreibt das Ergebnis (true/false) in den Datenpunkt
+    setState(PATH_PV + "Wallbox_Freigabe", freigabe, true);
+    return freigabe;
+}
+
+// Benachrichtigungssystem
+function notify(title, msg) {
+    sendTo("telegram", "send", { text: msg });
+    let tok = getState("0_userdata.0.gotifytoken.iobroker").val;
+    if (tok) {
+        httpPost("https://mygotify.meistermopper.de/message?token=" + tok, { 
+            title: title, message: msg, priority: 1 
+        });
+    }
+}
+
+// --- 4. HAUPT-LOGIK (Rechenzentrum) ---
+function runUpdate() {
     let now = Date.now();
     let diff = now - lastTs;
     if (diff < 100) return;
 
-    let hausV = pvP + netP - batP; if (hausV < 0) hausV = 0;
+    // Physik: Hausverbrauch = Erzeugung + Netzbezug - Batterieleistung
+    let curHausV = pvPower + netPower - batPower;
+    if (curHausV < 0) curHausV = 0;
+
+    // Integration: Leistung über Zeit in Arbeit (Wh) umrechnen
     let h = diff / 3600000;
-    tVerbrauchWh += (hausV * h);
-    if (batP > 0) tLadungWh += (batP * h); if (netP > 0) tNetzWh += (netP * h);
+    tVerbrauchWh += (curHausV * h);
+    if (batPower > 0) tLadungWh += (batPower * h);
+    if (netPower > 0) tNetzWh += (netPower * h);
     lastTs = now;
 
-    let lKWh = (sMax * soc) / 100;
-    let fUm = "n. n.", rMin = 0;
-    if (batP > 50) {
-        let rSec = ((sMax - lKWh) / (batP / 1000)) * 3600;
+    // Batterie-Metriken (Rest-kWh und Ladezeit)
+    let curKwh = (speicherMax * batSoc) / 100;
+    let rMin = 0, fUm = "n. n.";
+    if (batPower > 50) {
+        let rSec = ((speicherMax - curKwh) / (batPower / 1000)) * 3600;
         rMin = rSec / 60;
         let t = new Date(); t.setSeconds(t.getSeconds() + rSec); fUm = formatDate(t, "hh:mm");
     }
 
-    let curAut = hausV > 0 ? Math.round(Math.min(100, (1 - ((netP > 0 ? netP : 0) / hausV)) * 100)) : 0;
+    // Autarkie-Berechnung
+    let aut = curHausV > 0 ? Math.round(Math.min(100, (1 - (Math.max(0, netPower) / curHausV)) * 100)) : 0;
 
-    setState(PATH_PV + "Hausverbrauch", Math.round(hausV), true);
-    setState(PATH_PV + "Netzbezug", Math.max(0, Math.round(netP)), true);
-    setState(PATH_PV + "Einspeisung", Math.abs(Math.min(0, Math.round(netP))), true);
-    setState(PATH_PV + "Autarkie", curAut, true);
-    setState(PATH_PV + "lade_kwh", parseFloat(lKWh.toFixed(1)), true);
-    setState(PATH_PV + "Restladezeit", formatMins(rMin), true);
+    // Datenpunkte für VIS schreiben
+    setState(PATH_PV + "Hausverbrauch", Math.round(curHausV), true);
+    setState(PATH_PV + "Netzbezug", Math.max(0, Math.round(netPower)), true);
+    setState(PATH_PV + "Einspeisung", Math.abs(Math.min(0, Math.round(netPower))), true);
+    setState(PATH_PV + "Autarkie", aut, true);
+    setState(PATH_PV + "lade_kwh", parseFloat(curKwh.toFixed(1)), true);
     setState(PATH_PV + "Restladezeit_final", fUm, true);
 
-    let bLast = getBereinigteLast();
-    let sL = getState(IDS.saunaLogik).val;
-    
-    if (bLast > SAUNA_POWER) {
+    // Sommer-Strategie ausführen
+    checkSommerStrategie();
+
+    // Sauna-Schutzlogik
+    let bL = getBereinigteLast();
+    let sL = getState(IDS.sLog).val;
+
+    if (bL > 7500) { // Wenn Last > 7.5kW (Sauna heizt)
         if (!sL && !tSaunaStart) {
-            tSaunaStart = setTimeout(function() { if (getBereinigteLast() > SAUNA_POWER) { startSauna(getBereinigteLast()); } tSaunaStart = null; }, 30000);
-        } else if (sL) { 
-            let aSoc = getState(IDS.batSoc).val; 
-            if (aSoc > getState(IDS.minSocRead).val) setState(IDS.minSocSet, aSoc); 
+            tSaunaStart = setTimeout(function() {
+                if (getBereinigteLast() > 7500) { startSauna(); }
+                tSaunaStart = null;
+            }, 30000);
+        } else if (sL) {
+            // Min-SoC auf aktuellen SoC heben, um Batterie-Entladung für Sauna zu stoppen
+            if (batSoc > getState(IDS.mSocR).val) setState(IDS.mSocS, batSoc);
         }
-    } else if (bLast < 1000) {
-        if (sL && !tempMeldungGesendet && !tSaunaReset) { 
-            tempMeldungGesendet = true; 
-            notify("Sauna", "Zieltemperatur erreicht!"); 
-            announce("Die Sauna ist jetzt heiss."); 
-        }
+    } else if (bL < 1000 && sL && !tSaunaReset) {
         stopSauna();
     }
 }
 
-function startSauna(watt) {
-    if (isNaN(watt)) watt = 8000;
-    setState(IDS.saunaLogik, true, true); tempMeldungGesendet = false;
-    originalMinSoc = getState(IDS.minSocRead).val; setState(IDS.minSocSet, getState(IDS.batSoc).val);
-    notify("Sauna", "Sauna eingeschaltet.");
-    tRadioBad = setTimeout(function() { setState(IDS.heos.badSender, RADIO_SENDER); setState(IDS.heos.badStatus, true); }, 900000);
+function startSauna() {
+    setState(IDS.sLog, true, true);
+    originalMinSoc = getState(IDS.mSocR).val;
+    setState(IDS.mSocS, batSoc);
+    notify("Sauna", "Priorisierung aktiv. Batterie wird geschont.");
 }
 
 function stopSauna() {
-    if (!getState(IDS.saunaLogik).val || tSaunaReset) return;
     tSaunaReset = setTimeout(function() {
-        if (originalMinSoc !== null) setState(IDS.minSocSet, originalMinSoc);
-        setState(IDS.heos.saunaStatus, false); setState(IDS.heos.badStatus, false); setState(IDS.saunaLogik, false, true);
+        if (originalMinSoc !== null) setState(IDS.mSocS, originalMinSoc);
+        setState(IDS.sLog, false, true);
         tSaunaReset = null;
     }, 2100000);
 }
 
-// --- 5. ASTRO-REPORT ---
-schedule({astro: "sunset"}, function() {
-    let yieldKWh = getState(IDS.pvYieldToday).val || 0; 
-    let dAut = (tVerbrauchWh > 0) ? Math.round((1 - (tNetzWh / tVerbrauchWh)) * 100) : 0;
-    let msg = "PV-Tagesbericht: Erzeugung " + yieldKWh.toFixed(2) + " kWh, Haus " + (tVerbrauchWh/1000).toFixed(2) + " kWh, Autarkie " + dAut + "%";
-    notify("PV-Tagesbericht", msg);
-});
+// --- 5. TRIGGER (Sensoren) ---
+on({id: IDS.pvP, change: "ne"}, function(obj) { pvPower = obj.state.val || 0; runUpdate(); });
+on({id: IDS.net, change: "ne"}, function(obj) { netPower = obj.state.val || 0; runUpdate(); });
+on({id: IDS.batP, change: "ne"}, function(obj) { batPower = obj.state.val || 0; runUpdate(); });
+on({id: IDS.soc, change: "ne"}, function(obj) { batSoc = obj.state.val || 0; });
 
-// --- 6. TRIGGER ---
-on({id: IDS.pvPower, change: "ne"}, function(obj) { pvP = Number(obj.state.val) || 0; runMasterUpdate(); });
-on({id: IDS.netPower, change: "ne"}, function(obj) { netP = Number(obj.state.val) || 0; runMasterUpdate(); });
-on({id: IDS.batPower, change: "ne"}, function(obj) { batP = Number(obj.state.val) || 0; runMasterUpdate(); });
-on({id: IDS.batSoc, change: "ne"}, function(obj) { soc = Number(obj.state.val) || 0; });
-on({id: IDS.saunaTuer, change: "ne"}, function(obj) {
-    if (obj.state.val === true && getState(IDS.saunaLogik).val) {
-        tTuerWarn = setTimeout(function() { if (getState(IDS.saunaTuer).val && getState(IDS.saunaLogik).val) { announce("Achtung! Die Saunatur ist offen!"); notify("Sauna Alarm", "Tuer offen!"); } }, 60000);
-    } else if (tTuerWarn) { clearTimeout(tTuerWarn); tTuerWarn = null; }
-});
-
+// Statistik-Update alle 10 Sekunden
 setInterval(function() {
-    let yieldWh = (getState(IDS.pvYieldToday).val || 0) * 1000;
-    setState(PATH_PV + "Tageserzeugung", Math.round(yieldWh), true);
+    let yWh = (getState(IDS.pvY).val || 0) * 1000;
+    setState(PATH_PV + "Tageserzeugung", Math.round(yWh), true);
     setState(PATH_PV + "Tagesverbrauch", Math.round(tVerbrauchWh), true);
     setState(PATH_PV + "Tagesladung", Math.round(tLadungWh), true);
     setState(PATH_PV + "TagesNetzbezug", Math.round(tNetzWh), true);
 }, 10000);
 
+// Tages-Reset um Mitternacht
 schedule("0 0 * * *", function() { tVerbrauchWh = 0; tLadungWh = 0; tNetzWh = 0; });
