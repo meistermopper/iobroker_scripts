@@ -1,17 +1,17 @@
 /**
  * =============================================================================
- * KÜCHEN-LICHTSTEUERUNG v2.0 (AUTOMATIK & NACHTMODUS)
+ * KÜCHEN-LICHTSTEUERUNG v2.1 (PRESENCE FOLLOWER)
  * =============================================================================
- * ZWECK: Intelligente Steuerung der Küchenbeleuchtung basierend auf Präsenz,
- * Helligkeit und Uhrzeit.
+ * ZWECK: Licht folgt dem Präsenzmelder unter Berücksichtigung von Helligkeit
+ * und Tageszeit (Tag/Nacht-Modus).
  * * OPTIMIERUNGEN:
- * 1. TRAFFIC-CHECK: Befehle werden nur gesendet, wenn der Status sich wirklich ändert.
- * 2. TIMING: 300ms Versatz zwischen Sonoff und Hue zur Entlastung des Funknetzes.
- * 3. NACHTMODUS: Automatisches Dimmen zwischen 22:00 und 05:00 Uhr.
+ * 1. TRAFFIC-FILTER: Sendet nur Schaltbefehle, wenn der Ist-Zustand abweicht.
+ * 2. FUNK-SCHONUNG: 300ms Versatz zwischen Sonoff und Hue zur Lastverteilung.
+ * 3. LOGIK: Direkte Umsetzung des Präsenzstatus ohne künstliche Nachlaufzeit.
  * =============================================================================
  */
 
-// --- 1. KONFIGURATION (PFADE) ---
+// --- 1. KONFIGURATION (DATENPUNKTE) ---
 const IDS = {
     präsenz:      'alias.0.kueche.bwm.PRESENCE_DETECTION_STATE',
     helligkeit:   'alias.0.kueche.bwm.ILLUMINATION',
@@ -21,57 +21,51 @@ const IDS = {
 };
 
 // --- PARAMETER ---
-const LIMIT_LUX = 12;      // Schwellwert für "zu dunkel"
-const BRI_TAG   = 254;     // Volle Helligkeit
-const BRI_NACHT = 150;     // Gedimmtes Nachtlicht
+const LIMIT_LUX = 12;      // Schwelle für Aktivierung (nur wenn dunkler als 12 Lux)
+const BRI_TAG   = 254;     // Helligkeit am Tag (Maximum)
+const BRI_NACHT = 150;     // Helligkeit in der Nacht (Gedimmt)
 
-let debounceTimer = null;
+let debounceTimer = null; // Timer zur Entprellung des Eingangssignals
 
-/**
- * --- 2. EVENT-LOGIK ---
- * Der Trigger reagiert auf den Präsenzmelder.
- */
+// --- 2. HAUPT-LOGIK ---
 on({ id: IDS.präsenz, change: 'ne' }, (obj) => {
     
-    // Bestehenden Timer löschen (Entprellung), falls der Melder schnell flackert
+    // Falls der Melder extrem schnell flackert, fängt dieser Timer das ab (50ms)
     if (debounceTimer) clearTimeout(debounceTimer);
 
-    // 50ms Verzögerung zur Stabilisierung der Werte (wie im ursprünglichen Blockly)
     debounceTimer = setTimeout(async () => {
         
-        // --- STATUS-CHECK ---
-        const bewegung       = !!obj.state.val;
-        const helligkeit     = getState(IDS.helligkeit).val;
-        const autoAktiv      = getState(IDS.automatik).val;
-        const spotsSindAn    = getState(IDS.spots_sonoff).val;
+        // --- WERTE ERFASSEN ---
+        const istPräsent    = !!obj.state.val; // Echter Boolean (true/false)
+        const lux           = getState(IDS.helligkeit).val;
+        const autoAktiv     = getState(IDS.automatik).val;
+        const spotsSindAn   = getState(IDS.spots_sonoff).val;
         
-        // Zeitprüfung: Nutzen der ioBroker-eigenen compareTime Funktion für 22:00 - 05:00 Uhr
+        // Zeitprüfung: 22:00 bis 05:00 Uhr (ioBroker interne Funktion)
         const istNacht = compareTime('22:00', '05:00', 'between');
 
-        // FALL A: AUTOMATIK IST AUS -> Skript bricht sofort ab
+        // FALL A: AUTOMATIK DEAKTIVIERT -> Keine Aktion
         if (!autoAktiv) return;
 
-        // FALL B: BEWEGUNG ERKANNT & ZU DUNKEL
-        if (bewegung && helligkeit < LIMIT_LUX) {
+        // FALL B: PRÄSENZ ERKANNT & ZU DUNKEL
+        if (istPräsent && lux < LIMIT_LUX) {
             
             if (istNacht) {
                 /**
-                 * --- NACHT-MODUS ---
-                 * Nur die Hue-Lampe geht gedimmt an. Die Sonoff-Spots bleiben aus,
-                 * um nachts nicht zu blenden.
+                 * NACHT-MODUS (22:00 - 05:00 Uhr)
+                 * Wir schalten nur die Hue-Lampe gedimmt an. Die Spots bleiben aus.
                  */
                 const cmdNacht = JSON.stringify({ "on": true, "bri": BRI_NACHT, "transitiontime": 10 });
                 
-                // Nur senden, wenn die Lampe nicht schon exakt so eingestellt ist
+                // Nur senden, wenn sich der Befehl vom aktuellen Status unterscheidet
                 if (getState(IDS.hue_command).val !== cmdNacht) {
                     setState(IDS.hue_command, cmdNacht);
                 }
                 
             } else {
                 /**
-                 * --- TAG-MODUS ---
-                 * Erst die Sonoff-Spots (per Relais), dann die Hue-Lampe (per Funk).
-                 * Der Versatz von 300ms verhindert Funk-Kollisionen.
+                 * TAG-MODUS (05:00 - 22:00 Uhr)
+                 * Erst Sonoff-Spots, dann Hue (mit 300ms Versatz zur Funk-Entlastung).
                  */
                 if (!spotsSindAn) {
                     setState(IDS.spots_sonoff, true);
@@ -87,12 +81,12 @@ on({ id: IDS.präsenz, change: 'ne' }, (obj) => {
 
         } 
         
-        // FALL C: KEINE BEWEGUNG MEHR -> LICHT AUS
-        else if (!bewegung) {
+        // FALL C: PRÄSENZ BEENDET (Melder meldet 'false')
+        else if (!istPräsent) {
             
             /**
-             * Wir schalten beide Kreise aus. 
-             * Auch hier nutzen wir den 300ms Versatz zur Netz-Schonung.
+             * ALLES AUSSCHALTEN
+             * Wir schalten beide Kreise ab, falls sie noch an sind.
              */
             if (spotsSindAn) {
                 setState(IDS.spots_sonoff, false);
@@ -100,10 +94,10 @@ on({ id: IDS.präsenz, change: 'ne' }, (obj) => {
 
             setTimeout(() => {
                 const cmdAus = JSON.stringify({ "on": false, "transitiontime": 10 });
-                // Nur senden, wenn die Lampe noch als "AN" gemeldet ist
+                // Wir senden das "Aus", um sicherzugehen, dass die Bridge den Status kennt
                 setState(IDS.hue_command, cmdAus);
             }, 300);
         }
 
-    }, 50);
+    }, 50); // Die 50ms aus dem Blockly zur Signal-Stabilisierung
 });

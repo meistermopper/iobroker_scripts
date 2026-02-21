@@ -1,25 +1,37 @@
-// =============================================================================
-// RAUMKLIMA-MASTER v3.3 (MONITORING, LÜFTUNG & MORGEN-REPORT)
-// =============================================================================
+/**
+ * =============================================================================
+ * RAUMKLIMA-MASTER v3.4.1 (MONITORING, LÜFTUNG & MORGEN-REPORT)
+ * =============================================================================
+ * ZWECK: Überwachung der Luftfeuchtigkeit und Temperatur in allen Räumen.
+ * PHYSIK: Nutzt den Taupunkt und den absoluten Feuchtegehalt (g/m³), um zu 
+ * entscheiden, ob Außenluft den Raum wirklich trocknet (Entfeuchtung).
+ * FEATURES:
+ * - Morgen-Check: Täglicher Bericht über Schimmelgefahr und offene Fenster.
+ * - Lüftungsempfehlung: Physikalisch fundierte Entscheidungshilfe.
+ * - Benachrichtigung: Intelligente Meldung über Telegram, Gotify und SayIt.
+ * =============================================================================
+ */
+const Dewpoint = require('dewpoint'); // Erfordert das NPM-Modul 'dewpoint'
 
-const Dewpoint = require('dewpoint'); 
-
-// --- EINSTELLUNGEN ---
+// --- 1. KONFIGURATION ---
 const PFAD = "Raumklima.";
 const RAUM_PFAD = "Raum.";
 const USER_ONLINE_ID = 'unifi-network.0.clients.users.dc:e5:5b:11:b8:7e.isOnline';
-const MAIN_USER = 'MeisterMopper'; 
 const ID_GOTIFY_TOKEN = '0_userdata.0.gotifytoken.iobroker';
 
 const HUNN = 250;               // Höhe über NN
-const DEFAULT_TEMP = 18.0;      // Auskühlschutz
-const MAX_FEUCHTE = 55.0;       // Wohlfühl-Limit
-const HYS_TEMP = 0.5;           // Puffer Temp
-const HYS_ENTFEUCHTEN = 0.2;    // Puffer Feuchte
+const DEFAULT_TEMP = 18.0;      // Auskühlschutz (Min-Temp für Lüften)
+const MAX_FEUCHTE = 55.0;       // Ziel-Luftfeuchtigkeit
+const HYS_TEMP = 0.5;           // Puffer Temperatur
+const HYS_ENTFEUCHTEN = 0.2;    // Puffer Feuchtegehalt (g/m³)
 
 const notificationTimeouts = {}; 
 const doorCheckTimeouts = {};
 
+/**
+ * RAUM-KONFIGURATION
+ * Definiert Sensoren und deren Typ (heizung/klima) für die korrekte Pfadwahl.
+ */
 const RAEUME = {
     "Aussen": { "Sensor_TEMP": 'alias.0.draussen.thermometer.ACTUAL_TEMPERATURE', "Sensor_HUM": 'alias.0.draussen.thermometer.HUMIDITY', "aliasName": "draussen", type: "heizung" },
     "Wohnzimmer": { "Sensor_TEMP": 'alias.0.wohnzimmer.heizung.ACTUAL_TEMPERATURE', "Sensor_HUM": 'alias.0.wohnzimmer.heizung.HUMIDITY', "Aussensensor": "Aussen", "aliasName": "wohnzimmer", type: "heizung" },
@@ -36,25 +48,26 @@ const RAEUME = {
     "Sauna": { "Sensor_TEMP": 'alias.0.sauna.klima.temperature', "Sensor_HUM": 'alias.0.sauna.klima.humidity', "Aussensensor": "Aussen", "aliasName": "sauna", type: "klima" }
 };
 
-// --- HILFSFUNKTIONEN ---
+// --- 2. HILFSFUNKTIONEN (NOTIFY) ---
 
 function internalNotify(text, priority = 1) {
-    // 1. Telegram (Gezielt an dich mit den korrekten Anführungszeichen)
+    // Telegram-Versand
     sendTo('telegram.0', 'send', { 
         user: 'MeisterMopper / Thomas', 
         text: text, 
         parse_mode: 'HTML' 
     });
 
-    // 2. Gotify
+    // Gotify-Versand
     const token = getState(ID_GOTIFY_TOKEN).val;
     if (token) {
+        // HTML für Gotify entfernen (Reintext-Formatierung)
         const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
         exec(`curl -s "https://mygotify.meistermopper.de/message?token=${token}" -F "title=Haus-Klima" -F "message=${cleanText}" -F "priority=${priority}"`);
     }
 }
 
-// --- MORGEN-REPORT LOGIK (STILL WENN OK) ---
+// --- 3. MORGEN-REPORT (TÄGLICH 08:00) ---
 
 function runMorningReport() {
     let kritischKlima = [];
@@ -64,7 +77,7 @@ function runMorningReport() {
         if (raum === "Aussen") continue;
         const conf = RAEUME[raum];
 
-        // 1. Klima prüfen
+        // Feuchtigkeit prüfen
         const hSuffix = (conf.type === "heizung") ? "heizung.HUMIDITY" : "klima.humidity";
         const humID = `alias.0.${conf.aliasName}.${hSuffix}`;
         
@@ -73,27 +86,22 @@ function runMorningReport() {
             if (hum > 60) kritischKlima.push(`${raum} (${Math.round(hum)}%)`);
         }
 
-        // 2. Fenster prüfen
+        // Offene Fenster prüfen
         const fID = `alias.0.${conf.aliasName}.fenster.STATE`;
         if (existsState(fID) && getState(fID).val > 0) {
             offeneFenster.push(raum === "Wohnzimmer" ? "Terrassentür" : raum);
         }
     }
 
-    // Nur senden, wenn es wirklich ein Problem gibt
     if (kritischKlima.length > 0) {
-        internalNotify(`⚠️ <b>Morgen-Check: Schimmelgefahr!</b>\nHohe Feuchtigkeit in: ${kritischKlima.join(", ")}`, 1);
+        internalNotify(`⚠️ <b>Morgen-Check: Schimmelgefahr!</b>\nHohe Feuchtigkeit in: ${kritischKlima.join(", ")}`, 3);
     }
     if (offeneFenster.length > 0) {
-        internalNotify(`🪟 <b>Morgen-Check: Fenster noch offen!</b>\nBitte schließen in: ${offeneFenster.join(", ")}`, 1);
-    }
-    
-    if (kritischKlima.length === 0 && offeneFenster.length === 0) {
-        console.log("[Klima] Morgen-Check durchgeführt: Alles im grünen Bereich. Keine Nachricht gesendet.");
+        internalNotify(`🪟 <b>Morgen-Check: Fenster noch offen!</b>\nBitte schließen in: ${offeneFenster.join(", ")}`, 3);
     }
 }
 
-// --- LÜFTUNGSLOGIK & BERECHNUNG ---
+// --- 4. BERECHNUNG & LOGIK ---
 
 const xdp = new Dewpoint(HUNN);
 const runden = (wert, stellen) => Math.round(wert * Math.pow(10, stellen)) / Math.pow(10, stellen);
@@ -114,6 +122,7 @@ function calc(raum) {
         const xa = getState(`${PFAD}${RAUM_PFAD}${config.Aussensensor}.Feuchtegehalt_Absolut`).val;
         if (xa === 0) return;
 
+        // Lüftungsempfehlung: Physikalischer Vergleich (Innen vs Außen)
         const lueften = (xa <= (y.x - (HYS_ENTFEUCHTEN + 0.1))) && 
                         (ta <= (t - 0.6)) && 
                         (t >= (DEFAULT_TEMP + HYS_TEMP)) && 
@@ -135,11 +144,9 @@ function checkNotification(raum) {
     const offen = getState(fID).val > 0;
     const gemeldet = existsState(aDP) ? getState(aDP).val : false;
 
-    // Sofort-Meldung bei Lüftungsempfehlung
     if (empf && !offen && !gemeldet) {
         notify(aDP, `Im ${raum} sollte gelüftet werden.`);
     } 
-    // Verzögerte Meldung (1 Min) bei Schließen-Empfehlung
     else if (!empf && offen && !gemeldet) {
         if (!doorCheckTimeouts[raum]) {
             doorCheckTimeouts[raum] = setTimeout(() => {
@@ -154,9 +161,13 @@ function checkNotification(raum) {
     }
 }
 
+/**
+ * Sendet die Benachrichtigung basierend auf der Tageszeit
+ * Tag (08-20h): Prio 3 | Nacht: Prio 1
+ */
 function notify(dp, msg) {
     const isDay = compareTime('08:00', '20:00', 'between');
-    const prio = isDay ? 5 : 1;
+    const prio = isDay ? 3 : 1; 
 
     internalNotify(msg, prio);
 
@@ -167,16 +178,18 @@ function notify(dp, msg) {
     notificationTimeouts[dp] = setTimeout(() => { if (existsState(dp)) setState(dp, false, true); }, 3600000);
 }
 
-// --- INITIALISIERUNG & TRIGGER ---
+// --- 5. INITIALISIERUNG & TRIGGER ---
 
 schedule("0 8 * * *", () => {
     runMorningReport();
 });
 
+// Automatische Datenpunkterstellung und Trigger-Registrierung
 for (const r in RAEUME) {
     createState(`${PFAD}${RAUM_PFAD}${r}.Lüftungsempfehlung`, false, {type: 'boolean'});
     createState(`${PFAD}${RAUM_PFAD}${r}.Feuchtegehalt_Absolut`, 0, {type: 'number'});
     createState(`${PFAD}${RAUM_PFAD}${r}.Temperatur`, 0, {type: 'number'});
+    
     if (RAEUME[r].aliasName) {
         createState(`0_userdata.0.Heizen.Lueften.${r}_Ansage`, false, {type: 'boolean'});
         on({id: RAEUME[r].Sensor_TEMP, change: "ne"}, () => calc(r));
