@@ -1,20 +1,20 @@
 /**
- * Name:   Proxmox Cluster Master-Wächter
- * Version: 2.0 (Full Integration)
- * Zweck:  Überwacht Temperatur, Festplatten, Node-Status & Service-Relais
+ * Name:    Proxmox Cluster Master-Wächter
+ * Version: 2.2 (Broadcast & Logic Deep-Dive)
+ * Zweck:   Überwachung von Temperatur, Festplatten & Status.
+ * Sendet Alarme an ALLE Telegram-User.
  */
 
-// --- KONFIGURATION ---
-const GOTIFY_TOKEN = getState('0_userdata.0.gotifytoken.iobroker').val;
-const TELEGRAM_USER = 'Thomas';
-const DP_SERVICE_MSG = '0_userdata.0.Servicemeldungen.proxmox.proxmox_msg';
+// --- 1. KONFIGURATION ---
+const GOTIFY_TOKEN_DP = '0_userdata.0.gotifytoken.iobroker';
+const DP_SERVICE_MSG  = '0_userdata.0.Servicemeldungen.proxmox.proxmox_msg';
 
 // Schwellenwerte
-const TEMP_LIMIT = 95;       // °C
-const TEMP_HYST  = 5;        // Hysterese für Entwarnung
-const TEMP_DELAY = 30000;    // 30s Verzögerung gegen Spitzen
-const DISK_LIMIT = 85;       // %
-const OFFLINE_DELAY = 60000; // 1 Minute Puffer für Node-Offline
+const TEMP_LIMIT    = 95;    // Alarm ab 95°C
+const TEMP_HYST     = 5;     // Entwarnung erst bei < 90°C (Hysterese verhindert "Flattern")
+const TEMP_DELAY    = 30000; // 30 Sekunden Puffer (ignoriert kurze Lastspitzen)
+const DISK_LIMIT    = 85;    // Alarm bei 85% Festplattenbelegung
+const OFFLINE_DELAY = 60000; // 1 Minute Puffer (ignoriert kurze Reconnects/Adapter-Restarts)
 
 const SERVER_MAP = {
     'linux-control.0.Proxmox_pve1.CPUTemp': 'HA-PVE-01',
@@ -28,57 +28,80 @@ const NODE_STATUS_IDS = [
     'proxmox.0.node_HA-PVE-03.status'
 ];
 
-// Speicher für Timer und Zustände
+// Speicher für Timer und Zustände (verhindert doppelte Meldungen)
 let states = {
-    temp: {},   // { 'linux-control...': { timer: null, alarm: false } }
-    nodes: {},  // { 'proxmox.0...': { timer: null, alarm: false } }
-    disks: {}   // Speicherplatz-Status
+    temp: {}, 
+    nodes: {},
+    disks: {} 
 };
 
-// --- HILFSFUNKTION (ZENTRALE MELDUNG) ---
+// --- 2. HILFSFUNKTION (ZENTRALE MELDUNG) ---
+/**
+ * @param {string} title - Der Titel (wird fett gedruckt)
+ * @param {string} msg - Der Nachrichtentext
+ * @param {number} priority - Gotify Priorität (0-10)
+ */
 function notify(title, msg, priority = 5) {
-    // 1. Telegram
-    sendTo('telegram', 'send', { user: TELEGRAM_USER, text: `${title}:\n${msg}` });
+    const token = getState(GOTIFY_TOKEN_DP).val;
+
+    // 1. Telegram Broadcast
+    // Durch Weglassen von 'user' wird die Nachricht an alle User gesendet.
+    sendTo('telegram', 'send', { 
+        text: `*${title}*\n${msg}`, 
+        parse_mode: 'Markdown' 
+    });
     
     // 2. Gotify (Modern via httpPost)
-    httpPost(`https://mygotify.meistermopper.de/message?token=${GOTIFY_TOKEN}`, {
-        title: title,
-        message: msg,
-        priority: priority
-    }, (error) => {
-        if (error) console.error(`[Master-Guard] Gotify Fehler: ${error}`);
-    });
+    if (token) {
+        httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
+            title: title,
+            message: msg,
+            priority: priority
+        }, (error) => {
+            if (error) console.error(`[Master-Guard] Gotify Fehler: ${error}`);
+        });
+    }
 
     console.warn(`[Master-Guard] ${title}: ${msg}`);
 }
 
-// --- 1. LOGIK: TEMPERATUR (NUCs mit Anti-Spike) ---
+// --- 3. ÜBERWACHUNGS-LOGIK ---
+
+// A. TEMPERATUR (Anti-Spike & Hysterese)
 on({ id: Object.keys(SERVER_MAP), change: 'ne' }, (obj) => {
     const geraet = SERVER_MAP[obj.id];
     const temp = parseFloat(obj.state.val);
+    
     if (!states.temp[geraet]) states.temp[geraet] = { timer: null, alarm: false };
     const s = states.temp[geraet];
 
+    // Wenn Limit überschritten: Timer starten (30s Puffer)
     if (temp >= TEMP_LIMIT && !s.alarm && !s.timer) {
         s.timer = setTimeout(() => {
             s.alarm = true;
             s.timer = null;
             notify('🔥 CPU Dauerhitze', `${geraet} ist seit 30s auf ${temp}°C!`, 9);
         }, TEMP_DELAY);
-    } else if (temp < TEMP_LIMIT && s.timer) {
+    } 
+    // Wenn Temperatur sinkt, bevor der Timer abgelaufen ist: Timer löschen
+    else if (temp < TEMP_LIMIT && s.timer) {
         clearTimeout(s.timer);
         s.timer = null;
-    } else if (temp < (TEMP_LIMIT - TEMP_HYST) && s.alarm) {
+    } 
+    // Entwarnung erst, wenn Hysterese unterschritten wird (verhindert Alarm-Spam)
+    else if (temp < (TEMP_LIMIT - TEMP_HYST) && s.alarm) {
         s.alarm = false;
-        console.log(`[Master-Guard] Abkühlung: ${geraet} wieder im grünen Bereich.`);
+        notify('❄️ Abkühlung', `${geraet} ist wieder im grünen Bereich (${temp}°C).`, 4);
     }
 });
 
-// --- 2. LOGIK: SPEICHERPLATZ (VM / LXC) ---
+// B. DISK-LEVEL (Regex Überwachung)
+// Diese Logik überwacht automatisch alle VMs und LXCs auf einmal.
 on({ id: /^proxmox\.0\.(lxc|qemu)_.*\.disk_lev$/, change: 'ne' }, (obj) => {
     const level = obj.state.val;
     const oldLevel = obj.oldState ? obj.oldState.val : 0;
 
+    // Nur melden, wenn der Schwellenwert NEU überschritten wurde
     if (level >= DISK_LIMIT && oldLevel < DISK_LIMIT) {
         const type = obj.id.includes('lxc') ? 'LXC' : 'VM';
         const name = obj.id.split('.')[2].replace('lxc_', '').replace('qemu_', '');
@@ -86,14 +109,16 @@ on({ id: /^proxmox\.0\.(lxc|qemu)_.*\.disk_lev$/, change: 'ne' }, (obj) => {
     }
 });
 
-// --- 3. LOGIK: NODE-STATUS (Offline/Online mit Puffer) ---
+// C. NODE-STATUS (Offline-Puffer)
 on({ id: NODE_STATUS_IDS, change: 'ne' }, (obj) => {
     const id = obj.id;
-    const name = obj.channelName || id.split('_')[1].replace('.status', '');
+    const name = id.split('_')[1].replace('.status', '');
+    
     if (!states.nodes[id]) states.nodes[id] = { timer: null, alarm: false };
     const s = states.nodes[id];
 
     if (obj.state.val === 'offline' && !s.timer) {
+        // Puffer, falls der Proxmox-Adapter nur kurz neu startet
         s.timer = setTimeout(() => {
             if (getState(id).val === 'offline') {
                 notify('❌ Node Offline', `${name} ist seit 1 Minute nicht erreichbar!`, 8);
@@ -110,12 +135,12 @@ on({ id: NODE_STATUS_IDS, change: 'ne' }, (obj) => {
     }
 });
 
-// --- 4. LOGIK: SERVICE-RELAIS (Empfang von anderen Systemen) ---
+// D. SERVICE-RELAIS
 on({ id: DP_SERVICE_MSG, change: 'ne' }, (obj) => {
     const msg = obj.state.val;
-    if (msg && msg !== 'deleted') {
-        notify('🖥️ Proxmox Service', msg, 1);
-        // Zurücksetzen mit kleiner Verzögerung
-        setStateDelayed(DP_SERVICE_MSG, 'deleted', true, 500, false);
+    if (msg && msg !== 'deleted' && msg !== '') {
+        notify('🖥️ Proxmox Service', msg, 2);
+        // Automatisches "Aufräumen" des Datenpunkts
+        setStateDelayed(DP_SERVICE_MSG, 'deleted', true, 1000, false);
     }
 });

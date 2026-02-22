@@ -103,14 +103,14 @@ Object.keys(geraete).forEach(name => {
         if (level < config.min && !istAn) {
             setState(config.powerId, true);
             if (config.lowBatId) setState(config.lowBatId, true);
-            notify(name, `🔋 ${name} braucht Strom.\nStand: ${level}%`, 1, config.notificationUser, true);
+            notify(name, ` ${name} 🪫.\nStand: ${level}%`, 1, config.notificationUser, true);
         }
 
         // Ausschalt-Logik
         else if (level >= config.max && istAn) {
             setState(config.powerId, false);
             if (config.lowBatId) setState(config.lowBatId, false);
-            notify(name, `✅ ${name} ist geladen.\nStand: ${level}%`, 1, config.notificationUser, true);
+            notify(name, `🔋 ${name} ist geladen.\nStand: ${level}%`, 1, config.notificationUser, true);
         }
     });
 });
@@ -124,7 +124,7 @@ const manualTriggers = [
 
 on({ id: manualTriggers, val: true }, (obj) => {
     setState('sonoff.0.Smartlader.POWER', true);
-    const msg = "Bitte einstöpseln, ich habe eingeschaltet.";
+    const msg = "Bitte links einstöpseln, ich habe eingeschaltet.";
     
     // Beim manuellen Trigger nehmen wir hier Thomas als Referenz für die Anwesenheit
     const thomasOnline = getState(geraete['Das Smartphone von Thomas'].presenceId).val;
