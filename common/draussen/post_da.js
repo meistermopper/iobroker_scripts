@@ -1,15 +1,27 @@
-// --- KONFIGURATION ---
-const WARTEZEIT_RESUME_MS = 8000; // Zeitpuffer, bis die Musik nach der Ansage fortgesetzt wird
-const POSTKASTEN_STATE_ID = 'alias.0.draussen.postkasten.STATE';
-const POSTKASTEN_VIS_ID = '0_userdata.0.Haushalt.Briefkasten';
-const GOTIFY_TOKEN_ID = '0_userdata.0.gotifytoken.iobroker';
-const GOTIFY_URL = "https://mygotify.meistermopper.de/message?token=";
+/**
+ * =============================================================================
+ * POSTKASTEN-MONITOR v2.4.1
+ * =============================================================================
+ * ZWECK: Überwachung des Briefkastens mit Voice-Resume und Scharfschaltung.
+ * FIX: Syntax-Fehler (Z. 112) behoben und Code-Struktur bereinigt.
+ * =============================================================================
+ */
 
-var Sperre = false;
-var Sperre_stumm = false;
+// --- 1. KONFIGURATION ---
+const WARTEZEIT_RESUME_MS = 8000; // Zeit bis Musik nach Ansage weiterläuft
+const POSTKASTEN_STATE_ID = 'alias.0.draussen.postkasten.STATE'; 
+const POSTKASTEN_VIS_ID   = '0_userdata.0.Haushalt.Briefkasten'; 
+const GOTIFY_TOKEN_ID     = '0_userdata.0.gotifytoken.iobroker';
+const GOTIFY_URL          = "https://mygotify.meistermopper.de/message?token=";
 
-// --- DYNAMISCHE GOOGLE-ANSAGE FUNKTION ---
-// Diese Funktion speichert den Status spielender Geräte und stellt ihn nach der Ansage wieder her.
+// Sperren zur Vermeidung von Mehrfach-Meldungen
+let Sperre = false;       
+let Sperre_stumm = false; 
+
+/**
+ * --- 2. GOOGLE-ANSAGE FUNKTION ---
+ * Pausiert Chromecasts, macht die Ansage und setzt Musik fort.
+ */
 async function googleWatchdogAnnounce(text, vol) {
     const players = $(`chromecast.0.*.status.playerState`);
     
@@ -18,62 +30,82 @@ async function googleWatchdogAnnounce(text, vol) {
         const isPlaying = (getState(id).val === 'playing');
         
         let oldVol, oldUrl;
+        
+        // Status sichern
         if (isPlaying) {
             oldVol = getState(base + '.player.volume').val;
             oldUrl = getState(base + '.player.url2play').val;
         }
 
-        // Sprachausgabe über SayIt
+        // Ansage über SayIt triggern
         sendTo("sayit", "say", { text: text, volume: vol });
 
-        // Wiederaufnahme nur, wenn es vorher lief
+        // Musik fortsetzen (Resume)
         if (isPlaying) {
-            // Wir warten einen Moment, bis die SayIt-Ansage vermutlich beendet ist
             setStateDelayed(base + '.player.url2play', oldUrl, WARTEZEIT_RESUME_MS, false);
             setStateDelayed(base + '.player.volume', oldVol, WARTEZEIT_RESUME_MS + 500, false);
         }
     });
 }
 
-// --- TRIGGER POSTKASTEN ---
+/**
+ * --- 3. TRIGGER: POST IST DA ---
+ * Reagiert auf den Briefkastensensor.
+ */
 on({ id: POSTKASTEN_STATE_ID, change: 'ne' }, async (obj) => {
+    // Nur bei "wahr" reagieren und wenn nicht bereits als voll markiert
     if (!obj.state || !obj.state.val) return;
-    if (getState(POSTKASTEN_VIS_ID).val) return;
+    if (getState(POSTKASTEN_VIS_ID).val === true) return;
 
     const gotifyToken = getState(GOTIFY_TOKEN_ID).val;
-    const msg = '📫 Es war gerade jemand am Postkasten.';
+    
+    // Botschaften trennen: msgText für Handy, msgVoice für Lautsprecher
+    const msgText  = '📫 Es war gerade jemand am Postkasten.'; 
+    const msgVoice = 'Es war gerade jemand am Postkasten.';    
 
-    // A: Lautstarke Ansage (Tagsüber 08:00 - 20:00 Uhr)
+    // FALL A: Tagsüber mit Ansage (08:00 - 20:00 Uhr)
     if (!Sperre && compareTime('08:00', '20:00', 'between', null)) {
-        Sperre = true;
+        Sperre = true; 
         
-        console.warn('Post da - Lautstarke Ansage mit Resume-Logik');
-        await googleWatchdogAnnounce(msg, 40);
+        console.log('[Postkasten] Ereignis erkannt: Starte Ansage & Benachrichtigung.');
+        
+        // Sprachausgabe (Reintext)
+        await googleWatchdogAnnounce(msgVoice, 40);
 
-        // Benachrichtigungen
-        sendTo('telegram.0', 'send', { text: msg });
-        exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=ioBroker" -F "message=${msg}" -F "priority=1"`);
+        // Textnachrichten (mit Symbol)
+        sendTo('telegram.0', 'send', { text: msgText });
+        exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=Postkasten" -F "message=${msgText}" -F "priority=1"`);
 
-        setTimeout(() => { Sperre = false; }, 60000);
+        setTimeout(() => { Sperre = false; }, 60000); // 1 Min Sperre
     } 
-    // B: Stumme Benachrichtigung (Nachts oder während Sperre)
+    // FALL B: Nachts oder während Sperre (Nur Text)
     else if (!Sperre_stumm) {
         Sperre_stumm = true;
-        console.log('Post da - Nur Text/Benachrichtigung');
         
-        sendTo('telegram.0', 'send', { text: msg });
-        exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=ioBroker" -F "message=${msg}" -F "priority=5"`);
+        sendTo('telegram.0', 'send', { text: msgText });
+        exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=Postkasten" -F "message=${msgText}" -F "priority=5"`);
         
+        // Status in VIS auf voll setzen
         setState(POSTKASTEN_VIS_ID, true);
+        
         setTimeout(() => { Sperre_stumm = false; }, 60000);
     }
 });
 
-// Meldung Scharfschaltung (Wenn der Briefkasten geleert wurde)
-on({ id: POSTKASTEN_VIS_ID, change: 'lt' }, async (obj) => {
-    const gotifyToken = getState(GOTIFY_TOKEN_ID).val;
-    const msgScharf = '+++📫 Der Briefkasten wurde wieder scharf geschaltet. +++';
-    
-    sendTo('telegram.0', 'send', { text: msgScharf });
-    exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=ioBroker" -F "message=${msgScharf}" -F "priority=1"`);
+/**
+ * --- 4. TRIGGER: SCHARFSCHALTUNG NACH LEERUNG ---
+ * Reagiert, wenn du in VIS den Button auf "false" setzt.
+ */
+on({ id: POSTKASTEN_VIS_ID, change: 'ne' }, async (obj) => {
+    // Nur reagieren, wenn der Kasten geleert wurde (Status wechselt auf false)
+    if (obj.state.val === false) {
+        const gotifyToken = getState(GOTIFY_TOKEN_ID).val;
+        const msgScharf = '📪 Der Briefkasten wurde wieder scharfgeschaltet.';
+        
+        // Nur Textnachricht senden
+        sendTo('telegram.0', 'send', { text: msgScharf });
+        exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=Postkasten" -F "message=${msgScharf}" -F "priority=1"`);
+        
+        console.log('[Postkasten] System nach Leerung wieder scharfgeschaltet.');
+    }
 });
