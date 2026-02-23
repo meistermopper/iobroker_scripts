@@ -1,58 +1,143 @@
-// --- KONFIGURATION ---
-const ID_UPS_BATTERY = 'nut.0.status.onbattery';
-const ID_STORE = '0_userdata.0.Licht.Hue.Lampenstatus';
+/**
+ * SKRIPT: USV Power-Restore Manager (V2026)
+ * * ZWECK:
+ * Sichert bei Stromausfall (USV-Betrieb) den Zustand von Lampen/Steckdosen
+ * und stellt diesen bei Netzrückkehr exakt wieder her.
+ * * LOGIK-UPGRADES:
+ * - Dynamisches Delay: Verhindert Funkstau (Mesh-Flooding) durch gestaffeltes Schalten.
+ * - Fehlertoleranz: Ignoriert nicht erreichbare Geräte beim Snapshot.
+ * - Benachrichtigung: Informiert dich über Telegram/Gotify (falls konfiguriert).
+ */
 
-// Hier definieren wir, welche Geräte überwacht werden:
-// hue.0.*.on -> Alle Hue Lampen
-// zigbee.0.*.state -> Alle Zigbee Lampen & Plugs (Steckdosen)
-const SELECTOR = 'state[id=hue.0.*.on], state[id=zigbee.0.*.state]';
+// --- 1. KONFIGURATION ---
+const CONFIG = {
+    // USV Status (True = Strom weg / Batteriebetrieb)
+    idUPS: 'nut.0.status.onbattery',
+    
+    // Speicherort für den Snapshot (als JSON-String)
+    idStore: '0_userdata.0.Licht.Hue.Lampenstatus',
+    
+    // Welche Geräte sollen gesichert werden?
+    selector: 'state[id=hue.0.*.on], state[id=zigbee.0.*.state]',
+    
+    // Schalt-Verzögerung in ms (Abstand zwischen zwei Schaltbefehlen)
+    // Erhöhe diesen Wert auf 200, wenn dein Zigbee-Netzwerk träge reagiert.
+    staggerDelay: 150,
+    
+    // Benachrichtigungen (nutzt deine vorhandenen Einstellungen)
+    useNotifications: true
+};
 
-// --- LOGIK ---
+// --- 2. KERN-LOGIK ---
 
-on({ id: ID_UPS_BATTERY, change: "ne" }, async (obj) => {
+/**
+ * Funktion: processPowerRestore
+ * Wird gerufen, wenn der Strom wieder da ist.
+ */
+async function processPowerRestore() {
+    try {
+        const storeVal = getState(CONFIG.idStore).val;
+        
+        // Prüfung: Gibt es überhaupt einen gesicherten Zustand?
+        if (!storeVal || storeVal === "{}" || storeVal === "[]") {
+            console.log("USV-Restore: Kein Snapshot vorhanden oder Speicher leer.");
+            return;
+        }
+
+        const lastStates = JSON.parse(storeVal);
+        let delayCounter = 0; // Zähler für die Zeitstaffelung
+        let restoreCount = 0;
+
+        console.warn("USV: Netzbetrieb erkannt! Starte Wiederherstellung...");
+
+        for (const id in lastStates) {
+            const savedVal = lastStates[id];
+            
+            // Falls das Gerät im ioBroker existiert...
+            if (existsState(id)) {
+                const currentVal = getState(id).val;
+
+                // Nur schalten, wenn der aktuelle Zustand vom gesicherten abweicht.
+                // Das schont die Funk-Bandbreite enorm!
+                if (savedVal !== currentVal) {
+                    restoreCount++;
+                    
+                    /**
+                     * WICHTIG: Staggered Delay (Gestaffelte Verzögerung)
+                     * Wir erhöhen das Delay für jedes Gerät (0ms, 150ms, 300ms, 450ms...).
+                     * Dadurch wird das Funknetz (Zigbee/Hue) nicht mit Befehlen geflutet.
+                     */
+                    const finalDelay = delayCounter * CONFIG.staggerDelay;
+                    
+                    setStateDelayed(id, savedVal, finalDelay);
+                    delayCounter++;
+                }
+            }
+        }
+
+        // Nach der Wiederherstellung den Speicher leeren.
+        setState(CONFIG.idStore, "{}", true);
+        console.log(`USV-Restore: ${restoreCount} Geräte wurden zeitversetzt geschaltet.`);
+        
+        if (CONFIG.useNotifications) {
+            sendNotification(`⚡ Netzstrom zurück! ${restoreCount} Lampen/Geräte wurden wiederhergestellt.`);
+        }
+
+    } catch (e) {
+        console.error("USV-Restore: Fehler beim Wiederherstellen: " + e);
+    }
+}
+
+/**
+ * Funktion: createSnapshot
+ * Sichert alle aktuellen Zustände in den Datenpunkt.
+ */
+function createSnapshot() {
+    const statusSnapshot = {};
+    const geraete = $(CONFIG.selector);
+
+    console.warn("USV: Stromausfall! Erstelle Snapshot der Geräte...");
+
+    geraete.each(id => {
+        const state = getState(id);
+        if (state && state.val !== null) {
+            statusSnapshot[id] = state.val;
+        }
+    });
+
+    // Speichere das Objekt als JSON-Text.
+    setState(CONFIG.idStore, JSON.stringify(statusSnapshot), true);
+    
+    const count = Object.keys(statusSnapshot).length;
+    console.log(`USV-Snapshot: ${count} Zustände erfolgreich gesichert.`);
+    
+    if (CONFIG.useNotifications) {
+        sendNotification(`🔋 Stromausfall! USV übernimmt. ${count} Gerätestati wurden gesichert.`);
+    }
+}
+
+/**
+ * Funktion: sendNotification (Platzhalter für deine Bot-Logik)
+ */
+function sendNotification(msg) {
+    // Hier kannst du deine Telegram/Gotify-Befehle einfügen
+    console.log("Meldung: " + msg);
+    // sendTo('telegram', { text: msg });
+}
+
+// --- 3. EVENT-TRIGGER ---
+
+// Beobachtet den USV-Status auf Änderungen
+on({ id: CONFIG.idUPS, change: "ne" }, async (obj) => {
+    // Konvertiere Wert sicher zu Boolean (Strom weg = true)
     const onBattery = !!obj.state.val;
 
     if (onBattery) {
-        // --- STROMAUSFALL: SNAPSHOT ERSTELLEN ---
-        console.warn("USV: Stromausfall! Sicherung der Vitrine, Lampen und Plugs...");
-        
-        let statusSnapshot = {};
-        let geraete = $(SELECTOR);
-
-        geraete.each(function(id) {
-            statusSnapshot[id] = getState(id).val;
-        });
-
-        setState(ID_STORE, JSON.stringify(statusSnapshot), true);
-        console.log(`Snapshot erstellt: ${geraete.length} Zustände gesichert.`);
-
+        // FALL 1: Stromausfall -> Sichern
+        createSnapshot();
     } else {
-        // --- STROM WIEDER DA: RESTAURIEREN ---
-        console.warn("USV: Netzbetrieb! Stelle Zustände wieder her...");
-        
-        try {
-            let storeVal = getState(ID_STORE).val;
-            if (!storeVal || storeVal === "{}" || storeVal === "[]") return;
-
-            let lastStates = JSON.parse(storeVal);
-
-            for (let id in lastStates) {
-                let sollStatus = lastStates[id];
-                let aktuellerStatus = getState(id).val;
-
-                // Nur schalten, wenn der Wert abweicht (schont das Funknetz)
-                if (sollStatus !== aktuellerStatus) {
-                    // Kurze Verzögerung beim Schalten, um Zigbee-Mesh nicht zu fluten
-                    setStateDelayed(id, sollStatus, 100); 
-                }
-            }
-            
-            // Speicher leeren
-            setState(ID_STORE, "{}", true);
-            console.log("Wiederherstellung der Vitrine und Beleuchtung abgeschlossen.");
-
-        } catch (e) {
-            console.error("Fehler bei Power-Restore: " + e);
-        }
+        // FALL 2: Strom zurück -> Wiederherstellen
+        // Wir warten 2 Sekunden, bis sich die Router/Gateways nach Stromrückkehr stabilisiert haben.
+        setTimeout(processPowerRestore, 2000);
     }
 });

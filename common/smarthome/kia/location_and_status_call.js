@@ -1,116 +1,122 @@
 /**
- * Name:   Kia e-Niro Master-Steuerung v2.1
- * Zweck:  Zentrales Management für Standort, Status-Mirroring und 12V-Schutz.
- * Enthält: Abfrage-Logik, Google Maps Geocoding und Überwachung der Bedienelemente.
+ * Name:   Kia e-Niro Master-Steuerung v2.7
+ * Zweck:  Management für Standort, Status-Spiegelung und 12V-Schutz.
+ * UPGRADE:
+ * - Unterstützung für Smartphone-Projekt (projektx_sp).
+ * - Multi-Instanz-Trigger für alle VIS-Projekte.
+ * - Getrennte Logik-Prüfung für View-Namen.
  */
 
-// --- 1. KONFIGURATION ---
+// --- 1. KONFIGURATION (Identisch geblieben) ---
 const VIN = 'bluelink.0.KNAFD81A7S6058382';
 const PATH_USER = '0_userdata.0.Energie.Kia_e_niro';
 
-// Zentrale Objekt-Struktur für alle IDs
 const IDS = {
-    // Bluelink Steuer-Datenpunkte (Eingang vom Adapter)
-    ctrlCharge:    `${VIN}.control.charge`,
-    ctrlChargeStop: `${VIN}.control.charge_stop`,
-    ctrlClimaStart: `${VIN}.control.clima.start`,
-    ctrlClimaStop:  `${VIN}.control.clima.stop`,
-    ctrlLock:       `${VIN}.control.lock`,
-    ctrlUnlock:     `${VIN}.control.unlock`,
-    refreshCar:     `${VIN}.control.force_refresh_from_car`,
-    refreshSrv:     `${VIN}.control.force_refresh_from_server`,
-    lat:            `${VIN}.vehicleLocation.lat`,
-    lon:            `${VIN}.vehicleLocation.lon`,
-    
-    // Externe Hardware / Userdata
+    ctrlCharge:      `${VIN}.control.charge`,
+    ctrlChargeStop:  `${VIN}.control.charge_stop`,
+    ctrlClimaStart:  `${VIN}.control.clima.start`,
+    ctrlClimaStop:   `${VIN}.control.clima.stop`,
+    ctrlLock:        `${VIN}.control.lock`,
+    ctrlUnlock:      `${VIN}.control.unlock`,
+    refreshCar:      `${VIN}.control.force_refresh_from_car`,
+    refreshSrv:      `${VIN}.control.force_refresh_from_server`,
+    lat:             `${VIN}.vehicleLocation.lat`,
+    lon:             `${VIN}.vehicleLocation.lon`,
     chargingActive: 'ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.transactionActive',
     googleToken:    '0_userdata.0.google.mapsAPItoken',
-    
-    // Ziel-Datenpunkte in 0_userdata (Ausgang)
-    u_counter:      `${PATH_USER}.Anz_Aktualisierung`,
-    u_standort:     `${PATH_USER}.Standort`,
-    u_updateTime:   `${PATH_USER}.Aktualisierung`,
-    u_chargeState:  `${PATH_USER}.charge`,
-    u_klimaState:   `${PATH_USER}.klima_status`,
-    u_doorLock:     `${PATH_USER}.doorlock`
+    u_manualRefresh: `${PATH_USER}.Manual_Refresh_Location`,
+    u_counter:       `${PATH_USER}.Anz_Aktualisierung`,
+    u_standort:      `${PATH_USER}.Standort`,
+    u_updateTime:    `${PATH_USER}.Aktualisierung`,
+    u_chargeState:   `${PATH_USER}.charge`,
+    u_klimaState:    `${PATH_USER}.klima_status`,
+    u_doorLock:      `${PATH_USER}.doorlock`
 };
 
-// Interne Variablen (Cache/Sperren)
 let lastLat = 0;
 let lastLon = 0;
 let isLocked = false;
+let viewTriggerLock = 0;
 
-// --- 2. AUTOMATISCHE INITIALISIERUNG ---
-// Erstellt alle fehlenden Datenpunkte im Userdata-Bereich.
+// --- 2. INITIALISIERUNG ---
 async function initKiaSystem() {
     const states = [
-        { id: IDS.u_counter,      type: 'number',  unit: '',    name: 'Anzahl Aktualisierungen heute' },
-        { id: IDS.u_standort,     type: 'string',  unit: '',    name: 'Aktueller Standort' },
-        { id: IDS.u_updateTime,   type: 'string',  unit: 'Uhr', name: 'Letzte Aktualisierung' },
-        { id: IDS.u_chargeState,  type: 'boolean', unit: '',    name: 'Ladestatus (aktiv/inaktiv)' },
-        { id: IDS.u_klimaState,   type: 'boolean', unit: '',    name: 'Klimatisierung (an/aus)' },
-        { id: IDS.u_doorLock,     type: 'boolean', unit: '',    name: 'Fahrzeug verriegelt' }
+        { id: IDS.u_manualRefresh, type: 'boolean', name: 'Manuellen Standort-Refresh auslösen', role: 'button' },
+        { id: IDS.u_counter,       type: 'number',  name: 'Anzahl Aktualisierungen heute' },
+        { id: IDS.u_standort,      type: 'string',  name: 'Aktueller Standort' },
+        { id: IDS.u_updateTime,    type: 'string',  name: 'Letzte Aktualisierung' },
+        { id: IDS.u_chargeState,   type: 'boolean', name: 'Ladestatus (aktiv/inaktiv)' },
+        { id: IDS.u_klimaState,    type: 'boolean', name: 'Klimatisierung (an/aus)' },
+        { id: IDS.u_doorLock,      type: 'boolean', name: 'Fahrzeug verriegelt' }
     ];
-
     for (const s of states) {
         if (!existsState(s.id)) {
-            await createStateAsync(s.id, s.type === 'number' ? 0 : false, { 
-                type: s.type, unit: s.unit, name: s.name 
-            });
+            await createStateAsync(s.id, s.type === 'number' ? 0 : false, { type: s.type, name: s.name, role: s.role || 'state' });
         }
     }
-    console.log("[Kia] Initialisierung der Datenpunkte abgeschlossen.");
 }
 initKiaSystem();
 
-// --- 3. STATUS-MONITORING (CONTROL MIRRORING) ---
-// Überwacht die Buttons im Bluelink-Adapter und spiegelt den Status in Userdata.
-on({ id: [IDS.ctrlCharge, IDS.ctrlChargeStop, IDS.ctrlClimaStart, IDS.ctrlClimaStop, IDS.ctrlLock, IDS.ctrlUnlock], change: 'any' }, (obj) => {
-    if (!obj.state.val) return; // Nur reagieren, wenn der Datenpunkt getriggert wurde (true)
+// --- 3. MULTI-PROJECT VIEW-TRIGGER (Tablet & Smartphone) ---
+/**
+ * Erkennt View-Wechsel in allen Projekten (projektx und projektx_sp).
+ * Triggert den Refresh, sobald die View "960_Auto" geladen wird.
+ */
+on({ id: /^vis\..*\.control\.data$/, change: 'any' }, async (obj) => {
+    if (!obj.state.val) return;
 
-    const id = obj.id;
-    if (id.includes('charge')) {
-        setState(IDS.u_chargeState, id.includes('charge_stop') ? false : true, true);
-    } 
-    else if (id.includes('clima')) {
-        setState(IDS.u_klimaState, id.includes('stop') ? false : true, true);
-    } 
-    else if (id.includes('lock')) {
-        setState(IDS.u_doorLock, id.includes('unlock') ? false : true, true);
-    }
-});
-
-// --- 4. REFRESH-LOGIK & 12V-SCHUTZ ---
-// Zeitgesteuerter Refresh (06:58 bis 20:58 Uhr)
-schedule("58 6-20 * * *", () => {
-    const charging = getState(IDS.chargingActive).val;
-    // Während des Ladens: aktives Wecken (Car), sonst nur Server-Daten
-    setState(charging ? IDS.refreshCar : IDS.refreshSrv, true);
-});
-
-// VIS-Trigger: Nachts bei Seitenaufruf
-on({ id: 'vis.0.control.data', change: 'ne' }, (obj) => {
-    const isNight = compareTime('06:29', '19:29', 'not between');
-    if (isNight && obj.state.val && obj.state.val.includes('960_Auto')) {
-        if (!isLocked) {
-            setState(IDS.refreshSrv, true);
-            activateLock(300000); // 5 Min Sperre für VIS-Calls
+    const viewPath = obj.state.val; // z.B. "projektx/960_Auto" oder "projektx_sp/960_Auto"
+    
+    // Prüfen, ob die Ziel-View im Pfad vorkommt
+    if (viewPath.includes('960_Auto')) {
+        const now = Date.now();
+        
+        // 10 Minuten Sperre pro Aufruf (12V Schutz)
+        if (now > viewTriggerLock) {
+            const charging = getState(IDS.chargingActive).val;
+            
+            console.warn(`[Kia] Automatischer Refresh gestartet via View-Aufruf: ${viewPath}`);
+            console.log(`[Kia] Modus: ${charging ? 'Car (Wake-up)' : 'Server (Silent)'}`);
+            
+            setState(charging ? IDS.refreshCar : IDS.refreshSrv, true);
+            
+            viewTriggerLock = now + 600000; 
+        } else {
+            console.log(`[Kia] View-Refresh für ${viewPath} noch gesperrt (12V-Schutz aktiv).`);
         }
     }
 });
 
-// --- 5. STANDORT- & ZÄHLER-LOGIK ---
-// Reagiert auf alle Refresh-Events (Server, Car oder manuell)
-on({ id: [IDS.refreshCar, IDS.refreshSrv, `${VIN}.control.force_refresh`], change: 'ne' }, async (obj) => {
+// --- 4. MANUELLER REFRESH-BUTTON ---
+on({ id: IDS.u_manualRefresh, val: true, change: 'any' }, (obj) => {
+    console.warn("[Kia] Manueller Standort-Refresh via VIS ausgelöst.");
+    setState(IDS.refreshCar, true);
+    setTimeout(() => { setState(IDS.u_manualRefresh, false, true); }, 500);
+});
+
+// --- 5. ZEITPLAN & TAGES-RESET ---
+schedule("58 6-20 * * *", () => {
+    const charging = getState(IDS.chargingActive).val;
+    setState(charging ? IDS.refreshCar : IDS.refreshSrv, true);
+});
+
+schedule("0 0 * * *", () => {
+    setState(IDS.u_counter, 0, true);
+});
+
+// --- 6. ZÄHLER- & STANDORT-LOGIK ---
+on({ id: [IDS.refreshCar, IDS.refreshSrv, `${VIN}.control.force_refresh`], change: 'any' }, async (obj) => {
     if (obj.state.val !== true) return;
 
-    // Statistik und Zeitstempel
-    let count = (getState(IDS.u_counter).val || 0) + 1;
-    setState(IDS.u_counter, count, true);
+    setState(IDS.u_counter, (getState(IDS.u_counter).val || 0) + 1, true);
     setState(IDS.u_updateTime, formatDate(new Date(), 'hh:mm'), true);
 
+    processLocationUpdate();
+});
+
+async function processLocationUpdate() {
     if (isLocked) return;
-    activateLock(60000); // 60s Standardsperre
+    activateLock(30000); 
 
     const lat = getState(IDS.lat).val;
     const lon = getState(IDS.lon).val;
@@ -118,8 +124,10 @@ on({ id: [IDS.refreshCar, IDS.refreshSrv, `${VIN}.control.force_refresh`], chang
 
     if (!lat || !lon || !apiKey) return;
 
-    // Geocoding-Kostenbremse: Standort-Delta prüfen (~110m Radius)
-    if (lat.toFixed(3) === lastLat.toFixed(3) && lon.toFixed(3) === lastLon.toFixed(3)) return;
+    // Präziser Check auf 4 Nachkommastellen
+    if (lat.toFixed(4) === lastLat.toFixed(4) && lon.toFixed(4) === lastLon.toFixed(4)) {
+        return;
+    }
 
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`;
 
@@ -127,19 +135,26 @@ on({ id: [IDS.refreshCar, IDS.refreshSrv, `${VIN}.control.force_refresh`], chang
         if (err || !response || !response.data) return;
         try {
             const data = JSON.parse(response.data);
-            if (data.results && data.results[0]) {
+            if (data.results?.[0]) {
                 const address = data.results[0].formatted_address;
                 lastLat = lat;
                 lastLon = lon;
                 setState(IDS.u_standort, address, true);
+                console.log(`[Kia] Standort-Update erfolgreich: ${address}`);
             }
-        } catch (e) { console.error("Kia Geocoding Error: " + e); }
+        } catch (e) { console.error("[Kia] Geocoding Error: " + e); }
     });
+}
+
+// --- 7. STATUS-SPIEGELUNG ---
+on({ id: [IDS.ctrlCharge, IDS.ctrlChargeStop, IDS.ctrlClimaStart, IDS.ctrlClimaStop, IDS.ctrlLock, IDS.ctrlUnlock], change: 'any' }, (obj) => {
+    if (!obj.state.val) return;
+    const id = obj.id;
+    if (id.includes('charge')) setState(IDS.u_chargeState, !id.includes('charge_stop'), true);
+    else if (id.includes('clima')) setState(IDS.u_klimaState, !id.includes('stop'), true);
+    else if (id.includes('lock')) setState(IDS.u_doorLock, !id.includes('unlock'), true);
 });
 
-/**
- * Sperr-Funktion zur Vermeidung von Überlastung
- */
 function activateLock(ms) {
     isLocked = true;
     setTimeout(() => { isLocked = false; }, ms);
