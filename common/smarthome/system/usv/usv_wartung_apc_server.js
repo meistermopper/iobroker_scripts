@@ -1,163 +1,207 @@
-// =============================================================================
-// USV WARTUNG & KONDITIONIERUNG (APC Serverschrank)
-// =============================================================================
-
 /**
- * LOGIK-BESCHREIBUNG:
- * 1. Initialisierung: Legt alle notwendigen Datenpunkte unter javascript.0.USV_Wartung an.
- * 2. Überwachung: Berechnet die Restlaufzeit von Sekunden in Minuten.
- * 3. Automatische Wartung: Alle 2 Monate (1. Montag) wird die USV entladen, um die 
- * Batteriekapazität zu trainieren (Konditionierung).
- * 4. Schutzfunktion: Die Wartung wird sofort abgebrochen, wenn ein definierter 
- * Akkustand (% oder Minuten) unterschritten wird oder Großverbraucher aktiv sind.
- * 5. Alarmierung: Benachrichtigt via Telegram, Gotify und Alexa bei Ausfall oder Wartungsstatus.
+ * =============================================================================
+ * SKRIPT: USV WARTUNG & KONDITIONIERUNG (SERVERSCHRANK) - VERSION 41.1
+ * =============================================================================
+ * ZWECK: 
+ * Akkupflege der APC-USV im Serverschrank. 
+ * * FEATURES DIESER VERSION:
+ * 1. PFAD: Datenpunkte unter 0_userdata.0.USV.Wartung.0 (Instanz 0).
+ * 2. APC-LOGIK: Umrechnung von Sekunden in Minuten unter Abzug von "Runtime-Low".
+ * 3. WIFI-STABLE: 10 Sek. Verzögerung vor der ersten Ansage zur Netzstabilisierung.
+ * 4. BROADCAST: Sprachausgabe an sayit.0, 2, 3, 4 und 5.
+ * 5. SAFETY-STOP: Schaltet beim Skript-Stopp sofort den Strom wieder an.
+ * =============================================================================
  */
 
-// --- KONFIGURATION & DATENPUNKTE ---
-const dpPrefix = 'javascript.0.USV_Wartung'; // Pfad für die Steuerelemente
-const upsNutPrefix = 'nut.0';                // Pfad zum NUT-Adapter (APC)
-const sonoffPower = 'sonoff.0.Serverschrank.POWER'; // Die schaltbare Zuleitung
+// --- 1. KONFIGURATION ---
+
+// Neuer Pfad für die Datenpunkte (Instanz 0 für Serverschrank)
+const dpPrefix = '0_userdata.0.USV.Wartung.0';               
+
+const upsNutPrefix = 'nut.0';                               // NUT-Pfad für die APC-USV
+const sonoffPower = 'sonoff.0.Serverschrank.POWER';         // Zuleitung Serverschrank
 const gotifyToken = getState('0_userdata.0.gotifytoken.iobroker').val;
 
-// Initialisierung der Datenpunkte (Erstellt die Punkte nur, wenn sie fehlen)
+// Liste der Google-Instanzen für den Haus-weiten Alarm
+const sayitInstances = ['sayit.0', 'sayit.2', 'sayit.3', 'sayit.4', 'sayit.5']; 
+
+// Verzögerung für die erste Ansage (WLAN-Stabilität)
+const wifiStabilizeDelay = 10000; 
+
+// Hilfsvariablen für die Steuerung
+let lastSpokenSoc = -1;      // Merker für die 5%-Sprechbremse
+let speakTimeout = null;     // Speicher für den Verzögerungs-Timer
+
+// --- 2. INITIALISIERUNG ---
+
+/**
+ * Erzeugt alle 11 Datenpunkte in 0_userdata.0 für deine VIS-Oberfläche.
+ */
 async function initDP() {
     const states = [
-        ['Minimum_Rest_Prozent', 35],       // Unter dieser Grenze wird Zuleitung eingeschaltet
-        ['Minimum_Rest_Minuten', 10],       // Zeitliche Sicherheitsgrenze
-        ['Jetzt_Warten', false],            // Schalter für manuelle Wartung (VIS)
-        ['Speak_Minuten', true],            // Sprachausgabe in Minuten (true) oder % (false)
-        ['Speak_Prozent', false],
-        ['Speak_bei_Wartung', true],
-        ['Speak_bei_Ausfall', true],
-        ['Alexa_Lautstaerke', 30],
-        ['Wartung_eingeleitet', false],     // Interner Status (Wartung vs. echter Ausfall)
-        ['Automatische_Wartung_Aktiv', true],
-        ['Restlaufzeit_in_Minuten', 0]      // Berechneter Wert
+        ['Minimum_Rest_Prozent', 35, 'number', 'Akkustand für Wartungs-Ende'],
+        ['Minimum_Rest_Minuten', 10, 'number', 'Zeit-Limit für Abschaltung'],
+        ['Jetzt_Warten', false, 'boolean', 'Manueller Start-Button'],
+        ['Automatische_Wartung_Aktiv', true, 'boolean', 'Zeitplan aktiv?'],
+        ['Speak_bei_Wartung', true, 'boolean', 'Master-Schalter Sprache'],
+        ['Speak_Prozent', false, 'boolean', 'Ansage in % erlauben'],
+        ['Speak_Minuten', true, 'boolean', 'Ansage in Min erlauben'],
+        ['Speak_bei_Ausfall', true, 'boolean', 'Sprachwarnung bei Notfall'],
+        ['Google_lautstaerke', 30, 'number', 'Lautstärke Google Geräte'],
+        ['Wartung_eingeleitet', false, 'boolean', 'Status: Wartung läuft'],
+        ['Restlaufzeit_in_Minuten', 0, 'number', 'Anzeige für VIS']
     ];
-    for (let s of states) {
-        if (!existsState(`${dpPrefix}.${s[0]}`)) {
-            await createStateAsync(`${dpPrefix}.${s[0]}`, { 
-                name: s[0], 
-                def: s[1], 
-                type: typeof s[1] === 'number' ? 'number' : 'boolean',
-                role: 'value'
-            });
+
+    for (const s of states) {
+        const fullPath = `${dpPrefix}.${s[0]}`;
+        if (!existsState(fullPath)) {
+            await createStateAsync(fullPath, s[1], { name: s[3], type: s[2], role: 'state' });
         }
     }
+    console.log("[USV-APC] Datenpunkte unter 0_userdata.0 erfolgreich initialisiert.");
 }
 
-// Zentrale Benachrichtigung (Telegram & Gotify)
+// --- 3. KOMMUNIKATION ---
+
 function notify(text, priority = 5) {
     const header = '🔌🔋 USV Serverschrank\n\n';
     sendTo('telegram', 'send', { text: header + text });
     console.log(`USV-APC-Log: ${text}`);
-    // Versand an Gotify Server
     exec(`curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=USV Serverschrank" -F "message=${text}" -F "priority=${priority}"`);
 }
 
-// Sprachausgabe via SayIt / Alexa
+/**
+ * Verteilt die Ansage an alle Google-Geräte im Haus.
+ */
 function speak(text) {
-    const vol = getState(`${dpPrefix}.Alexa_Lautstaerke`).val;
-    // Format: "Lautstärke; Text"
-    sendTo("sayit", "say", { text: `${vol}; ${text}`, volume: vol });
+    if (!getState(`${dpPrefix}.Speak_bei_Wartung`).val) return;
+    const vol = getState(`${dpPrefix}.Google_lautstaerke`).val;
+    
+    sayitInstances.forEach((instance) => {
+        sendTo(instance, "say", { text: `${vol}; ${text}`, volume: vol });
+    });
+    console.log(`[USV-APC-Audio] Broadcast an ${sayitInstances.length} Lautsprecher gesendet.`);
 }
 
-// --- AKTIONEN ---
+// --- 4. AKTIONEN ---
 
-// Schaltet die Steckdose vor der USV
-async function toggleZuleitung(powerState) {
-    setState(sonoffPower, powerState);
-}
-
-// Startet den Entladevorgang
 async function startWartung(isManual = false) {
     setState(`${dpPrefix}.Wartung_eingeleitet`, true);
-    await toggleZuleitung(false); // Strom kappen
-    notify(isManual ? 'Manuelle Wartung gestartet.' : 'Automatische Wartung gestartet.');
+    lastSpokenSoc = -1; // Reset für sofortigen Start der Ansage-Kette
+    setState(sonoffPower, false); // Netzspannung kappen
+    notify(isManual ? 'Manuelle Wartung Serverschrank gestartet.' : 'Automatische Wartung Serverschrank gestartet.');
 }
 
-// Beendet den Entladevorgang und stellt Strom wieder her
 async function stopWartung(reason = '') {
-    await toggleZuleitung(true); // Netzspannung wieder ein
-    // Verzögerung um den Status-Flag zurückzusetzen (Puffer für NUT-Aktualisierung)
+    setState(sonoffPower, true); // Strom wieder an
     setTimeout(() => {
         setState(`${dpPrefix}.Wartung_eingeleitet`, false);
         setState(`${dpPrefix}.Jetzt_Warten`, false);
     }, 15000);
-    
     const soc = getState(`${upsNutPrefix}.battery.charge`).val;
-    const runtime = Math.floor(getState(`${dpPrefix}.Restlaufzeit_in_Minuten`).val);
-    notify(`Wartung beendet (${reason}).\nStand: ${soc}% / ${runtime} min.\nAufladung beginnt.`);
+    notify(`Wartung Serverschrank beendet (${reason}). Stand: ${soc}%.`);
 }
 
-// --- TRIGGER & SCHEDULES ---
+// --- 5. TRIGGER & EVENT-STEUERUNG ---
 
-// 1. Automatische Wartung: Jeden 1. Montag alle 2 Monate um 11:00 Uhr
-schedule("0 11 1-7 */2 *", async () => {
-    if (new Date().getDay() === 1) { // Nur wenn heute wirklich Montag ist
-        const soc = getState(`${upsNutPrefix}.battery.charge`).val;
-        const autoAktiv = getState(`${dpPrefix}.Automatische_Wartung_Aktiv`).val;
-        
-        // Prüfung: USV voll geladen? Automatik an?
-        if (autoAktiv && soc > 89) {
-            await startWartung(false);
-        } else if (autoAktiv) {
-            notify(`Wartung ausgesetzt. Akkustand zu niedrig für Test: ${soc}%`);
-        }
-    }
-});
-
-// 2. Überwachung Stromausfall (Unterscheidung zwischen Test und Ernstfall)
-on({ id: `${upsNutPrefix}.status.onbattery`, change: 'ne' }, async (obj) => {
-    const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`).val;
-    if (obj.state.val === true && !isWartung) {
-        notify('⚠️ WARNUNG: Stromversorgung Serverschrank unerwartet unterbrochen!', 8);
-    } else if (obj.state.val === false && !isWartung) {
-        notify('✅ Netzspannung Serverschrank wiederhergestellt.');
-    }
-});
-
-// 3. Manuelle Wartung via Vis / Datenpunkt
-on({ id: `${dpPrefix}.Jetzt_Warten`, change: 'ne', val: true }, async () => {
-    await startWartung(true);
-});
-
-// 4. Überwachung Entladevorgang & Sicherheits-Abbruch
+/**
+ * TRIGGER: Überwachung Akkustand (battery.charge)
+ * Hier wird das Ende der Wartung und die Sprech-Bremse geregelt.
+ */
 on({ id: `${upsNutPrefix}.battery.charge`, change: 'ne' }, async (obj) => {
     const soc = obj.state.val;
     const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`).val;
+    const onBattery = getState(`${upsNutPrefix}.status.onbattery`).val === true;
     const minSoc = getState(`${dpPrefix}.Minimum_Rest_Prozent`).val;
     const minMin = getState(`${dpPrefix}.Minimum_Rest_Minuten`).val;
     const runtime = getState(`${dpPrefix}.Restlaufzeit_in_Minuten`).val;
 
-    // Abbruch wenn Mindest-Prozent oder Mindest-Minuten erreicht sind
+    // A: Automatisches Ende bei Erreichen der Sicherheitslimits
     if (isWartung && (soc <= minSoc || runtime <= minMin)) {
         await stopWartung(`Limit (${soc}% / ${Math.floor(runtime)} min) erreicht`);
+        return;
     }
     
-    // Status-Ansage bei Entladung (alle X Prozent, gesteuert durch NUT-Update)
-    if (getState(`${upsNutPrefix}.status.onbattery`).val === true) {
-        const speakMin = getState(`${dpPrefix}.Speak_Minuten`).val;
-        const speakActiveWartung = getState(`${dpPrefix}.Speak_bei_Wartung`).val;
-        const speakActiveAusfall = getState(`${dpPrefix}.Speak_bei_Ausfall`).val;
-        
-        if ((isWartung && speakActiveWartung) || (!isWartung && speakActiveAusfall)) {
-            let msg = isWartung ? 'U S V Wartung läuft. ' : 'Warnung. Stromversorgung unterbrochen. ';
-            msg += speakMin ? `Restlaufzeit ${Math.floor(runtime)} Minuten.` : `Akkustand ${soc} Prozent.`;
-            speak(msg);
+    // B: INTELLIGENTE SPRACHAUSGABE
+    if (onBattery) {
+        // Prüfung: Soll laut VIS überhaupt gesprochen werden?
+        const canSpeak = isWartung ? getState(`${dpPrefix}.Speak_bei_Wartung`).val : getState(`${dpPrefix}.Speak_bei_Ausfall`).val;
+        if (!canSpeak) return;
+
+        // Sprech-Bremse: Nur bei 5%-Schritten oder kurz vor dem Limit
+        if (lastSpokenSoc === -1 || (soc % 5 === 0 && soc !== lastSpokenSoc) || soc === (minSoc + 2)) {
+            
+            lastSpokenSoc = soc;
+            
+            let text = isWartung ? 'U S V Wartung Serverschrank läuft. ' : 'Warnung. Stromversorgung Serverschrank unterbrochen. ';
+            if (getState(`${dpPrefix}.Speak_Minuten`).val) text += `Restlaufzeit ${Math.floor(runtime)} Minuten. `;
+            if (getState(`${dpPrefix}.Speak_Prozent`).val) text += `Akkustand ${soc} Prozent.`;
+            
+            // WIFI-STABILISATOR: Bei der ersten Ansage (nahe 100%) verzögern
+            if (speakTimeout) clearTimeout(speakTimeout); 
+            if (soc >= 98) { 
+                console.log("[USV-APC-Audio] Warte 10s auf WLAN-Stabilität...");
+                speakTimeout = setTimeout(() => { speak(text); }, wifiStabilizeDelay);
+            } else {
+                speak(text);
+            }
         }
     }
 });
 
-// 5. Umrechnung Restzeit (APC liefert oft Sekunden -> Umrechnung in Minuten)
+/**
+ * TRIGGER: Netzstatus (onbattery)
+ * Erkennt den Wechsel zwischen Netz und Batterie.
+ */
+on({ id: `${upsNutPrefix}.status.onbattery`, change: 'ne' }, async (obj) => {
+    const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`).val;
+    if (obj.state.val === true && !isWartung) {
+        notify('⚠️ WARNUNG: Stromversorgung Serverschrank unerwartet unterbrochen!', 8);
+    } else if (obj.state.val === false) {
+        if (speakTimeout) clearTimeout(speakTimeout);
+        lastSpokenSoc = -1; // Reset für den nächsten Vorfall
+        if (!isWartung) notify('✅ Netzspannung Serverschrank wiederhergestellt.');
+    }
+});
+
+/**
+ * TRIGGER: Restzeit-Umrechnung (APC Spezifisch)
+ * Wandelt Sekunden in Minuten um und zieht die "Runtime-Low" Grenze ab.
+ */
 on({ id: `${upsNutPrefix}.battery.runtime`, change: 'ne' }, (obj) => {
-    // APC liefert Sekunden. Wir ziehen die "Runtime Low" Grenze ab für die reale Testzeit
     const runtimeSec = obj.state.val;
     const runtimeLow = getState(`${upsNutPrefix}.battery.runtime-low`).val || 0;
+    
+    // Formel: (Sekunden - Puffer) / 60
     const realMinutes = (runtimeSec - runtimeLow) / 60;
     
     setState(`${dpPrefix}.Restlaufzeit_in_Minuten`, realMinutes, true);
 });
 
-// Initialstart: Datenpunkte prüfen/anlegen
+// ZEITPLAN: Automatische Wartung (jeden 1. Montag alle 2 Monate)
+schedule("0 11 1-7 */2 *", async () => {
+    if (new Date().getDay() === 1) { 
+        const autoAktiv = getState(`${dpPrefix}.Automatische_Wartung_Aktiv`).val;
+        const soc = getState(`${upsNutPrefix}.battery.charge`).val;
+        if (autoAktiv && soc > 89) await startWartung(false);
+    }
+});
+
+// VIS BUTTON
+on({ id: `${dpPrefix}.Jetzt_Warten`, change: 'ne', val: true }, () => {
+    startWartung(true);
+});
+
+// --- 6. SAFETY-STOP (AIRBAG) ---
+
+/**
+ * Stellt sicher, dass die USV wieder Saft bekommt, wenn das Skript beendet wird.
+ */
+onStop(function (callback) {
+    console.warn("[USV-APC-Safety] Skript-Stopp! Erzwinge Netzbetrieb...");
+    setState(sonoffPower, true);
+    setTimeout(callback, 500); 
+});
+
+// START
 initDP();
