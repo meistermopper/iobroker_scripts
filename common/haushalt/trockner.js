@@ -1,90 +1,92 @@
 /**
- * Name:   Trockner-Wächter v2.5
- * Zweck:  Überwachung von Laufzeit und Verbrauch (Isolated Edition)
+ * =============================================================================
+ * SKRIPT: TROCKNER-ÜBERWACHUNG (V2.4)
+ * =============================================================================
+ * FIX: Nutzt eigenständige Statistik im Ordner 'Statistik'.
+ * =============================================================================
  */
 
-// --- KONFIGURATION TROCKNER ---
-const GrenzWertInWatt = 3;      
-const timeout_zeit = 300000;    
+// --- 1. KONFIGURATION ---
+const ID_POWER_T  = 'alias.0.geraete.trockner.power';
+const ID_ENERGY_T = 'alias.0.geraete.trockner.energy';
 
-const ID_POWER = 'alias.0.waschen.trocknen.ENERGY_Power';
-const ID_TOTAL = 'alias.0.waschen.trocknen.ENERGY_Total';
-const ID_TODAY = 'alias.0.waschen.trocknen.ENERGY_Today';
-const ID_RUNNING = '0_userdata.0.Haushalt.trocknen';
+const PATH_STAT_T = '0_userdata.0.Energie.Statistik';
+const PATH_PRIC_T = '0_userdata.0.Energie.Strompreise';
 
-// EIGENE SPEICHERPUNKTE FÜR TROCKNER
-const ID_START_VAL = '0_userdata.0.Haushalt.trocknen_energie_start';
-const ID_START_TIME = '0_userdata.0.Haushalt.trocknen_zeit_start';
+const ID_PRICE_T  = `${PATH_PRIC_T}.akt_Preis`;
+const ID_TOTAL_T  = `${PATH_STAT_T}.Trockner_Tag`;
 
-const GOTIFY_SERVER = 'mygotify.meistermopper.de';
-const ID_GOTIFY_TOKEN = '0_userdata.0.gotifytoken.iobroker';
+const START_WATT_T = 5;
+const END_WATT_T   = 2;
+const END_DELAY_T  = 300000; // 5 Minuten Puffer für Trockner
 
-let timeout_trockner = null;
+let isRunningT = false;
+let startTimeT = null;
+let startEnergyT = 0;
+let timerEndT = null;
 
-async function erstelleDatenpunkteTrockner() {
-    if (!existsState(ID_START_TIME)) await createStateAsync(ID_START_TIME, 0, {type: 'number', name: 'Trockner Startzeit'});
-    if (!existsState(ID_START_VAL))  await createStateAsync(ID_START_VAL, 0, {type: 'number', name: 'Trockner Start-Energie'});
+// --- 2. INITIALISIERUNG ---
+async function initTrocknerStatistik() {
+    if (!existsState(ID_TOTAL_T)) {
+        await createStateAsync(ID_TOTAL_T, 0, { 
+            type: 'number', 
+            name: 'Trockner Verbrauch Heute (Skript-intern)', 
+            unit: 'kWh', 
+            role: 'value' 
+        });
+    }
 }
-erstelleDatenpunkteTrockner();
+initTrocknerStatistik();
 
-on({ id: ID_POWER, change: 'ne' }, async (obj) => {
+// --- 3. TAGES-RESET ---
+schedule("0 0 * * *", () => {
+    setState(ID_TOTAL_T, 0, true);
+    console.log("[Trockner] Statistik für den neuen Tag zurückgesetzt.");
+});
+
+// --- 4. HAUPTLOGIK ---
+
+on({ id: ID_POWER_T, change: 'ne' }, (obj) => {
     const watt = obj.state.val;
-    const laeuft = getState(ID_RUNNING).val;
 
-    if (watt > GrenzWertInWatt && !laeuft) {
-        const aktuellerZaehler = Number(getState(ID_TOTAL).val);
-        setState(ID_START_VAL, aktuellerZaehler, true);
-        setState(ID_START_TIME, Date.now(), true);
-        setState(ID_RUNNING, true, true);
-        console.log(`[Trockner] Start erkannt: Zählerstand ${aktuellerZaehler} kWh gespeichert.`);
-    } 
-    else if (watt < GrenzWertInWatt && laeuft) {
-        if (!timeout_trockner) {
-            console.log(`[Trockner] Leistung unter Schwellwert. Timer gestartet...`);
-            timeout_trockner = setTimeout(() => {
-                abschlussTrockner();
-            }, timeout_zeit);
-        }
-    } 
-    else if (watt >= GrenzWertInWatt && laeuft && timeout_trockner) {
-        console.log(`[Trockner] Maschine arbeitet weiter. Timer gelöscht.`);
-        clearTimeout(timeout_trockner);
-        timeout_trockner = null;
+    if (watt > START_WATT_T && !isRunningT) {
+        if (timerEndT) { clearTimeout(timerEndT); timerEndT = null; }
+        
+        isRunningT = true;
+        startTimeT = Date.now();
+        startEnergyT = getState(ID_ENERGY_T).val;
+        
+        console.log("[Trockner] Trocknung gestartet bei " + startEnergyT + " kWh.");
+    }
+
+    if (watt < END_WATT_T && isRunningT && !timerEndT) {
+        timerEndT = setTimeout(processFinishT, END_DELAY_T);
     }
 });
 
-async function abschlussTrockner() {
-    const ende = Number(getState(ID_TOTAL).val);
-    const start = Number(getState(ID_START_VAL).val);
-    const startZeit = Number(getState(ID_START_TIME).val);
-    const kwhHeute = Number(getState(ID_TODAY).val) || 0;
+function processFinishT() {
+    const endEnergy = getState(ID_ENERGY_T).val;
+    const priceKwh = getState(ID_PRICE_T).val || 0.30;
     
-    const dauerMin = Math.round((Date.now() - startZeit - timeout_zeit) / 60000);
-    let verbrauch = Number((ende - start).toFixed(3));
+    const diffEnergy = Math.max(0, endEnergy - startEnergyT);
+    const totalCost = diffEnergy * priceKwh;
     
-    if (verbrauch <= 0 && kwhHeute > 0) verbrauch = 0.01; 
+    const durationMs = Date.now() - startTimeT - END_DELAY_T;
+    const hours = Math.floor(durationMs / 3600000);
+    const minutes = Math.floor((durationMs % 3600000) / 60000);
+    const timeStr = hours + ":" + (minutes < 10 ? '0' + minutes : minutes) + " Std.";
 
-    setState(ID_RUNNING, false, true);
-    await MeldenTrocknen("Trockner", dauerMin, verbrauch, kwhHeute);
-    timeout_trockner = null;
-}
+    const currentTotalT = getState(ID_TOTAL_T).val || 0;
+    const newTotalT = currentTotalT + diffEnergy;
+    setState(ID_TOTAL_T, newTotalT, true);
 
-async function MeldenTrocknen(name, min, kwh, kwhHeute) {
-    const std = Math.floor(min / 60);
-    const m = (min % 60).toString().padStart(2, '0');
-    const preis = getState('0_userdata.0.Energie.Strompreise.akt_Preis').val || 0.30;
-    
-    const msg = `Der ${name} ist fertig. Dauer: ${std}:${m} Std. Verbrauch: ${kwh.toFixed(2)} kWh (${(kwh * preis).toFixed(2)} €). Heute gesamt: ${kwhHeute.toFixed(2)} kWh.`;
-    
-    console.log(`[${name}] ${msg}`);
-    sendTo('telegram', 'send', { text: `☀️💨 ${msg}` });
-    
-    const token = getState(ID_GOTIFY_TOKEN).val;
-    if (token) {
-        httpPost(`https://${GOTIFY_SERVER}/message?token=${token}`, { title: name, message: msg, priority: 1 });
-    }
+    const msg = `☀️💨 Der Trockner ist fertig. Dauer: ${timeStr}. ` +
+                `Verbrauch: ${diffEnergy.toFixed(2)} kWh (${totalCost.toFixed(2)} €). ` +
+                `Heute gesamt: ${newTotalT.toFixed(2)} kWh.`;
 
-    if (compareTime('08:00', '20:00', 'between')) {
-        sendTo("sayit", "say", { text: 'Der Trockner ist fertig.' });
-    }
+    sendTo('telegram', { text: msg });
+    console.log("[Trockner] " + msg);
+    
+    isRunningT = false;
+    timerEndT = null;
 }
