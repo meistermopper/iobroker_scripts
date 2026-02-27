@@ -92,7 +92,7 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
         if (timeouts[id]) {
             clearTimeout(timeouts[id]);
             delete timeouts[id];
-            console.log(`[Fenster] ${nameRaw} wurde rechtzeitig geschlossen. Timer gelöscht.`);
+            //console.log(`[Fenster] ${nameRaw} wurde rechtzeitig geschlossen. Timer gelöscht.`);
         }
     }
 });

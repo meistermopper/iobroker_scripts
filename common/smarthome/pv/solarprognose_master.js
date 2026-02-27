@@ -1,11 +1,11 @@
 /**
  * =============================================================================
- * SKRIPT: SOLAR-PROGNOSE MASTER (VERSION 1.4)
+ * SKRIPT: SOLAR-PROGNOSE MASTER (VERSION 1.5)
  * =============================================================================
- * ZWECK: Stündliche PV-Prognose von solarprognose.de
+ * ZWECK: Stündliche PV-Prognose von solarprognose.de für heute & morgen.
  * OPTIMIERT: 
+ * - Reduziert auf 2 Tage (übermorgen entfernt, um Logs sauber zu halten).
  * - Automatisches Anlegen der Datenpunkte in 0_userdata.0.
- * - Fehlertolerant bei fehlenden Daten für "übermorgen".
  * - Unterdrückung von Warnmeldungen bei der Initialisierung.
  * =============================================================================
  */
@@ -15,19 +15,19 @@ const API_TOKEN = '72206e8f60f98f2a22101ea20fd0c999';
 const INVERTER_ID = '4511';
 const url = `http://www.solarprognose.de/web/solarprediction/api/v1?_format=json&access-token=${API_TOKEN}&item=inverter&id=${INVERTER_ID}&type=hourly`;
 
-// WICHTIG: Kein Punkt am Ende!
+// Basis-Pfad für die Datenpunkte (ohne Punkt am Ende)
 const baseRef = '0_userdata.0.Energie.PV.Prognose'; 
 
 // --- 2. INITIALISIERUNG ---
 
 /**
- * Erstellt die Datenstruktur. Wir nutzen hier die Standard-Funktion,
- * stellen aber sicher, dass keine Fehler geworfen werden, wenn Punkte noch im Werden sind.
+ * Erstellt die Datenstruktur in 0_userdata.0.
+ * Wir beschränken uns nun auf heute und morgen.
  */
 async function initDPs() {
-    const days = ['heute', 'morgen', 'uebermorgen'];
+    const days = ['heute', 'morgen']; // 'uebermorgen' entfernt
     
-    // Basis-Ordner und JSON-Punkt
+    // Basis-JSON für die Rohdaten
     await createStateAsync(baseRef + '.Json', "", { name: 'Rohdaten JSON', type: 'string', role: 'json' });
 
     for (const day of days) {
@@ -38,19 +38,23 @@ async function initDPs() {
         await createStateAsync(path + 'uhrzeit', "", { name: `Peak Zeit ${day}`, type: 'string' });
         await createStateAsync(path + 'leistung', 0, { name: `Peak Watt ${day}`, type: 'number', unit: 'W' });
     }
-    console.log("[Solar-Prognose] Datenstruktur unter 0_userdata.0 wurde geprüft/erstellt.");
+    console.log("[Solar-Prognose] Datenstruktur (heute/morgen) wurde geprüft/erstellt.");
 }
 
-// Start der Prüfung
+// Start der Initialisierung beim Skriptstart
 initDPs();
 
 // --- 3. ZEITPLAN ---
+// Abfrage alle 2 Stunden ab 08:04 Uhr
 schedule('4 8,10,12,14,16,18,20 * * *', () => {
     fetchSolarData();
 });
 
 // --- 4. DATENVERARBEITUNG ---
 
+/**
+ * Holt die Daten von der API und verteilt sie auf die Tage.
+ */
 function fetchSolarData() {
     console.log("[Solar-Prognose] Starte API-Abfrage...");
 
@@ -67,15 +71,14 @@ function fetchSolarData() {
                 return;
             }
 
-            // Rohdaten speichern (true am Ende unterdrückt "not found" Fehler beim ersten Mal)
+            // Gesamte Rohdaten speichern
             setState(baseRef + '.Json', JSON.stringify(obj.data), true);
 
             const splitData = formatAndSplitData(obj.data);
 
-            // Verarbeitung der Tage
+            // Verarbeitung nur für heute und morgen
             processDayData('heute', splitData.heute);
             processDayData('morgen', splitData.morgen);
-            processDayData('uebermorgen', splitData.uebermorgen);
 
         } catch (e) {
             console.error('[Solar-Prognose] Fehler beim Parsen: ' + e);
@@ -83,8 +86,10 @@ function fetchSolarData() {
     });
 }
 
+/**
+ * Berechnet Peak-Werte und Ertrag für einen Tag.
+ */
 function processDayData(dayName, dataArray) {
-    // Falls für einen Tag (meist übermorgen) keine Daten da sind -> Abbruch ohne Fehler
     if (!dataArray || dataArray.length === 0) {
         console.log(`[Solar-Prognose] Hinweis: Keine Daten für '${dayName}' geliefert.`);
         return;
@@ -92,10 +97,10 @@ function processDayData(dayName, dataArray) {
 
     const path = baseRef + '.' + dayName + '.';
     
-    // Die Berechnung von Peak und Gesamt
     let maxWatt = 0;
     let peakTime = '--:--';
 
+    // Suche nach der höchsten Leistung im Stunden-Array
     dataArray.forEach(entry => {
         const time = entry[0];
         const watt = entry[1];
@@ -105,11 +110,11 @@ function processDayData(dayName, dataArray) {
         }
     });
 
+    // Der letzte Eintrag im Array enthält bei dieser API den kumulierten Tagesertrag
     const lastEntry = dataArray[dataArray.length - 1];
     const gesamtWh = (lastEntry && lastEntry.length >= 3) ? lastEntry[2] : 0;
 
-    // SCHREIBEN DER WERTE
-    // Das 'true' als dritter Parameter verhindert Warnungen, falls das Objekt gerade erst erstellt wurde.
+    // Werte in ioBroker schreiben
     if (existsState(path + 'Json'))     setState(path + 'Json', dataArray, true);
     if (existsState(path + 'gesamt'))   setState(path + 'gesamt', gesamtWh, true);
     if (existsState(path + 'uhrzeit'))  setState(path + 'uhrzeit', peakTime, true);
@@ -118,11 +123,16 @@ function processDayData(dayName, dataArray) {
     console.log(`[Solar-Prognose] ${dayName.toUpperCase()}: Peak ${maxWatt}W um ${peakTime} Uhr.`);
 }
 
+/**
+ * Trennt die flache Liste der API in heute und morgen auf.
+ */
 function formatAndSplitData(data) {
     const MS_IN_DAY = 86400000;
     const now = new Date();
+    // Zeitstempel von heute 00:00:00 Uhr
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const result = { heute: [], morgen: [], uebermorgen: [] };
+    
+    const result = { heute: [], morgen: [] };
 
     for (const [timestamp, values] of Object.entries(data)) {
         const ts = Number(timestamp) * 1000;
@@ -130,16 +140,15 @@ function formatAndSplitData(data) {
         const timeStr = date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
         const entry = [timeStr, ...values]; 
 
+        // Einsortierung in heute oder morgen
         if (ts >= startOfToday && ts < startOfToday + MS_IN_DAY) {
             result.heute.push(entry);
         } else if (ts >= startOfToday + MS_IN_DAY && ts < startOfToday + (MS_IN_DAY * 2)) {
             result.morgen.push(entry);
-        } else if (ts >= startOfToday + (MS_IN_DAY * 2)) {
-            result.uebermorgen.push(entry);
         }
     }
     return result;
 }
 
-// Erster Start nach 10 Sekunden (gibt dem System Zeit, die neuen DPs zu registrieren)
+// Erster Start verzögert (gibt ioBroker Zeit zum Registrieren der Datenpunkte)
 setTimeout(fetchSolarData, 10000);

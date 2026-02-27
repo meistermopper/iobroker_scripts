@@ -58,7 +58,7 @@ on({ id: ID_DEVICE_CONNECTED, change: 'ne' }, (obj) => {
     } else {
         // Falls das Gerät innerhalb der 2 Minuten wieder online geht
         if (miniTimeout) {
-            console.log('Google Mini rechtzeitig wieder online. Benachrichtigung abgebrochen.');
+            //console.log('Google Mini rechtzeitig wieder online. Benachrichtigung abgebrochen.');
             clearTimeout(miniTimeout);
             miniTimeout = null;
         }
