@@ -1,0 +1,9 @@
+# Logs ausschließen
+*.log
+# Temporäre Dateien
+*.tmp
+# Node-Module (falls vorhanden)
+node_modules/
+# Eventuelle Backup-Dateien
+*.bak
+
