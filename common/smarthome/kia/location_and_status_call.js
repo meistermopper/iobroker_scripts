@@ -118,7 +118,7 @@ on({ id: IDS.u_manualRefresh, val: true, change: 'any' }, (obj) => {
  * Dies belastet die 12V Batterie nicht, da das Auto nicht aufgeweckt wird.
  */
 schedule("58 6-20 * * *", () => {
-    console.log("[Kia] Stündlicher Server-Refresh (geplant).");
+    //console.log("[Kia] Stündlicher Server-Refresh (geplant).");
     setState(IDS.refreshSrv, true);
 });
 
