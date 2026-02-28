@@ -1,9 +1,20 @@
 # Logs ausschließen
 *.log
+
 # Temporäre Dateien
 *.tmp
+
 # Node-Module (falls vorhanden)
 node_modules/
+
 # Eventuelle Backup-Dateien
 *.bak
 
+# Windows Systemdateien
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# VS Code Einstellungen
+.vscode/
+*.code-workspace
