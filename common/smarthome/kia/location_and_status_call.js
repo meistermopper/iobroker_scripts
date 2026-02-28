@@ -162,7 +162,7 @@ async function processLocationUpdate() {
                 lastLat = lat;
                 lastLon = lon;
                 setState(IDS.u_standort, address, true);
-                console.log(`[Kia] Standort-Update via Google: ${address}`);
+                //console.log(`[Kia] Standort-Update via Google: ${address}`);
             }
         } catch (e) { console.error("[Kia] Geocoding Fehler: " + e); }
     });
