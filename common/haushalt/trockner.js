@@ -4,8 +4,7 @@
  * =============================================================================
  * ZWECK: Überwachung von Start/Ende und Energie-Statistik.
  * ÄNDERUNG: SayIt Sprachausgabe auf "Der Trockner ist fertig." gekürzt.
- * Teständerung über VSCode 
-* =============================================================================
+ * =============================================================================
  */
 
 // --- 1. KONFIGURATION ---
