@@ -37,3 +37,37 @@ Die Skripte werden automatisch zwischen dem ioBroker-Server und diesem Repositor
 
 ---
 **Hinweis:** Dies ist ein privates Projekt. Die Skripte sind individuell auf meine Hardware (Kia, Solaranlage, Proxmox etc.) angepasst und dienen primär als Backup und Referenz.
+
+---
+
+## Annex: Gold-Standard der Repository-Verwaltung
+
+Um die Stabilität des Systems und die Synchronität zwischen ioBroker, GitHub und der lokalen Entwicklungsumgebung (VS Code) zu gewährleisten, gelten folgende Standards:
+
+### 1. Verzeichnisstruktur & Sauberkeit
+Das Arbeitsverzeichnis auf dem Server ist `/home/iobroker/scripts/`. 
+* **Inhalt:** Nur die Ordner `common/` (produktive Skripte), `.git/` (Versionsverwaltung), die Datei `.gitignore` (Filter) und diese `README.md` sind zulässig.
+* **Sauberkeit:** Keine leeren Verzeichnisse oder Dubletten durch unterschiedliche Groß-/Kleinschreibung (Case-Sensitivity) auf der Root-Ebene.
+
+### 2. Berechtigungskonzept (Owner-Prinzip)
+Alle Dateien und Ordner innerhalb des Repositorys gehören zwingend dem User **`iobroker`**.
+* **Änderungen:** Manuelle Dateioperationen oder Git-Befehle auf der Konsole werden konsequent mit `sudo -u iobroker` ausgeführt.
+* **Ziel:** Vermeidung von Berechtigungsfehlern (`Permission denied`) beim automatischen nächtlichen Backup-Lauf oder durch den JavaScript-Adapter.
+
+### 3. Zentraler Workflow (Der `gitsync`-Alias)
+Für die tägliche Arbeit wurde ein Alias definiert, der alle notwendigen Schritte bündelt:
+`gitsync` führt folgende Kette als User `iobroker` aus:
+1. `git pull` (Abgleich mit GitHub)
+2. `git add .` (Index aktualisieren)
+3. `git commit -m "Auto-Sync: [Zeitstempel]"` (Änderungen festschreiben)
+4. `git push` (Sicherung in die Cloud)
+5. `git status` (Abschlusskontrolle)
+
+### 4. Entwicklung mit VS Code (Windows)
+* Die lokale Bearbeitung erfolgt im Windows-Dateisystem.
+* Vor und nach jeder Entwicklungssitzung wird ein `git pull` bzw. `git push` im VS Code Terminal durchgeführt.
+* Die Datei `.gitignore` filtert aktiv Windows-spezifische Systemdateien (`Thumbs.db`, `desktop.ini`) und lokale Editor-Einstellungen (`.vscode/`) heraus.
+
+### 5. Fehlerprävention & Monitoring
+* **Logs:** Temporäre `ENOENT`-Fehler im ioBroker-Log während eines Git-Commits sind systembedingt (Race Condition des Watchers im `.git`-Verzeichnis) und können ignoriert werden.
+* **Konsistenz:** Bei Unstimmigkeiten zwischen Server und Lokalversion ist GitHub als "Source of Truth" zu betrachten.
