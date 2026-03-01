@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * KÜCHEN-LICHTSTEUERUNG v2.1 (PRESENCE FOLLOWER)
+ * KÜCHEN-LICHTSTEUERUNG v2.2 (PRESENCE FOLLOWER)
  * =============================================================================
  * ZWECK: Licht folgt dem Präsenzmelder unter Berücksichtigung von Helligkeit
  * und Tageszeit (Tag/Nacht-Modus).
@@ -8,6 +8,7 @@
  * 1. TRAFFIC-FILTER: Sendet nur Schaltbefehle, wenn der Ist-Zustand abweicht.
  * 2. FUNK-SCHONUNG: 300ms Versatz zwischen Sonoff und Hue zur Lastverteilung.
  * 3. LOGIK: Direkte Umsetzung des Präsenzstatus ohne künstliche Nachlaufzeit.
+ * 4. ÄNDERUNG v2.2: Bewegungsautomatik entfernt (Steuerung dauerhaft aktiv).
  * =============================================================================
  */
 
@@ -15,7 +16,6 @@
 const IDS = {
     präsenz:      'alias.0.kueche.bwm.PRESENCE_DETECTION_STATE',
     helligkeit:   'alias.0.kueche.bwm.ILLUMINATION',
-    automatik:    '0_userdata.0.Licht.Küche.Bewegungsautomatik',
     spots_sonoff: 'alias.0.kueche.licht.spots.POWER',
     hue_command:  'alias.0.kueche.kuechenlampe.command'
 };
@@ -38,16 +38,12 @@ on({ id: IDS.präsenz, change: 'ne' }, (obj) => {
         // --- WERTE ERFASSEN ---
         const istPräsent    = !!obj.state.val; // Echter Boolean (true/false)
         const lux           = getState(IDS.helligkeit).val;
-        const autoAktiv     = getState(IDS.automatik).val;
         const spotsSindAn   = getState(IDS.spots_sonoff).val;
         
         // Zeitprüfung: 22:00 bis 05:00 Uhr (ioBroker interne Funktion)
         const istNacht = compareTime('22:00', '05:00', 'between');
 
-        // FALL A: AUTOMATIK DEAKTIVIERT -> Keine Aktion
-        if (!autoAktiv) return;
-
-        // FALL B: PRÄSENZ ERKANNT & ZU DUNKEL
+        // FALL A: PRÄSENZ ERKANNT & ZU DUNKEL
         if (istPräsent && lux < LIMIT_LUX) {
             
             if (istNacht) {
@@ -81,7 +77,7 @@ on({ id: IDS.präsenz, change: 'ne' }, (obj) => {
 
         } 
         
-        // FALL C: PRÄSENZ BEENDET (Melder meldet 'false')
+        // FALL B: PRÄSENZ BEENDET (Melder meldet 'false')
         else if (!istPräsent) {
             
             /**
@@ -99,5 +95,5 @@ on({ id: IDS.präsenz, change: 'ne' }, (obj) => {
             }, 300);
         }
 
-    }, 50); // Die 50ms aus dem Blockly zur Signal-Stabilisierung
+    }, 50); // Signal-Stabilisierung
 });

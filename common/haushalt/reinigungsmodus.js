@@ -5,9 +5,7 @@
 
 const BWM_DATENPUNKTE = [
     { id: "0_userdata.0.Licht.Bad_oben.BWM", delay: 0 },
-    { id: "0_userdata.0.Licht.Bad_unten.BWM", delay: 1000 },
-    { id: "0_userdata.0.Licht.Garderobe.BWM", delay: 2000 },
-    { id: "0_userdata.0.Licht.Küche.Bewegungsautomatik", delay: 3000 }
+    { id: "0_userdata.0.Licht.Bad_unten.BWM", delay: 1000 }
 ];
 
 on({ id: "0_userdata.0.Licht.Reinigungsmodus", change: "ne" }, (obj) => {

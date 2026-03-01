@@ -1,113 +1,134 @@
 /**
  * =============================================================================
- * SKRIPT: WASCHMASCHINEN-ÜBERWACHUNG (V2.4)
+ * SKRIPT: WASCHMASCHINEN-ÜBERWACHUNG (V2.8)
  * =============================================================================
  * ZWECK: Überwachung von Start/Ende und Energie-Statistik.
- * NEU: Eigener Statistik-Ordner zur Vermeidung von Konflikten mit Tageswerten.
+ * ÄNDERUNG: SayIt Sprachausgabe auf "Die Waschmaschine ist fertig." gekürzt.
+ * DATENPUNKTE: Nutzt die korrekten Aliase und den exklusiven Statistik-Ordner.
  * =============================================================================
  */
 
-// --- 1. KONFIGURATION ---
-const ID_POWER  = 'alias.0.geraete.waschmaschine.power';  // Watt-Leistung
-const ID_ENERGY = 'alias.0.geraete.waschmaschine.energy'; // Gesamt-Zähler (kWh)
+// --- 1. KONFIGURATION (PFADE AN DEIN SYSTEM ANGEPASST) ---
+const ID_POWER  = 'alias.0.waschen.wasch.ENERGY_Power';  // Aktuelle Leistung (Watt)
+const ID_ENERGY = 'alias.0.waschen.wasch.ENERGY_Total';  // Gesamt-Zähler (kWh)
 
-// Neue Pfade für Deine Statistik und Preise
 const PATH_STAT = '0_userdata.0.Energie.Statistik';
 const PATH_PRIC = '0_userdata.0.Energie.Strompreise';
 
 const ID_PRICE  = `${PATH_PRIC}.akt_Preis`;        // Dein Strompreis
-const ID_TOTAL  = `${PATH_STAT}.Waschmaschine_Tag`; // Der neue, exklusive Datenpunkt
+const ID_TOTAL  = `${PATH_STAT}.Waschmaschine_Tag`; // Exklusiver Statistik-Datenpunkt
+const ID_GOTIFY = '0_userdata.0.gotifytoken.iobroker'; // Pfad zum Gotify-Token
 
-// Schwellenwerte
-const START_WATT = 10;     // Start bei > 10W
-const END_WATT   = 3;      // Ende bei < 3W
-const END_DELAY  = 120000; // 2 Minuten Pufferzeit
+// VIS Datenpunkt für die Status-Anzeige (An/Aus)
+const ID_VIS    = '0_userdata.0.Haushalt.waschen'; 
 
-// Interne Variablen
+// Schwellenwerte für die Erkennung
+const START_WATT = 10;     // Start-Schwelle in Watt
+const END_WATT   = 3;      // Ende-Schwelle (Standby)
+const END_DELAY  = 120000; // 2 Minuten Pufferzeit gegen Spülpausen
+
+// Interne Variablen (Gedächtnis)
 let isRunning = false;
 let startTime = null;
 let startEnergy = 0;
 let timerEnd = null;
 
 // --- 2. INITIALISIERUNG ---
-/**
- * Erstellt den neuen Statistik-Ordner und den Datenpunkt, falls nicht vorhanden.
- */
-async function initWaschStatistik() {
+async function initWaschSystem() {
     if (!existsState(ID_TOTAL)) {
         await createStateAsync(ID_TOTAL, 0, { 
-            type: 'number', 
-            name: 'Waschmaschine Verbrauch Heute (Skript-intern)', 
-            unit: 'kWh', 
-            role: 'value' 
+            type: 'number', name: 'Waschmaschine Verbrauch Heute', unit: 'kWh', role: 'value' 
         });
     }
-    console.log("[Waschmaschine] Statistik-Datenpunkt wurde geprüft/erstellt.");
+    if (!existsState(ID_VIS)) {
+        await createStateAsync(ID_VIS, false, { 
+            type: 'boolean', name: 'Waschmaschine läuft (VIS)', role: 'indicator.working' 
+        });
+    }
+    console.log("[Waschmaschine] Initialisierung v2.8 abgeschlossen.");
 }
-initWaschStatistik();
+initWaschSystem();
 
-// --- 3. TAGES-RESET ---
+// --- 3. KOMMUNIKATIONS-ZENTRALE ---
+
 /**
- * Setzt den schaltungsspezifischen Tageswert um Mitternacht auf 0.
+ * Versendet Meldungen über verschiedene Kanäle.
+ * @param {string} text - Der detaillierte Text für Telegram/Gotify.
  */
+function washNotify(text) {
+    // 1. Telegram (Detailliert)
+    sendTo('telegram', { text: text });
+
+    // 2. Gotify (Detailliert via curl)
+    const token = getState(ID_GOTIFY).val;
+    if (token) {
+        exec(`curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=Haushalt" -F "message=${text}" -F "priority=5"`);
+    }
+
+    // 3. SayIt (Gekürzte Sprachausgabe nur zwischen 08:00 und 20:00 Uhr)
+    if (compareTime('08:00', '20:00', 'between')) {
+        const voiceMsg = "Die Waschmaschine ist fertig.";
+        sendTo("sayit", "say", { text: voiceMsg });
+    }
+    
+    console.log("[Waschmaschine] Benachrichtigungen versendet.");
+}
+
+// --- 4. TAGES-RESET ---
 schedule("0 0 * * *", () => {
     setState(ID_TOTAL, 0, true);
-    console.log("[Waschmaschine] Statistik für den neuen Tag zurückgesetzt.");
+    console.log("[Waschmaschine] Statistik-Reset für neuen Tag.");
 });
 
-// --- 4. HAUPTLOGIK ---
+// --- 5. HAUPTLOGIK ---
 
 on({ id: ID_POWER, change: 'ne' }, (obj) => {
     const watt = obj.state.val;
 
-    // START-PHASE
+    // START-PHASE: Erkennt den echten Anlauf der Maschine
     if (watt > START_WATT && !isRunning) {
         if (timerEnd) { clearTimeout(timerEnd); timerEnd = null; }
         
         isRunning = true;
         startTime = Date.now();
-        startEnergy = getState(ID_ENERGY).val; // Fixierung des Zählerstands beim Start
+        startEnergy = getState(ID_ENERGY).val; // Zählerstand beim Start fixieren
         
-        console.log("[Waschmaschine] Waschgang gestartet bei " + startEnergy + " kWh.");
+        setState(ID_VIS, true, true); // VIS-Anzeige auf "An"
+        console.log("[Waschmaschine] Waschgang gestartet.");
     }
 
-    // ENDE-PHASE (Timer-Start)
+    // ENDE-PHASE: Startet den Verzögerungs-Timer
     if (watt < END_WATT && isRunning && !timerEnd) {
         timerEnd = setTimeout(processFinish, END_DELAY);
     }
 });
 
-/**
- * Berechnet Verbrauch, Kosten und Dauer nach Abschluss des Waschgangs.
- */
 function processFinish() {
     const endEnergy = getState(ID_ENERGY).val;
     const priceKwh = getState(ID_PRICE).val || 0.30;
     
-    // Aktuellen Verbrauch berechnen
+    // Berechnung der Verbrauchsdaten
     const diffEnergy = Math.max(0, endEnergy - startEnergy);
     const totalCost = diffEnergy * priceKwh;
     
-    // Dauer berechnen (abzüglich der 2 Minuten Wartezeit)
+    // Zeitberechnung (abzüglich der Pufferzeit)
     const durationMs = Date.now() - startTime - END_DELAY;
     const hours = Math.floor(durationMs / 3600000);
     const minutes = Math.floor((durationMs % 3600000) / 60000);
     const timeStr = hours + ":" + (minutes < 10 ? '0' + minutes : minutes) + " Std.";
 
-    // Neuen Statistik-Wert speichern
+    // Tagesstatistik aktualisieren
     const currentTotal = getState(ID_TOTAL).val || 0;
     const newTotal = currentTotal + diffEnergy;
     setState(ID_TOTAL, newTotal, true);
 
-    // Telegram-Meldung
     const msg = `🧺 Die Waschmaschine ist fertig. Dauer: ${timeStr}. ` +
                 `Verbrauch: ${diffEnergy.toFixed(2)} kWh (${totalCost.toFixed(2)} €). ` +
                 `Heute gesamt: ${newTotal.toFixed(2)} kWh.`;
 
-    sendTo('telegram', { text: msg });
-    console.log("[Waschmaschine] " + msg);
+    washNotify(msg);
     
-    // Status zurücksetzen
+    setState(ID_VIS, false, true); // VIS-Anzeige auf "Aus"
     isRunning = false;
     timerEnd = null;
 }

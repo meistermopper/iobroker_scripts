@@ -1,180 +1,158 @@
 /**
  * =============================================================================
- * SKRIPT: SMART-CHARGING ZENTRALE (V2.0)
+ * SKRIPT: SMART-CHARGING ZENTRALE (V2.7 - FINAL & CLEAN)
  * =============================================================================
  * ZWECK: 
- * Intelligente Ladesteuerung für Smartphones und Tablets. Schont den Akku durch 
- * Einhaltung von Min/Max-Grenzwerten (Konditionierung).
+ * Dieses Skript überwacht Deine Geräte und steuert die Ladung so, dass der
+ * Akku geschont wird (30% bis 80%). Es verhindert doppelte Meldungen und
+ * reagiert auf Sprachbefehle zum Laden.
  * * FEATURES:
- * 1. ZENTRALE KONFIGURATION: Alle Geräte und Grenzwerte an einem Ort.
- * 2. REPEAT-SCHUTZ: Meldungen über vollen Akku erfolgen nur einmalig beim Abschalten.
- * 3. ANWESENHEITS-CHECK: Sprachausgabe nur, wenn die Person im WLAN ist.
- * 4. EMOJI-FILTER: Entfernt Symbole aus Sprachnachrichten für sauberes SayIt.
+ * 1. REBOOT-FEST: Speichert Zustände in '0_userdata.0', damit nach einem 
+ * Neustart nicht alles vergessen wird.
+ * 2. SELF-HEALING: Erstellt fehlende Datenpunkte automatisch beim Start.
+ * 3. SPRACH-TRIGGER: Spezielle Ansage für Thomas und das Tablet.
  * =============================================================================
  */
 
 // --- 1. KONFIGURATION DER GERÄTE ---
-
+// Wir bündeln alle Infos in einem zentralen Objekt namens 'geraete'.
 const geraete = {
     'Das Smartphone von Kiki': {
-        levelId: '0_userdata.0.Energie.Smartphone.Kiki_level',
-        powerId: 'sonoff.0.Ladestation_Kiki.POWER',
-        presenceId: 'unifi-network.0.clients.users.78:53:64:01:8b:04.isOnline',
-        min: 30, max: 80, notificationUser: ''
+        levelId: '0_userdata.0.Energie.Smartphone.Kiki_level',           // Woher kommt der Akkustand?
+        powerId: 'alias.0.wohnzimmer.energie.ladestation_kiki.Ladestation_Kiki.POWER',                      // Eigene Dose für Kiki
+        presenceId: 'unifi-network.0.clients.users.78:53:64:01:8b:04.isOnline', // Nur melden, wenn Kiki da ist
+        notifiedFullId: '0_userdata.0.Energie.Smartphone.Kiki_MeldungVoll', // Speicher für "Schon gemeldet"
+        lowBatId: '0_userdata.0.Energie.Smartphone.Kiki_lowBat',        // Rotes Icon in der VIS
+        min: 30, max: 80, notificationUser: ''                          // Grenzwerte (30% an, 80% aus)
     },
     'Das Smartphone von Thomas': {
         levelId: '0_userdata.0.Energie.Smartphone.Thomas_level',
-        powerId: 'sonoff.0.Smartlader.POWER',
+        powerId: 'alias.0.wohnzimmer.energie.smartlader.on',            // Nutzt den zentralen Alias
         presenceId: 'unifi-network.0.clients.users.dc:e5:5b:11:b8:7e.isOnline',
+        notifiedFullId: '0_userdata.0.Energie.Smartphone.ThomasMeldungVoll', // Laut Grafik ohne Unterstrich
         lowBatId: '0_userdata.0.Energie.Smartphone.Thomas_lowBat',
         min: 30, max: 80, notificationUser: 'Thomas'
     },
     'Das Tablet': {
         levelId: '0_userdata.0.Energie.Smartphone.Tablet_level',
-        powerId: 'sonoff.0.Smartlader.POWER', // Mehrfachnutzung eines Aktors
+        powerId: 'alias.0.wohnzimmer.energie.smartlader.on',            // Teilt sich die Dose mit Thomas
+        notifiedFullId: '0_userdata.0.Energie.Smartphone.Tablet_MeldungVoll',
         lowBatId: '0_userdata.0.Energie.Smartphone.Tablet_lowBat',
-        min: 30, max: 80, notificationUser: ''
-    },
-    'Das Tablet2': {
-        levelId: 'fullybrowser.0.192_168_178_235.Info.batteryLevel',
-        powerId: 'sonoff.0.Smartlader.POWER',
-        lowBatId: '0_userdata.0.Energie.Smartphone.Tablet2_lowBat',
         min: 30, max: 80, notificationUser: ''
     }
 };
 
-// --- 2. HILFSFUNKTIONEN ---
+// --- 2. INITIALISIERUNG (DATENPUNKTE ERSTELLEN) ---
+// Diese Funktion prüft beim Skriptstart, ob alle Datenpunkte existieren.
+async function initStates() {
+    for (const name of Object.keys(geraete)) {
+        const config = geraete[name];
 
-/**
- * Zentrale Funktion für Benachrichtigungen (Text & Sprache).
- * @param {string} name - Name des Geräts für das Log.
- * @param {string} msg - Die Nachricht.
- * @param {number} priority - Gotify Priorität.
- * @param {string} user - Ziel-User für Telegram.
- * @param {boolean} sayIt - Soll Sprachausgabe erfolgen?
- */
-function notify(name, msg, priority = 1, user = '', sayIt = false) {
-    const config = geraete[name];
-    const timeOk = compareTime('08:00', '20:00', 'between');
-    const token = getState('0_userdata.0.gotifytoken.iobroker').val;
-
-    // A. TEXT-MELDUNG (Telegram & Gotify)
-    sendTo('telegram', 'send', { text: msg, user: user });
-    exec(`curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=Smartphone Akku" -F "message=${msg}" -F "priority=${priority}"`);
-
-    // B. SPRACH-MELDUNG (Nur bei Anwesenheit und Zeitfenster)
-    let isPresent = true; 
-    if (config && config.presenceId) {
-        isPresent = getState(config.presenceId).val;
-    }
-
-    if (sayIt && timeOk && isPresent) {
-        // Bereinigung des Textes für SayIt (Emojis und Zeilenumbrüche entfernen)
-        const cleanMsg = msg
-            .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '')
-            .replace(/\n/g, ' ')
-            .trim();
-            
-        sendTo("sayit", "say", { text: cleanMsg, volume: 50 });
-    }
-    
-    console.log(`[Battery-Watchdog] Meldung für ${name}: ${msg.replace(/\n/g, ' ')}`);
-}
-
-// --- 3. LOGIK-STEUERUNG ---
-
-/**
- * SONDERFALL: Kiki's 05:00 Uhr Check.
- * Stellt sicher, dass das Handy morgens genug Saft hat, falls es nachts nicht geladen wurde.
- */
-schedule("0 5 * * *", () => {
-    const name = 'Das Smartphone von Kiki';
-    const config = geraete[name]; 
-    if (config && existsState(config.levelId)) {
-        const level = getState(config.levelId).val;
-        // Wenn unter 70% und Lader ist aus -> einschalten
-        if (level < 70 && !getState(config.powerId).val) {
-            setState(config.powerId, true);
-            console.log(`[Battery-Watchdog] Morgen-Check Kiki: Ladung bei ${level}% gestartet.`);
+        // A. Der Sperr-Datenpunkt (verhindert doppelte Nachrichten)
+        if (config.notifiedFullId && !existsState(config.notifiedFullId)) {
+            await createStateAsync(config.notifiedFullId, false, { name: 'Sperre Voll-Meldung', type: 'boolean', role: 'state', def: false });
+        }
+        // B. Der LowBat-Datenpunkt (für die VIS Anzeige)
+        if (config.lowBatId && !existsState(config.lowBatId)) {
+            await createStateAsync(config.lowBatId, false, { name: 'LowBat Anzeige', type: 'boolean', role: 'state', def: false });
+        }
+        // C. Der "Lädt"-Datenpunkt (zeigt an, ob der Akku gerade steigt)
+        let laedtId = config.levelId.replace('_level', '_laedt');
+        if (!existsState(laedtId)) {
+            await createStateAsync(laedtId, false, { name: 'Ladestatus Aktiv', type: 'boolean', role: 'state', def: false });
         }
     }
-});
+}
+initStates(); // Führt die Prüfung sofort beim Start aus
 
-/**
- * HAUPT-LOGIK: Überwachung aller konfigurierten Geräte.
- * Wir loopen durch das 'geraete' Objekt und legen Trigger an.
- */
+// --- 3. BENACHRICHTIGUNGS-HELFER ---
+function notify(name, msg, priority = 1, user = '', sayIt = false) {
+    const config = geraete[name];
+    const timeOk = compareTime('08:00', '20:00', 'between'); // Keine Ansagen mitten in der Nacht
+    const token = getState('0_userdata.0.gotifytoken.iobroker').val;
+
+    // Telegram & Gotify Nachrichten senden
+    sendTo('telegram', 'send', { text: msg, user: user });
+    exec(`curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=Akku" -F "message=${msg}" -F "priority=${priority}"`);
+
+    // Sprachausgabe nur, wenn gewünscht, die Zeit passt und die Person im WLAN ist
+    let isPresent = (config && config.presenceId) ? getState(config.presenceId).val : true;
+    if (sayIt && timeOk && isPresent) {
+        const cleanMsg = msg.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF])/g, '').replace(/\n/g, ' ');
+        sendTo("sayit", "say", { text: cleanMsg, volume: 50 });
+    }
+}
+
+// --- 4. HAUPT-ÜBERWACHUNG ---
 Object.keys(geraete).forEach(name => {
     const config = geraete[name];
 
+    // Wir "abonnieren" den Akkustand (levelId)
     on({ id: config.levelId, change: 'ne' }, (obj) => {
-        const level = obj.state.val;
-        const istAn = getState(config.powerId).val;
-        
-        // ONLINE-CHECK: Wenn Gerät nicht im WLAN (presenceId vorhanden), keine Logik ausführen
-        if (config.presenceId && !getState(config.presenceId).val) return;
+        const level = obj.state.val; // Neuer Prozentwert
+        const istAn = getState(config.powerId).val; // Ist der Strom an?
+        const alreadyNotified = getState(config.notifiedFullId).val; // Wurde heute schon gemeldet?
 
-        // HELPER: Bestimmung des Ladestatus-Datenpunkts (VIS Anzeige)
-        let targetLaedtId = null;
-        if (config.levelId.includes('_level')) {
-            targetLaedtId = config.levelId.replace('_level', '_laedt');
-        } else if (config.levelId.includes('batteryLevel')) {
-            targetLaedtId = config.levelId.replace('batteryLevel', 'isCharging');
+        // 1. VIS LADESTATUS AKTUALISIEREN
+        let targetLaedtId = config.levelId.replace('_level', '_laedt');
+        if (existsState(targetLaedtId)) {
+            // Wenn neuer Wert > alter Wert, dann lädt das Gerät
+            setState(targetLaedtId, level > (obj.oldState ? obj.oldState.val : 0), true);
         }
 
-        // Setzt den Ladestatus in 0_userdata (wird geladen? true/false)
-        if (targetLaedtId && targetLaedtId !== config.levelId && existsState(targetLaedtId)) {
-            const isCharging = level > (obj.oldState ? obj.oldState.val : 0);
-            setState(targetLaedtId, isCharging, true); 
+        // 2. SPERRE ZURÜCKSETZEN
+        // Wenn die Dose aus ist oder der Akku wieder leer wird, erlauben wir eine neue Meldung.
+        if (!istAn || level < config.min) {
+            if (alreadyNotified) setState(config.notifiedFullId, false, true);
         }
 
-        /**
-         * EINSCHALT-LOGIK:
-         * Wenn Akku unter Minimum und Lader ist aus.
-         */
+        // 3. EINSCHALT-LOGIK (Akku < 30%)
         if (level < config.min && !istAn) {
             setState(config.powerId, true);
-            if (config.lowBatId) setState(config.lowBatId, true); // LowBat-Flag für VIS setzen
-            notify(name, `🪫 ${name} sollte geladen werden.\nAkkustand: ${level}%`, 1, config.notificationUser, true);
+            if (config.lowBatId) setState(config.lowBatId, true);
+            notify(name, "🪫 " + name + " sollte geladen werden.\nStand: " + level + "%", 1, config.notificationUser, true);
         }
 
-        /**
-         * AUSSCHALT-LOGIK:
-         * Wenn Akku das Maximum erreicht hat und der Lader noch AN ist.
-         * WICHTIG: Die Meldung erfolgt NUR HIER (beim Abschalten).
-         * Wenn das Handy bei 100% entlädt (Pixel Konditionierung), triggert dieser Block nicht mehr,
-         * da 'istAn' bereits false ist.
-         */
-        else if (level >= config.max && istAn) {
-            setState(config.powerId, false);
+        // 4. AUSSCHALT-LOGIK (Akku >= 80%)
+        // Nur wenn Dose noch an ist UND wir für diesen Ladevorgang noch nicht gemeldet haben.
+        else if (level >= config.max && istAn && !alreadyNotified) {
+            setState(config.notifiedFullId, true, true); // Sperre im Datenpunkt setzen
+            setState(config.powerId, false);             // Dose ausschalten
             if (config.lowBatId) setState(config.lowBatId, false);
-            notify(name, `🔋 ${name} ist geladen.\nAkkustand: ${level}%`, 1, config.notificationUser, true);
+            notify(name, "🔋 " + name + " ist geladen.\nStand: " + level + "%", 1, config.notificationUser, true);
         }
     });
 });
 
-/**
- * MANUELLER TRIGGER:
- * Ermöglicht das Einschalten des Laders über VIS-Buttons, auch wenn Akku noch voll ist.
- */
+// --- 5. MANUELLER START (SPRACHBEFEHL) ---
+// Reagiert auf die Datenpunkte Thomas_laden und Tablet_laden
 const manualTriggers = [
     '0_userdata.0.Energie.Smartphone.Thomas_laden',
-    '0_userdata.0.Energie.Smartphone.Tablet_laden',
-    '0_userdata.0.Energie.Smartphone.Tablet2_laden'
+    '0_userdata.0.Energie.Smartphone.Tablet_laden'
 ];
 
 on({ id: manualTriggers, val: true }, (obj) => {
-    setState('sonoff.0.Smartlader.POWER', true);
-    const msg = "Ladestation eingeschaltet. Bitte einstöpseln.";
+    // A. Ladegerät einschalten
+    setState('alias.0.wohnzimmer.energie.smartlader.on', true);
     
-    // Wir nutzen Thomas' Anwesenheit als Bedingung für die Ansage
-    const thomasConfig = geraete['Das Smartphone von Thomas'];
-    const thomasOnline = thomasConfig && thomasConfig.presenceId ? getState(thomasConfig.presenceId).val : true;
-    
-    if (compareTime('08:00', '20:00', 'between') && thomasOnline) {
-        sendTo("sayit", "say", { text: msg, volume: 50 });
+    // B. Die gewünschte Ansage ausgeben
+    const ansage = "Bitte links einstöpseln, ich habe eingeschaltet.";
+    if (compareTime('08:00', '20:00', 'between')) {
+        sendTo("sayit", "say", { text: ansage, volume: 50 });
     }
     
-    // Button in der VIS nach 2 Sek wieder auf false setzen
-    setTimeout(() => { setState(obj.id, false, true); }, 2000);
+    // C. Den Button in der VIS nach 2 Sekunden wieder auf 'false' setzen
+    setTimeout(() => { 
+        setState(obj.id, false, true); 
+    }, 2000);
+});
+
+// --- 6. KIKI MORGEN-CHECK (05:00 Uhr) ---
+schedule("0 5 * * *", () => {
+    const kiki = geraete['Das Smartphone von Kiki'];
+    const level = getState(kiki.levelId).val;
+    // Falls das Handy morgens unter 70% ist, vorsichtshalber laden
+    if (level < 70 && !getState(kiki.powerId).val) {
+        setState(kiki.powerId, true);
+    }
 });
