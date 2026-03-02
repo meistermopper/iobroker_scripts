@@ -23,7 +23,7 @@ const sonoffPower = 'alias.0.buero.usv.POWER';              // Pfad zum Aktor (S
 const gotifyToken = getState('0_userdata.0.gotifytoken.iobroker').val;
 
 // Liste aller SayIt-Instanzen laut deinem System-Screenshot
-const sayitInstances = ['sayit.0', 'sayit.2', 'sayit.3', 'sayit.4', 'sayit.5']; 
+const sayitInstances = ['sayit.0', 'sayit.1', 'sayit.2', 'sayit.3', 'sayit.4', 'sayit.5']; 
 
 // Verzögerung für die erste Ansage (WLAN-Stabilität nach Umschalt-Peak)
 const wifiStabilizeDelay = 10000; 

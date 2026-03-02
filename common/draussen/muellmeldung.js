@@ -14,7 +14,7 @@ schedule("0 18 * * 0-5", async () => {
         }
 
         // 2. Sprachausgabe (Jetzt identisch zum Fenster-Skript)
-        console.log(`Müll-Ansage wird gestartet: ${muellText}`);
+        //console.log(`Müll-Ansage wird gestartet: ${muellText}`);
         
         // Wir probieren erst deinen Watchdog
         if (typeof googleWatchdogAnnounce === 'function') {

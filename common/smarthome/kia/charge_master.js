@@ -50,8 +50,8 @@ const IDS = {
 };
 
 // --- PARAMETER ---
-const PV_START_LIMIT   = 4300;  // Startschwelle (Sonne muss > 4,1kW + Puffer liefern)
-const FIXED_CHARGE_W   = 4140;  // Fixe Leistung bei 6A (230V * 3 Phasen * 6A)
+const PV_START_LIMIT   = 4600;  // Startschwelle (Sonne muss > 4,1kW + Puffer liefern)
+const FIXED_CHARGE_W   = 3690;  // Fixe Leistung bei 6A (230V * 3 Phasen * 6A)
 const GOTIFY_TOKEN     = getState('0_userdata.0.gotifytoken.iobroker').val;
 
 let startZeitLaden = null;      // Merker für Statistik
@@ -118,7 +118,7 @@ on({ id: IDS.pvAverage, change: 'ne' }, (obj) => {
         }
     } 
     // STOP: Überschuss sinkt unter die Ladeleistung (Pausierung)
-    else if (isTransActive && mittel < 3800) {
+    else if (isTransActive && mittel < 4100) {
         setState(IDS.wbTrans, false);
         ev3Notify("⏸️ PV-Pause: Ertrag zu gering.");
     }
