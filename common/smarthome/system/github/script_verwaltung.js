@@ -1,32 +1,22 @@
 /**
  * =============================================================================
- * GIT FULL-SYNC: DETAILLIERT KOMMENTIERTE PROFI-VERSION
+ * GIT FULL-SYNC: 1:1 REPOSITORY-VERSION (BEREINIGT)
  * =============================================================================
  * Dieses Skript synchronisiert lokale ioBroker-Skripte mit einem GitHub-Repository.
- * * OPTIMIERUNGEN:
- * 1. LÖSCH-SCHUTZ: Verwendet '--ignore-removal', um versehentliche Löschungen 
- * durch den ioBroker-Dateiwächter zu verhindern [cite: 2026-03-03].
- * 2. SILENT COMMIT: Vermeidet Fehlermeldungen bei "nichts zu committen" [cite: 2026-03-03].
- * 3. FEEDBACK: Schreibt Status-Updates in Datenpunkte, Telegram und Gotify.
+ * Es bildet den exakten lokalen Stand ab (inkl. Löschungen & Umbenennungen).
+ * * VERSION: 2026-03-03 - Optimiert für ioBroker-Stabilität [cite: 2026-03-03]
  */
 
-// --- Konfiguration ---
-// Der absolute Pfad zu deinem Skript-Ordner auf dem Linux-System
-const PATH_SCRIPTS = '/home/iobroker/scripts';
-
-// IDs für die Benachrichtigungs-Dienste
+// --- 1. KONFIGURATION ---
+const PATH_SCRIPTS = '/home/iobroker/scripts'; // Pfad auf dem Host
 const GOTIFY_TOKEN_ID = '0_userdata.0.gotifytoken.iobroker';
 const GOTIFY_SERVER = 'mygotify.meistermopper.de';
-
-// Datenpunkt für den lesbaren Status (wird bei Bedarf automatisch angelegt)
 const STATE_STATUS = '0_userdata.0.git_sync_last_status';
 
-/**
- * Initialisierung:
- * Prüft beim Skriptstart, ob der Status-Datenpunkt existiert.
- */
+// --- 2. INITIALISIERUNG ---
+// Erstellt den Status-Datenpunkt, falls er noch nicht existiert [cite: 2026-02-23]
 if (!existsState(STATE_STATUS)) {
-    createState(STATE_STATUS, "Noch nicht gelaufen", {
+    createState(STATE_STATUS, "Initialisiert", {
         name: "Letzter Git-Sync Status",
         type: "string",
         role: "text"
@@ -35,21 +25,15 @@ if (!existsState(STATE_STATUS)) {
 
 /**
  * Funktion: sendSyncNotify
- * Zentralisiert den Versand von Nachrichten über verschiedene Kanäle.
- * @param {string} msg - Die Nachricht.
- * @param {number} priority - Gotify-Priorität (1-5).
+ * Versendet Statusmeldungen an ioBroker, Telegram und Gotify [cite: 2026-02-23].
  */
 function sendSyncNotify(msg, priority = 1) {
-    // 1. Status im ioBroker aktualisieren
     setState(STATE_STATUS, msg, true);
+    sendTo('telegram', 'send', { text: "🔄 Git-Sync: " + msg });
     
-    // 2. Versand via Telegram
-    sendTo('telegram', 'send', { text: `🔄 Git-Sync: ${msg}` });
-    
-    // 3. Versand via Gotify (falls Token vorhanden)
     const tokenState = getState(GOTIFY_TOKEN_ID);
     if (tokenState && tokenState.val) {
-        httpPost(`https://${GOTIFY_SERVER}/message?token=${tokenState.val}`, {
+        httpPost("https://" + GOTIFY_SERVER + "/message?token=" + tokenState.val, {
             title: "ioBroker Sync",
             message: msg,
             priority: priority
@@ -57,70 +41,53 @@ function sendSyncNotify(msg, priority = 1) {
     }
 }
 
-/**
- * Zeitplan: Täglich um 00:07 Uhr
- */
+// --- 3. DER SYNC-PROZESS ---
+// Ausführung täglich um 00:07 Uhr [cite: 2026-02-16]
 schedule("07 0 * * *", () => {
-    // Child_process laden für Shell-Befehle
     const exec = require('child_process').exec;
-    
-    // Zeitstempel für den Commit erzeugen
     const timestamp = formatDate(new Date(), "YYYY-MM-DD HH:mm");
     
-    log(`[Git-Sync] Starte automatische Synchronisation...`, 'info');
+    log("[Git-Sync] Starte 1:1 Synchronisation...", 'info');
 
     /**
-     * Erklärung der optimierten Git-Befehlskette:
-     * 1. cd: Wechselt ins Arbeitsverzeichnis.
-     * 2. git pull: Holt Änderungen von GitHub.
-     * 3. git add --ignore-removal .: WICHTIG! Fügt neue/geänderte Dateien hinzu,
-     * ignoriert aber Dateien, die auf der Festplatte fehlen (Lösch-Schutz) [cite: 2026-03-03].
-     * 4. git diff-index: Prüft lautlos, ob es echte Änderungen zum Committen gibt.
-     * Verhindert den "Exit Code 1" Fehler bei leeren Commits [cite: 2026-03-03].
-     * 5. git push: Schiebt die Änderungen hoch zu GitHub.
+     * Erklärung der Befehlskette:
+     * Wir nutzen hier die klassische Verkettung mit "+", um Probleme mit 
+     * Zeilenumbrüchen im ioBroker-Editor zu vermeiden [cite: 2026-03-03].
      */
-    const cmd = `cd ${PATH_SCRIPTS} && \
-                 git pull origin main && \
-                 git add --ignore-removal . && \
-                 (git diff-index --quiet HEAD -- || git commit -m "Auto-Sync: ${timestamp}") && \
-                 git push origin main`;
+    const cmd = "cd " + PATH_SCRIPTS + " && " +
+                "git pull origin main && " +
+                "git add . && " +
+                "(git diff-index --quiet HEAD -- || git commit -m 'Auto-Sync: " + timestamp + "') && " +
+                "git push origin main";
     
     exec(cmd, (error, stdout, stderr) => {
-        // Zusammenfassen der Ausgaben zur Analyse
         const fullOutput = (stdout + stderr).toLowerCase();
         
-        /**
-         * Fehlerbehandlung:
-         * Ein 'error' wird ignoriert, wenn Git nur meldet, dass alles aktuell ist.
-         */
+        // Fehlerprüfung: Ignoriere "Bereits aktuell"-Meldungen als Fehler [cite: 2026-03-03]
         if (error && !fullOutput.includes("everything up-to-date") && !fullOutput.includes("already up to date")) {
-            log(`[Git-Sync] Kritischer Fehler: ${error.message}`, 'error');
-            sendSyncNotify(`⚠️ Fehler: ${error.message}`, 5);
+            log("[Git-Sync] Kritischer Fehler: " + error.message, 'error');
+            sendSyncNotify("⚠️ Fehler: " + error.message, 5);
             return;
         }
 
         let infoMsg = "";
         
-        // Analyse: Gab es lokale Änderungen oder Remote-Updates?
-        const hasLocalChanges = fullOutput.includes("file changed") || fullOutput.includes("files changed");
+        // Analyse der Git-Ausgabe für die Erfolgsmeldung [cite: 2026-02-23]
+        const hasLocalChanges = fullOutput.includes("file changed") || fullOutput.includes("files changed") || fullOutput.includes("delete mode");
         const hasRemoteUpdates = fullOutput.includes("updating") || fullOutput.includes("fast-forward");
 
         if (hasLocalChanges && hasRemoteUpdates) {
-            infoMsg = `Vollständiger Sync: Daten gesendet & empfangen (${timestamp})`;
-            sendSyncNotify(`✅ ${infoMsg}`);
-        } 
-        else if (hasLocalChanges) {
-            infoMsg = `Erfolgreich: Lokale Änderungen hochgeladen (${timestamp})`;
-            sendSyncNotify(`✅ ${infoMsg}`);
-        } 
-        else if (hasRemoteUpdates) {
-            infoMsg = `Erfolgreich: Neue Daten von GitHub geladen (${timestamp})`;
-            sendSyncNotify(`✅ ${infoMsg}`);
-        } 
-        else {
-            infoMsg = `Alles aktuell (${timestamp})`;
-            // Wir loggen "Alles aktuell" nur in ioBroker, um Benachrichtigungs-Spam zu vermeiden
-            log(`[Git-Sync] ${infoMsg}`, 'info');
+            infoMsg = "Vollständiger Sync: Daten gesendet & empfangen (" + timestamp + ")";
+            sendSyncNotify("✅ " + infoMsg);
+        } else if (hasLocalChanges) {
+            infoMsg = "Erfolgreich: Lokale Änderungen/Löschungen hochgeladen (" + timestamp + ")";
+            sendSyncNotify("✅ " + infoMsg);
+        } else if (hasRemoteUpdates) {
+            infoMsg = "Erfolgreich: Neue Daten von GitHub geladen (" + timestamp + ")";
+            sendSyncNotify("✅ " + infoMsg);
+        } else {
+            infoMsg = "Alles aktuell (" + timestamp + ")";
+            log("[Git-Sync] " + infoMsg, 'info');
             setState(STATE_STATUS, infoMsg, true);
         }
     });
