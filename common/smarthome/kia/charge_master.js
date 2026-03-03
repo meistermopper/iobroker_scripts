@@ -42,16 +42,16 @@ const IDS = {
     u_auto:    `${PATH_USER}.autoladen`,      // [14] Schalter: PV-Automatik an/aus
     u_limit:   `${PATH_USER}.Ladeprozent`,    // [15] Ziel-SOC Slider
     u_smooth:  `${PATH_USER}.Glaettung_Zeit`,  // [16] EMA-Trägheit Slider
-    u_power:   `${PATH_USER}.Ladeleistung`,   // [17] Anzeige Watt (fest 4140W)
+    u_power:   `${PATH_USER}.Ladeleistung`,   // [17] Anzeige Watt (fest 3690W)
     u_timeDay: `${PATH_USER}.Ladezeit`,       // [18] Lademinuten heute
     u_rest:    `${PATH_USER}.Restladezeit`,   // [19] HH:MM Anzeige
-    aliasKm:   'alias.0.umrechnen.kia_ladekm',    // [20] Reichweite
+    aliasKm:   'alias.0.umrechnen.kia_ladekm',    // [20] gewonnene Reichweite
     aliasDur:  'alias.0.umrechnen.kia_ladezeit'  // [21] Zeit-Objekt
 };
 
 // --- PARAMETER ---
-const PV_START_LIMIT   = 4600;  // Startschwelle (Sonne muss > 4,1kW + Puffer liefern)
-const FIXED_CHARGE_W   = 3690;  // Fixe Leistung bei 6A (230V * 3 Phasen * 6A)
+const PV_START_LIMIT   = 4600;  // Startschwelle (Sonne muss > 4,6kW + Puffer liefern)
+const FIXED_CHARGE_W   = 3690;  // Fixe Leistung bei 6A (220V * 3 Phasen * 6A)
 const GOTIFY_TOKEN     = getState('0_userdata.0.gotifytoken.iobroker').val;
 
 let startZeitLaden = null;      // Merker für Statistik
@@ -114,13 +114,13 @@ on({ id: IDS.pvAverage, change: 'ne' }, (obj) => {
         const wbStatus = getState(IDS.wbStat).val;
         if (wbStatus === 'Preparing') {
             setState(IDS.wbTrans, true);
-            ev3Notify("🔋 PV-Start: Überschussladung mit 6A aktiviert.");
+            ev3Notify("🔋 Das Überschussladen des IWi three wurde mit 6 Ampere aktiviert.");
         }
     } 
     // STOP: Überschuss sinkt unter die Ladeleistung (Pausierung)
     else if (isTransActive && mittel < 4100) {
         setState(IDS.wbTrans, false);
-        ev3Notify("⏸️ PV-Pause: Ertrag zu gering.");
+        ev3Notify("⏸️ Das Laden des IWi three wurde beendet, der Ertrag ist zu gering.");
     }
 });
 
