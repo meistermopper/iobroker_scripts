@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * SKRIPT: EV3 LADE-MASTER v6.1.0
+ * SKRIPT: EV3 LADE-MASTER v6.1.1
  * =============================================================================
  * KONZEPT: Fokussiertes Start/Stop Management für den Kia e-Niro.
  * STRATEGIE: Nutzung der fixen 6A (ca. 4,1 kW) für zwei Betriebsmodi:
@@ -10,6 +10,7 @@
  * - Boost-Modus vollständig entfernt.
  * - Logik auf 21 relevante Datenpunkte reduziert.
  * - Beibehaltung aller Statistiken und Schutzfunktionen.
+ * - Aussprache EV3 (Iwi three) in Benachrichtigungen für Persönlichkeit.
  * =============================================================================
  */
 
