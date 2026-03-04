@@ -1,15 +1,41 @@
 /**
  * =============================================================================
+<<<<<<< Updated upstream
  * GIT FULL-SYNC: 1:1 REPOSITORY-VERSION (MANUELLER TEST)
  * =============================================================================
  */
 
 const PATH_SCRIPTS = '/home/iobroker/scripts'; 
+=======
+ * ioBroker GIT FULL-SYNC: 1:1 REPOSITORY-STEUERUNG (LOCAL-WINS EDITION)
+ * =============================================================================
+ * Dieses Skript synchronisiert lokale ioBroker-Skripte mit GitHub.
+ * Es ist so konfiguriert, dass lokale Änderungen Vorrang haben (Conflict-Safe).
+ * * FUNKTIONEN:
+ * 1. Täglicher automatischer Sync um 00:07 Uhr.
+ * 2. Automatischer Sync direkt beim Skriptstart/Speichern (2s Verzögerung).
+ * 3. Automatisches Stashing & Merging bei Konflikten (Local-Wins).
+ * 4. Statusmeldungen via ioBroker-Log, Telegram und Gotify.
+ * * VERSION: 2026-03-04 - Optimiert für automatische Konfliktlösung
+ * =============================================================================
+ */
+
+// --- 1. KONFIGURATION ---
+// Pfad zum Skript-Ordner auf deinem ioBroker-Host
+const PATH_SCRIPTS = '/home/iobroker/scripts'; 
+
+// Datenpunkte für Benachrichtigungen & Status
+>>>>>>> Stashed changes
 const GOTIFY_TOKEN_ID = '0_userdata.0.gotifytoken.iobroker';
 const GOTIFY_SERVER = 'mygotify.meistermopper.de';
 const STATE_STATUS = '0_userdata.0.git_sync_last_status';
 
+<<<<<<< Updated upstream
 // Datenpunkt initialisieren
+=======
+// --- 2. INITIALISIERUNG ---
+// Erstellt den Status-Datenpunkt, falls er noch nicht existiert
+>>>>>>> Stashed changes
 if (!existsState(STATE_STATUS)) {
     createState(STATE_STATUS, "Initialisiert", {
         name: "Letzter Git-Sync Status",
@@ -19,11 +45,41 @@ if (!existsState(STATE_STATUS)) {
 }
 
 /**
+<<<<<<< Updated upstream
  * Kern-Funktion für die Synchronisation
  */
 function doGitSync() {
+=======
+ * Funktion: sendSyncNotify
+ * Zentralisiert den Versand von Statusmeldungen an alle Kanäle.
+ * @param {string} msg - Die Nachricht, die gesendet werden soll.
+ * @param {number} priority - Gotify-Priorität (1 = Info, 5 = Alarm).
+ */
+function sendSyncNotify(msg, priority = 1) {
+    setState(STATE_STATUS, msg, true);
+    sendTo('telegram', 'send', { text: "🔄 Git-Sync: " + msg });
+    
+    const tokenState = getState(GOTIFY_TOKEN_ID);
+    if (tokenState && tokenState.val) {
+        httpPost("https://" + GOTIFY_SERVER + "/message?token=" + tokenState.val, {
+            title: "ioBroker Sync",
+            message: msg,
+            priority: priority
+        });
+    }
+}
+
+// --- 3. DIE SYNC-FUNKTION (KERNLOGIK) ---
+
+/**
+ * Funktion: runGitSync
+ * Führt die Git-Befehlskette mit automatischer Konfliktlösung aus.
+ */
+function runGitSync() {
+>>>>>>> Stashed changes
     const exec = require('child_process').exec;
     
+<<<<<<< Updated upstream
     // Zeitstempel generieren (Fix für das HH:07 Problem) [cite: 2026-03-03]
     const jetzt = new Date();
     const stunde = String(jetzt.getHours()).padStart(2, '0');
@@ -33,8 +89,23 @@ function doGitSync() {
     
     log("[Git-Sync] Manuelle Synchronisation gestartet...", 'info');
 
+=======
+    log("[Git-Sync] Synchronisation wird gestartet...", 'info');
+
+    /**
+     * Erklärung der robusten Befehlskette:
+     * 1. git add . && git stash: Lokale Änderungen sicher zwischenparken.
+     * 2. git pull ... -X ours: GitHub-Stand holen. Bei Konflikten bleibt die lokale Version ('ours') erhalten.
+     * 3. git stash pop: Geparkte Änderungen wieder einspielen (Konflikte werden ignoriert).
+     * 4. git add . && commit: Finalen Stand für den Upload vorbereiten.
+     * 5. git push: Den sauberen Stand zurück zu GitHub schieben.
+     */
+>>>>>>> Stashed changes
     const cmd = "cd " + PATH_SCRIPTS + " && " +
-                "git pull origin main && " +
+                "git add . && " +
+                "git stash && " +
+                "git pull origin main -s recursive -X ours && " +
+                "git stash pop || true && " +
                 "git add . && " +
                 "(git diff-index --quiet HEAD -- || git commit -m 'Auto-Sync: " + timestamp + "') && " +
                 "git push origin main";
@@ -42,11 +113,17 @@ function doGitSync() {
     exec(cmd, (error, stdout, stderr) => {
         const fullOutput = (stdout + stderr).toLowerCase();
         
+<<<<<<< Updated upstream
         if (error && !fullOutput.includes("everything up-to-date") && !fullOutput.includes("already up to date")) {
+=======
+        // Fehlerprüfung: Ignoriere Standard-Meldungen, die keine echten Fehler sind
+        if (error && !fullOutput.includes("everything up-to-date") && !fullOutput.includes("already up to date") && !fullOutput.includes("no local changes to save")) {
+>>>>>>> Stashed changes
             log("[Git-Sync] Kritischer Fehler: " + error.message, 'error');
             return;
         }
 
+<<<<<<< Updated upstream
         let infoMsg = "";
         const hasLocalChanges = fullOutput.includes("file changed") || fullOutput.includes("files changed") || fullOutput.includes("delete mode");
         const hasRemoteUpdates = fullOutput.includes("updating") || fullOutput.includes("fast-forward");
@@ -56,6 +133,17 @@ function doGitSync() {
             infoMsg = "✅ Sync erfolgreich (" + timestamp + ")";
         } else {
             infoMsg = "✅ Alles aktuell (" + timestamp + ")";
+=======
+        // Erfolgskontrolle
+        const hasLocalChanges = fullOutput.includes("file changed") || fullOutput.includes("files changed") || fullOutput.includes("delete mode") || fullOutput.includes("dropped refs");
+        const hasRemoteUpdates = fullOutput.includes("updating") || fullOutput.includes("fast-forward");
+
+        if (hasLocalChanges || hasRemoteUpdates) {
+            sendSyncNotify("✅ Sync erfolgreich (Konflikte gelöst) am " + timestamp);
+        } else {
+            log("[Git-Sync] Alles aktuell (" + timestamp + ")", 'info');
+            setState(STATE_STATUS, "Alles aktuell (" + timestamp + ")", true);
+>>>>>>> Stashed changes
         }
 
         log("[Git-Sync] " + infoMsg, 'info');
@@ -63,8 +151,22 @@ function doGitSync() {
     });
 }
 
+<<<<<<< Updated upstream
 // 1. Zeitplan: Täglich um 00:07 Uhr [cite: 2026-02-16]
 schedule("07 0 * * *", doGitSync);
 
 // 2. SOFORT-START: Diese Zeile führt das Skript beim Speichern einmalig aus
 doGitSync();
+=======
+// --- 4. TRIGGER & AUTOMATISIERUNG ---
+
+// A. Geplante Ausführung: Täglich um 00:07 Uhr
+schedule("07 0 * * *", runGitSync);
+
+// B. Sofortige Ausführung beim Skript-Start / Speichern
+// Wartet 2 Sekunden, um Initialisierungen abzuschließen
+setTimeout(() => {
+    log("[Git-Sync] Initialer Start-Sync wird ausgeführt...", 'info');
+    runGitSync();
+}, 2000);
+>>>>>>> Stashed changes
