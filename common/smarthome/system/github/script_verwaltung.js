@@ -40,7 +40,7 @@ function runGitSync() {
     const exec = require('child_process').exec;
     const jetzt = new Date();
     // Wichtig: HH:mm sorgt für 24h-Format (vermeidet den "HH:27" Fehler) [cite: 2026-03-05]
-    const timestamp = formatDate(jetzt, "YYYY-MM-DD HH:mm");
+    const timestamp = formatDate(jetzt, "YYYY-MM-DD hh:mm");
     
     log("[Git-Sync] Synchronisation wird gestartet...", 'info');
 
