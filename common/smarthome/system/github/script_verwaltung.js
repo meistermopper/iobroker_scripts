@@ -2,7 +2,7 @@
  * =============================================================================
  * ioBroker GIT FULL-SYNC (STABLE, PERSISTENT & SHORTCUT-READY)
  * =============================================================================
- * VERSION: 2026-03-05 - Inkl. VS Code Shortcut-Trigger in VS Code
+ * VERSION: 2026-03-05 - Shortcut-Trigger in VS Code entfernt
  * =============================================================================
  */
 
