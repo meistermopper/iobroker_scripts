@@ -55,7 +55,7 @@ function sendSyncNotify(msg, priority = 1) {
  */
 function runGitSync() {
     const exec = require('child_process').exec;
-    const timestamp = formatDate(new Date(), "YYYY-MM-DD HH:mm");
+    const timestamp = formatDate(new Date(), "YYYY-MM-DD hh:mm");
     
     log("[Git-Sync] Synchronisation wird gestartet...", 'info');
 
