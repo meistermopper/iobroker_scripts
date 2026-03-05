@@ -4,6 +4,11 @@ schedule("0 3 * * *", async () => {
     // 2 Sekunden warten, damit der Cache-Löschvorgang sicher durch ist
     setTimeout(() => {
         setState('fullybrowser.0.Fully-Browser.Commands.loadURL', 'http://192.168.178.10:8082/vis/index.html?projektx#100_Startseite');
+
+        // NEU: Nach weiteren 5 Sekunden das Display wieder ausschalten, um sicherzustellen, dass die Seite geladen ist.
+        setTimeout(() => {
+            setState('fullybrowser.0.Fully-Browser.Commands.screenOff', true);
+        }, 5000); // 5 Sekunden Puffer
     }, 2000);
 });
 

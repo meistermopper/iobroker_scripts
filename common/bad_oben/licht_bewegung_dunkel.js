@@ -22,7 +22,7 @@ let sperreNachTuer     = false;
 
 // --- 2. FUNKTIONEN ---
 
-async function lichtAn() {
+function lichtAn() {
     if (sperreNachTuer) return;
 
     if (getState(ID_LICHT).val === false) {
@@ -62,6 +62,8 @@ function lichtAus() {
 on({ id: ID_BWM, change: 'any' }, (obj) => {
     if (timeoutGedenkpause) clearTimeout(timeoutGedenkpause);
 
+    if (!obj.state) return; // Sicherheitscheck
+
     timeoutGedenkpause = setTimeout(() => {
         const occupancy = !!obj.state.val;
         const lux       = getState(ID_LUX).val;
@@ -74,7 +76,9 @@ on({ id: ID_BWM, change: 'any' }, (obj) => {
     }, 50); 
 });
 
-on({ id: ID_TUER, change: 'gt' }, () => {
+on({ id: ID_TUER, change: 'ne' }, (obj) => {
+    if (!obj.state || !obj.state.val) return; // Nur reagieren, wenn Tür offen (true)
+
     const lichtWarAn = getState(ID_LICHT).val;
 
     if (lichtWarAn) {

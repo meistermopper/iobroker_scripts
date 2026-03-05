@@ -1,21 +1,59 @@
-// --- Konfiguration ---
-const ID_BWM         = 'alias.0.bad_unten.bwm.occupancy';
-const ID_TUER        = 'alias.0.bad_unten.tuer.opened';
-const ID_LUX         = 'alias.0.bad_unten.bwm.illuminance_raw';
-const ID_BWM_ENABLE  = '0_userdata.0.Licht.Bad_unten.BWM';
+/**
+ * =============================================================================
+ * LICHTSTEUERUNG BAD UNTEN (BEWEGUNG & TAGESZEIT) v1.1 - Kommentiert
+ * =============================================================================
+ * ZWECK:
+ * Dieses Skript steuert das Licht im unteren Badezimmer basierend auf Bewegung,
+ * Helligkeit, Tageszeit und Wochentag. Es bietet verschiedene Lichtszenen
+ * (z.B. helles Morgenlicht, Standardlicht) und eine automatische Abschaltung
+ * mit Vorwarnung.
+ *
+ * FUNKTIONSWEISE:
+ * 1. BEI BEWEGUNG:
+ *    - Wenn es dunkel genug ist und die Automatik aktiv ist, wird `lichtAn()` aufgerufen.
+ *    - `lichtAn()` setzt je nach Uhrzeit und Wochentag eine passende Lichtszene.
+ *    - Jeder Bewegungsimpuls startet die Timer für Vorwarnung (25 Min) und
+ *      Abschaltung (30 Min) neu.
+ *
+ * 2. VORWARNUNG:
+ *    - Nach 25 Minuten ohne neue Bewegung wird das Licht kurz gedimmt, um auf
+ *      die bevorstehende Abschaltung hinzuweisen.
+ *
+ * 3. ABSCHALTUNG:
+ *    - Nach 30 Minuten ohne neue Bewegung schaltet das Licht komplett aus.
+ *    - Wird die Tür geöffnet, schaltet das Licht SOFORT aus (Priorität).
+ * =============================================================================
+ */
 
-const HUE_ON         = 'alias.0.bad_unten.licht.spiegel.on';
-const HUE_LEVEL      = 'alias.0.bad_unten.licht.spiegel.level';
-const HUE_BRI        = 'alias.0.bad_unten.licht.spiegel.bri';
-const HUE_CT         = 'alias.0.bad_unten.licht.spiegel.ct';
-const SONOFF_PWR     = 'alias.0.bad_unten.licht.spots.POWER';
+// --- 1. KONFIGURATION: DATENPUNKTE & VARIABLEN ---
 
-let timeoutAusschalten = null;
-let timeoutVorwarnung  = null;
-let timeoutGedenkpause = null;
+// IDs der Sensoren und Aktoren
+const ID_BWM         = 'alias.0.bad_unten.bwm.occupancy';       // Bewegungsmelder (true/false)
+const ID_TUER        = 'alias.0.bad_unten.tuer.opened';         // Türsensor (true/false)
+const ID_LUX         = 'alias.0.bad_unten.bwm.illuminance_raw'; // Helligkeitssensor (numerischer Wert)
+const ID_BWM_ENABLE  = '0_userdata.0.Licht.Bad_unten.BWM';      // Schalter, um diese Automatik global zu (de-)aktivieren
 
+// IDs der Leuchtmittel (Hue & Sonoff)
+const HUE_ON         = 'alias.0.bad_unten.licht.spiegel.on';    // An/Aus-Status der Spiegelleuchte
+const HUE_LEVEL      = 'alias.0.bad_unten.licht.spiegel.level'; // Helligkeitslevel (Prozent)
+const HUE_BRI        = 'alias.0.bad_unten.licht.spiegel.bri';   // Helligkeit (absoluter Wert 0-254)
+const HUE_CT         = 'alias.0.bad_unten.licht.spiegel.ct';    // Farbtemperatur (Kelvin)
+const SONOFF_PWR     = 'alias.0.bad_unten.licht.spots.POWER';   // An/Aus-Status der Decken-Spots
+
+// Globale Variablen zur Verwaltung der Timer
+let timeoutAusschalten = null; // Speichert den Timer für die endgültige Abschaltung
+let timeoutVorwarnung  = null; // Speichert den Timer für die Dimm-Vorwarnung
+let timeoutGedenkpause = null; // Speichert einen kurzen Timer, um Sensor-"Flackern" zu entprellen
+
+
+// --- 2. FUNKTIONEN ---
+
+/**
+ * Hilfsfunktion, die prüft, ob heute ein Arbeitstag (Montag-Freitag) ist.
+ * @returns {boolean} True, wenn Mo-Fr, sonst false.
+ */
 function istArbeitstag() {
-    const d = new Date().getDay();
+    const d = new Date().getDay(); // Gibt den Wochentag als Zahl (0=So, 1=Mo, ..., 6=Sa)
     return (d >= 1 && d <= 5);
 }
 
@@ -26,10 +64,10 @@ async function lichtAn() {
     let sonoffAn = false;
 
     // Zeitsteuerung Logik (wie gehabt)
-    if (istArbeitstag() && compareTime('05:00', '10:00', 'between')) {
+    if (istArbeitstag() && compareTime('06:00', '10:00', 'between')) {
         bri = 100; ct = 6494; sonoffAn = true;
     } 
-    else if (!istArbeitstag() && compareTime('07:00', '10:00', 'between')) {
+    else if (!istArbeitstag() && compareTime('08:00', '10:00', 'between')) {
         bri = 100; ct = 6494; sonoffAn = true;
     }
     else if (compareTime('10:00', '21:00', 'between')) {
