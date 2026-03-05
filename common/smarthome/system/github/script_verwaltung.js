@@ -1,17 +1,21 @@
 /**
  * =============================================================================
- * ioBroker GIT FULL-SYNC (STABLE & PERSISTENT)
+ * ioBroker GIT FULL-SYNC (STABLE, PERSISTENT & SHORTCUT-READY)
  * =============================================================================
- * VERSION: 2026-03-05 - Fix für Status "Grün" & Zeitstempel
+ * VERSION: 2026-03-05 - Inkl. VS Code Shortcut-Trigger in VS Code
  * =============================================================================
  */
 
+// --- 1. KONFIGURATION ---
 const PATH_SCRIPTS = '/home/iobroker/scripts'; 
 const GOTIFY_TOKEN_ID = '0_userdata.0.gotifytoken.iobroker';
 const GOTIFY_SERVER = 'mygotify.meistermopper.de';
 const STATE_STATUS = '0_userdata.0.git_sync_last_status';
+const STATE_TRIGGER = '0_userdata.0.git_sync_trigger'; // Datenpunkt für VS Code Shortcut
 
-// --- 1. INITIALISIERUNG ---
+// --- 2. INITIALISIERUNG (Datenpunkte prüfen/erstellen) ---
+
+// Status-Datenpunkt für das Widget
 if (!existsState(STATE_STATUS)) {
     createState(STATE_STATUS, "Initialisiert", {
         name: "Letzter Git-Sync Status",
@@ -20,8 +24,32 @@ if (!existsState(STATE_STATUS)) {
     });
 }
 
-// --- 2. FUNKTIONEN ---
+// Trigger-Datenpunkt für den VS Code Shortcut (Strg+Alt+S)
+if (!existsState(STATE_TRIGGER)) {
+    createState(STATE_TRIGGER, false, {
+        name: "Trigger für GitHub Sync via VS Code",
+        type: "boolean",
+        role: "button",
+        def: false,
+        read: true,
+        write: true
+    });
+}
 
+// Gotify-Token Dummy (falls gar nichts existiert, damit das Skript nicht abbricht)
+if (!existsState(GOTIFY_TOKEN_ID)) {
+    createState(GOTIFY_TOKEN_ID, "", {
+        name: "Gotify Token für Git-Sync",
+        type: "string",
+        role: "text"
+    });
+}
+
+// --- 3. FUNKTIONEN ---
+
+/**
+ * Sendet Benachrichtigungen über Telegram, Gotify und setzt den Status
+ */
 function sendSyncNotify(msg, priority = 1) {
     setState(STATE_STATUS, msg, true);
     sendTo('telegram', 'send', { text: "🔄 Git-Sync: " + msg });
@@ -36,10 +64,13 @@ function sendSyncNotify(msg, priority = 1) {
     }
 }
 
+/**
+ * Hauptfunktion für den Git-Abgleich
+ */
 function runGitSync() {
     const exec = require('child_process').exec;
     const jetzt = new Date();
-    // Wichtig: HH:mm sorgt für 24h-Format (vermeidet den "HH:27" Fehler) [cite: 2026-03-05]
+    // hh:mm sorgt für das korrekte Zeitformat im Widget [cite: 2026-03-05]
     const timestamp = formatDate(jetzt, "YYYY-MM-DD hh:mm");
     
     log("[Git-Sync] Synchronisation wird gestartet...", 'info');
@@ -72,18 +103,28 @@ function runGitSync() {
     });
 }
 
-// --- 3. TRIGGER & ABLAUF ---
+// --- 4. TRIGGER & ABLAUF ---
 
 // Täglicher Zeitplan um 00:07 Uhr [cite: 2026-02-16]
 schedule("07 0 * * *", runGitSync);
 
-// Automatischer Start nach 5 Sekunden [cite: 2026-03-05]
+// Automatischer Start-Sync nach 5 Sekunden beim Skriptstart [cite: 2026-03-05]
 setTimeout(runGitSync, 5000);
 
-// --- 4. DAUERLAUF-FIX ---
+// Reagiert auf den Shortcut-Trigger aus VS Code
+on({id: STATE_TRIGGER, change: "any", val: true}, () => {
+    log("[Git-Sync] Manueller Sync via VS Code Shortcut ausgelöst...");
+    runGitSync();
+    
+    // Button nach 1 Sekunde automatisch zurücksetzen
+    setTimeout(() => {
+        setState(STATE_TRIGGER, false, true);
+    }, 1000);
+});
+
+// --- 5. DAUERLAUF-FIX ---
 /** * Dieser Block sorgt dafür, dass das Skript für ioBroker "aktiv" bleibt.
- * Wir abonnieren den Status dieses Skripts selbst. 
  */
 on({id: "javascript.0.scriptEnabled." + name, change: "ne"}, () => {
-    // Dummy-Funktion hält das Skript am Leben
+    // Dummy-Funktion hält das Skript am Leben [cite: 2026-03-05]
 });
