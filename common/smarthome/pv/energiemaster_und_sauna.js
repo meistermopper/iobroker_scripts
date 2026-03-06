@@ -63,7 +63,18 @@ async function initSystem() {
 
     for (let s of states) {
         if (!existsState(s.id)) {
-            await createStateAsync(s.id, s.type === "boolean" ? false : 0, { 
+            let defVal;
+            switch(s.type) {
+                case "string":
+                    defVal = "";
+                    break;
+                case "boolean":
+                    defVal = false;
+                    break;
+                default: // number
+                    defVal = 0;
+            }
+            await createStateAsync(s.id, defVal, { 
                 type: s.type, unit: s.unit, name: s.id.split('.').pop() 
             });
         }
