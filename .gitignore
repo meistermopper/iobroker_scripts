@@ -1,0 +1,9 @@
+# VS Code Einstellungen ignorieren
+.vscode/
+*.code-workspace
+
+# Temporäre Dateien und Logs
+*.log
+node_modules/
+# Beispiele ausschließen
+common/beispiele/

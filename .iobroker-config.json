@@ -1,0 +1,9 @@
+{
+  "ioBrokerUrl": "https://192.168.178.10",
+  "socketIoPort": 8081,
+  "scriptRoot": ".",
+  "adminVersion": "admin7",
+  "allowSelfSignedCertificate": true,
+  "username": "thomas",
+  "password": "DBtRkL123"
+}
