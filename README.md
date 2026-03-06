@@ -1,9 +1,9 @@
 # ioBroker Script-Sammlung
 
-![GitHub last commit](https://img.shields.io/github/last-commit/meistermopper/iobroker_scripts?style=flat-square&color=blue)
-![GitHub top language](https://img.shields.io/github/languages/top/meistermopper/iobroker_scripts?style=flat-square&color=yellow)
-![GitHub repo size](https://img.shields.io/github/repo-size/meistermopper/iobroker_scripts?style=flat-square)
-![ioBroker-Scripts](https://img.shields.io/badge/ioBroker-Scripts-orange?style=flat-square)
+![Status](https://img.shields.io/badge/Status-aktiv-blue?style=flat-square)
+![Sprache](https://img.shields.io/badge/Sprache-JavaScript-yellow?style=flat-square)
+![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
+![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
 
 Diese Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
