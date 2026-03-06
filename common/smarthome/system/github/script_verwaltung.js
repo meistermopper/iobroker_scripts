@@ -1,19 +1,15 @@
 /**
  * =============================================================================
- * ioBroker GIT FULL-SYNC (HIGH-SPEED & EIGENSICHER)
+ * ioBroker GIT FULL-SYNC (BUGFIX-VERSION)
  * =============================================================================
- * Dieses Skript automatisiert den Abgleich zwischen ioBroker und GitHub.
- * Es ist darauf optimiert, Änderungen sofort aktiv zu schalten, ohne den 
- * laufenden Betrieb durch lange Wartezeiten zu stören.
+ * - Fix: Ungültige IDs (The id "." is invalid) durch Filterung leerer Zeilen
+ * - Fix: Nachrichten kommen nun auch bei "Alles aktuell"
+ * - Logik: Turbo-Sync mit Priorität auf den Pull
  * =============================================================================
  */
 
-// --- 1. KONFIGURATION & PFADE ---
-
-// Der physische Pfad auf deinem Server. Hier liegen die .js Dateien und der .git Ordner.
+// --- 1. KONFIGURATION ---
 const PATH_SCRIPTS = '/home/iobroker/scripts'; 
-
-// Datenpunkte für die Kommunikation mit der Außenwelt (Widget & VS Code)
 const GOTIFY_TOKEN_ID = '0_userdata.0.gotifytoken.iobroker';
 const GOTIFY_SERVER = 'mygotify.meistermopper.de';
 const STATE_STATUS = '0_userdata.0.git_sync_last_status';
@@ -21,29 +17,26 @@ const STATE_TRIGGER = '0_userdata.0.git_sync_trigger';
 
 /**
  * EIGENSICHERUNG:
- * Wir speichern den internen Namen dieses Skripts. 
- * Wenn Git meldet, dass sich DIESE Datei hier geändert hat, darf das Skript 
- * keinen Neustart-Impuls an sich selbst senden. 
- * Ohne diese Zeile würde das Skript bei jedem Update eine Endlosschleife starten.
+ * Verhindert, dass das Skript sich selbst neu startet, wenn es sich per Git 
+ * aktualisiert hat (Endlosschleifen-Schutz).
  */
 const SELF_NAME = 'common.smarthome.system.github.script_verwaltung';
 
 // --- 2. BENACHRICHTIGUNGS-LOGIK ---
 
 /**
- * Zentralisiert alle Meldungen. So musst du bei Änderungen an Telegram oder 
- * Gotify nur an einer Stelle im Code etwas anpassen.
+ * Schickt Updates an das VIS-Widget, Telegram und Gotify.
  */
 function sendSyncNotify(msg, priority = 1) {
-    // 1. Aktualisiert den Text in deinem ioBroker-Widget (VIS)
+    // Status im ioBroker-Datenpunkt setzen (für das VIS-Widget)
     setState(STATE_STATUS, msg, true);
     
-    // 2. Schickt eine Push-Nachricht via Telegram
+    // Telegram-Nachricht absetzen
     sendTo('telegram', 'send', { text: "🔄 Git-Sync: " + msg });
     
-    // 3. Schickt eine Nachricht an deinen Gotify-Server
+    // Gotify-Nachricht absetzen (falls Token vorhanden)
     const tokenState = getState(GOTIFY_TOKEN_ID);
-    if (tokenState && tokenState.val) {
+    if (tokenState && tokenState.val && tokenState.val.length > 5) {
         httpPost("https://" + GOTIFY_SERVER + "/message?token=" + tokenState.val, {
             title: "ioBroker Sync",
             message: msg,
@@ -52,142 +45,90 @@ function sendSyncNotify(msg, priority = 1) {
     }
 }
 
-// --- 3. DIE NEUSTART-LOGIK (DER "HERZSCHRITTMACHER") ---
+// --- 3. RESTART-LOGIK ---
 
-/**
- * Diese Funktion wird aufgerufen, sobald neue Dateien vom Server geladen wurden.
- */
 function restartAffectedScripts() {
-    // 'child_process' erlaubt uns, Linux-Befehle direkt auszuführen
     const exec = require('child_process').exec;
-    
-    /**
-     * LOGIK: Wir fragen Git nach den Namen der geänderten Dateien.
-     * HEAD@{1} ist der Stand VOR dem Pull, HEAD ist der Stand JETZT.
-     * git diff --name-only listet uns einfach nur die Dateinamen auf.
-     */
     const checkCmd = "cd " + PATH_SCRIPTS + " && git diff --name-only HEAD@{1} HEAD";
 
     exec(checkCmd, { timeout: 30000 }, (error, stdout) => {
         if (error) return;
 
-        // Wir zerteilen die Antwort von Git in eine Liste von Dateinamen
-        const changedFiles = stdout.split('\n');
+        // Wir filtern leere Zeilen heraus, um den Fehler "The id '.' is invalid" zu vermeiden
+        const changedFiles = stdout.split('\n').filter(line => line.trim() !== "");
         
         changedFiles.forEach(file => {
-            // Wir interessieren uns nur für .js Dateien
             if (file.endsWith('.js')) {
-                // Konvertierung: 'ordner/skript.js' -> 'ordner.skript'
+                // Pfad umwandeln: 'ordner/skript.js' -> 'ordner.skript'
                 let scriptId = file.replace('.js', '').replace(/\//g, '.');
                 
-                // PRÜFUNG: Wenn die Datei dieses Skript selbst ist -> Überspringen!
+                // Überspringen, wenn es dieses Verwaltungs-Skript selbst ist
                 if (scriptId === SELF_NAME) return; 
 
                 let fullPath = 'javascript.0.scriptEnabled.' + scriptId;
                 
-                // Wenn das Skript im ioBroker existiert, geben wir ihm einen Neustart-Impuls
                 if (existsState(fullPath)) {
-                    log("[Git-Sync] Neustart-Impuls für: " + scriptId);
-                    
-                    /**
-                     * Warum erst 'false' und dann 'true'?
-                     * Das erzwingt, dass der Javascript-Adapter den Code neu von der
-                     * Festplatte liest. Ohne das 'false' würde er einfach weiterlaufen.
-                     */
+                    log("[Git-Sync] Automatischer Neustart: " + scriptId);
                     setState(fullPath, false);
-                    setTimeout(() => setState(fullPath, true), 1000);
+                    setTimeout(() => setState(fullPath, true), 1500);
                 }
             }
         });
     });
 }
 
-// --- 4. DER HAUPTPROZESS (TURBO-SYNC) ---
+// --- 4. SYNC-LOGIK ---
 
-/**
- * Diese Funktion führt den eigentlichen Datenabgleich durch.
- */
 function runGitSync() {
     const exec = require('child_process').exec;
     const jetzt = new Date();
-    
-    /**
-     * ZEITFORMAT:
-     * 'hh' (kleingeschrieben!) ist wichtig für ioBroker, um die Stunden als
-     * Ziffern (00-23) auszugeben. Ein großes 'HH' würde oft nur Text liefern.
-     */
+    // 'hh' sorgt für die korrekte 24h-Anzeige als Ziffern
     const timestamp = formatDate(jetzt, "YYYY-MM-DD hh:mm");
     
     log("[Git-Sync] Synchronisation gestartet...", 'info');
 
-    /**
-     * SCHRITT 1: DER PULL (Daten holen)
-     * Das hat Priorität, damit dein System so schnell wie möglich auf dem neuesten Stand ist.
-     * -s recursive -X ours: Bei Konflikten gewinnt immer dein ioBroker-Stand.
-     */
+    // 1. SCHRITT: PULL (Daten vom Server holen)
     const pullCmd = "cd " + PATH_SCRIPTS + " && git pull origin main -s recursive -X ours";
     
     exec(pullCmd, { timeout: 60000 }, (error, stdout, stderr) => {
         if (error) {
-            log("[Git-Sync] FEHLER beim Pull: " + stderr, 'error');
+            log("[Git-Sync] Fehler beim Pull: " + stderr, 'error');
             sendSyncNotify("❌ Fehler beim Pull (" + timestamp + ")", 2);
             return;
         }
 
         const fullOutput = (stdout + stderr).toLowerCase();
-        
-        // Prüfen, ob Git tatsächlich Dateien heruntergeladen hat
         const hasChanges = fullOutput.includes("changed") || 
                            fullOutput.includes("updating") || 
                            fullOutput.includes("fast-forward");
 
         if (hasChanges) {
-            log("[Git-Sync] Neue Versionen gefunden. Starte sofortige Updates...");
-            
-            /**
-             * WARTEZEIT (1500ms): 
-             * Wir geben dem ioBroker-Adapter kurz Zeit, die neuen Dateien auf der
-             * Platte zu bemerken (Dateispiegelung), bevor wir den Neustart triggern.
-             */
+            log("[Git-Sync] Änderungen gefunden. Starte Neustarts...");
             setTimeout(restartAffectedScripts, 1500); 
             sendSyncNotify("✅ Update erfolgreich (" + timestamp + ")");
         } else {
             log("[Git-Sync] Alles aktuell.");
-            // Wir schreiben nur den Status, ohne Telegram zu spammen
-            setState(STATE_STATUS, "✅ Alles aktuell (" + timestamp + ")", true);
+            // REAKTIVIERT: Schickt nun auch bei "Alles aktuell" eine Bestätigung
+            sendSyncNotify("✅ Alles aktuell (" + timestamp + ")");
         }
 
-        /**
-         * SCHRITT 2: DER PUSH (Hintergrund)
-         * Das Hochladen deiner Änderungen zu GitHub dauert oft am längsten.
-         * Wir machen das in einem eigenen Prozess, damit Schritt 1 (Neustarts)
-         * nicht darauf warten muss. Das macht das Skript "gefühlt" viel schneller.
-         */
+        // 2. SCHRITT: PUSH (Eigene Änderungen im Hintergrund hochladen)
         const pushCmd = "cd " + PATH_SCRIPTS + " && git add . && (git commit -m 'Auto-Sync: " + timestamp + "' || true) && git push origin main";
-        
-        exec(pushCmd, { timeout: 60000 }, (pError, pStdout, pStderr) => {
-            if (pError) {
-                log("[Git-Sync] Push-Warnung (Hintergrund): " + pStderr, 'warn');
-            } else {
-                log("[Git-Sync] Hintergrund-Push abgeschlossen.");
-            }
-        });
+        exec(pushCmd, { timeout: 60000 });
     });
 }
 
-// --- 5. TRIGGER & ZEITPLÄNE ---
+// --- 5. TRIGGER ---
 
-// Automatischer Lauf jede Nacht um 00:07 Uhr [cite: 2026-02-16]
+// Nacht-Sync um 00:07 Uhr
 schedule("07 0 * * *", runGitSync);
 
-// Manueller Start (z.B. durch deinen VS Code Shortcut Strg+Alt+S)
+// Manueller Start (VS Code)
 on({id: STATE_TRIGGER, change: "any", val: true}, () => {
     log("[Git-Sync] Manueller Start angefordert...");
     runGitSync();
-    
-    // Den Button-Datenpunkt nach 1 Sekunde wieder auf 'false' setzen
     setTimeout(() => setState(STATE_TRIGGER, false, true), 1000);
 });
 
-// SYSTEM-FIX: Hält das Skript im Arbeitsspeicher des ioBrokers aktiv
-on({id: "javascript.0.scriptEnabled." + name, change: "ne"}, () => {});
+// Fix für den Skript-Dauerlauf (Verwendet nun einen festen Namen statt der Variable 'name')
+on({id: "javascript.0.scriptEnabled." + SELF_NAME, change: "ne"}, () => {});
