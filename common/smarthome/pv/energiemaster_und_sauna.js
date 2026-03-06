@@ -36,6 +36,8 @@ const IDS = {
     wbLimit:  "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.configuration.evb_MaximumStationCurrent"
 };
 
+const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
+
 // Interne Speicher für Berechnungen
 let pvP = 0, netP = 0, batP = 0, soc = 0, sMax = 0;
 let tVerbrauchWh = 0, tLadungWh = 0, tNetzWh = 0, lastTs = Date.now();
@@ -54,8 +56,8 @@ async function initSystem() {
         { id: PATH_PV + "Tagesladung", unit: "Wh", type: "number" },
         { id: PATH_PV + "TagesNetzbezug", unit: "Wh", type: "number" },
         { id: PATH_PV + "lade_kwh", unit: "kWh", type: "number" },
-        { id: PATH_PV + "Restladezeit", unit: "", type: "string" },
-        { id: PATH_PV + "Restladezeit_final", unit: "", type: "string" },
+        { id: PATH_PV + "Restentladezeit", unit: "h", type: "string" },
+        { id: PATH_PV + "Entladung_final_Uhrzeit", unit: "", type: "string" },
         { id: PATH_PV + "Wallbox_Freigabe", unit: "", type: "boolean" }
     ];
 
@@ -83,15 +85,16 @@ initSystem();
  */
 function notify(msg) {
     sendTo('telegram', 'send', { text: msg });
-    let token = getState("0_userdata.0.gotifytoken.iobroker").val;
-    if (token) {
-        exec(`curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=Energiemaster" -F "message=${msg}" -F "priority=1"`);
+    if (gotifyToken) {
+        exec(`curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=Energiemaster" -F "message=${msg}" -F "priority=1"`);
     }
 }
 
 /**
  * Berechnet die Last im Haus abzüglich bekannter Großverbraucher.
  * Nötig, um den Saunaofen (taktet) von anderen Lasten zu unterscheiden.
+ * HINWEIS: Für eine bessere Performance wäre es optimal, für die gP-Geräte
+ * 'on'-Trigger zu verwenden, anstatt 'getState' wiederholt aufzurufen.
  */
 function getBereinigteLast() {
     let hausV = Number(getState(PATH_PV + "Hausverbrauch").val) || 0;
@@ -132,15 +135,15 @@ function runUpdate() {
 
     // Batterie-Metriken (Wie lange dauert das Laden noch?)
     let curKwh = (sMax * soc) / 100;
-    let fUm = "n. n.", rDurationDisplay = "---";
+    let entladeEndeUhrzeit = "n. n.", entladeDauerAnzeige = "---";
 
-    if (batP > 50) { // Wenn Batterie geladen wird (Leistung > 50W)
-        let rSec = ((sMax - curKwh) / (batP / 1000)) * 3600;
+    if (batP > 50) { // Wenn Batterie entladen wird (Leistung > 50W)
+        let rSec = (curKwh / (batP / 1000)) * 3600; // Rest-Energie / Entladeleistung
         let rMinTotal = rSec / 60;
         let hrs = Math.floor(rMinTotal / 60);
         let mins = Math.floor(rMinTotal % 60);
-        rDurationDisplay = (hrs < 10 ? "0" + hrs : hrs) + ":" + (mins < 10 ? "0" + mins : mins);
-        let t = new Date(); t.setSeconds(t.getSeconds() + rSec); fUm = formatDate(t, "hh:mm");
+        entladeDauerAnzeige = (hrs < 10 ? "0" + hrs : hrs) + ":" + (mins < 10 ? "0" + mins : mins);
+        let t = new Date(); t.setSeconds(t.getSeconds() + rSec); entladeEndeUhrzeit = formatDate(t, "hh:mm");
     }
 
     // Autarkie-Berechnung (Was kommt nicht aus dem Netz?)
@@ -152,8 +155,8 @@ function runUpdate() {
     setState(PATH_PV + "Einspeisung", Math.abs(Math.min(0, Math.round(netP))), true);
     setState(PATH_PV + "Autarkie", aut, true);
     setState(PATH_PV + "lade_kwh", parseFloat(curKwh.toFixed(1)), true);
-    setState(PATH_PV + "Restladezeit", rDurationDisplay, true); 
-    setState(PATH_PV + "Restladezeit_final", fUm, true);
+    setState(PATH_PV + "Restentladezeit", entladeDauerAnzeige, true); 
+    setState(PATH_PV + "Entladung_final_Uhrzeit", entladeEndeUhrzeit, true);
 
     // Sommer-Strategie (Flag für VIS)
     const d = new Date();
@@ -233,10 +236,10 @@ on({id: IDS.minSocRead, change: "ne"}, function(obj) {
 
     // SPAM-SCHUTZ: Während der Sauna nur loggen, kein Telegram senden
     if (getState(IDS.saunaLogik).val === true) {
-        console.log(`Sauna-Modus: Telegram unterdrückt. (Wert: ${newVal}%)`);
+        console.log(`[Min-SoC Watchdog] Sauna-Modus aktiv, Änderung auf ${newVal}% wird ignoriert.`);
     } else {
         notify(text);
-        console.warn(`Battery-Log: ${text}`);
+        console.warn(`[Min-SoC Watchdog] ${text}`);
     }
 });
 
