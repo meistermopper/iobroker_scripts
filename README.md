@@ -1,9 +1,13 @@
 # ioBroker Script-Sammlung
 
-Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für **ioBroker**. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung (PV & E-Auto) bis hin zur raumspezifischen Steuerung.
+![GitHub last commit](https://img.shields.io/github/last-commit/meistermopper/iobroker_scripts?style=flat-square&color=blue)
+![GitHub top language](https://img.shields.io/github/languages/top/meistermopper/iobroker_scripts?style=flat-square&color=yellow)
+![GitHub repo size](https://img.shields.io/github/repo-size/meistermopper/iobroker_scripts?style=flat-square)
+![ioBroker-Scripts](https://img.shields.io/badge/ioBroker-Scripts-orange?style=flat-square)
+
+Diese Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
 ## 📂 Struktur
-
 Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 
 ### ⚡ Energie & Mobilität (`common/smarthome/`)
@@ -17,57 +21,38 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 * **Haushalt**: Überwachung von Haushaltsgeräten (Waschmaschine, Trockner) und Fenstersensoren [cite: 2026-02-23].
 
 ### 🛠️ System & Verwaltung
-* **GitHub-Sync**: Automatische Synchronisation dieses Verzeichnisses mit GitHub zur Versionskontrolle [cite: 2026-02-23].
 * **Monitoring**: Überwachung von USV-Status, Proxmox-Servern, FritzBox, Zigbee-Verfügbarkeit und Pi-hole [cite: 2026-02-23].
 * **Telegram**: Zentrales Menü und Benachrichtigungsdienst für Statusmeldungen [cite: 2026-02-23].
 
-## 🚀 Installation & Sync
+---
 
-Die Skripte werden automatisch zwischen dem ioBroker-Server und diesem Repository synchronisiert.
+## 🚀 Workflow & Synchronisation
+Um Instabilitäten auf dem ioBroker-Server zu vermeiden, wurde die Versionsverwaltung vom Server entkoppelt.
 
-1. **Pfad auf dem Server**: `/home/iobroker/scripts/`
-2. **Automatischer Sync**: Ein Cron-Job führt nachts (`00:07 Uhr`) das Skript `script_verwaltung.js` aus, um lokale Änderungen zu sichern [cite: 2026-02-23].
-3. **Entwicklung**: Änderungen können bequem via VS Code durchgeführt und per Git gepusht werden.
+* **Source of Truth**: Die primäre Entwicklungsumgebung ist **VS Code** auf dem lokalen Rechner.
+* **Git-Status auf dem Server**: Das Verzeichnis `/home/iobroker/scripts/` auf dem Server enthält **kein** Git-Repository mehr. Dies verhindert Konflikte mit dem ioBroker-Dateisystem.
+* **Backup & Cloud**: Der Push zu GitHub erfolgt ausschließlich manuell über VS Code, sobald ein Skript einen stabilen Zustand erreicht hat.
+
+### Tägliche Arbeit
+1. **Editieren**: Änderungen erfolgen direkt in VS Code.
+2. **Deployment**: Durch die Spiegelung des JavaScript-Adapters (Pfad: `/home/iobroker/scripts/`) sind Änderungen sofort im ioBroker aktiv [cite: 2026-02-23].
+3. **Sicherung**: 
+   * `Commit`: Änderungen lokal in VS Code beschreiben und speichern.
+   * `Push`: Stand zu GitHub hochladen (ersetzt den alten nächtlichen Cron-Job).
+
+---
 
 ## ⚙️ Voraussetzungen
-
-* ioBroker mit installiertem **JavaScript-Adapter**.
-* Dateispiegelung im JavaScript-Adapter ist auf `/home/iobroker/scripts` konfiguriert [cite: 2026-02-23].
-* Git-Client auf dem Host-System.
-
----
-**Hinweis:** Dies ist ein privates Projekt. Die Skripte sind individuell auf meine Hardware (Kia, Solaranlage, Proxmox etc.) angepasst und dienen primär als Backup und Referenz.
+* ioBroker mit installiertem JavaScript-Adapter.
+* Dateispiegelung im JavaScript-Adapter konfiguriert [cite: 2026-02-23].
+* Git-Client & GitLens in VS Code zur Verwaltung der Historie.
 
 ---
 
-## Annex: Gold-Standard der Repository-Verwaltung
+## 📜 Annex: Repository-Standard
+1. **Dateiberechtigungen**: Alle Dateien auf dem Server gehören dem User `iobroker`.
+2. **Sauberkeit**: Der Ordner `common/beispiele/` wird durch die `.gitignore` ignoriert.
+3. **Source of Truth**: Bei Unstimmigkeiten ist immer der Stand in VS Code bzw. auf GitHub maßgeblich.
 
-Um die Stabilität des Systems und die Synchronität zwischen ioBroker, GitHub und der lokalen Entwicklungsumgebung (VS Code) zu gewährleisten, gelten folgende Standards:
-
-### 1. Verzeichnisstruktur & Sauberkeit
-Das Arbeitsverzeichnis auf dem Server ist `/home/iobroker/scripts/`. 
-* **Inhalt:** Nur die Ordner `common/` (produktive Skripte), `.git/` (Versionsverwaltung), die Datei `.gitignore` (Filter) und diese `README.md` sind zulässig.
-* **Sauberkeit:** Keine leeren Verzeichnisse oder Dubletten durch unterschiedliche Groß-/Kleinschreibung (Case-Sensitivity) auf der Root-Ebene.
-
-### 2. Berechtigungskonzept (Owner-Prinzip)
-Alle Dateien und Ordner innerhalb des Repositorys gehören zwingend dem User **`iobroker`**.
-* **Änderungen:** Manuelle Dateioperationen oder Git-Befehle auf der Konsole werden konsequent mit `sudo -u iobroker` ausgeführt.
-* **Ziel:** Vermeidung von Berechtigungsfehlern (`Permission denied`) beim automatischen nächtlichen Backup-Lauf oder durch den JavaScript-Adapter.
-
-### 3. Zentraler Workflow (Der `gitsync`-Alias)
-Für die tägliche Arbeit wurde ein Alias definiert, der alle notwendigen Schritte bündelt:
-`gitsync` führt folgende Kette als User `iobroker` aus:
-1. `git pull` (Abgleich mit GitHub)
-2. `git add .` (Index aktualisieren)
-3. `git commit -m "Auto-Sync: [Zeitstempel]"` (Änderungen festschreiben)
-4. `git push` (Sicherung in die Cloud)
-5. `git status` (Abschlusskontrolle)
-
-### 4. Entwicklung mit VS Code (Windows)
-* Die lokale Bearbeitung erfolgt im Windows-Dateisystem.
-* Vor und nach jeder Entwicklungssitzung wird ein `git pull` bzw. `git push` im VS Code Terminal durchgeführt.
-* Die Datei `.gitignore` filtert aktiv Windows-spezifische Systemdateien (`Thumbs.db`, `desktop.ini`) und lokale Editor-Einstellungen (`.vscode/`) heraus.
-
-### 5. Fehlerprävention & Monitoring
-* **Logs:** Temporäre `ENOENT`-Fehler im ioBroker-Log während eines Git-Commits sind systembedingt (Race Condition des Watchers im `.git`-Verzeichnis) und können ignoriert werden.
-* **Konsistenz:** Bei Unstimmigkeiten zwischen Server und Lokalversion ist GitHub als "Source of Truth" zu betrachten.
+---
+Hinweis: Dies ist ein privates Projekt. Die Skripte sind individuell auf meine Hardware angepasst und dienen primär als Backup und Referenz.
