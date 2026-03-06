@@ -1,4 +1,4 @@
-// --- KONFIGURATION ---
+// --- KONFIGURATION der DAtenpunkte---
 const ID_HUMIDITY = 'alias.0.bad_oben.klima.humidity';
 const ID_TEMP_AKTUELL = 'alias.0.bad_oben.klima.temperature';
 const ID_SETPOINT = 'alias.0.bad_oben.heizung.SET_POINT_TEMPERATURE';
