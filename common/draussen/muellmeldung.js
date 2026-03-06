@@ -1,28 +1,57 @@
+/**
+ * =============================================================================
+ * MÜLL-ERINNERUNG v2.0
+ * =============================================================================
+ * ZWECK: Sendet am Vorabend eine Benachrichtigung, wenn Müll abgeholt wird.
+ * VERBESSERUNGEN:
+ * - Konstanten für alle IDs zur besseren Wartbarkeit.
+ * - Gekapselte notify-Funktion für sauberen Code.
+ * =============================================================================
+ */
+
+// --- 1. KONFIGURATION ---
+const CONFIG = {
+    daysLeft: 'trashschedule.0.next.daysLeft',
+    trashTypes: 'trashschedule.0.next.typesText',
+    gotifyToken: '0_userdata.0.gotifytoken.iobroker',
+    gotifyUrl: 'https://mygotify.meistermopper.de/message'
+};
+
+// --- 2. HILFSFUNKTIONEN ---
+
+/**
+ * Sendet eine Benachrichtigung an Telegram und Gotify.
+ * @param {string} message - Die zu sendende Nachricht.
+ */
+function notify(message) {
+    // 1. An Telegram senden
+    sendTo('telegram.0', 'send', { text: `🚮 ${message}` });
+
+    // 2. An Gotify senden
+    const token = getState(CONFIG.gotifyToken).val;
+    if (token) {
+        exec(`curl "${CONFIG.gotifyUrl}?token=${token}" -F "title=ioBroker: Müll" -F "message=🚮 ${message}" -F "priority=5"`);
+    }
+}
+
+// --- 3. HAUPTLOGIK ---
+
 // Trigger: Jeden Sonntag bis Freitag um 18:00 Uhr
 schedule("0 18 * * 0-5", async () => {
-    const daysLeft = getState('trashschedule.0.next.daysLeft').val;
+    const daysLeft = getState(CONFIG.daysLeft).val;
     
     if (daysLeft === 1) {
-        const muellSorte = getState('trashschedule.0.next.typesText').val;
+        const muellSorte = getState(CONFIG.trashTypes).val;
         const muellText = `Morgen wird ${muellSorte} abgeholt.`;
-        const gotifyToken = getState('0_userdata.0.gotifytoken.iobroker').val;
 
-        // 1. Telegram & Gotify (Funktioniert bereits)
-        sendTo('telegram.0', 'send', { text: `🚮 ${muellText}` });
-        if (gotifyToken) {
-            exec(`curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=ioBroker: Müll" -F "message=🚮 ${muellText}" -F "priority=5"`);
-        }
+        // Benachrichtigungen (Text & Sprache) senden
+        notify(muellText);
 
-        // 2. Sprachausgabe (Jetzt identisch zum Fenster-Skript)
-        //console.log(`Müll-Ansage wird gestartet: ${muellText}`);
-        
-        // Wir probieren erst deinen Watchdog
+        // Sprachausgabe mit Fallback
         if (typeof googleWatchdogAnnounce === 'function') {
             await googleWatchdogAnnounce(muellText, 40);
         } else {
-            // FALLBACK: Jetzt exakt wie im Fenster-Skript ("sayit" ohne .0)
-            sendTo("sayit", "say", { text: muellText }); 
-            // Optional: Wenn du Volume brauchst, hänge es an: { text: muellText, volume: 40 }
+            sendTo("sayit", "say", { text: muellText, volume: 40 });
         }
     }
 });
