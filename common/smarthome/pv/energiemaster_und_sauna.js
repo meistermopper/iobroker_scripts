@@ -308,7 +308,7 @@ function checkSaunaSafety(load) {
         // Entwarnung: Tür zu oder Ofen hat abgeschaltet (Thermostat)
         clearTimeout(tSaunaSafety);
         tSaunaSafety = null;
-        console.log("[Sauna-Safety] Situation bereinigt (Tür zu oder Heizung aus). Timer gestoppt.");
+        console.log("Sauna-Safety: Situation bereinigt (Tür zu oder Heizung aus), Timer gestoppt");
     }
 }
 
