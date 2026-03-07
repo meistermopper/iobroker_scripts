@@ -1,6 +1,5 @@
 /**
  * =============================================================================
- * UNIVERSAL MASTER v2.6.5 - THE ENERGY GUARDIAN
  * UNIVERSAL MASTER v2.7 - THE ENERGY GUARDIAN
  * =============================================================================
  * ZWECK: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox.
