@@ -72,7 +72,7 @@ function dryNotify(text) {
 // --- 4. TAGES-RESET ---
 schedule("0 0 * * *", () => {
     setState(ID_TOTAL_T, 0, true);
-    console.log("[Trockner] Statistik-Reset.");
+    //console.log("[Trockner] Statistik-Reset.");
 });
 
 // --- 5. HAUPTLOGIK ---

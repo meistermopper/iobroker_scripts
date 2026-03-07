@@ -65,7 +65,7 @@ function washNotify(text) {
 // --- 4. TAGES-RESET ---
 schedule("0 0 * * *", () => {
     setState(ID_TOTAL, 0, true);
-    console.log("[Waschmaschine] Statistik-Reset für neuen Tag.");
+    //console.log("[Waschmaschine] Statistik-Reset für neuen Tag.");
 });
 
 // --- 5. HAUPTLOGIK ---
