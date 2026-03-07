@@ -84,7 +84,7 @@ async function initSystem() {
     tVerbrauchWh = getState(PATH_PV + "Tagesverbrauch").val || 0;
     tLadungWh = getState(PATH_PV + "Tagesladung").val || 0;
     tNetzWh = getState(PATH_PV + "TagesNetzbezug").val || 0;
-    console.log("[Master] v2.6.5 (Integrated & Anti-Jitter) aktiv.");
+    console.log("Master v2.6.5 (Integrated & Anti-Jitter) aktiv");
 }
 initSystem();
 
