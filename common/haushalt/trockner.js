@@ -44,7 +44,7 @@ async function initTrocknerSystem() {
             type: 'boolean', name: 'Trockner läuft (VIS)', role: 'indicator.working' 
         });
     }
-    console.log("[Trockner] Initialisierung v2.8 abgeschlossen.");
+    console.log("Trockner: Initialisierung v2.8 abgeschlossen");
 }
 initTrocknerSystem();
 
@@ -66,7 +66,7 @@ function dryNotify(text) {
         sendTo("sayit", "say", { text: voiceMsg });
     }
     
-    console.log("[Trockner] Benachrichtigungen versendet.");
+    console.log("Trockner: Benachrichtigungen versendet");
 }
 
 // --- 4. TAGES-RESET ---
@@ -88,7 +88,7 @@ on({ id: ID_POWER_T, change: 'ne' }, (obj) => {
         startEnergyT = getState(ID_ENERGY_T).val; 
         
         setState(ID_VIS_T, true, true);
-        console.log("[Trockner] Trocknung gestartet.");
+        console.log("Trockner: Trocknung gestartet");
     }
 
     if (watt < END_WATT_T && isRunningT && !timerEndT) {

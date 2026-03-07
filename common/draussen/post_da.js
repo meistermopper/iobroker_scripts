@@ -68,7 +68,7 @@ on({ id: POSTKASTEN_STATE_ID, change: 'ne' }, async (obj) => {
     if (!Sperre && compareTime('08:00', '20:00', 'between', null)) {
         Sperre = true; 
         
-        console.log('[Postkasten] Ereignis erkannt: Starte Ansage & VIS-Update.');
+        console.log('Postkasten: Ereignis erkannt, starte Ansage & VIS-Update');
         
         // 1. Status in VIS auf "voll" setzen (Das hat in V2.4.1 gefehlt!)
         setState(POSTKASTEN_VIS_ID, true);
@@ -88,7 +88,7 @@ on({ id: POSTKASTEN_STATE_ID, change: 'ne' }, async (obj) => {
     else if (!Sperre_stumm) {
         Sperre_stumm = true;
         
-        console.log('[Postkasten] Stummes Ereignis: Nur VIS-Update & Textnachricht.');
+        console.log('Postkasten: Stummes Ereignis, nur VIS-Update & Textnachricht');
 
         // Status in VIS auf "voll" setzen
         setState(POSTKASTEN_VIS_ID, true);
@@ -114,6 +114,6 @@ on({ id: POSTKASTEN_VIS_ID, change: 'ne' }, async (obj) => {
         sendTo('telegram.0', 'send', { text: msgScharf });
         exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=Postkasten" -F "message=${msgScharf}" -F "priority=1"`);
         
-        console.log('[Postkasten] System manuell zurückgesetzt.');
+        console.log('Postkasten: System manuell zurückgesetzt');
     }
 });

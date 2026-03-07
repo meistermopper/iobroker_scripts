@@ -48,7 +48,7 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
                     const essePower = getState(DUNSTABZUG_POWER_ID).val;
                     
                     if (essePower > DUNSTABZUG_THRESHOLD) {
-                        console.log(`[Fenster] Küche offen, aber Dunstabzug läuft (${essePower}W). Warnung unterdrückt.`);
+                        console.log(`Fenster: Küche offen, aber Dunstabzug läuft (${essePower}W), Warnung unterdrückt`);
                         delete timeouts[id];
                         return; // Abbruch: Keine Meldung, da gekocht wird
                     }
@@ -64,8 +64,8 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
                     artikel = 'Das';
                 }
 
-                const meldung = `${nameKlartext} steht seit 30 Minuten offen und sollte geschlossen werden. Die Außentemperatur beträgt ${aktuelleTemp} Grad Celsius.`;
-                const volltext = `${artikel} ${meldung}`;
+                const meldung = `${nameKlartext} steht seit 30 Minuten offen und sollte geschlossen werden, Außentemperatur ${aktuelleTemp} Grad`;
+                const volltext = `${artikel} ${nameKlartext} steht seit 30 Minuten offen und sollte geschlossen werden. Die Außentemperatur beträgt ${aktuelleTemp} Grad Celsius`;
 
                 // --- BENACHRICHTIGUNG ---
                 
@@ -75,12 +75,12 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
                 // B) SayIt (NUR zwischen 08:00 und 20:00 Uhr)
                 if (compareTime('08:00', '20:00', 'between')) {
                     sendTo("sayit", "say", { text: meldung });
-                    console.log(`[Fenster] Sprachausgabe gesendet: ${nameKlartext}`);
+                    console.log(`Fenster: Sprachausgabe gesendet für ${nameKlartext}`);
                 } else {
-                    console.log(`[Fenster] Sprachausgabe unterdrückt (Nachtzeit): ${nameKlartext}`);
+                    console.log(`Fenster: Sprachausgabe unterdrückt (Nachtzeit) für ${nameKlartext}`);
                 }
 
-                console.warn(`Lüftungswarnung gesendet: ${volltext}`);
+                console.warn(`Lüftungswarnung gesendet: ${nameKlartext} steht offen`);
                 
                 delete timeouts[id]; // Timer-Referenz nach Ausführung löschen
             }, WARTEZEIT_MS); 

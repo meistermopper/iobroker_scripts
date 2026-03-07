@@ -24,7 +24,7 @@ const lichtStatus     = !!getState(ID_LICHT).val;   // Aktuellen Lichtwert holen
 // Nur schalten, wenn der Ist-Zustand des Lichts nicht zum Melder passt
 if (lichtStatus !== aktuellerStatus) {
     setState(ID_LICHT, aktuellerStatus);
-    console.log(`[Garderobe] Initial-Sync: Licht auf ${aktuellerStatus ? 'AN' : 'AUS'} gesetzt.`);
+    console.log(`Garderobe: Initial-Sync, Licht auf ${aktuellerStatus ? 'AN' : 'AUS'} gesetzt`);
 }
 
 /**

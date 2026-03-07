@@ -60,14 +60,14 @@ function fetchSolarData() {
 
     httpGet(url, { timeout: 15000 }, (error, response) => {
         if (error) {
-            console.warn('[Solar-Prognose] API-Fehler: ' + error);
+            console.warn('Solar-Prognose: API-Fehler - ' + error);
             return;
         }
         
         try {
             const obj = JSON.parse(response.data);
             if (!obj || !obj.data || (obj.status && obj.status !== 0)) {
-                console.warn('[Solar-Prognose] API liefert keine gültigen Daten.');
+                console.warn('Solar-Prognose: API liefert keine gültigen Daten');
                 return;
             }
 
@@ -81,7 +81,7 @@ function fetchSolarData() {
             processDayData('morgen', splitData.morgen);
 
         } catch (e) {
-            console.error('[Solar-Prognose] Fehler beim Parsen: ' + e);
+            console.error('Solar-Prognose: Fehler beim Parsen - ' + e);
         }
     });
 }
@@ -91,7 +91,7 @@ function fetchSolarData() {
  */
 function processDayData(dayName, dataArray) {
     if (!dataArray || dataArray.length === 0) {
-        console.log(`[Solar-Prognose] Hinweis: Keine Daten für '${dayName}' geliefert.`);
+        console.log(`Solar-Prognose: Hinweis, keine Daten für '${dayName}' geliefert`);
         return;
     }
 

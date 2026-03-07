@@ -58,7 +58,7 @@ async function initDP() {
             await createStateAsync(fullPath, s[1], { name: s[3], type: s[2], role: 'state' });
         }
     }
-    console.log("[USV-Wartung] Alle 11 Datenpunkte unter 0_userdata.0 erfolgreich initialisiert.");
+    console.log("USV-Wartung: Alle 11 Datenpunkte unter 0_userdata.0 erfolgreich initialisiert");
 }
 
 // --- 3. KOMMUNIKATIONS-FUNKTIONEN ---
@@ -87,7 +87,7 @@ function speak(text) {
         sendTo(instance, "say", { text: `${vol}; ${text}`, volume: vol });
     });
     
-    console.log(`[USV-Audio] Broadcast an ${sayitInstances.length} Google-Geräte gesendet.`);
+    console.log(`USV-Audio: Broadcast an ${sayitInstances.length} Google-Geräte gesendet`);
 }
 
 // --- 4. WARTUNGS-AKTIONEN ---
@@ -99,7 +99,7 @@ async function startWartung(isManual = false) {
     setState(`${dpPrefix}.Wartung_eingeleitet`, true);
     lastSpokenSoc = -1; // Reset für sofortige erste Ansage
     setState(sonoffPower, false); // Trennung vom Netz
-    notify(isManual ? 'Manuelle Wartung gestartet.' : 'Automatische Wartung gestartet.');
+    notify(isManual ? 'Manuelle Wartung gestartet' : 'Automatische Wartung gestartet');
 }
 
 /**
@@ -112,7 +112,7 @@ async function stopWartung(reason = '') {
         setState(`${dpPrefix}.Jetzt_Warten`, false);
     }, 15000);
     const soc = getState(`${upsNutPrefix}.battery.charge`).val;
-    notify(`Wartung beendet (${reason}). Stand: ${soc}%.`);
+    notify(`Wartung beendet (${reason}), Stand: ${soc}%`);
 }
 
 // --- 5. TRIGGER-LOGIK ---
@@ -146,13 +146,13 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: 'ne' }, async (obj) => {
             const runtime = Math.floor(getState(`${dpPrefix}.Restlaufzeit_in_Minuten`).val);
             
             // Textbaustein nach deinen VIS-Einstellungen (Minuten vs Prozent)
-            let text = isWartung ? 'Wartung im Büro läuft. ' : 'Warnung. Stromausfall im Büro. ';
+            let text = isWartung ? 'Wartung im Büro läuft, ' : 'Warnung, Stromausfall im Büro, ';
             
             const speakMin = getState(`${dpPrefix}.Speak_Minuten`).val;
             const speakPct = getState(`${dpPrefix}.Speak_Prozent`).val;
 
-            if (speakMin) text += `Restlaufzeit ${runtime} Minuten. `;
-            if (speakPct) text += `Akkustand ${soc} Prozent.`;
+            if (speakMin) text += `Restlaufzeit ${runtime} Minuten, `;
+            if (speakPct) text += `Akkustand ${soc} Prozent`;
             
             /**
              * DER WIFI-STABILISATOR:
@@ -162,7 +162,7 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: 'ne' }, async (obj) => {
             if (speakTimeout) clearTimeout(speakTimeout); 
             
             if (soc >= 98) { 
-                console.log("[USV-Audio] Warte 10s auf WLAN-Stabilität vor der ersten Ansage...");
+                console.log("USV-Audio: Warte 10s auf WLAN-Stabilität vor der ersten Ansage");
                 speakTimeout = setTimeout(() => { speak(text); }, wifiStabilizeDelay);
             } else {
                 speak(text);
@@ -178,11 +178,11 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: 'ne' }, async (obj) => {
 on({ id: `${upsNutPrefix}.status.onbattery`, change: 'ne' }, async (obj) => {
     const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`).val;
     if (obj.state.val === true && !isWartung) {
-        notify('⚠️ WARNUNG: Stromversorgung unterbrochen!', 8);
+        notify('WARNUNG: Stromversorgung unterbrochen', 8);
     } else if (obj.state.val === false) {
         if (speakTimeout) clearTimeout(speakTimeout);
         lastSpokenSoc = -1; // Reset für den nächsten Vorfall
-        if (!isWartung) notify('✅ Netzspannung wiederhergestellt.');
+        if (!isWartung) notify('Netzspannung wiederhergestellt');
     }
 });
 
@@ -209,7 +209,7 @@ on({ id: `${dpPrefix}.Jetzt_Warten`, change: 'ne', val: true }, () => {
  * Verhindert, dass die USV auf Batterie bleibt, wenn du das Skript stoppst.
  */
 onStop(function (callback) {
-    console.warn("[USV-Safety] Skript-Stopp! Erzwinge Netzbetrieb zur Sicherheit...");
+    console.warn("USV-Safety: Skript-Stopp, erzwinge Netzbetrieb zur Sicherheit");
     setState(sonoffPower, true);
     setTimeout(callback, 500); 
 });

@@ -58,15 +58,15 @@ function notify(title, msg, priority = 5) {
         const url = `https://mygotify.meistermopper.de/message?token=${token}`;
         
         httpPost(url, { title: title, message: msg, priority: finalePrio }, (err) => {
-            if (err) console.error(`[UniFi-Guard] Gotify Fehler: ${err}`);
+            if (err) console.error(`UniFi-Guard: Gotify Fehler - ${err}`);
         });
     }
 
     // Konsolen-Log zur Nachverfolgung
     if (istRuhezeit) {
-        console.log(`[UniFi-Guard] (STUMM) ${title}: ${msg}`);
+        console.log(`UniFi-Guard (STUMM): ${title} - ${msg.replace(/\n|`|\*|✅|🌐|⚠️/g, '')}`);
     } else {
-        console.warn(`[UniFi-Guard] (ALARM) ${title}: ${msg}`);
+        console.warn(`UniFi-Guard (ALARM): ${title} - ${msg.replace(/\n|`|\*|✅|🌐|⚠️/g, '')}`);
     }
 }
 
@@ -86,7 +86,7 @@ on({ id: CONFIG.dpWanIp, change: 'ne' }, async (obj) => {
     if (neueIp === CONFIG.ipFailover) {
         GUARD.startTime = Date.now();
         GUARD.failoverActive = true;
-        notify('🌐 Internet-Failover', 'Hauptleitung ausgefallen! Backup-LTE ist jetzt aktiv.', 8);
+        notify('Internet-Failover', 'Hauptleitung ausgefallen, Backup-LTE ist jetzt aktiv', 8);
         return;
     }
 
@@ -97,12 +97,12 @@ on({ id: CONFIG.dpWanIp, change: 'ne' }, async (obj) => {
         const ddnssKey = getState(CONFIG.dpDdnssKey).val;
         if (ddnssKey) {
             httpGet(`https://www.ddnss.de/upd.php?key=${ddnssKey}&host=all`, (err) => {
-                if (!err) console.log("[UniFi-Guard] DDNS Update gesendet.");
+                if (!err) console.log("UniFi-Guard: DDNS Update gesendet");
             });
         }
 
-        let title = '🌐 IP-Wechsel';
-        let msg = `Neue WAN-IP: \`${neueIp}\`\nDDNS wurde aktualisiert.`;
+        let title = 'IP-Wechsel';
+        let msg = `Neue WAN-IP: ${neueIp}, DDNS wurde aktualisiert`;
 
         // Dauer berechnen, falls wir aus einem Failover kommen
         if (GUARD.failoverActive) {
@@ -111,8 +111,8 @@ on({ id: CONFIG.dpWanIp, change: 'ne' }, async (obj) => {
                 ? `${Math.round(dauerMs / 1000)} Sekunden` 
                 : `${(dauerMs / 60000).toFixed(1)} Minuten`;
             
-            title = '✅ Internet stabil';
-            msg = `Die Hauptleitung ist nach ${dauerText} wieder da.\nNeue IP: \`${neueIp}\``;
+            title = 'Internet stabil';
+            msg = `Die Hauptleitung ist nach ${dauerText} wieder da, neue IP: ${neueIp}`;
             GUARD.failoverActive = false;
         }
 
@@ -136,17 +136,17 @@ schedule(CONFIG.checkInterval, async () => {
         // Alarm auslösen bei Diskrepanz (außer während absichtlichem Failover)
         if (echteIp !== unifiIp && unifiIp !== CONFIG.ipFailover) {
             if (!GUARD.discrepancyAlarm) {
-                const warnung = `⚠️ IP-Abgleich fehlerhaft!\n` +
-                                `UniFi meldet: ${unifiIp}\n` +
-                                `Amazon sieht: ${echteIp}\n` +
-                                `Prüfe die DynDNS-Funktion!`;
+                const warnung = `IP-Abgleich fehlerhaft! ` +
+                                `UniFi meldet: ${unifiIp}, ` +
+                                `Amazon sieht: ${echteIp}, ` +
+                                `Prüfe die DynDNS-Funktion`;
                 notify('UniFi Guard', warnung, 7);
                 GUARD.discrepancyAlarm = true;
             }
         } 
         // Entwarnung, wenn alles wieder passt
         else if (GUARD.discrepancyAlarm) {
-            notify('UniFi Guard', '✅ IP-Abgleich wieder korrekt.', 5);
+            notify('UniFi Guard', 'IP-Abgleich wieder korrekt', 5);
             GUARD.discrepancyAlarm = false;
         }
     });

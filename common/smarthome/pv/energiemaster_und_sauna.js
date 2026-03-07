@@ -88,8 +88,7 @@ async function initSystem() {
     tVerbrauchWh = getState(PATH_PV + "Tagesverbrauch").val || 0;
     tLadungWh = getState(PATH_PV + "Tagesladung").val || 0;
     tNetzWh = getState(PATH_PV + "TagesNetzbezug").val || 0;
-    console.log("Master v2.6.5 (Integrated & Anti-Jitter) aktiv");
-    console.log("Master v2.7 (Sauna-Safety) aktiv");
+    console.log("Master v2.7 (Sauna-Safety) aktiv"); // Doppelten Log-Eintrag entfernt
 }
 initSystem();
 
@@ -196,7 +195,7 @@ function runUpdate() {
         if (tSaunaReset) {
             clearTimeout(tSaunaReset);
             tSaunaReset = null;
-            console.log("[Sauna] Ofen heizt wieder. Abschalt-Timer gelöscht.");
+            console.log("Sauna: Ofen heizt wieder, Abschalt-Timer gelöscht");
         }
 
         if (!sL && !tSaunaStart) {
@@ -212,7 +211,7 @@ function runUpdate() {
     } else if (bLast < 1000 && sL) {
         // Ofen ist aus (Takt-Pause oder Sauna wirklich fertig)
         if (!tSaunaReset) {
-            console.log("[Sauna] Ofen taktet aus. 35-Minuten-Überwachungsphase gestartet.");
+            console.log("Sauna: Ofen taktet aus, 35-Minuten-Überwachungsphase gestartet");
             stopSauna();
         }
     }
@@ -224,7 +223,7 @@ function startSauna() {
     setState(IDS.saunaLogik, true, true);
     originalMinSoc = getState(IDS.minSocRead).val; // Ursprungswert merken (z.B. 40%)
     setState(IDS.minSocSet, soc); // Batterie sofort auf aktuellem Level sperren
-    console.log("[Sauna] Priorisierung AKTIV. Min-SoC auf " + soc + "% fixiert.");
+    console.log("Sauna: Priorisierung AKTIV, Min-SoC auf " + soc + "% fixiert");
 }
 
 function stopSauna() {
@@ -232,7 +231,7 @@ function stopSauna() {
     tSaunaReset = setTimeout(function() {
         if (originalMinSoc !== null) {
             setState(IDS.minSocSet, originalMinSoc); // Zurück auf Normalwert
-            console.log("[Sauna] Nachlauf abgelaufen. Batterie wieder freigegeben.");
+            console.log("Sauna: Nachlauf abgelaufen, Batterie wieder freigegeben");
         }
         setState(IDS.saunaLogik, false, true);
         tSaunaReset = null;
@@ -253,14 +252,14 @@ on({id: IDS.minSocRead, change: "ne"}, function(obj) {
     const oldVal = obj.oldState ? obj.oldState.val : 0;
     if (newVal === oldVal) return;
 
-    const text = `🪫 Min-SoC Update: Die Hausbatterie wurde auf ${newVal}% geregelt.`;
+    const text = `Min-SoC Update: Die Hausbatterie wurde auf ${newVal}% geregelt`;
 
     // SPAM-SCHUTZ: Während der Sauna nur loggen, kein Telegram senden
     if (getState(IDS.saunaLogik).val === true) {
-        console.log(`[Min-SoC Watchdog] Sauna-Modus aktiv, Änderung auf ${newVal}% wird ignoriert.`);
+        console.log(`Min-SoC Watchdog: Sauna-Modus aktiv, Änderung auf ${newVal}% wird ignoriert`);
     } else {
         notify(text);
-        console.warn(`[Min-SoC Watchdog] ${text}`);
+        console.warn(`Min-SoC Watchdog: ${text}`);
     }
 });
 
@@ -291,12 +290,12 @@ function checkSaunaSafety(load) {
 
     if (doorOpen && isHeating) {
         if (!tSaunaSafety) {
-            console.log("[Sauna-Safety] Kritischer Zustand: Tür offen & Heizung an! Timer gestartet.");
+            console.log("Sauna-Safety: Kritischer Zustand, Tür offen & Heizung an, Timer gestartet");
             tSaunaSafety = setTimeout(() => {
                 // Erneute Prüfung nach Ablauf der Zeit
                 if (getState(IDS.saunaTuer).val && getBereinigteLast() > 5000) {
-                    const msg = "Achtung! Die Sauna heizt bei offener Tür. Bitte überprüfen!";
-                    notify("🚪🔥 " + msg);
+                    const msg = "Achtung: Die Sauna heizt bei offener Tür, bitte überprüfen";
+                    notify(msg);
                     sayitInstances.forEach(inst => {
                         sendTo(inst, "say", { text: msg, volume: 70 });
                     });

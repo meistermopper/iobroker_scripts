@@ -42,7 +42,7 @@ async function initWaschSystem() {
             type: 'boolean', name: 'Waschmaschine läuft (VIS)', role: 'indicator.working' 
         });
     }
-    console.log("[Waschmaschine] Initialisierung v2.9 abgeschlossen.");
+    console.log("Waschmaschine: Initialisierung v2.9 abgeschlossen");
 }
 initWaschSystem();
 
@@ -59,7 +59,7 @@ function washNotify(text) {
     if (compareTime('08:00', '20:00', 'between')) {
         sendTo("sayit", "say", { text: "Die Waschmaschine ist fertig." });
     }
-    console.log("[Waschmaschine] Benachrichtigung: " + text);
+    console.log("Waschmaschine: Benachrichtigung gesendet");
 }
 
 // --- 4. TAGES-RESET ---
@@ -78,31 +78,41 @@ on({ id: ID_POWER, change: 'ne' }, (obj) => {
         if (timerEnd) { 
             clearTimeout(timerEnd); 
             timerEnd = null; 
-            console.log("[Waschmaschine] Start erkannt - Ende-Timer abgebrochen.");
+            console.log("Waschmaschine: Start erkannt, Ende-Timer abgebrochen");
         }
         
+
+        const stateEnergy = getState(ID_ENERGY);
+        if (!stateEnergy || stateEnergy.val === null || typeof stateEnergy.val === 'undefined') {
+            console.warn("Waschmaschine: Warnung, konnte Start-Zählerstand nicht lesen, versuche es beim nächsten Update erneut");
+            return;
+        }
+
         isRunning = true;
         startTime = Date.now();
         const curEnergy = getState(ID_ENERGY).val;
         startEnergy = (curEnergy !== null) ? parseFloat(curEnergy) : 0;
         
+        startEnergy = parseFloat(stateEnergy.val);
+
         setState(ID_VIS, true, true);
-        console.log(`[Waschmaschine] Waschgang gestartet (Zählerstand: ${startEnergy} kWh).`);
+        console.log(`Waschmaschine: Waschgang gestartet, Zählerstand ${startEnergy} kWh`);
     }
 
     // ÜBERWACHUNG WÄHREND DES LAUFS
     if (isRunning) {
         // Fall A: Leistung fällt unter Ende-Schwelle -> Timer starten
         if (watt < END_WATT && !timerEnd) {
-            console.log("[Waschmaschine] Leistung niedrig. Warte auf Bestätigung des Endes...");
+            console.log("Waschmaschine: Leistung niedrig, warte auf Bestätigung des Endes");
             timerEnd = setTimeout(processFinish, END_DELAY);
         }
         
+
         // Fall B: Leistung steigt wieder ÜBER Ende-Schwelle -> Timer löschen (Spülpause beendet)
         if (watt >= END_WATT && timerEnd) {
             clearTimeout(timerEnd);
             timerEnd = null;
-            console.log("[Waschmaschine] Leistung wieder gestiegen. Timer zurückgesetzt.");
+            console.log("Waschmaschine: Leistung wieder gestiegen, Timer zurückgesetzt");
         }
     }
 });
@@ -111,13 +121,27 @@ function processFinish() {
     const stateEnergy = getState(ID_ENERGY);
     const endEnergy = (stateEnergy && stateEnergy.val !== null) ? parseFloat(stateEnergy.val) : startEnergy;
     
+    if (!stateEnergy || stateEnergy.val === null || typeof stateEnergy.val === 'undefined') {
+        console.error("Waschmaschine: FEHLER, konnte den finalen Energiezählerstand nicht lesen");
+        // Status zurücksetzen, ohne eine falsche Benachrichtigung zu senden.
+        isRunning = false;
+        timerEnd = null;
+        setState(ID_VIS, false, true);
+        return; // Funktion verlassen
+    }
+    const endEnergy = parseFloat(stateEnergy.val);
+
     const statePrice = getState(ID_PRICE);
     const priceKwh = (statePrice && statePrice.val !== null) ? parseFloat(statePrice.val) : 0.30;
     
+
     // Mathematische Berechnung des Verbrauchs
     // $$Verbrauch = Zählerstand_{Ende} - Zählerstand_{Start}$$
     const diffEnergy = Math.max(0, endEnergy - startEnergy);
     const totalCost = diffEnergy * priceKwh;
+
+    // DEBUG: Werte ins Log schreiben, um das 0-kWh-Problem zu finden
+    console.log(`Waschmaschine: Ende erkannt, Start ${startEnergy} kWh -> Ende ${endEnergy} kWh = Diff ${diffEnergy.toFixed(3)} kWh`);
     
     // Zeitberechnung
     const durationMs = Date.now() - startTime - END_DELAY;
@@ -138,6 +162,8 @@ function processFinish() {
     washNotify(msg);
     
     setState(ID_VIS, false, true); 
+
+    setState(ID_VIS, false, true);
     isRunning = false;
     timerEnd = null;
 }

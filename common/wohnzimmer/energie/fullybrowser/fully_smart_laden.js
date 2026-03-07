@@ -71,7 +71,7 @@ on({ id: 'fullybrowser.0.Fully-Browser.Info.batteryLevel', change: 'ne' }, async
      * Dies deutet auf ein defektes Kabel oder eine hängende Steckdose hin.
      */
     else if (currentBatt < 28 && currentBatt < oldBatt) {
-        const message = `⚠️ Achtung: Wandtablet lädt nicht korrekt! Stand: ${currentBatt}% (Sinkend)`;
+        const message = `Achtung: Wandtablet lädt nicht korrekt, Stand: ${currentBatt}% (Sinkend)`;
         
         // Fehlermeldung im Log und per Telegram
         console.error(message);
