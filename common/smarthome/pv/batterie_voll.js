@@ -19,9 +19,9 @@ on({ id: 'modbus.0.inputRegisters.100.843_Battery_State_of_Charge_(System)', cha
         let value = obj.state.val;
         let oldValue = obj.oldState.val;
         // Speicher ist voll
-        if (value === 100 && oldValue < 100 && !message) {
+        if (value === 96 && oldValue < 96 && !message) {
             sendTo('telegram', 'send', {
-                text: '👌 Bingo! Die Hausbatterie ist proppevoll.'
+                text: '👌 Bingo! Die Hausbatterie ist aufgeladen.'
             });
             if (getState('0_userdata.0.gotifytoken.iobroker')) {
                 exec('curl "https://mygotify.meistermopper.de/message?token=' + getState('0_userdata.0.gotifytoken.iobroker').val + '" -F "title=ioBroker:\n" -F "message=👌 Bingo! Die Hausbatterie ist proppevoll." -F "priority=1"', (error, stdout, stderr) => {
