@@ -1,6 +1,7 @@
 /**
  * =============================================================================
  * UNIVERSAL MASTER v2.6.5 - THE ENERGY GUARDIAN
+ * UNIVERSAL MASTER v2.7 - THE ENERGY GUARDIAN
  * =============================================================================
  * ZWECK: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox.
  * RECHENKERN: Physikalische Berechnung von Hausverbrauch und Autarkie.
@@ -9,6 +10,7 @@
  * 2. Anti-Zappel: Verhindert Min-SoC-Sprünge bei taktendem Saunaofen.
  * 3. Smart-Notify: Unterdrückt Telegram-Spam während der Wellness-Phase.
  * 4. Watchdog: Überwacht Änderungen des Min-SoC am Wechselrichter.
+ * 5. Safety-Guard: Warnt, wenn die Sauna bei offener Tür heizt.
  * =============================================================================
  */
 
@@ -37,11 +39,13 @@ const IDS = {
 };
 
 const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
+const sayitInstances = ['sayit.0', 'sayit.1', 'sayit.2', 'sayit.3', 'sayit.4', 'sayit.5'];
 
 // Interne Speicher für Berechnungen
 let pvP = 0, netP = 0, batP = 0, soc = 0, sMax = 0;
 let tVerbrauchWh = 0, tLadungWh = 0, tNetzWh = 0, lastTs = Date.now();
 let originalMinSoc = null, tSaunaStart = null, tSaunaReset = null;
+let tSaunaSafety = null;
 
 // --- 2. INITIALISIERUNG (SYSTEMSTART) ---
 async function initSystem() {
@@ -85,6 +89,7 @@ async function initSystem() {
     tLadungWh = getState(PATH_PV + "Tagesladung").val || 0;
     tNetzWh = getState(PATH_PV + "TagesNetzbezug").val || 0;
     console.log("Master v2.6.5 (Integrated & Anti-Jitter) aktiv");
+    console.log("Master v2.7 (Sauna-Safety) aktiv");
 }
 initSystem();
 
@@ -177,6 +182,10 @@ function runUpdate() {
 
     // --- SAUNA-LOGIK MIT ANTI-ZAPPEL-SYSTEM ---
     let bLast = getBereinigteLast();
+    
+    // Sicherheits-Check: Heizt die Sauna bei offener Tür?
+    checkSaunaSafety(bLast);
+
     let sL = getState(IDS.saunaLogik).val;
 
     if (bLast > 7500) { 
@@ -266,3 +275,44 @@ setInterval(function() {
 
 // Mitternachts-Reset
 schedule("0 0 * * *", function() { tVerbrauchWh = 0; tLadungWh = 0; tNetzWh = 0; });
+
+// --- 7. SAUNA SAFETY (TÜR-WÄCHTER) ---
+
+/**
+ * Prüft, ob ein gefährlicher Zustand vorliegt:
+ * Tür ist offen UND der Ofen zieht Strom (heizt).
+ * @param {number} load - Die aktuelle bereinigte Hauslast in Watt.
+ */
+function checkSaunaSafety(load) {
+    const doorOpen = getState(IDS.saunaTuer).val;
+    // Wir nehmen > 5000W an, da der Saunaofen (8kW) deutlich darüber liegt.
+    // Dies verhindert Fehlalarme durch andere Verbraucher (Föhn, Wasserkocher).
+    const isHeating = load > 5000; 
+
+    if (doorOpen && isHeating) {
+        if (!tSaunaSafety) {
+            console.log("[Sauna-Safety] Kritischer Zustand: Tür offen & Heizung an! Timer gestartet.");
+            tSaunaSafety = setTimeout(() => {
+                // Erneute Prüfung nach Ablauf der Zeit
+                if (getState(IDS.saunaTuer).val && getBereinigteLast() > 5000) {
+                    const msg = "Achtung! Die Sauna heizt bei offener Tür. Bitte überprüfen!";
+                    notify("🚪🔥 " + msg);
+                    sayitInstances.forEach(inst => {
+                        sendTo(inst, "say", { text: msg, volume: 70 });
+                    });
+                }
+                tSaunaSafety = null;
+            }, 60000); // Warnung nach 1 Minute Dauer-Heizen bei offener Tür
+        }
+    } else if (tSaunaSafety) {
+        // Entwarnung: Tür zu oder Ofen hat abgeschaltet (Thermostat)
+        clearTimeout(tSaunaSafety);
+        tSaunaSafety = null;
+        console.log("[Sauna-Safety] Situation bereinigt (Tür zu oder Heizung aus). Timer gestoppt.");
+    }
+}
+
+// Trigger für sofortige Prüfung bei Türbewegung
+on({id: IDS.saunaTuer, change: "ne"}, function() { 
+    checkSaunaSafety(getBereinigteLast()); 
+});
