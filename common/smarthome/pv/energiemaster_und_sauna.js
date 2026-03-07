@@ -56,8 +56,8 @@ async function initSystem() {
         { id: PATH_PV + "Tagesladung", unit: "Wh", type: "number" },
         { id: PATH_PV + "TagesNetzbezug", unit: "Wh", type: "number" },
         { id: PATH_PV + "lade_kwh", unit: "kWh", type: "number" },
-        { id: PATH_PV + "Restentladezeit", unit: "h", type: "string" },
-        { id: PATH_PV + "Entladung_final_Uhrzeit", unit: "", type: "string" },
+        { id: PATH_PV + "Restentladezeit", unit: "h", type: "string" }, //meint Restladezeit
+        { id: PATH_PV + "Entladung_final_Uhrzeit", unit: "", type: "string" }, //meint Ladungsende Uhrzeit
         { id: PATH_PV + "Wallbox_Freigabe", unit: "", type: "boolean" }
     ];
 
@@ -148,8 +148,9 @@ function runUpdate() {
     let curKwh = (sMax * soc) / 100;
     let entladeEndeUhrzeit = "n. n.", entladeDauerAnzeige = "---";
 
-    if (batP > 50) { // Wenn Batterie entladen wird (Leistung > 50W)
-        let rSec = (curKwh / (batP / 1000)) * 3600; // Rest-Energie / Entladeleistung
+    if (batP > 50) { // Wenn Batterie geladen wird (Leistung > 50W)
+        let missingKwh = sMax - curKwh;
+        let rSec = (missingKwh / (batP / 1000)) * 3600; // Fehlende Energie / Ladeleistung
         let rMinTotal = rSec / 60;
         let hrs = Math.floor(rMinTotal / 60);
         let mins = Math.floor(rMinTotal % 60);
