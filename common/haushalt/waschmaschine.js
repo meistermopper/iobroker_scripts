@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * SKRIPT: WASCHMASCHINEN-ÜBERWACHUNG (V2.9)
+ * SKRIPT: WASCHMASCHINEN-ÜBERWACHUNG (V2.9.1)
  * =============================================================================
  * ZWECK: Überwachung von Start/Ende und Energie-Statistik.
  * ANPASSUNG: Verbesserte Timer-Logik gegen Fehlmessungen und 0-Watt-Bug.
@@ -119,7 +119,6 @@ on({ id: ID_POWER, change: 'ne' }, (obj) => {
 
 function processFinish() {
     const stateEnergy = getState(ID_ENERGY);
-    const endEnergy = (stateEnergy && stateEnergy.val !== null) ? parseFloat(stateEnergy.val) : startEnergy;
     
     if (!stateEnergy || stateEnergy.val === null || typeof stateEnergy.val === 'undefined') {
         console.error("Waschmaschine: FEHLER, konnte den finalen Energiezählerstand nicht lesen");
@@ -161,8 +160,6 @@ function processFinish() {
 
     washNotify(msg);
     
-    setState(ID_VIS, false, true); 
-
     setState(ID_VIS, false, true);
     isRunning = false;
     timerEnd = null;
