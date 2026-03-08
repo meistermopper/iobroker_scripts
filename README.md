@@ -12,7 +12,9 @@
 
  
 
-![Version](https://img.shields.io/badge/version-1.0.1-orange) Diese Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
+ 
+
+![Version](https://img.shields.io/badge/version-1.0.2-orange) Diese Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
 ## 📂 Struktur
 Die Skripte sind logisch nach Funktionen und Räumen gegliedert und steuern zentrale Aspekte des Smart Homes.

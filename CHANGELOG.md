@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.0.2] - 2026-03-08
+- Update von auto_version.js
+
 ## [1.0.1] - 2026-03-08
 - Dokumentation aktualisiert und Version angehoben
 
