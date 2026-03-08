@@ -1,4 +1,4 @@
-# ioBroker Script-Sammlung
+# ioBroker Skript-Sammlung
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
@@ -20,7 +20,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
     * **Bad unten**: Szenen für Morgen- und Standardlicht mit Dimm-Vorwarnung (`licht_bewegung_dunkel.js`).
     * **Garderobe**: Einfache "Presence Follower"-Logik (`garderobenlicht.js`).
     * **Küche**: Tag- und Nachtmodus mit gestaffeltem Schalten von Spots und Hue-Lampen (`licht_presence.js`).
-    * **Wohnzimmer**: Helligkeits- und medialabhängige Lichtsteuerung
+    * **Wohnzimmer**: Helligkeits- und medienabhängige Lichtsteuerung
 
 ### 🏡 Haushalt & Außenbereich
 * **Postkasten-Monitor**: Benachrichtigung bei Posteinwurf mit Sprachansage und VIS-Status (`post_da.js`).
@@ -75,16 +75,7 @@ Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 - Code-Optimierungen und Updates
 
 ### [1.0.19] - 2026-03-08
-- Update von CHANGELOG.md
-
-### [1.0.18] - 2026-03-08
-- Update von CHANGELOG.md
-
-### [1.0.17] - 2026-03-08
-- Code-Optimierungen und Updates
-
-### [1.0.16] - 2026-03-08
-- Code-Optimierungen und Updates
+- delete CHANGELOG.md
 
 ### [1.0.12] - 2026-03-08
 - Update von fenster_offen.js
