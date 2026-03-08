@@ -1,3 +1,4 @@
+![Version](https://img.shields.io/github/package-json/v/meistermopper/iobroker_scripts)
 # ioBroker Script-Sammlung
 
 ![Status](https://img.shields.io/badge/Status-aktiv-blue?style=flat-square)
