@@ -1,9 +1,9 @@
 /**
  * =============================================================================
- * SKRIPT: TROCKNER-ÜBERWACHUNG (V2.8)
+ * SKRIPT: TROCKNER-ÜBERWACHUNG (V2.9)
  * =============================================================================
  * ZWECK: Überwachung von Start/Ende und Energie-Statistik.
- * ÄNDERUNG: SayIt Sprachausgabe auf "Der Trockner ist fertig." gekürzt.
+ * ANPASSUNG: Timing-Problem beim Lesen des Start-Zählerstands behoben (0-kWh-Bug).
  * =============================================================================
  */
 
@@ -44,7 +44,7 @@ async function initTrocknerSystem() {
             type: 'boolean', name: 'Trockner läuft (VIS)', role: 'indicator.working' 
         });
     }
-    console.log("Trockner: Initialisierung v2.8 abgeschlossen");
+    console.log("Trockner: Initialisierung v2.9 abgeschlossen");
 }
 initTrocknerSystem();
 
@@ -72,7 +72,7 @@ function dryNotify(text) {
 // --- 4. TAGES-RESET ---
 schedule("0 0 * * *", () => {
     setState(ID_TOTAL_T, 0, true);
-    //console.log("[Trockner] Statistik-Reset.");
+    //console.log("[Trockner] Statistik-Reset");
 });
 
 // --- 5. HAUPTLOGIK ---
@@ -80,29 +80,65 @@ schedule("0 0 * * *", () => {
 on({ id: ID_POWER_T, change: 'ne' }, (obj) => {
     const watt = obj.state.val;
 
+    // START-ERKENNUNG
     if (watt > START_WATT_T && !isRunningT) {
-        if (timerEndT) { clearTimeout(timerEndT); timerEndT = null; }
+        if (timerEndT) { 
+            clearTimeout(timerEndT); 
+            timerEndT = null; 
+            console.log("Trockner: Start erkannt, Ende-Timer abgebrochen");
+        }
         
         isRunningT = true;
         startTimeT = Date.now();
-        startEnergyT = getState(ID_ENERGY_T).val; 
-        
         setState(ID_VIS_T, true, true);
-        console.log("Trockner: Trocknung gestartet");
+        console.log("Trockner: Trocknung gestartet. Lese Start-Zählerstand in 15 Sekunden...");
+        
+        // Verzögertes Lesen des Zählerstands, um der Steckdose Zeit zum Aktualisieren zu geben.
+        setTimeout(() => {
+            const stateEnergy = getState(ID_ENERGY_T);
+            if (stateEnergy && stateEnergy.val !== null) {
+                startEnergyT = parseFloat(stateEnergy.val);
+                console.log(`Trockner: Start-Zählerstand erfasst: ${startEnergyT.toFixed(3)} kWh`);
+            } else {
+                console.warn(`Trockner: Konnte Start-Zählerstand nach 15s nicht lesen. startEnergyT bleibt ${startEnergyT}. Berechnung ungenau`);
+            }
+        }, 15000); // 15 Sekunden Wartezeit
     }
 
-    if (watt < END_WATT_T && isRunningT && !timerEndT) {
-        timerEndT = setTimeout(processFinishT, END_DELAY_T);
+    // ÜBERWACHUNG WÄHREND DES LAUFS
+    if (isRunningT) {
+        // Fall A: Leistung fällt unter Ende-Schwelle -> Timer starten
+        if (watt < END_WATT_T && !timerEndT) {
+            console.log("Trockner: Leistung niedrig, warte auf Bestätigung des Endes");
+            timerEndT = setTimeout(processFinishT, END_DELAY_T);
+        }
+
+        // Fall B: Leistung steigt wieder ÜBER Ende-Schwelle -> Timer löschen (Knitterschutz-Pause beendet)
+        if (watt >= END_WATT_T && timerEndT) {
+            clearTimeout(timerEndT);
+            timerEndT = null;
+            console.log("Trockner: Leistung wieder gestiegen, Timer zurückgesetzt");
+        }
     }
 });
 
 function processFinishT() {
-    const endEnergy = getState(ID_ENERGY_T).val;
+    const stateEnergy = getState(ID_ENERGY_T);
+    if (!stateEnergy || stateEnergy.val === null || typeof stateEnergy.val === 'undefined') {
+        console.error("Trockner: FEHLER, konnte den finalen Energiezählerstand nicht lesen");
+        isRunningT = false;
+        timerEndT = null;
+        setState(ID_VIS_T, false, true);
+        return;
+    }
+    const endEnergy = parseFloat(stateEnergy.val);
     const priceKwh = getState(ID_PRICE_T).val || 0.30;
     
     const diffEnergy = Math.max(0, endEnergy - startEnergyT);
     const totalCost = diffEnergy * priceKwh;
     
+    console.log(`Trockner: Ende erkannt, Start ${startEnergyT.toFixed(3)} kWh -> Ende ${endEnergy.toFixed(3)} kWh = Diff ${diffEnergy.toFixed(3)} kWh`);
+
     const durationMs = Date.now() - startTimeT - END_DELAY_T;
     const hours = Math.floor(durationMs / 3600000);
     const minutes = Math.floor((durationMs % 3600000) / 60000);

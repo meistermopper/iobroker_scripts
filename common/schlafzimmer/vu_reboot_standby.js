@@ -40,7 +40,7 @@ schedule("30 23 * * *", async () => {
                 if (error) console.error(`Gotify Fehler: ${error}`);
             });
 
-            console.log(`Schlafzimmer-Standby: Meldung gesendet an Thomas & Gotify.`);
+            console.log(`Schlafzimmer-Standby: Meldung gesendet an Thomas & Gotify`);
             msgTimeout = null;
         }, 60000);
     }

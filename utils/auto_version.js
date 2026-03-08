@@ -87,13 +87,17 @@ if (fs.existsSync(packagePath)) {
         // 2. CHANGELOG.md aktualisieren
         const date = new Date().toISOString().split('T')[0];
         const fileList = getChangedFilesList();
-        const newEntry = `## [${newV}] - ${date}\n${fileList}\n\n`;
+        const newEntry = `## [${newV}] - ${date}\n${fileList}`;
         
-        let chContent = fs.existsSync(changelogPath) ? fs.readFileSync(changelogPath, 'utf8') : '# Changelog\n\n';
+        const changelogHeader = '# Changelog\n\nAlle wichtigen Änderungen dieses Projekts werden hier dokumentiert.';
+        let oldContent = fs.existsSync(changelogPath) ? fs.readFileSync(changelogPath, 'utf8') : '';
         
-        // Den neuen Eintrag direkt nach dem Header einfügen
-        const headerEnd = chContent.indexOf('\n\n') + 2;
-        const updatedChContent = chContent.slice(0, headerEnd) + newEntry + chContent.slice(headerEnd);
+        // Entferne den alten Header und überflüssige Leerzeilen, um Duplikate zu vermeiden.
+        // Dies bereinigt die Datei bei jedem Durchlauf.
+        oldContent = oldContent.replace(/# Changelog\n\n(Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert\.)?/, '').trim();
+
+        // Baue den neuen Inhalt zusammen: Header, neuer Eintrag, alter Inhalt.
+        const updatedChContent = `${changelogHeader}\n\n${newEntry}\n\n${oldContent}`.trim() + '\n';
         
         fs.writeFileSync(changelogPath, updatedChContent, 'utf8');
         runGitCommand(`git add "${changelogPath}"`);

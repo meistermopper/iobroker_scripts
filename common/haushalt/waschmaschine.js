@@ -1,9 +1,9 @@
 /**
  * =============================================================================
- * SKRIPT: WASCHMASCHINEN-ÜBERWACHUNG (V2.9.1)
+ * SKRIPT: WASCHMASCHINEN-ÜBERWACHUNG (V2.9.2)
  * =============================================================================
  * ZWECK: Überwachung von Start/Ende und Energie-Statistik.
- * ANPASSUNG: Verbesserte Timer-Logik gegen Fehlmessungen und 0-Watt-Bug.
+ * ANPASSUNG: Timing-Problem beim Lesen des Start-Zählerstands behoben (0-kWh-Bug).
  * =============================================================================
  */
 
@@ -42,7 +42,7 @@ async function initWaschSystem() {
             type: 'boolean', name: 'Waschmaschine läuft (VIS)', role: 'indicator.working' 
         });
     }
-    console.log("Waschmaschine: Initialisierung v2.9 abgeschlossen");
+    console.log("Waschmaschine: Initialisierung v2.9.2 abgeschlossen");
 }
 initWaschSystem();
 
@@ -65,7 +65,7 @@ function washNotify(text) {
 // --- 4. TAGES-RESET ---
 schedule("0 0 * * *", () => {
     setState(ID_TOTAL, 0, true);
-    //console.log("[Waschmaschine] Statistik-Reset für neuen Tag.");
+    //console.log("[Waschmaschine] Statistik-Reset für neuen Tag");
 });
 
 // --- 5. HAUPTLOGIK ---
@@ -74,29 +74,29 @@ on({ id: ID_POWER, change: 'ne' }, (obj) => {
 
     // START-ERKENNUNG
     if (watt > START_WATT && !isRunning) {
-        // Falls noch ein alter "Ende-Timer" läuft (weil Maschine kurz aus war), stoppen
+        // Falls ein alter "Ende-Timer" läuft, wird dieser gestoppt.
         if (timerEnd) { 
             clearTimeout(timerEnd); 
             timerEnd = null; 
-            console.log("Waschmaschine: Start erkannt, Ende-Timer abgebrochen");
+            console.log("Waschmaschine: Start erkannt, Ende-Timer abgebrochen.");
         }
         
-
-        const stateEnergy = getState(ID_ENERGY);
-        if (!stateEnergy || stateEnergy.val === null || typeof stateEnergy.val === 'undefined') {
-            console.warn("Waschmaschine: Warnung, konnte Start-Zählerstand nicht lesen, versuche es beim nächsten Update erneut");
-            return;
-        }
-
+        // Status sofort setzen, um Logik zu starten und Mehrfach-Trigger zu verhindern
         isRunning = true;
-        startTime = Date.now();
-        const curEnergy = getState(ID_ENERGY).val;
-        startEnergy = (curEnergy !== null) ? parseFloat(curEnergy) : 0;
-        
-        startEnergy = parseFloat(stateEnergy.val);
-
+        startTime = Date.now(); // Der Startzeitpunkt ist der erste Leistungsanstieg
         setState(ID_VIS, true, true);
-        console.log(`Waschmaschine: Waschgang gestartet, Zählerstand ${startEnergy} kWh`);
+        console.log("Waschmaschine: Waschgang gestartet. Lese Start-Zählerstand in 15 Sekunden");
+
+        // Verzögertes Lesen des Zählerstands, um der Steckdose Zeit zum Aktualisieren zu geben.
+        setTimeout(() => {
+            const stateEnergy = getState(ID_ENERGY);
+            if (stateEnergy && stateEnergy.val !== null) {
+                startEnergy = parseFloat(stateEnergy.val);
+                console.log(`Waschmaschine: Start-Zählerstand erfasst: ${startEnergy.toFixed(3)} kWh`);
+            } else {
+                console.warn(`Waschmaschine: Konnte Start-Zählerstand nach 15s nicht lesen. startEnergy bleibt ${startEnergy}. Berechnung ungenau`);
+            }
+        }, 15000); // 15 Sekunden Wartezeit
     }
 
     // ÜBERWACHUNG WÄHREND DES LAUFS
@@ -140,7 +140,7 @@ function processFinish() {
     const totalCost = diffEnergy * priceKwh;
 
     // DEBUG: Werte ins Log schreiben, um das 0-kWh-Problem zu finden
-    console.log(`Waschmaschine: Ende erkannt, Start ${startEnergy} kWh -> Ende ${endEnergy} kWh = Diff ${diffEnergy.toFixed(3)} kWh`);
+    console.log(`Waschmaschine: Ende erkannt, Start ${startEnergy.toFixed(3)} kWh -> Ende ${endEnergy.toFixed(3)} kWh = Diff ${diffEnergy.toFixed(3)} kWh`);
     
     // Zeitberechnung
     const durationMs = Date.now() - startTime - END_DELAY;
