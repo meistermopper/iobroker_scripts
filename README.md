@@ -2,7 +2,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.0.14-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.15-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -62,6 +62,25 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 1. **Dateiberechtigungen**: Alle Dateien auf dem Server gehören zwingend dem User `iobroker`.
 2. **Sauberkeit**: Das Repository wird frei von temporären Systemdateien gehalten.
 3. **Source of Truth**: Bei Unstimmigkeiten ist der Stand in VS Code maßgeblich.
+
+---
+
+## 📝 Changelog
+
+Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
+
+### [1.0.12] - 2026-03-08
+- Update von fenster_offen.js
+- Update von trockner.js
+- Update von waschmaschine.js
+- Update von vu_reboot_standby.js
+- Update von auto_version.js
+
+### [1.0.7] - 2026-03-08
+- Dokumentation und Skripte aktualisiert
+
+### [1.0.1] - 2026-03-08
+- aktuelle Skripte und automatische Versionierung initiiert
 
 ---
 *Hinweis: Dies ist ein privates Projekt.*
