@@ -4,7 +4,7 @@
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
 ![Version](https://img.shields.io/badge/Version-1.0.14-success?style=flat-square)
 
-Diese Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
+Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
 ## 📂 Struktur
 Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
@@ -18,9 +18,11 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
     * **Bad unten**: Szenen für Morgen- und Standardlicht mit Dimm-Vorwarnung (`licht_bewegung_dunkel.js`).
     * **Garderobe**: Einfache "Presence Follower"-Logik (`garderobenlicht.js`).
     * **Küche**: Tag- und Nachtmodus mit gestaffeltem Schalten von Spots und Hue-Lampen (`licht_presence.js`).
+    * **Wohnzimmer**: Helligkeits- und medialabhängige Lichtsteuerung
 
 ### 🏡 Haushalt & Außenbereich
 * **Postkasten-Monitor**: Benachrichtigung bei Posteinwurf mit Sprachansage und VIS-Status (`post_da.js`).
+* **Müllmeldung**: Am Vortag wird um 18:00 Uhr per Sprache und Nachricht die Abholung der Müllart am Folgetag angekündigt.
 
 ### 🛠️ System & Monitoring
 * **ioBroker-Wächter**:
@@ -29,23 +31,27 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 * **Netzwerk-Management**:
     * Überwacht die WAN-IP auf Wechsel, steuert DDNS-Updates und managt Failover-Szenarien (`failover_dyndns_master.js`).
 
+### 📺🎵 Medien
+* **Medienauswahl**: Wird per Sprachbefehl gesteuert
+* **Sauna**: Erkennt, wenn die Sauna läuft/nicht läuft und steuert zeitabhängig die Musikausgabe in Bad und Sauna.
+
 ---
 
 ## 🚀 Workflow & Synchronisation
 Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufzeit (ioBroker).
 
 * **Source of Truth**: Die primäre Entwicklungsumgebung ist **VS Code** auf dem lokalen Rechner.
-* **Git-Status auf dem Server**: Das Verzeichnis `/home/iobroker/scripts/` auf dem Server ist kein Git-Repository mehr.
+* **Git-Status auf dem Server und auf GitHub**
 * **Deployment (Live schalten)**: Die Übertragung zum ioBroker erfolgt manuell über die ioBroker-Extension.
 
-### Tägliche Arbeit
+### Täglicher Workflow
 1. **Editieren**: Änderungen direkt in VS Code vornehmen.
 2. **Aktivieren**: Den Upload-Pfeil in der ioBroker-Seitenleiste nutzen.
-3. **Sichern**: Commit & Push in VS Code.
+3. **Sichern**: Commit & Push & GitHub Sync in VS Code.
 
 ---
 
-## ⚙️ Voraussetzungen
+## ⚙️ Setup
 * ioBroker mit installiertem JavaScript-Adapter.
 * VS Code mit der **ioBroker Extension**.
 * Git & GitLens zur Versionsverwaltung.
