@@ -111,7 +111,7 @@ try {
     const newEntry = `### [${newV}] - ${date}\n${fileList}`;
 
     const changelogMarker = 'Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.';
-    const markerIndex = readmeContent.indexOf(changelelogMarker);
+    const markerIndex = readmeContent.indexOf(changelogMarker);
 
     if (markerIndex !== -1) {
         const insertionPoint = markerIndex + changelogMarker.length;
@@ -130,46 +130,5 @@ try {
 
 } catch (e) {
     console.error('❌ Fehler während der Versionierung:', e.message);
-    process.exit(1);
-}
-        const date = new Date().toISOString().split('T')[0];
-        const fileList = getChangedFilesList();
-        const newEntry = `## [${newV}] - ${date}\n${fileList}`;
-        
-        const changelogHeader = '# Changelog\n\nAlle wichtigen Änderungen dieses Projekts werden hier dokumentiert.';
-        let oldContent = fs.existsSync(changelogPath) ? fs.readFileSync(changelogPath, 'utf8') : '';
-        
-        // Entferne den alten Header und überflüssige Leerzeilen, um Duplikate zu vermeiden.
-        // Dies bereinigt die Datei bei jedem Durchlauf.
-        oldContent = oldContent.replace(/# Changelog\n\n(Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert\.)?/, '').trim();
-
-        // Baue den neuen Inhalt zusammen: Header, neuer Eintrag, alter Inhalt.
-        const updatedChContent = `${changelogHeader}\n\n${newEntry}\n\n${oldContent}`.trim() + '\n';
-        
-        fs.writeFileSync(changelogPath, updatedChContent, 'utf8');
-        runGitCommand(`git add "${changelogPath}"`);
-        console.log(`📝 CHANGELOG.md für v${newV} aktualisiert`);
-
-        // 3. README.md aktualisieren (Badge)
-        if (fs.existsSync(readmePath)) {
-            let readmeContent = fs.readFileSync(readmePath, 'utf8');
-            // Ersetzt die Version im Badge: !Version
-            const badgeRegex = /(!\[Version\]\(.*\/Version-)([\d\.]+)(-success\?style=flat-square\))/;
-            
-            if (badgeRegex.test(readmeContent)) {
-                readmeContent = readmeContent.replace(badgeRegex, `$1${newV}$3`);
-                fs.writeFileSync(readmePath, readmeContent, 'utf8');
-                runGitCommand(`git add "${readmePath}"`);
-                console.log(`📘 README.md Badge auf v${newV} aktualisiert`);
-            }
-        }
-
-        console.log(`--- Erfolg: Version ${newV} ist bereit für den Commit ---`);
-    } catch (e) {
-        console.error('❌ Fehler während der Versionierung:', e.message);
-        process.exit(1);
-    }
-} else {
-    console.error('❌ Fehler: Keine package.json gefunden');
     process.exit(1);
 }
