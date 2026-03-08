@@ -1,4 +1,7 @@
-# Changelog
+### [1.0.3] - 2026-03-08
+- Update von auto_version.js
+
+ Changelog
 
 ## [1.0.2] - 2026-03-08
 - Update von auto_version.js
