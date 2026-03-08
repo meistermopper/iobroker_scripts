@@ -1,7 +1,7 @@
 /**
  * @file auto_version.js
- * @description Inkrementiert die Version, aktualisiert die CHANGELOG.md und 
- * synchronisiert die letzten 5 Einträge in die README.md (vor dem Annex).
+ * @description Inkrementiert die Version in der package.json und pflegt die CHANGELOG.md.
+ * Die README.md bleibt von diesem Skript unberührt.
  * @author Gemini 3 Flash
  */
 
@@ -10,33 +10,35 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 /**
- * Hilfsfunktion zum Ausführen von Git-Befehlen
- * @param {string} command - Der auszuführende Befehl
+ * Führt einen Git-Befehl aus und fängt Fehler ab.
+ * @param {string} command - Der auszuführende Git-Befehl.
  */
 function runGitCommand(command) {
     try {
         return execSync(command).toString().trim();
     } catch (err) {
-        // Keine Punkte am Ende für ioBroker-Kompatibilität
-        console.error(`❌ Git-Fehler bei Befehl: ${command}`, err.message);
+        // Keine Satzpunkte am Ende der Logs, um ioBroker-Validierungsfehler zu vermeiden
+        console.error(`❌ Git-Fehler: ${command}`, err.message);
         process.exit(1);
     }
 }
 
-// Prüfen auf main-Branch
+// 1. Prüfung: Wir führen die Versionierung nur auf dem 'main' Branch aus
 const currentBranch = runGitCommand('git rev-parse --abbrev-ref HEAD');
 if (currentBranch !== 'main') {
-    console.log(`ℹ️  Info: Branch ist "${currentBranch}" - Auto-Versionierung nur auf main`);
+    console.log(`ℹ️  Info: Branch ist "${currentBranch}" - Keine automatische Versionierung`);
     process.exit(0);
 }
 
+// Pfade zu den Dateien definieren
 const rootDir = path.join(__dirname, '..');
 const packagePath = path.join(rootDir, 'package.json');
-const readmePath = path.join(rootDir, 'README.md');
 const changelogPath = path.join(rootDir, 'CHANGELOG.md');
 
 /**
- * Erhöht die Patch-Version (z.B. 1.0.12 -> 1.0.13)
+ * Erhöht die Patch-Stelle der Version (z.B. 1.0.7 -> 1.0.8).
+ * @param {string} v - Die aktuelle Versionsnummer.
+ * @returns {string} Die neue Versionsnummer.
  */
 function incrementPatch(v) {
     const parts = v.split('.');
@@ -47,104 +49,62 @@ function incrementPatch(v) {
 }
 
 /**
- * Ermittelt die Namen der geänderten Dateien
+ * Ermittelt die Liste der geänderten Dateien für den Changelog.
+ * @returns {string} Eine Liste der Dateinamen oder ein Standardtext.
  */
 function getChangedFilesList() {
-    const files = runGitCommand('git diff --cached --name-only')
-        .split('\n')
-        .filter(f => {
-            const name = f.trim();
-            return name && 
-                   !['package.json', 'CHANGELOG.md', 'README.md', 'io-package.json'].includes(name);
-        })
-        .map(f => `- Update von ${path.basename(f)}`);
+    try {
+        const files = runGitCommand('git diff --cached --name-only')
+            .split('\n')
+            .filter(f => {
+                const name = f.trim();
+                // Metadaten-Dateien aus der Liste für den Changelog filtern
+                return name && !['package.json', 'CHANGELOG.md', 'README.md'].includes(name);
+            })
+            .map(f => `- Update von ${path.basename(f)}`);
 
-    return files.length > 0 ? files.join('\n') : '- Allgemeine Code-Verbesserungen';
-}
-
-/**
- * Aktualisiert die README.md: Badge-Update und Changelog-Auszug (5 Einträge vor Annex)
- */
-function updateReadme(newVersion) {
-    if (!fs.existsSync(readmePath)) return;
-
-    let readmeContent = fs.readFileSync(readmePath, 'utf8');
-    const newBadge = `![Version](https://img.shields.io/badge/version-${newVersion}-orange)`;
-    
-    // 1. Badge-Update
-    const anyVersionBadgeRegex = /!\[Version\]\(https:\/\/img\.shields\.io\/.*version.*\)/gi;
-    readmeContent = readmeContent.replace(anyVersionBadgeRegex, '');
-    const titleRegex = /^(# ioBroker Script-Sammlung\s*)/m;
-    if (titleRegex.test(readmeContent)) {
-        readmeContent = readmeContent.replace(titleRegex, `$1\n\n${newBadge} `);
+        return files.length > 0 ? files.join('\n') : '- Code-Optimierungen und Updates';
+    } catch (e) {
+        return '- Dokumentation und Skripte aktualisiert';
     }
-
-    // 2. Changelog-Synchronisation (5 Einträge)
-    if (fs.existsSync(changelogPath)) {
-        const fullChangelog = fs.readFileSync(changelogPath, 'utf8');
-        const changelogEntries = fullChangelog.split('## [').slice(1, 6); // Top 5
-        const latestChanges = '## 📜 Letzte Änderungen\n\n' + 
-                             changelogEntries.map(e => '## [' + e).join('').trim();
-
-        const startMarker = '';
-        const endMarker = '';
-        const changelogBlock = `${startMarker}\n\n${latestChanges}\n\n${endMarker}`;
-
-        if (readmeContent.includes(startMarker) && readmeContent.includes(endMarker)) {
-            const regex = new RegExp(`${startMarker}[\\s\\S]*${endMarker}`, 'g');
-            readmeContent = readmeContent.replace(regex, changelogBlock);
-        } else {
-            // Vor dem Annex einfügen
-            const annexRegex = /^(## .*Annex.*)$/m;
-            if (annexRegex.test(readmeContent)) {
-                readmeContent = readmeContent.replace(annexRegex, `---\n\n${changelogBlock}\n\n$1`);
-            } else {
-                readmeContent += `\n\n---\n\n${changelogBlock}`;
-            }
-        }
-    }
-
-    readmeContent = readmeContent.replace(/\n{3,}/g, '\n\n');
-    fs.writeFileSync(readmePath, readmeContent.trim() + '\n', 'utf8');
-    runGitCommand(`git add "${readmePath}"`);
-    console.log(`📖 README.md aktualisiert (5 Einträge vor Annex)`);
-}
-
-/**
- * Aktualisiert die CHANGELOG.md
- */
-function updateChangelog(v) {
-    const date = new Date().toISOString().split('T')[0];
-    const fileList = getChangedFilesList();
-    const newEntry = `## [${v}] - ${date}\n${fileList}\n\n`;
-    
-    let content = fs.existsSync(changelogPath) ? fs.readFileSync(changelogPath, 'utf8') : '# Changelog\n\n';
-    const headerEnd = content.indexOf('\n\n') + 2;
-    
-    fs.writeFileSync(changelogPath, content.slice(0, headerEnd) + newEntry + content.slice(headerEnd));
-    runGitCommand(`git add "${changelogPath}"`);
-    console.log(`📝 CHANGELOG.md aktualisiert`);
 }
 
 // --- Hauptprozess ---
+console.log('--- Start: Auto Versioning (Hintergrund) ---');
+
 if (fs.existsSync(packagePath)) {
     try {
+        // 1. package.json einlesen und Version erhöhen
         const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
         const oldV = pkg.version;
         const newV = incrementPatch(oldV);
 
         pkg.version = newV;
-        fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n');
+        fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
         runGitCommand(`git add "${packagePath}"`);
         console.log(`✅ package.json: ${oldV} -> ${newV}`);
 
-        updateChangelog(newV);
-        updateReadme(newV);
+        // 2. CHANGELOG.md aktualisieren
+        const date = new Date().toISOString().split('T')[0];
+        const fileList = getChangedFilesList();
+        const newEntry = `## [${newV}] - ${date}\n${fileList}\n\n`;
+        
+        let chContent = fs.existsSync(changelogPath) ? fs.readFileSync(changelogPath, 'utf8') : '# Changelog\n\n';
+        
+        // Den neuen Eintrag direkt nach dem Header einfügen
+        const headerEnd = chContent.indexOf('\n\n') + 2;
+        const updatedChContent = chContent.slice(0, headerEnd) + newEntry + chContent.slice(headerEnd);
+        
+        fs.writeFileSync(changelogPath, updatedChContent, 'utf8');
+        runGitCommand(`git add "${changelogPath}"`);
+        console.log(`📝 CHANGELOG.md für v${newV} aktualisiert`);
 
         console.log(`--- Erfolg: Version ${newV} ist bereit für den Commit ---`);
-        process.exit(0);
     } catch (e) {
-        console.error('❌ Fehler während des Updates:', e.message);
+        console.error('❌ Fehler während der Versionierung:', e.message);
         process.exit(1);
     }
+} else {
+    console.error('❌ Fehler: Keine package.json gefunden');
+    process.exit(1);
 }

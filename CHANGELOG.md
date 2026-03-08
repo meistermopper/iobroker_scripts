@@ -1,6 +1,9 @@
 ### [1.0.3] - 2026-03-08
 - Update von auto_version.js
 
+## [1.0.10] - 2026-03-08
+- Update von auto_version.js
+
 ## [1.0.9] - 2026-03-08
 - Code-Optimierungen und Updates
 
