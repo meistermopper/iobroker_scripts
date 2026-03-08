@@ -1,39 +1,29 @@
-## 📜 Letzte Änderungen
+# ioBroker Script-Sammlung
 
-## [1.0.3] - 2026-03-08
-- Update von auto_version.js
+![Version](https://img.shields.io/badge/version-1.0.6-orange) ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
+![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
 
- Changelog
+Diese Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker.
 
-## [1.0.2] - 2026-03-08
-- Update von auto_version.js
+## 📂 Struktur
+* **KIA**: Steuerung von Ladeprozessen und Vorklimatisierung.
+* **PV-Anlage**: Intelligentes Batteriemanagement und Solarprognosen.
+* **Heizung**: Präsenzabhängige Heizungssteuerung.
 
-## [1.0.1] - 2026-03-08
-- aktuelle Skripte und automatische Versionierung
+---
 
+## 🚀 Workflow
+1. **Editieren**: In VS Code.
+2. **Aktivieren**: Upload-Pfeil (ioBroker Extension).
+3. **Sichern**: Commit & Push.
 
+---
 
+---
 
+## 📜 Annex: Repository-Standard
+1. **Dateiberechtigungen**: Alle Dateien gehören dem User `iobroker`.
+2. **Source of Truth**: Der Stand in VS Code ist maßgeblich.
 
-
-Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
-
-## 📜 Letzte Änderungen
-
-## [1.0.3] - 2026-03-08
-- Update von auto_version.js
-
- Changelog
-
-## [1.0.2] - 2026-03-08
-- Update von auto_version.js
-
-## [1.0.1] - 2026-03-08
-- aktuelle Skripte und automatische Versionierung
-
-
-
-
-
-
-Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
+---
+*Hinweis: Privates Projekt.*
