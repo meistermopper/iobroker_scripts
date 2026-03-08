@@ -8,19 +8,25 @@ Diese Repository enthält meine persönliche Sammlung an Automatisierungsskripte
 ## 📂 Struktur
 Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 
-### ⚡ Energie & Mobilität (`common/smarthome/`)
-* **KIA**: Steuerung von Ladeprozessen (`charge_master`), Vorklimatisierung und Statusabfragen über die Cloud.
-* **PV-Anlage**: Intelligentes Batteriemanagement, Solarprognosen (`solarprognose_master`) und Auswertung von Erzeugungsdaten.
-* **Verbrauch**: Tracking von Stromkosten und Verbräuchen einzelner Geräte wie Server oder Kühlschränke.
+### ⚡ Energie & Laden
+* **Smart Charging**: Intelligente Ladesteuerung für Wandtablet (`fully_smart_laden.js`) und Smartphones (`smartphones_laden.js`) zur Akkuschonung.
+* **USV-Management**: Sichert und stellt den Zustand von Lampen und Steckdosen nach einem Stromausfall wieder her (`hue_zigbee_states_restore.js`).
 
-### 🌡️ Haussteuerung
-* **Heizung**: Präsenzabhängige Heizungssteuerung und Master-Logik für das gesamte Haus.
-* **Räume**: Individuelle Logiken für Bad, Küche, Sauna, Schlafzimmer und Wohnzimmer (Beleuchtung, Mediensteuerung für VU+ Solo 4K/Spotify/Denon).
-* **Haushalt**: Überwachung von Haushaltsgeräten (Waschmaschine, Trockner) und Fenstersensoren.
+### 💡 Licht & Präsenz
+* **Raumlogik**: Präsenz- und helligkeitsabhängige Lichtsteuerung für verschiedene Bereiche:
+    * **Bad unten**: Szenen für Morgen- und Standardlicht mit Dimm-Vorwarnung (`licht_bewegung_dunkel.js`).
+    * **Garderobe**: Einfache "Presence Follower"-Logik (`garderobenlicht.js`).
+    * **Küche**: Tag- und Nachtmodus mit gestaffeltem Schalten von Spots und Hue-Lampen (`licht_presence.js`).
 
-### 🛠️ System & Verwaltung
-* **Monitoring**: Überwachung von USV-Status, Proxmox-Servern, FritzBox, Zigbee-Verfügbarkeit und Pi-hole.
-* **Telegram**: Zentrales Menü und Benachrichtigungsdienst für Statusmeldungen.
+### 🏡 Haushalt & Außenbereich
+* **Postkasten-Monitor**: Benachrichtigung bei Posteinwurf mit Sprachansage und VIS-Status (`post_da.js`).
+
+### 🛠️ System & Monitoring
+* **ioBroker-Wächter**:
+    * Überwacht Adapter und meldet Ausfälle nach einer Wartezeit (`adapter_off.js`).
+    * Implementiert einen PIN-Schutz für sensible VIS-Views (`vis_PIN.js`).
+* **Netzwerk-Management**:
+    * Überwacht die WAN-IP auf Wechsel, steuert DDNS-Updates und managt Failover-Szenarien (`failover_dyndns_master.js`).
 
 ---
 
