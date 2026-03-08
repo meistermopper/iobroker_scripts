@@ -2,8 +2,8 @@
 
 
 
-![Version](https://img.shields.io/badge/version-1.0.10-orange) ![Status](https://img.shields.io/badge/Status-aktiv-blue?style=flat-square)
-![Sprache](https://img.shields.io/badge/Sprache-JavaScript-yellow?style=flat-square)
+
+![Version](https://img.shields.io/badge/version-1.0.11-orange) ![Sprache](https://img.shields.io/badge/Sprache-JavaScript-yellow?style=flat-square)
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
 
