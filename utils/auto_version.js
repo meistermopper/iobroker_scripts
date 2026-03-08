@@ -1,8 +1,6 @@
 /**
  * @file auto_version.js
- * @description Inkrementiert die Version und aktualisiert die CHANGELOG.md.
- * Optimiert für die Verwendung in GUI-Tools wie VS Code (keine Interaktion).
- * Läuft nur auf dem 'main' Branch.
+ * @description Inkrementiert die Version und aktualisiert CHANGELOG.md sowie README.md (statisches Badge).
  * @author Gemini 3 Flash
  */
 
@@ -10,110 +8,82 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-/**
- * Hilfsfunktion zum Ausführen von Shell-Befehlen
- * @param {string} command - Der auszuführende Git-Befehl
- * @returns {string} Die bereinigte Ausgabe des Befehls
- */
 function runGitCommand(command) {
     try {
         return execSync(command).toString().trim();
     } catch (err) {
-        console.error(`❌ Fehler bei: ${command}`, err.message);
+        console.error(`❌ Git-Fehler: ${command}`, err.message);
         process.exit(1);
     }
 }
 
-// 1. Aktuellen Branch ermitteln
+// Nur auf 'main' aktiv werden
 const currentBranch = runGitCommand('git rev-parse --abbrev-ref HEAD');
-
-// 2. Prüfung: Nur auf dem 'main' Branch aktiv werden
-if (currentBranch !== 'main') {
-    // Wenn nicht auf main, beenden wir das Skript ohne Änderungen
-    process.exit(0);
-}
+if (currentBranch !== 'main') process.exit(0);
 
 const rootDir = path.join(__dirname, '..');
 const packagePath = path.join(rootDir, 'package.json');
+const readmePath = path.join(rootDir, 'README.md');
 const changelogPath = path.join(rootDir, 'CHANGELOG.md');
 
-/**
- * Inkrementiert die Patch-Version (z.B. 1.0.4 -> 1.0.5)
- * @param {string} versionStr - Aktuelle Version
- * @returns {string} Neue Version
- */
-function incrementPatch(versionStr) {
-    const parts = versionStr.split('.');
-    if (parts.length === 3) {
-        parts[2] = parseInt(parts[2], 10) + 1;
-    }
-    return parts.join('.');
+function incrementPatch(v) {
+    const p = v.split('.');
+    if (p.length === 3) p[2] = parseInt(p[2], 10) + 1;
+    return p.join('.');
 }
 
 /**
- * Aktualisiert die CHANGELOG.md mit einem Standardeintrag
- * @param {string} version - Die neue Versionsnummer
+ * Aktualisiert das Badge in der README.md
+ * Wir nutzen ein statisches Badge: https://img.shields.io/badge/version-1.0.5-orange
  */
-function updateChangelog(version) {
-    const date = new Date().toISOString().split('T')[0]; // Aktuelles Datum YYYY-MM-DD
-    
-    // Standard-Nachricht, da in der GUI keine Abfrage möglich ist
-    const logMessage = "Automatisches Update der Version.";
-    const newEntry = `## [${version}] - ${date}\n- ${logMessage}\n\n`;
+function updateReadme(newVersion) {
+    if (!fs.existsSync(readmePath)) return;
 
-    let currentContent = '';
-    if (fs.existsSync(changelogPath)) {
-        currentContent = fs.readFileSync(changelogPath, 'utf8');
+    let content = fs.readFileSync(readmePath, 'utf8');
+    
+    // Sucht nach dem Badge-Muster (egal welche Farbe oder Version gerade drin steht)
+    const badgeRegex = /!\[Version\]\(https:\/\/img\.shields\.io\/badge\/version-[\d\.]+-orange\)/;
+    const newBadge = `![Version](https://img.shields.io/badge/version-${newVersion}-orange)`;
+
+    if (badgeRegex.test(content)) {
+        // Bestehendes Badge ersetzen
+        content = content.replace(badgeRegex, newBadge);
     } else {
-        // Falls keine CHANGELOG.md existiert, erstellen wir eine Grundstruktur
-        currentContent = '# Changelog\n\nAlle Änderungen werden hier dokumentiert.\n\n';
+        // Kein Badge gefunden? Dann unter die erste Überschrift einfügen
+        content = content.replace(/^(# .*)$/m, `$1\n\n${newBadge}`);
     }
 
-    // Den neuen Eintrag direkt unter dem Header einfügen
-    const headerEndIndex = currentContent.indexOf('\n\n') + 2;
-    const updatedContent = currentContent.slice(0, headerEndIndex) + newEntry + currentContent.slice(headerEndIndex);
+    fs.writeFileSync(readmePath, content, 'utf8');
+    runGitCommand(`git add "${readmePath}"`);
+    console.log(`📖 README.md: Badge auf ${newVersion} gesetzt.`);
+}
 
-    fs.writeFileSync(changelogPath, updatedContent, 'utf8');
-    
-    // Die geänderte CHANGELOG.md wieder zum Git-Index hinzufügen
+function updateChangelog(v) {
+    const date = new Date().toISOString().split('T')[0];
+    const newEntry = `## [${v}] - ${date}\n- Automatisches Update.\n\n`;
+    let content = fs.existsSync(changelogPath) ? fs.readFileSync(changelogPath, 'utf8') : '# Changelog\n\n';
+    const headerEnd = content.indexOf('\n\n') + 2;
+    fs.writeFileSync(changelogPath, content.slice(0, headerEnd) + newEntry + content.slice(headerEnd));
     runGitCommand(`git add "${changelogPath}"`);
 }
 
-// --- Hauptlogik ---
+// Hauptprozess
 if (fs.existsSync(packagePath)) {
     try {
-        const fileContent = fs.readFileSync(packagePath, 'utf8');
-        const data = JSON.parse(fileContent);
-        
-        const oldVersion = data.version;
-        const newVersion = incrementPatch(oldVersion);
+        const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+        const newV = incrementPatch(pkg.version);
 
-        // Version in package.json aktualisieren
-        data.version = newVersion;
-        fs.writeFileSync(packagePath, JSON.stringify(data, null, 2) + '\n');
-        
-        // Datei für Git vormerken
+        pkg.version = newV;
+        fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n');
         runGitCommand(`git add "${packagePath}"`);
+        console.log(`✅ package.json: -> ${newV}`);
 
-        // Falls vorhanden, auch io-package.json aktualisieren
-        const ioPkgPath = path.join(rootDir, 'io-package.json');
-        if (fs.existsSync(ioPkgPath)) {
-            const ioData = JSON.parse(fs.readFileSync(ioPkgPath, 'utf8'));
-            ioData.version = newVersion;
-            fs.writeFileSync(ioPkgPath, JSON.stringify(ioData, null, 2) + '\n');
-            runGitCommand(`git add "${ioPkgPath}"`);
-        }
+        updateChangelog(newV);
+        updateReadme(newV);
 
-        // Changelog-Eintrag schreiben
-        updateChangelog(newVersion);
-
-        // Skript erfolgreich beenden
         process.exit(0);
-    } catch (err) {
-        console.error('❌ Fehler beim Update:', err.message);
+    } catch (e) {
+        console.error('❌ Fehler:', e.message);
         process.exit(1);
     }
-} else {
-    // Ohne package.json können wir nicht arbeiten
-    process.exit(0);
 }

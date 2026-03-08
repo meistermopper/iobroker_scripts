@@ -1,6 +1,8 @@
 ![Version](https://img.shields.io/github/package-json/v/meistermopper/iobroker_scripts)
 # ioBroker Script-Sammlung
 
+![Version](https://img.shields.io/badge/version-1.0.9-orange)
+
 ![Status](https://img.shields.io/badge/Status-aktiv-blue?style=flat-square)
 ![Sprache](https://img.shields.io/badge/Sprache-JavaScript-yellow?style=flat-square)
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
