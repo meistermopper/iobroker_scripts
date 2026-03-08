@@ -2,7 +2,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.0.19-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.20-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -10,6 +10,8 @@ Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskript
 Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 
 ### ⚡ Energie & Laden
+* **Energie-Master**: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox mit physikalischer Berechnung von Hausverbrauch und Autarkie (`energiemaster_und_sauna.js`).
+* **Charge-Master**: Übergeordnete Ladesteuerung (`charge_master.js`).
 * **Smart Charging**: Intelligente Ladesteuerung für Wandtablet (`fully_smart_laden.js`) und Smartphones (`smartphones_laden.js`) zur Akkuschonung.
 * **USV-Management**: Sichert und stellt den Zustand von Lampen und Steckdosen nach einem Stromausfall wieder her (`hue_zigbee_states_restore.js`).
 
@@ -68,6 +70,9 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 ## 📝 Changelog
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
+
+### [1.0.20] - 2026-03-08
+- Code-Optimierungen und Updates
 
 ### [1.0.19] - 2026-03-08
 - Update von CHANGELOG.md
