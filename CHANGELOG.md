@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.0.14] - 2026-03-08
+- Automatisches Update der Version.
+
 ## [1.0.13] - 2026-03-08
 - Automatisches Update der Version.
 

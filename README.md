@@ -1,30 +1,37 @@
 # ioBroker Script-Sammlung
 
+![Version](https://img.shields.io/badge/version-1.0.14-orange)
 
 
 
 
 
-![Version](https://img.shields.io/badge/version-1.0.13-orange) ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
+
+
 
 Diese Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
 ## 📂 Struktur
-Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
+Die Skripte sind logisch nach Funktionen und Räumen gegliedert und steuern zentrale Aspekte des Smart Homes.
 
-### ⚡ Energie & Mobilität (`common/smarthome/`)
-* **KIA**: Steuerung von Ladeprozessen (`charge_master`), Vorklimatisierung und Statusabfragen über die Cloud.
-* **PV-Anlage**: Intelligentes Batteriemanagement, Solarprognosen (`solarprognose_master`) und Auswertung von Erzeugungsdaten.
-* **Verbrauch**: Tracking von Stromkosten und Verbräuchen einzelner Geräte wie Server oder Kühlschränke.
+### ⚡ Energie & Mobilität
+*   **Smart Charging**: Intelligente Ladesteuerung zur Akkuschonung für Smartphones (`smartphones_laden.js`) und Wandtablets (`fully_smart_laden.js`). Die Skripte verwalten den Ladezyklus (z.B. 30-80%) und verhindern unnötiges Laden.
+*   **KIA & PV**: (Nicht in den aktuellen Dateien, aber im Repo vorhanden) Steuerung von Ladevorgängen für E-Autos, PV-Überschussladung und Auswertung von Prognosen.
 
-### 🌡️ Haussteuerung
-* **Heizung**: Präsenzabhängige Heizungssteuerung und Master-Logik für das gesamte Haus.
-* **Räume**: Individuelle Logiken für Bad, Küche, Sauna, Schlafzimmer und Wohnzimmer (Beleuchtung, Mediensteuerung für VU+ Solo 4K/Spotify/Denon).
-* **Haushalt**: Überwachung von Haushaltsgeräten (Waschmaschine, Trockner) und Fenstersensoren.
+###  Haussteuerung
+*   **Lichtautomatik**: Präsenz- und helligkeitsabhängige Lichtsteuerung. Die Skripte agieren als "Presence Follower", die das Licht exakt dem Zustand von Bewegungsmeldern folgen lassen und dabei nur schalten, wenn es nötig ist (z.B. `garderobenlicht.js`, `licht_presence.js` für die Küche).
+*   **Haushalt & Außenbereich**: Überwachung des Postkastens mit Benachrichtigung per Telegram/Gotify und Sprachausgabe (`post_da.js`).
+*   **Heizung & Medien**: (Nicht in den aktuellen Dateien) Präsenzabhängige Heizungssteuerung und individuelle Logiken für Mediensteuerung.
 
 ### 🛠️ System & Verwaltung
-* **Monitoring**: Überwachung von USV-Status, Proxmox-Servern, FritzBox, Zigbee-Verfügbarkeit und Pi-hole.
-* **Telegram**: Zentrales Menü und Benachrichtigungsdienst für Statusmeldungen.
+*   **Systemstabilität & Monitoring**:
+    *   **Adapter-Überwachung**: Sendet eine Warnung, wenn ein ioBroker-Adapter ausfällt (`adapter_off.js`).
+    *   **USV-Management**: Sichert bei Stromausfall den Zustand von Lampen und stellt diesen bei Netzrückkehr wieder her, um den letzten Zustand zu erhalten (`hue_zigbee_states_restore.js`).
+    *   **Netzwerk-Failover**: Überwacht die Internetverbindung (UniFi), managt das Failover auf LTE und aktualisiert automatisch DynDNS-Einträge (`failover_dyndns_master.js`).
+*   **Sicherheit & UI**:
+    *   **PIN-Schutz**: Implementiert eine PIN-Sperre für sensible Bereiche in der VIS-Visualisierung (`vis_PIN.js`).
+*   **Automatisierung**:
+    *   **Auto-Versioning**: Ein Hilfsskript (`auto_version.js`), das bei Commits automatisch die Version in `package.json` und `CHANGELOG.md` erhöht.
 
 ---
 
