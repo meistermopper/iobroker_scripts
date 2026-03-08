@@ -18,7 +18,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
     * **Bad unten**: Szenen für Morgen- und Standardlicht mit Dimm-Vorwarnung (`licht_bewegung_dunkel.js`).
     * **Garderobe**: Einfache "Presence Follower"-Logik (`garderobenlicht.js`).
     * **Küche**: Tag- und Nachtmodus mit gestaffeltem Schalten von Spots und Hue-Lampen (`licht_presence.js`).
-    * **Wohnzimmer**: Helligkeits- und medialabhängige Lichtsteuerung
+    * **Wohnzimmer**: Helligkeits- und medienabhängige Lichtsteuerung
 
 ### 🏡 Haushalt & Außenbereich
 * **Postkasten-Monitor**: Benachrichtigung bei Posteinwurf mit Sprachansage und VIS-Status (`post_da.js`).
