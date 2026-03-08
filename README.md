@@ -70,16 +70,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.0.19] - 2026-03-08
-- Update von CHANGELOG.md
-
-### [1.0.18] - 2026-03-08
-- Update von CHANGELOG.md
-
-### [1.0.17] - 2026-03-08
-- Code-Optimierungen und Updates
-
-### [1.0.16] - 2026-03-08
-- Code-Optimierungen und Updates
+- delete CHANGELOG.md
 
 ### [1.0.12] - 2026-03-08
 - Update von fenster_offen.js
