@@ -4,7 +4,7 @@
 - Update von auto_version.js
 
 ## [1.0.1] - 2026-03-08
-- Dokumentation aktualisiert und Version angehoben
+- aktuelle Skripte und automatische Versionierung
 
 
 
