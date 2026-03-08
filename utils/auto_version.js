@@ -1,8 +1,8 @@
 /**
  * @file auto_version.js
- * @description Inkrementiert die Version in der package.json und pflegt die CHANGELOG.md.
+ * @description Inkrementiert die Version in der package.json und pflegt den Changelog in der README.md.
  * Aktualisiert zudem das Versions-Badge in der README.md.
- * @author Gemini 3 Flash
+ * @author Gemini Code Assist
  */
 
 const fs = require('fs');
@@ -33,7 +33,6 @@ if (currentBranch !== 'main') {
 // Pfade zu den Dateien definieren
 const rootDir = path.join(__dirname, '..');
 const packagePath = path.join(rootDir, 'package.json');
-const changelogPath = path.join(rootDir, 'CHANGELOG.md');
 const readmePath = path.join(rootDir, 'README.md');
 
 /**
@@ -59,8 +58,8 @@ function getChangedFilesList() {
             .split('\n')
             .filter(f => {
                 const name = f.trim();
-                // Metadaten-Dateien aus der Liste für den Changelog filtern
-                return name && !['package.json', 'CHANGELOG.md', 'README.md'].includes(name);
+                // Metadaten-Dateien und das Skript selbst aus der Liste für den Changelog filtern
+                return name && !['package.json', 'README.md', 'utils/auto_version.js'].includes(name);
             })
             .map(f => `- Update von ${path.basename(f)}`);
 
@@ -71,21 +70,68 @@ function getChangedFilesList() {
 }
 
 // --- Hauptprozess ---
-console.log('--- Start: Auto Versioning (Hintergrund) ---');
+console.log('--- Start: Auto Versioning (Single Source of Truth) ---');
 
-if (fs.existsSync(packagePath)) {
-    try {
-        // 1. package.json einlesen und Version erhöhen
-        const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-        const oldV = pkg.version;
-        const newV = incrementPatch(oldV);
+if (!fs.existsSync(packagePath)) {
+    console.error('❌ Fehler: Keine package.json gefunden');
+    process.exit(1);
+}
+if (!fs.existsSync(readmePath)) {
+    console.error('❌ Fehler: Keine README.md gefunden');
+    process.exit(1);
+}
 
-        pkg.version = newV;
-        fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
-        runGitCommand(`git add "${packagePath}"`);
-        console.log(`✅ package.json: ${oldV} -> ${newV}`);
+try {
+    // 1. package.json einlesen und Version erhöhen
+    const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+    const oldV = pkg.version;
+    const newV = incrementPatch(oldV);
 
-        // 2. CHANGELOG.md aktualisieren
+    pkg.version = newV;
+    fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+    runGitCommand(`git add "${packagePath}"`);
+    console.log(`✅ package.json: ${oldV} -> ${newV}`);
+
+    // 2. README.md aktualisieren (Badge und Changelog)
+    let readmeContent = fs.readFileSync(readmePath, 'utf8');
+
+    // 2a. Badge aktualisieren
+    const badgeRegex = /(!\[Version\]\(.*\/Version-)([\d\.]+)(-success\?style=flat-square\))/;
+    if (badgeRegex.test(readmeContent)) {
+        readmeContent = readmeContent.replace(badgeRegex, `$1${newV}$3`);
+        console.log(`📘 README.md Badge auf v${newV} aktualisiert`);
+    } else {
+        console.warn('⚠️ Versions-Badge in README.md nicht gefunden. Badge nicht aktualisiert.');
+    }
+
+    // 2b. Changelog-Eintrag erstellen und einfügen
+    const date = new Date().toISOString().split('T')[0];
+    const fileList = getChangedFilesList();
+    // Wichtig: ### verwenden, damit es zur README-Struktur passt
+    const newEntry = `### [${newV}] - ${date}\n${fileList}`;
+
+    const changelogMarker = 'Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.';
+    const markerIndex = readmeContent.indexOf(changelelogMarker);
+
+    if (markerIndex !== -1) {
+        const insertionPoint = markerIndex + changelogMarker.length;
+        // Füge den neuen Eintrag mit korrekten Zeilenumbrüchen nach dem Marker ein
+        readmeContent = readmeContent.slice(0, insertionPoint) + `\n\n${newEntry}` + readmeContent.slice(insertionPoint);
+        console.log(`📝 README.md Changelog für v${newV} aktualisiert`);
+    } else {
+        console.warn('⚠️ Changelog-Marker in README.md nicht gefunden. Eintrag wird nicht hinzugefügt.');
+    }
+
+    // 3. Aktualisierte README.md speichern und zu Git hinzufügen
+    fs.writeFileSync(readmePath, readmeContent, 'utf8');
+    runGitCommand(`git add "${readmePath}"`);
+
+    console.log(`--- Erfolg: Version ${newV} ist bereit für den Commit ---`);
+
+} catch (e) {
+    console.error('❌ Fehler während der Versionierung:', e.message);
+    process.exit(1);
+}
         const date = new Date().toISOString().split('T')[0];
         const fileList = getChangedFilesList();
         const newEntry = `## [${newV}] - ${date}\n${fileList}`;
