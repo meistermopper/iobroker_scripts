@@ -1,4 +1,4 @@
-# ioBroker Script-Sammlung
+# ioBroker Skript-Sammlung
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
