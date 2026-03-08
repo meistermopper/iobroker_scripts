@@ -2,9 +2,6 @@
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
-## [1.0.14] - 2026-03-08
-- Update von auto_version.js
-
 ## [1.0.12] - 2026-03-08
 - Update von fenster_offen.js
 - Update von trockner.js
