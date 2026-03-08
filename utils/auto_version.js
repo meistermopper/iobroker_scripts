@@ -1,7 +1,7 @@
 /**
  * @file auto_version.js
  * @description Inkrementiert die Version in der package.json und pflegt die CHANGELOG.md.
- * Die README.md bleibt von diesem Skript unberührt.
+ * Aktualisiert zudem das Versions-Badge in der README.md.
  * @author Gemini 3 Flash
  */
 
@@ -34,6 +34,7 @@ if (currentBranch !== 'main') {
 const rootDir = path.join(__dirname, '..');
 const packagePath = path.join(rootDir, 'package.json');
 const changelogPath = path.join(rootDir, 'CHANGELOG.md');
+const readmePath = path.join(rootDir, 'README.md');
 
 /**
  * Erhöht die Patch-Stelle der Version (z.B. 1.0.7 -> 1.0.8).
@@ -102,6 +103,20 @@ if (fs.existsSync(packagePath)) {
         fs.writeFileSync(changelogPath, updatedChContent, 'utf8');
         runGitCommand(`git add "${changelogPath}"`);
         console.log(`📝 CHANGELOG.md für v${newV} aktualisiert`);
+
+        // 3. README.md aktualisieren (Badge)
+        if (fs.existsSync(readmePath)) {
+            let readmeContent = fs.readFileSync(readmePath, 'utf8');
+            // Ersetzt die Version im Badge: !Version
+            const badgeRegex = /(!\[Version\]\(.*\/Version-)([\d\.]+)(-success\?style=flat-square\))/;
+            
+            if (badgeRegex.test(readmeContent)) {
+                readmeContent = readmeContent.replace(badgeRegex, `$1${newV}$3`);
+                fs.writeFileSync(readmePath, readmeContent, 'utf8');
+                runGitCommand(`git add "${readmePath}"`);
+                console.log(`📘 README.md Badge auf v${newV} aktualisiert`);
+            }
+        }
 
         console.log(`--- Erfolg: Version ${newV} ist bereit für den Commit ---`);
     } catch (e) {

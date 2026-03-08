@@ -2,6 +2,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.14-success?style=flat-square)
 
 Diese Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
