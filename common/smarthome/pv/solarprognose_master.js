@@ -1,12 +1,13 @@
 /**
  * =============================================================================
- * SKRIPT: SOLAR-PROGNOSE MASTER (VERSION 1.5)
+ * SKRIPT: SOLAR-PROGNOSE MASTER (VERSION 1.6)
  * =============================================================================
  * ZWECK: Stündliche PV-Prognose von solarprognose.de für heute & morgen.
  * OPTIMIERT: 
  * - Reduziert auf 2 Tage (übermorgen entfernt, um Logs sauber zu halten).
  * - Automatisches Anlegen der Datenpunkte in 0_userdata.0.
  * - Unterdrückung von Warnmeldungen bei der Initialisierung.
+ * - Logs bereinigt
  * =============================================================================
  */
 
@@ -38,7 +39,7 @@ async function initDPs() {
         await createStateAsync(path + 'uhrzeit', "", { name: `Peak Zeit ${day}`, type: 'string' });
         await createStateAsync(path + 'leistung', 0, { name: `Peak Watt ${day}`, type: 'number', unit: 'W' });
     }
-    //console.log("[Solar-Prognose] Datenstruktur (heute/morgen) wurde geprüft/erstellt.");
+    //console.log("[Solar-Prognose] Datenstruktur (heute/morgen) wurde geprüft/erstellt");
 }
 
 // Start der Initialisierung beim Skriptstart
@@ -56,7 +57,7 @@ schedule('4 8,10,12,14,16,18,20 * * *', () => {
  * Holt die Daten von der API und verteilt sie auf die Tage.
  */
 function fetchSolarData() {
-    //console.log("[Solar-Prognose] Starte API-Abfrage...");
+    //console.log("[Solar-Prognose] Starte API-Abfrage");
 
     httpGet(url, { timeout: 15000 }, (error, response) => {
         if (error) {
@@ -120,7 +121,7 @@ function processDayData(dayName, dataArray) {
     if (existsState(path + 'uhrzeit'))  setState(path + 'uhrzeit', peakTime, true);
     if (existsState(path + 'leistung')) setState(path + 'leistung', maxWatt, true);
 
-    //console.log(`[Solar-Prognose] ${dayName.toUpperCase()}: Peak ${maxWatt}W um ${peakTime} Uhr.`);
+    //console.log(`[Solar-Prognose] ${dayName.toUpperCase()}: Peak ${maxWatt}W um ${peakTime} Uhr`);
 }
 
 /**
