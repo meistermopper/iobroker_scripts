@@ -11,32 +11,48 @@ Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskript
 Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 
 ### ⚡ Energie & Laden
-* **Energie-Master**: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox mit physikalischer Berechnung von Hausverbrauch und Autarkie (`energiemaster_und_sauna.js`).
-* **Charge-Master**: Übergeordnete Ladesteuerung (`charge_master.js`).
-* **Smart Charging**: Intelligente Ladesteuerung für Wandtablet (`fully_smart_laden.js`) und Smartphones (`smartphones_laden.js`) zur Akkuschonung.
-* **USV-Management**: Sichert und stellt den Zustand von Lampen und Steckdosen nach einem Stromausfall wieder her (`hue_zigbee_states_restore.js`).
+* **Energie-Master**: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox mit physikalischer Berechnung von Hausverbrauch und Autarkie (`energiemaster_und_sauna.js`)
+* **Charge-Master**: Übergeordnete Ladesteuerung (`charge_master.js`)
+* **Smart Charging**: Intelligente Ladesteuerung für Wandtablet (`fully_smart_laden.js`) und Smartphones (`smartphones_laden.js`) zur Akkuschonung
+* **USV-Management**: Sichert und stellt den Zustand von Lampen und Steckdosen nach einem Stromausfall wieder her (`hue_zigbee_states_restore.js`)
 
 ### 💡 Licht & Präsenz
 * **Raumlogik**: Präsenz- und helligkeitsabhängige Lichtsteuerung für verschiedene Bereiche:
-    * **Bad unten**: Szenen für Morgen- und Standardlicht mit Dimm-Vorwarnung (`licht_bewegung_dunkel.js`).
-    * **Garderobe**: Einfache "Presence Follower"-Logik (`garderobenlicht.js`).
-    * **Küche**: Tag- und Nachtmodus mit gestaffeltem Schalten von Spots und Hue-Lampen (`licht_presence.js`).
+    * **Bad unten**: Szenen für Morgen- und Standardlicht mit Dimm-Vorwarnung (`licht_bewegung_dunkel.js`)
+    * **Garderobe**: Einfache "Presence Follower"-Logik (`garderobenlicht.js`)
+    * **Küche**: Tag- und Nachtmodus mit gestaffeltem Schalten von Spots und Hue-Lampen (`licht_presence.js`)
     * **Wohnzimmer**: Helligkeits- und medienabhängige Lichtsteuerung
 
 ### 🏡 Haushalt & Außenbereich
-* **Postkasten-Monitor**: Benachrichtigung bei Posteinwurf mit Sprachansage und VIS-Status (`post_da.js`).
-* **Müllmeldung**: Am Vortag wird um 18:00 Uhr per Sprache und Nachricht die Abholung der Müllart am Folgetag angekündigt.
+* **UNIVERSAL MASTER v2.7 - THE ENERGY GUARDIAN**: ZWECK: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox.
+ * RECHENKERN: Physikalische Berechnung von Hausverbrauch und Autarkie.
+ * SCHUTZLOGIKEN:
+ * 1. Sauna-Priorisierung: Schützt die Batterie vor Hochstrom-Entladung.
+ * 2. Anti-Zappel: Verhindert Min-SoC-Sprünge bei taktendem Saunaofen.
+ * 4. Watchdog: Überwacht Änderungen des Min-SoC am Wechselrichter.
+ * 5. Safety-Guard: Warnt, wenn die Sauna bei offener Tür heizt.
+* **Postkasten-Monitor**: Benachrichtigung bei Posteinwurf mit Sprachansage und VIS-Status (`post_da.js`)
+* **Müllmeldung**: Am Vortag wird um 18:00 Uhr per Sprache und Nachricht die Abholung der Müllart am Folgetag angekündigt und visualisiert.
+* **Lüftungsempfehlungen**: In Abhängigkeit von Temperatur und Luftfeuchtigkeit (innen und außen)
+* **Spritpreise**: Auswertung günstigste Tankstelle in der Nähe und Visualisierung
+* **Alarmmelder**: Rauch- und Wasserwarnungen akustisch und per Nachricht
+* **Haushaltsgeräte**: Statusmeldungen für Waschmaschine, Geschirrspüler und Trocker
+* **Anwesenheit**: Über Smartphones vermittels WLAN (UniFi-Network-Adapter)
+* **Heizungssteuerung**: je nach Anwesenheit
+* **Homematic Service-Zentrale**:  überwacht UNREACH, LOWBAT, CONFIG_PENDING und CCU-Firmware
+* **Ladezustände**: überwacht alle akkubetriebenen Geräte und warnt bei Niedrigstand - automatisches Intervallladen von Smartphones und Tablets (30 <=> 80 %)
 
 ### 🛠️ System & Monitoring
 * **ioBroker-Wächter**:
-    * Überwacht Adapter und meldet Ausfälle nach einer Wartezeit (`adapter_off.js`).
-    * Implementiert einen PIN-Schutz für sensible VIS-Views (`vis_PIN.js`).
+    * Überwacht Adapter und meldet Ausfälle nach einer Wartezeit (`adapter_off.js`)
+    * Implementiert einen PIN-Schutz für sensible VIS-Views (`vis_PIN.js`)
 * **Netzwerk-Management**:
-    * Überwacht die WAN-IP auf Wechsel, steuert DDNS-Updates und managt Failover-Szenarien (`failover_dyndns_master.js`).
+    * Überwacht die WAN-IP auf Wechsel, steuert DDNS-Updates und managt Failover-Szenarien (`failover_dyndns_master.js`)
+* **Proxmox Cluster Master-Wächter**: Überwachung von Temperatur, Festplatten & Status - sendet Alarme an ALLE Telegram-User und gotify.
 
 ### 📺🎵 Medien
-* **Medienauswahl**: Wird per Sprachbefehl gesteuert
-* **Sauna**: Erkennt, wenn die Sauna läuft/nicht läuft und steuert zeitabhängig die Musikausgabe in Bad und Sauna.
+* **Medienauswahl**: Wird per Sprachbefehl und Google Home gesteuert
+* **Sauna**: Erkennt, wenn die Sauna läuft/nicht läuft und steuert zeitabhängig die Musikausgabe in Bad und Sauna
 
 ---
 
@@ -48,16 +64,16 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 * **Deployment (Live schalten)**: Die Übertragung zum ioBroker erfolgt manuell über die ioBroker-Extension.
 
 ### Täglicher Workflow
-1. **Editieren**: Änderungen direkt in VS Code vornehmen.
-2. **Aktivieren**: Den Upload-Pfeil in der ioBroker-Seitenleiste nutzen.
-3. **Sichern**: Commit & Push & GitHub Sync in VS Code.
+1. **Editieren**: Änderungen direkt in VS Code vornehmen
+2. **Aktivieren**: Den Upload-Pfeil in der ioBroker-Seitenleiste nutzen
+3. **Sichern**: Commit & Push & GitHub Sync in VS Code
 
 ---
 
 ## ⚙️ Setup
-* ioBroker mit installiertem JavaScript-Adapter.
-* VS Code mit der **ioBroker Extension**.
-* Git & GitLens zur Versionsverwaltung.
+* ioBroker mit installiertem JavaScript-Adapter
+* VS Code mit der **ioBroker Extension*.
+* Git & GitLens zur Versionsverwaltun.
 
 ---
 
