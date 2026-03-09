@@ -2,15 +2,13 @@
  * =============================================================================
  * SKRIPT: EV3 LADE-MASTER v6.1.1
  * =============================================================================
- * KONZEPT: Fokussiertes Start/Stop Management für den Kia e-Niro.
+ * KONZEPT: Fokussiertes Start/Stop Management für den Kia EV3.
  * STRATEGIE: Nutzung der fixen 6A (ca. 4,1 kW) für zwei Betriebsmodi:
  * 1. MANUELL: User schaltet in VIS (Automatik AUS).
  * 2. PV-AUTO: Skript schaltet nach Überschuss (Automatik AN).
  * ÄNDERUNGEN:
- * - Boost-Modus vollständig entfernt.
- * - Logik auf 21 relevante Datenpunkte reduziert.
  * - Beibehaltung aller Statistiken und Schutzfunktionen.
- * - Aussprache EV3 (Iwi three) in Benachrichtigungen für Persönlichkeit.
+ * - Wechseln der Sayit-Ansagen von Stunden auf Minuten, wenn 0 Std.
  * =============================================================================
  */
 
@@ -71,13 +69,16 @@ initLadeSystem();
 
 // --- 3. KOMMUNIKATION ---
 
-function ev3Notify(text, prio = 1) {
+function ev3Notify(text, prio = 1, spoken = null) {
     sendTo('telegram', 'send', { text: text });
     exec(`curl "https://mygotify.meistermopper.de/message?token=${GOTIFY_TOKEN}" -F "title=EV3 Master" -F "message=${text}" -F "priority=${prio}"`);
     
     // Sprachausgabe tagsüber
     if (compareTime('08:00', '20:00', 'between')) {
-        let voice = text.replace(/%/g, ' Prozent').replace(/SOC/gi, 'Ladestand').replace(/🔋|🔌|⚠️|🚗|❌/g, '');
+        // Wenn ein spezieller Sprechtext übergeben wurde (spoken), nutzen wir diesen.
+        // Andernfalls nehmen wir den Standardtext.
+        let voice = spoken || text;
+        voice = voice.replace(/%/g, ' Prozent').replace(/SOC/gi, 'Ladestand').replace(/🔋|🔌|⚠️|🚗|❌/g, '');
         sendTo("sayit", "say", { text: voice });
     }
 }
@@ -110,7 +111,7 @@ on({ id: IDS.pvAverage, change: 'ne' }, (obj) => {
     const isTransActive = getState(IDS.wbTrans).val;
     const batSoc = getState(IDS.batSocPV).val;
 
-    // START: Genügend Sonne (>4,3kW) und Hausspeicher gut gefüllt (>75%)
+    // START: Genügend Sonne (>4,6kW) und Hausspeicher gut gefüllt (>75%)
     if (!isTransActive && mittel > PV_START_LIMIT && batSoc > 75) {
         const wbStatus = getState(IDS.wbStat).val;
         if (wbStatus === 'Preparing') {
@@ -139,11 +140,27 @@ on({ id: IDS.wbStat, change: 'ne' }, (obj) => {
         setState(IDS.u_power, FIXED_CHARGE_W, true);
     } 
     else if (startZeitLaden && (status === 'Finishing' || status === 'Available')) {
+        // 1. Dauer des aktuellen Ladevorgangs in Minuten berechnen
         let dauerMin = Math.round((Date.now() - startZeitLaden) / 60000);
-        setState(IDS.u_timeDay, (getState(IDS.u_timeDay).val || 0) + dauerMin, true);
+        
+        // 2. Gesamtdauer für heute ermitteln (Bisherige Zeit + Aktuelle Zeit)
+        let totalMin = (getState(IDS.u_timeDay).val || 0) + dauerMin;
+        setState(IDS.u_timeDay, totalMin, true);
         
         setTimeout(() => {
-            ev3Notify(`❌ Ladung beendet. Heute geladen: ${getState(IDS.aliasDur).val}.`, 1);
+            // 3. Optimierung der Sprachausgabe (SayIt)
+            // Wir zerlegen die Gesamtminuten in Stunden und Restminuten,
+            // damit Alexa/Google nicht "0 Uhr 49" sagt, sondern "49 Minuten".
+            let h = Math.floor(totalMin / 60); // Ganze Stunden
+            let m = totalMin % 60;             // Verbleibende Minuten
+            
+            // Fallunterscheidung für natürliche Sprache:
+            // - Wenn Stunden > 0: "1 Stunde und 15 Minuten"
+            // - Wenn Stunden = 0: "49 Minuten"
+            let spokenTime = (h > 0) ? `${h} Stunde${h === 1 ? '' : 'n'} und ${m} Minuten` : `${m} Minuten`;
+            
+            // 4. Benachrichtigung senden (Text vs. Sprache getrennt)
+            ev3Notify(`❌ Ladung beendet. Heute geladen: ${getState(IDS.aliasDur).val}.`, 1, `Ladung beendet. Heute geladen: ${spokenTime}.`);
         }, 2000);
         
         startZeitLaden = null;
