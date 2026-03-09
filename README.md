@@ -31,6 +31,8 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
  * 2. Anti-Zappel: Verhindert Min-SoC-Sprünge bei taktendem Saunaofen.
  * 3. Watchdog: Überwacht Änderungen des Min-SoC am Wechselrichter.
  * 4. Safety-Guard: Warnt, wenn die Sauna bei offener Tür heizt.
+* **Überschussladen**: steuert die Wallbox in Abhängigkeit von Stromüberschuss und Ladeziel des Kfz
+* **Solarprognose**: Visualisierung der Werte von heute und morgen
 * **Postkasten-Monitor**: Benachrichtigung bei Posteinwurf mit Sprachansage und VIS-Status (`post_da.js`)
 * **Müllmeldung**: Am Vortag wird um 18:00 Uhr per Sprache und Nachricht die Abholung der Müllart am Folgetag angekündigt und visualisiert.
 * **Lüftungsempfehlungen**: In Abhängigkeit von Temperatur und Luftfeuchtigkeit (innen und außen)
