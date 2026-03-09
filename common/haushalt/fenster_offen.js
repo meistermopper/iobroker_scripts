@@ -75,9 +75,9 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
                 // B) SayIt (NUR zwischen 08:00 und 20:00 Uhr)
                 if (compareTime('08:00', '20:00', 'between')) {
                     sendTo("sayit", "say", { text: meldung });
-                    console.log(`Fenster: Sprachausgabe gesendet für ${nameKlartext}`);
+                    //console.log(`Fenster: Sprachausgabe gesendet für ${nameKlartext}`);
                 } else {
-                    console.log(`Fenster: Sprachausgabe unterdrückt (Nachtzeit) für ${nameKlartext}`);
+                    //console.log(`Fenster: Sprachausgabe unterdrückt (Nachtzeit) für ${nameKlartext}`);
                 }
 
                 console.warn(`Lüftungswarnung gesendet: ${nameKlartext} steht offen`);
