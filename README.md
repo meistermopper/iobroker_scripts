@@ -92,9 +92,6 @@ Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 ### [1.2.3] - 2026-03-09
 - Update von charge_master.js
 
-### [1.2.2] - 2026-03-09
-- Update von charge_master.js
-
 ### [1.1.1] - 2026-03-08
 - Code-Optimierungen und Updates
 
