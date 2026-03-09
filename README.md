@@ -1,3 +1,4 @@
+<img src="media/iobroker.png" align="right" width="200" alt="Projekt Logo">
 # ioBroker Skript-Sammlung 
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
