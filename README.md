@@ -50,6 +50,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 * **Netzwerk-Management**:
     * Überwacht die WAN-IP auf Wechsel, steuert DDNS-Updates und managt Failover-Szenarien (`failover_dyndns_master.js`)
 * **Proxmox Cluster Master-Wächter**: Überwachung von Temperatur, Festplatten & Status - sendet Alarme an ALLE Telegram-User und gotify.
+* **Fußball-Bundesliga**: Darstellung der aktuellen Tabelle und der nächsten Spiele SGE und FCB mit dem OpenLigaDB-Adapter
 
 ### 📺🎵 Medien
 * **Medienauswahl**: Wird per Sprachbefehl und Google Home gesteuert
