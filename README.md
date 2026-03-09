@@ -23,7 +23,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
     * **Küche**: Tag- und Nachtmodus mit gestaffeltem Schalten von Spots und Hue-Lampen (`licht_presence.js`)
     * **Wohnzimmer**: Helligkeits- und medienabhängige Lichtsteuerung
 
-### 🏡 Haushalt & Außenbereich
+### 🏡 Energie & Haushalt & Außenbereich
 * **UNIVERSAL MASTER v2.7 - THE ENERGY GUARDIAN**: ZWECK: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox.
  * RECHENKERN: Physikalische Berechnung von Hausverbrauch und Autarkie.
  * SCHUTZLOGIKEN:
