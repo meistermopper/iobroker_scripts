@@ -11,9 +11,17 @@ Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskript
 Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 
 ### ⚡ Energie & Laden
+* **UNIVERSAL MASTER v2.7 - THE ENERGY GUARDIAN**: ZWECK: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox.
+ * RECHENKERN: Physikalische Berechnung von Hausverbrauch und Autarkie.
+ * SCHUTZLOGIKEN:
+ * 1. Sauna-Priorisierung: Schützt die Batterie vor Hochstrom-Entladung.
+ * 2. Anti-Zappel: Verhindert Min-SoC-Sprünge bei taktendem Saunaofen.
+ * 3. Watchdog: Überwacht Änderungen des Min-SoC am Wechselrichter.
+ * 4. Safety-Guard: Warnt, wenn die Sauna bei offener Tür heizt.
+* **Überschussladen**: steuert die Wallbox in Abhängigkeit von Stromüberschuss und Ladeziel des Kfz
 * **Energie-Master**: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox mit physikalischer Berechnung von Hausverbrauch und Autarkie (`energiemaster_und_sauna.js`)
-* **Charge-Master**: Übergeordnete Ladesteuerung (`charge_master.js`)
 * **Smart Charging**: Intelligente Ladesteuerung für Wandtablet (`fully_smart_laden.js`) und Smartphones (`smartphones_laden.js`) zur Akkuschonung
+* **Solarprognose**: Visualisierung der Werte von heute und morgen
 * **USV-Management**: Sichert und stellt den Zustand von Lampen und Steckdosen nach einem Stromausfall wieder her (`hue_zigbee_states_restore.js`)
 
 ### 💡 Licht & Präsenz
@@ -23,16 +31,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
     * **Küche**: Tag- und Nachtmodus mit gestaffeltem Schalten von Spots und Hue-Lampen (`licht_presence.js`)
     * **Wohnzimmer**: Helligkeits- und medienabhängige Lichtsteuerung
 
-### 🏡 Energie & Haushalt & Außenbereich
-* **UNIVERSAL MASTER v2.7 - THE ENERGY GUARDIAN**: ZWECK: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox.
- * RECHENKERN: Physikalische Berechnung von Hausverbrauch und Autarkie.
- * SCHUTZLOGIKEN:
- * 1. Sauna-Priorisierung: Schützt die Batterie vor Hochstrom-Entladung.
- * 2. Anti-Zappel: Verhindert Min-SoC-Sprünge bei taktendem Saunaofen.
- * 3. Watchdog: Überwacht Änderungen des Min-SoC am Wechselrichter.
- * 4. Safety-Guard: Warnt, wenn die Sauna bei offener Tür heizt.
-* **Überschussladen**: steuert die Wallbox in Abhängigkeit von Stromüberschuss und Ladeziel des Kfz
-* **Solarprognose**: Visualisierung der Werte von heute und morgen
+### 🏡 Haushalt & Außenbereich
 * **Postkasten-Monitor**: Benachrichtigung bei Posteinwurf mit Sprachansage und VIS-Status (`post_da.js`)
 * **Müllmeldung**: Am Vortag wird um 18:00 Uhr per Sprache und Nachricht die Abholung der Müllart am Folgetag angekündigt und visualisiert.
 * **Lüftungsempfehlungen**: In Abhängigkeit von Temperatur und Luftfeuchtigkeit (innen und außen)
@@ -42,7 +41,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 * **Anwesenheit**: Über Smartphones vermittels WLAN (UniFi-Network-Adapter)
 * **Heizungssteuerung**: je nach Anwesenheit
 * **Homematic Service-Zentrale**:  überwacht UNREACH, LOWBAT, CONFIG_PENDING und CCU-Firmware
-* **Ladezustände**: überwacht alle akkubetriebenen Geräte und warnt bei Niedrigstand - automatisches Intervallladen von Smartphones und Tablets (30 <=> 80 %)
+* **Ladezustände**: überwacht alle akkubetriebenen Geräte und warnt bei Niedrigstand
 
 ### 🛠️ System & Monitoring
 * **ioBroker-Wächter**:
