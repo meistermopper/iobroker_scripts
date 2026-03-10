@@ -91,7 +91,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.2.3] - 2026-03-09
-- Update von charge_master.js
+- Update von charge_master.js (Ergänzung der Minutenansage)
 
 ### [1.1.1] - 2026-03-08
 - Code-Optimierungen und Updates
