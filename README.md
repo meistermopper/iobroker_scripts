@@ -90,7 +90,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
-### [1.2.4] - 2026-03-10
+### [1.2.4] - 2026-03-10 Syntax  auf Standard korrigiert
 - Update von heizen_rh.js
 - Update von heizen_rh.js
 - Update von boiler.js
