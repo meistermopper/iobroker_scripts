@@ -13,13 +13,13 @@
 
 // --- 1. KONFIGURATION (Pfade aus v2.5) ---
 const ID_SAUNA_AKTIV = "0_userdata.0.Haushalt.sauna_laeuft";
-const RADIO_SENDER   = "smoothjazz";
+const RADIO_SENDER = "smoothjazz";
 
 const HEOS = {
-    saunaStatus: "0_userdata.0.heos.Sauna.radio_status",
-    saunaSender: "0_userdata.0.heos.Sauna.sender",
-    badStatus:   "0_userdata.0.heos.Bad.radio_status",
-    badSender:   "0_userdata.0.heos.Bad.sender"
+  saunaStatus: "0_userdata.0.heos.Sauna.radio_status",
+  saunaSender: "0_userdata.0.heos.Sauna.sender",
+  badStatus: "0_userdata.0.heos.Bad.radio_status",
+  badSender: "0_userdata.0.heos.Bad.sender",
 };
 
 // Merker für die Timer, um sie bei Bedarf abbrechen zu können
@@ -27,41 +27,48 @@ let tRadioBad = null;
 let tRadioSauna = null;
 
 // --- 2. LOGIK ---
-on({id: ID_SAUNA_AKTIV, change: "ne"}, function(obj) {
-    const laeuft = obj.state.val; // Aktueller Status der Sauna-Priorisierung
+on({ id: ID_SAUNA_AKTIV, change: "ne" }, function (obj) {
+  const laeuft = obj.state.val; // Aktueller Status der Sauna-Priorisierung
 
-    if (laeuft === true) {
-        // --- SAUNA-MODUS GESTARTET ---
-        console.log("[Sound] Sauna-Logik aktiv. Musik-Timer gestartet (Bad 5 Min / Sauna 20 Min).");
-        
-        // Timer für Bad_unten (5 Minuten)
-        if (tRadioBad) clearTimeout(tRadioBad);
-        tRadioBad = setTimeout(function() {
-            setState(HEOS.badSender, RADIO_SENDER);
-            setState(HEOS.badStatus, true);
-            console.log("[Sound] Bad-Radio aktiv (5 Min. Verzögerung erreicht).");
-            tRadioBad = null;
-        }, 300000);
+  if (laeuft === true) {
+    // --- SAUNA-MODUS GESTARTET ---
+    console.log(
+      "[Sound] Sauna-Logik aktiv. Musik-Timer gestartet (Bad 5 Min / Sauna 20 Min).",
+    );
 
-        // Timer für Sauna (20 Minuten)
-        if (tRadioSauna) clearTimeout(tRadioSauna);
-        tRadioSauna = setTimeout(function() {
-            setState(HEOS.saunaSender, RADIO_SENDER);
-            setState(HEOS.saunaStatus, true);
-            console.log("[Sound] Sauna-Radio aktiv (20 Min. Verzögerung erreicht).");
-            tRadioSauna = null;
-        }, 1200000);
+    // Timer für Bad_unten (5 Minuten)
+    if (tRadioBad) clearTimeout(tRadioBad);
+    tRadioBad = setTimeout(function () {
+      setState(HEOS.badSender, RADIO_SENDER);
+      setState(HEOS.badStatus, true);
+      console.log("[Sound] Bad-Radio aktiv (5 Min. Verzögerung erreicht).");
+      tRadioBad = null;
+    }, 300000);
 
-    } else {
-        // --- SAUNA-MODUS BEENDET ---
-        console.log("[Sound] Sauna-Logik beendet. Musik wird gestoppt.");
-        
-        // Laufende Einschalt-Timer sofort abbrechen
-        if (tRadioBad) { clearTimeout(tRadioBad); tRadioBad = null; }
-        if (tRadioSauna) { clearTimeout(tRadioSauna); tRadioSauna = null; }
+    // Timer für Sauna (20 Minuten)
+    if (tRadioSauna) clearTimeout(tRadioSauna);
+    tRadioSauna = setTimeout(function () {
+      setState(HEOS.saunaSender, RADIO_SENDER);
+      setState(HEOS.saunaStatus, true);
+      console.log("[Sound] Sauna-Radio aktiv (20 Min. Verzögerung erreicht).");
+      tRadioSauna = null;
+    }, 1200000);
+  } else {
+    // --- SAUNA-MODUS BEENDET ---
+    console.log("[Sound] Sauna-Logik beendet. Musik wird gestoppt.");
 
-        // Beide Radios ausschalten
-        setState(HEOS.saunaStatus, false);
-        setState(HEOS.badStatus, false);
+    // Laufende Einschalt-Timer sofort abbrechen
+    if (tRadioBad) {
+      clearTimeout(tRadioBad);
+      tRadioBad = null;
     }
+    if (tRadioSauna) {
+      clearTimeout(tRadioSauna);
+      tRadioSauna = null;
+    }
+
+    // Beide Radios ausschalten
+    setState(HEOS.saunaStatus, false);
+    setState(HEOS.badStatus, false);
+  }
 });
