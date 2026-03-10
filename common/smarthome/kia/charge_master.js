@@ -63,7 +63,7 @@ async function initLadeSystem() {
     if (!existsState(IDS.u_smooth)) await createStateAsync(IDS.u_smooth, 10, { type: 'number', name: 'EMA-Glättung' });
     if (!existsState(IDS.u_limit))  await createStateAsync(IDS.u_limit, 80, { type: 'number', name: 'Ladeziel' });
     
-    console.log("[EV3 Master] v6.1.0 Initialisierung abgeschlossen. 21 Datenpunkte aktiv.");
+    console.log("[EV3 Master] v6.1.0 Initialisierung abgeschlossen. 21 Datenpunkte aktiv");
 }
 initLadeSystem();
 
