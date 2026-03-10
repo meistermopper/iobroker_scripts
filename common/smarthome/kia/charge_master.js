@@ -160,7 +160,7 @@ on({ id: IDS.wbStat, change: 'ne' }, (obj) => {
             let spokenTime = (h > 0) ? `${h} Stunde${h === 1 ? '' : 'n'} und ${m} Minuten` : `${m} Minuten`;
             
             // 4. Benachrichtigung senden (Text vs. Sprache getrennt)
-            ev3Notify(`❌ Ladung beendet. Heute geladen: ${getState(IDS.aliasDur).val}.`, 1, `Ladung beendet. Heute geladen: ${spokenTime}.`);
+            ev3Notify(`❌ Ladung beendet. Heute geladen: ${getState(IDS.aliasDur).val}`, 1, `Ladung beendet. Heute geladen: ${spokenTime}`);
         }, 2000);
         
         startZeitLaden = null;
