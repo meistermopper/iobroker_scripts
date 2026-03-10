@@ -116,7 +116,7 @@ on({ id: IDS.pvAverage, change: 'ne' }, (obj) => {
         const wbStatus = getState(IDS.wbStat).val;
         if (wbStatus === 'Preparing') {
             setState(IDS.wbTrans, true);
-            ev3Notify("🔋 Das Überschussladen des IWi three wurde mit 6 Ampere aktiviert.");
+            ev3Notify("🔋 Das Überschussladen des IWi three wurde mit 6 Ampere aktiviert");
         }
     } 
     // STOP: Überschuss sinkt unter die Ladeleistung (Pausierung)
