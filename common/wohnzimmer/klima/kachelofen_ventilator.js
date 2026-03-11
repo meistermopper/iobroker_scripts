@@ -19,7 +19,7 @@ function notify(msg) {
   const gotifyCmd = `curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker Fan" -F "message=${msg}" -F "priority=1"`;
   exec(gotifyCmd);
 
-  console.log("Meldung gesendet: " + msg);
+  //console.log("Meldung gesendet: " + msg);
 }
 
 // Hilfsfunktion zum Einschalten
