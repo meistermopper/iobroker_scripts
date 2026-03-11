@@ -90,9 +90,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
-### [1.2.5] - 2026-03-11
-- Update von kachelofen_ventilator.js
-
 ### [1.2.4] - 2026-03-10 Syntax - Skripte mit Prettier Code Formatter aktualisiert
 - sehen jetzt schick aus
 
