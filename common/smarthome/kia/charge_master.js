@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * SKRIPT: EV3 LADE-MASTER v6.2.0
+ * SKRIPT: EV3 LADE-MASTER v6.3.0
  * =============================================================================
  * KONZEPT: Fokussiertes Start/Stop Management für den Kia EV3.
  * STRATEGIE: Nutzung der fixen 6A (ca. 4,1 kW) für zwei Betriebsmodi:
@@ -9,6 +9,10 @@
  * ÄNDERUNGEN:
  * - Beibehaltung aller Statistiken und Schutzfunktionen.
  * - Wechseln der Sayit-Ansagen von Stunden auf Minuten, wenn 0 Std.
+ * ÄNDERUNGEN v6.3.0:
+ * - Batterieschutz: Bei manuellem Laden wird der Min-SoC der Hausbatterie
+ *   auf den aktuellen Wert gesetzt, um eine Entladung zu verhindern.
+ * - Nach Ladeende wird der ursprüngliche Min-SoC wiederhergestellt.
  * =============================================================================
  */
 
@@ -37,6 +41,8 @@ const IDS = {
   netPower: "0_userdata.0.Energie.PV.Netzbezug", // [11] Hauszähler (+Bezug/-Einspeisung)
   hausCons: "0_userdata.0.Energie.PV.Hausverbrauch", // [12] Eigenverbrauch Haus
   batSocPV: "modbus.0.inputRegisters.100.843_Battery_State_of_Charge_(System)", // [13] Hausspeicher %
+  minSocSet: "modbus.0.holdingRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
+  minSocRead: "modbus.0.inputRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
 
   // Steuerung & Statistik (VIS)
   u_auto: `${PATH_USER}.autoladen`, // [14] Schalter: PV-Automatik an/aus
@@ -55,6 +61,7 @@ const FIXED_CHARGE_W = 3690; // Fixe Leistung bei 6A (220V * 3 Phasen * 6A)
 const GOTIFY_TOKEN = getState("0_userdata.0.gotifytoken.iobroker").val;
 
 let startZeitLaden = null; // Merker für Statistik
+let originalMinSoc = null; // Merker für Min-SoC bei manuellem Laden
 
 // --- 2. INITIALISIERUNG ---
 
@@ -77,7 +84,7 @@ async function initLadeSystem() {
     });
 
   console.log(
-    "[EV3 Master] v6.1.0 Initialisierung abgeschlossen. 21 Datenpunkte aktiv",
+    "[EV3 Master] v6.3.0 Initialisierung abgeschlossen. Manuelles Laden schützt jetzt den Haus-Akku",
   );
 }
 initLadeSystem();
@@ -154,18 +161,40 @@ on({ id: IDS.pvAverage, change: "ne" }, (obj) => {
 
 /**
  * Erfasst Ladedauer und setzt die Leistungsanzeige.
+ * Erfasst Ladedauer, setzt die Leistungsanzeige und schützt bei manuellem
+ * Laden die Hausbatterie vor Entladung.
  */
 on({ id: IDS.wbStat, change: "ne" }, (obj) => {
   const status = obj.state.val;
+  const isAuto = getState(IDS.u_auto).val;
 
   if (status === "Charging") {
     startZeitLaden = Date.now();
     // Da die Box starr 6A lädt, setzen wir den festen Watt-Wert
     setState(IDS.u_power, FIXED_CHARGE_W, true);
+
+    // NEU: Batterieschutz bei manuellem Laden (Automatik AUS)
+    if (!isAuto && originalMinSoc === null) {
+      originalMinSoc = getState(IDS.minSocRead).val;
+      const currentBatSoc = getState(IDS.batSocPV).val;
+      setState(IDS.minSocSet, currentBatSoc);
+      const msg = `Manuelles Laden gestartet. Haus-Akku auf ${currentBatSoc}% gesperrt (vorher: ${originalMinSoc}%)`;
+      console.log(`[EV3 Master] ${msg}`);
+      ev3Notify(`🔋 ${msg}`);
+    }
   } else if (
     startZeitLaden &&
     (status === "Finishing" || status === "Available")
   ) {
+    // NEU: Batterieschutz bei manuellem Laden aufheben
+    if (!isAuto && originalMinSoc !== null) {
+      setState(IDS.minSocSet, originalMinSoc);
+      const msg = `Manuelles Laden beendet. Haus-Akku auf ${originalMinSoc}% freigegeben.`;
+      console.log(`[EV3 Master] ${msg}`);
+      ev3Notify(`🔌 ${msg}`);
+      originalMinSoc = null; // Merker zurücksetzen
+    }
+
     // 1. Dauer des aktuellen Ladevorgangs in Minuten berechnen
     let dauerMin = Math.round((Date.now() - startZeitLaden) / 60000);
 
