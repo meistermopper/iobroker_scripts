@@ -90,18 +90,13 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
-### [1.3.2] - 2026-03-12
-- Code-Optimierungen und Updates
-
-<<<<<<< HEAD
 ### [1.3.1] - 2026-03-12
 - Update von charge_master.js
+- Schutz der Hausbatterie bei manuellem Laden (kein Batteriestrom ins Kfz)
 
 ### [1.2.5] - 2026-03-11
 - Update von kachelofen_ventilator.js
 
-=======
->>>>>>> b2ba1ca3eb30d439cc62aa1d365435215b6d9fff
 ### [1.2.4] - 2026-03-10 Syntax - Skripte mit Prettier Code Formatter aktualisiert
 - sehen jetzt schick aus
 
