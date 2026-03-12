@@ -3,7 +3,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.3.1-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.3.2-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -90,12 +90,18 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
+### [1.3.2] - 2026-03-12
+- Code-Optimierungen und Updates
+
+<<<<<<< HEAD
 ### [1.3.1] - 2026-03-12
 - Update von charge_master.js
 
 ### [1.2.5] - 2026-03-11
 - Update von kachelofen_ventilator.js
 
+=======
+>>>>>>> b2ba1ca3eb30d439cc62aa1d365435215b6d9fff
 ### [1.2.4] - 2026-03-10 Syntax - Skripte mit Prettier Code Formatter aktualisiert
 - sehen jetzt schick aus
 
