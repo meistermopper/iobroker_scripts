@@ -26,13 +26,14 @@ const PIN_VIEWS = [
     name:       '420_ioBroker',        // Name der View, zu der bei Erfolg gewechselt werden soll (pin-view 107_PIN)
     project:    'projektx',            // VIS-Projekt, in dem die View ist, für den Viewwechsel bei Erfolg. Wert bekommt man u.a.: Vis -> Menü: Setup > Projekte (den Namen des jeweilgen Projektes nehmen)
     instance:   'FFFFFFFF',      // Funktioniert bei mir (und einigen anderen) immer mit 'FFFFFFFF', ansonsten Wert vom Vis, Menü Tools, Feld "Instanz ID" nehmen
-    pin:        '4712',          // Pin
+    // pin:        '4712',       // UNSICHER: Pin direkt im Code
+    pinId:      '0_userdata.0.Visualisierung.PIN_Codes.420_ioBroker', // SICHER: Pfad zum Datenpunkt mit der PIN
   },
  {
-    name:       '960_Auto',    
-    project:    'projektx',   
+    name:       '960_Auto',
+    project:    'projektx',
     instance:   'FFFFFFFF',
-    pin:        '4712',          
+    pinId:      '0_userdata.0.Visualisierung.PIN_Codes.960_Auto',
  },
 ];
 
@@ -55,7 +56,7 @@ var G_PinBufferWildcards = [];  // Für Vis-Anzeigefeld der Pineingabe, füllt s
  *******************************************************************************/
 init();
 function init() {
- 
+
     // Create states
     createScriptStates();
 
@@ -66,7 +67,7 @@ function init() {
             // Initialize global variables
             G_LastKeyPressed[PIN_VIEWS[i].name] = '';
             G_PinBufferKeys[PIN_VIEWS[i].name] = '';
-            G_PinBufferWildcards[PIN_VIEWS[i].name] = '';        
+            G_PinBufferWildcards[PIN_VIEWS[i].name] = '';
             // Reset für jede View durchführen
             resetPin(PIN_VIEWS[i].name)
         }
@@ -100,7 +101,7 @@ function main() {
                     break;
                 default:
                     //None
-            } 
+            }
         });
     }
 
@@ -134,7 +135,16 @@ function userEnteredNumber(viewName) {
  * @param {string}   viewName     Name der View
  ********************************/
 function checkEnteredPin(viewName) {
-    if (G_PinBufferKeys[viewName] == getPresetElement(viewName, 'pin')) {
+    // Ziel-PIN ermitteln: Entweder direkt (pin) oder sicher über Datenpunkt (pinId)
+    let targetPin = getPresetElement(viewName, 'pin');
+    const pinId   = getPresetElement(viewName, 'pinId');
+
+    if (pinId && existsState(pinId)) {
+        targetPin = getState(pinId).val;
+    }
+
+    // Vergleich (als String, um Typenprobleme zu vermeiden)
+    if (G_PinBufferKeys[viewName].toString() === targetPin.toString()) {
         if(LOGGING) log('Pin-Eingabe erfolgreich, View [' + viewName + ']');
         onSuccess(viewName);
         setTimeout(function() { resetPin(viewName) }, 3000);    // Reset nach 3 Sekunden
@@ -143,7 +153,7 @@ function checkEnteredPin(viewName) {
         setState(STATE_PATH + viewName + '.WrongPinEntered', true);
         resetPin(viewName);
     }
-}    
+}
 
 /********************************
  * Reset
