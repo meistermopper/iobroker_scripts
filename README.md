@@ -95,6 +95,7 @@ Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.3.4] - 2026-03-13
 - Update von batterie_voll.js
+- zurück auf 100 %, Optimierung und Kommentierung verbessert
 
 ### [1.3.3] - 2026-03-13
 - Update von charge_master.js
