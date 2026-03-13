@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * SKRIPT: EV3 LADE-MASTER v6.3.0
+ * SKRIPT: EV3 LADE-MASTER v6.3.1
  * =============================================================================
  * KONZEPT: Fokussiertes Start/Stop Management für den Kia EV3.
  * STRATEGIE: Nutzung der fixen 6A (ca. 4,1 kW) für zwei Betriebsmodi:
@@ -12,7 +12,7 @@
  * ÄNDERUNGEN v6.3.0:
  * - Batterieschutz: Bei manuellem Laden wird der Min-SoC der Hausbatterie
  *   auf den aktuellen Wert gesetzt, um eine Entladung zu verhindern.
- * - Nach Ladeende wird der ursprüngliche Min-SoC wiederhergestellt.
+ * - Nach Ladeende (auch wenn das Fzg beendet hat) wird der ursprüngliche Min-SoC wiederhergestellt.
  * =============================================================================
  */
 
@@ -84,7 +84,7 @@ async function initLadeSystem() {
     });
 
   console.log(
-    "[EV3 Master] v6.3.0 Initialisierung abgeschlossen. Manuelles Laden schützt jetzt den Haus-Akku",
+    "[EV3 Master] v6.3.1 Initialisierung abgeschlossen. Manuelles Laden schützt jetzt den Haus-Akku",
   );
 }
 initLadeSystem();
@@ -184,7 +184,10 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
     }
   } else if (
     startZeitLaden &&
-    (status === "Finishing" || status === "Available")
+    (status === "Finishing" ||
+      status === "Available" ||
+      status === "SuspendedEV" ||
+      status === "SuspendedEVSE")
   ) {
     // NEU: Batterieschutz bei manuellem Laden aufheben
     if (!isAuto && originalMinSoc !== null) {
