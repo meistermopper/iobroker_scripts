@@ -12,7 +12,7 @@
 /*******************************************************************************
  * Konfiguration
  ******************************************************************************/
-const STATE_PATH = 'javascript.' + instance + '.' + 'visViewPinSperre.';
+const STATE_PATH = '0_userdata.0.VISPin.'; // Zentraler Pfad für alle PIN-Datenpunkte
 
 const LOGGING = false;         // Detaillierte Ausgabe im Log. Falls keine Probleme, dann auf false setzen.
 
@@ -20,21 +20,21 @@ const LOGGING = false;         // Detaillierte Ausgabe im Log. Falls keine Probl
 /*******************************************************************************
  * Konfiguration: Views
  ******************************************************************************/
-// Es können beliebig mehr Views hinzugefügt oder auf eine limitiert werden, bitte aber Aufbau beibehalten! Damit nicht immer auf allen devices die View wechselt, können Views kopiert werden und den jeweiligen "Instanz ID" zugewiesen werden.
+// Es können beliebig mehr Views hinzugefügt werden.
+// Der PIN wird jetzt sicher in einem Datenpunkt gespeichert, der automatisch angelegt wird.
 const PIN_VIEWS = [
   {
-    name:       '420_ioBroker',        // Name der View, zu der bei Erfolg gewechselt werden soll (pin-view 107_PIN)
-    project:    'projektx',            // VIS-Projekt, in dem die View ist, für den Viewwechsel bei Erfolg. Wert bekommt man u.a.: Vis -> Menü: Setup > Projekte (den Namen des jeweilgen Projektes nehmen)
-    instance:   'FFFFFFFF',      // Funktioniert bei mir (und einigen anderen) immer mit 'FFFFFFFF', ansonsten Wert vom Vis, Menü Tools, Feld "Instanz ID" nehmen
-    // pin:        '4712',       // UNSICHER: Pin direkt im Code
-    pinId:      '0_userdata.0.Visualisierung.PIN_Codes.420_ioBroker', // SICHER: Pfad zum Datenpunkt mit der PIN
+    name: '420_ioBroker', // Name der View, zu der bei Erfolg gewechselt werden soll (pin-view 107_PIN)
+    project: 'projektx', // VIS-Projekt, in dem die View ist, für den Viewwechsel bei Erfolg. Wert bekommt man u.a.: Vis -> Menü: Setup > Projekte (den Namen des jeweilgen Projektes nehmen)
+    instance: 'FFFFFFFF', // Funktioniert bei mir (und einigen anderen) immer mit 'FFFFFFFF', ansonsten Wert vom Vis, Menü Tools, Feld "Instanz ID" nehmen
+    pin:        '4712',       // Fallback-PIN: Wird beim ersten Start in den Datenpunkt geschrieben.
   },
- {
-    name:       '960_Auto',
-    project:    'projektx',
-    instance:   'FFFFFFFF',
-    pinId:      '0_userdata.0.Visualisierung.PIN_Codes.960_Auto',
- },
+  {
+    name: '960_Auto',
+    project: 'projektx',
+    instance: 'FFFFFFFF',
+    pin:        '4712',       // Fallback-PIN.
+  },
 ];
 
 
@@ -46,52 +46,60 @@ const PIN_VIEWS = [
 /*******************************************************************************
  * Globale Variablen
  *******************************************************************************/
-// Array, pro View ein Element
-var G_LastKeyPressed = [];      // Letzte Taste, die gedrückt wurde
-var G_PinBufferKeys = [];       // Puffer für eingegebene Ziffern
-var G_PinBufferWildcards = [];  // Für Vis-Anzeigefeld der Pineingabe, füllt sich mit "*" nach jeder Zifferneingabe
+// Status-Objekt für alle Views (ersetzt die globalen Arrays)
+const viewStates = {};
 
 /*******************************************************************************
  * Executed on every script start.
  *******************************************************************************/
-init();
-function init() {
+(async function init() {
+    // 1. Datenpunkte anlegen (asynchron und sicher)
+    for (const view of PIN_VIEWS) {
+        const viewPath = STATE_PATH + view.name;
+        await createStateAsync(viewPath + '.CurrentKey', { name: 'Mit Tasten aus VIS setzen', type: 'string', read: true, write: true, role: 'info', def: '' });
+        await createStateAsync(viewPath + '.WrongPinEntered', { name: 'Pin-Fehler', type: 'boolean', read: true, write: false, role: 'info', def: false });
+        await createStateAsync(viewPath + '.PinWildcards', { name: 'Sterne (*) für VIS-Anzeige', type: 'string', read: true, write: false, role: 'info', def: '' });
 
-    // Create states
-    createScriptStates();
+        // NEU: Datenpunkt für den PIN anlegen, falls er nicht existiert
+        // Der PIN wird jetzt auch unter dem View-Pfad gespeichert
+        const pinId = viewPath + '.PIN';
+        view.pinId = pinId; // pinId zur Laufzeit hinzufügen für die spätere Verwendung
 
-    // 1. Initialize global variables
-    // 2. Reset for each view
-    setTimeout(function(){
-        for (let i = 0; i < PIN_VIEWS.length; i++) {
-            // Initialize global variables
-            G_LastKeyPressed[PIN_VIEWS[i].name] = '';
-            G_PinBufferKeys[PIN_VIEWS[i].name] = '';
-            G_PinBufferWildcards[PIN_VIEWS[i].name] = '';
-            // Reset für jede View durchführen
-            resetPin(PIN_VIEWS[i].name)
+        if (!(await existsObjectAsync(pinId))) {
+                await createStateAsync(pinId, view.pin || '', {
+                    name: `PIN Code für View '${view.name}'`,
+                    type: 'string',
+                    role: 'text.password',
+                    read: true,
+                    write: true,
+                });
+            log(`PIN-Datenpunkt ${pinId} wurde mit dem Fallback-PIN angelegt.`, 'info');
         }
-    }, 3000);
 
-    // Main Script starten, 5 Sekunden nach State-Generierung
-    setTimeout(main, 5000);
+        // Status initialisieren
+        viewStates[view.name] = { buffer: '', wildcards: '' };
 
-}
+        // Reset durchführen
+        await resetPin(view.name);
+    }
 
-/*******************************************************************************
- * Haupt-Skript
- *******************************************************************************/
-function main() {
+    // 2. Trigger starten (Regex für alle Views)
+    // Baut einen Regex, der auf alle CurrentKey-Pfade passt
+    const triggerPath = new RegExp('^' + STATE_PATH.replace(/\./g, '\\.') + '.*\\.CurrentKey$');
 
-    // Überwacht das Tastenfeld in VIS für jede View
-    for (var i = 0; i < PIN_VIEWS.length; i++) {
-        on({id: STATE_PATH + PIN_VIEWS[i].name + '.CurrentKey', change: "any"}, function (obj) {
-            var currView = obj.id.substr(STATE_PATH.length).split(".")[0]; // get View Name simply from obj.id
-            if(LOGGING) if(obj.state.val !== '') log('Eingabe über Tastenfeld: ' + obj.state.val + ', Viewname: ' + currView);
-            switch(obj.state.val) {
-                case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8: case 9:
-                    G_LastKeyPressed[currView] = obj.state.val;
-                    userEnteredNumber(currView);
+    on({id: triggerPath, change: "any"}, function (obj) {
+        const currView = obj.id.substring(STATE_PATH.length, obj.id.lastIndexOf('.'));
+        if (!currView || !viewStates[currView]) return;
+
+        const val = obj.state.val;
+        if (val === '') return; // Leere Änderungen ignorieren
+
+        if (LOGGING) log('Eingabe erkannt, View: ' + currView);
+
+        switch(String(val)) { // String-Cast zur Sicherheit
+            case '0': case '1': case '2': case '3': case '4':
+            case '5': case '6': case '7': case '8': case '9':
+                    userEnteredNumber(currView, val);
                     break;
                 case 'Enter':   // Der User hat die Pin-Eingabe bestätigt.
                     checkEnteredPin(currView);
@@ -100,34 +108,21 @@ function main() {
                     resetPin(currView);
                     break;
                 default:
-                    //None
-            }
-        });
-    }
-
-}
-
-
-/********************************
- * Create States
- ********************************/
-function createScriptStates() {
-    for (let i = 0; i < PIN_VIEWS.length; i++) {
-        createState(STATE_PATH + PIN_VIEWS[i].name + '.CurrentKey', {'name':'Mit Tasten aus VIS setzen', 'type':'string', 'read':true, 'write':false, 'role':'info', 'def':'' });
-        createState(STATE_PATH + PIN_VIEWS[i].name + '.WrongPinEntered', {'name':'Pin-Fehler', 'type':'boolean', 'read':true, 'write':false, 'role':'info'});
-        createState(STATE_PATH + PIN_VIEWS[i].name + '.PinWildcards', {'name':'Sterne (*) für VIS-Anzeige', 'type':'string', 'read':true, 'write':false, 'role':'info', 'def':'' });
-    }
-}
+                    if(LOGGING) log('Unbekannte Eingabe: ' + val);
+        }
+    });
+})();
 
 
 /********************************
  * Wird ausgeführt, sobald der User eine Nummer im Tastenfeld eingibt.
  * @param {string}   viewName     Name der View
+ * @param {string}   key          Gedrückte Taste
  *********************************/
-function userEnteredNumber(viewName) {
-    G_PinBufferKeys[viewName] = G_PinBufferKeys[viewName] + G_LastKeyPressed[viewName];
-    G_PinBufferWildcards[viewName] = G_PinBufferWildcards[viewName] + ' *';
-    setState(STATE_PATH + viewName + '.PinWildcards', G_PinBufferWildcards[viewName], true);
+function userEnteredNumber(viewName, key) {
+    viewStates[viewName].buffer += key;
+    viewStates[viewName].wildcards += ' *';
+    setState(STATE_PATH + viewName + '.PinWildcards', viewStates[viewName].wildcards, true);
 }
 
 /********************************
@@ -135,22 +130,39 @@ function userEnteredNumber(viewName) {
  * @param {string}   viewName     Name der View
  ********************************/
 function checkEnteredPin(viewName) {
-    // Ziel-PIN ermitteln: Entweder direkt (pin) oder sicher über Datenpunkt (pinId)
-    let targetPin = getPresetElement(viewName, 'pin');
-    const pinId   = getPresetElement(viewName, 'pinId');
-
-    if (pinId && existsState(pinId)) {
-        targetPin = getState(pinId).val;
+    // Konfiguration für diese View suchen
+    const viewConfig = PIN_VIEWS.find(v => v.name === viewName);
+    if (!viewConfig) {
+        log('Konfiguration für View ' + viewName + ' nicht gefunden!', 'error');
+        return;
     }
 
+    // Ziel-PIN ermitteln: Entweder direkt (pin) oder sicher über Datenpunkt (pinId)
+    let targetPin = '';
+    const pinId   = viewConfig.pinId;
+
+    // Wenn eine pinId konfiguriert ist, überschreibe den Wert aus der Konfiguration
+    if (pinId && existsState(pinId)) {
+        targetPin = getState(pinId).val;
+        if (LOGGING) log('PIN wird aus Datenpunkt gelesen: ' + pinId);
+    } else if (pinId) {
+        log(`PIN für View '${viewName}' konnte nicht geprüft werden. Datenpunkt '${pinId}' nicht gefunden oder hat keinen Wert.`, 'warn');
+        return; // Abbruch, da kein PIN zum Vergleich vorhanden ist.
+    } else {
+        log(`PIN für View '${viewName}' konnte nicht geprüft werden. Kein 'pinId' in der Konfiguration gesetzt.`, 'warn');
+        return; // Abbruch
+    }
+
+    if (LOGGING) log('Prüfe PIN für View [' + viewName + ']');
+
     // Vergleich (als String, um Typenprobleme zu vermeiden)
-    if (G_PinBufferKeys[viewName].toString() === targetPin.toString()) {
+    if ((viewStates[viewName].buffer || '').toString() === (targetPin || '').toString()) {
         if(LOGGING) log('Pin-Eingabe erfolgreich, View [' + viewName + ']');
-        onSuccess(viewName);
-        setTimeout(function() { resetPin(viewName) }, 3000);    // Reset nach 3 Sekunden
+        onSuccess(viewConfig);
+        setTimeout(() => resetPin(viewName), 3000);    // Reset nach 3 Sekunden
     } else {
         if(LOGGING) log('Falschen Pin eingegeben, View [' + viewName + ']');
-        setState(STATE_PATH + viewName + '.WrongPinEntered', true);
+        setState(STATE_PATH + viewName + '.WrongPinEntered', true, true); // ack: true setzen
         resetPin(viewName);
     }
 }
@@ -159,39 +171,25 @@ function checkEnteredPin(viewName) {
  * Reset
  * @param {string}   viewName     Name der View
  ********************************/
-function resetPin(viewName) {
-    if(LOGGING) log('Reset Pin, View-Name: [' + viewName + ']');
-    G_PinBufferWildcards[viewName] = '';
-    G_PinBufferKeys[viewName] = '';
-    setState(STATE_PATH + viewName + '.CurrentKey', '', true);
-    setState(STATE_PATH + viewName + '.PinWildcards', '', true);
+async function resetPin(viewName) {
+    if (!viewStates[viewName]) return;
+
+    // if(LOGGING) log('Reset Pin, View-Name: [' + viewName + ']'); // Spam im Log reduzieren
+    viewStates[viewName].buffer = '';
+    viewStates[viewName].wildcards = '';
+
+    await setStateAsync(STATE_PATH + viewName + '.CurrentKey', '', true);
+    await setStateAsync(STATE_PATH + viewName + '.PinWildcards', '', true);
     setStateDelayed(STATE_PATH + viewName + '.WrongPinEntered', false, true, 3000); // Erst nach 3 Sekunden, für VIS-Anzeige
 }
 
 /********************************
  * Wird bei erfolgreicher Pin-Eingabe ausgeführt
- * @param {string}   viewName     Name der View
+ * @param {object}   viewConfig   Konfigurationsobjekt der View
  ********************************/
-function onSuccess(viewName){
+function onSuccess(viewConfig){
     // Change View
-    setState("vis.0.control.instance", getPresetElement(viewName, 'instance'));
-    setState("vis.0.control.data",     getPresetElement(viewName, 'project') + '/' + viewName);
+    setState("vis.0.control.instance", viewConfig.instance);
+    setState("vis.0.control.data",     viewConfig.project + '/' + viewConfig.name);
     setState("vis.0.control.command",  'changeView');
-}
-
-
-/********************************
- * Gibt Elemente von PIN_VIEWS zurück
- * @param {string}   viewName     Name of the view
- * @param {string}   key          'project', 'instance', 'pin'
- * @return {string}  Content of the element, e.g. the Pin "1234" for element 'pin'
- ********************************/
-function getPresetElement(viewName, key) {
-    var keyEntry = '';
-    for (let i = 0; i < PIN_VIEWS.length; i++) {
-        if (PIN_VIEWS[i].name === viewName) {
-            keyEntry = PIN_VIEWS[i][key]
-        }
-    }
-    return keyEntry;
 }
