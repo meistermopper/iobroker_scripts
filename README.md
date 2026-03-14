@@ -92,10 +92,7 @@ Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.3.6] - 2026-03-14
 - Update von vis_PIN.js
-
-### [1.3.5] - 2026-03-13
-- Update von vis_PIN.js
-- PIN ist nicht mehr offen
+- PIN wird nicht mehr im Skript angezeigt, neue Datenstruktur unter 0_userdata.0
 
 ### [1.3.4] - 2026-03-13
 - Update von batterie_voll.js
