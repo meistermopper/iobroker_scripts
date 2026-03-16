@@ -94,7 +94,7 @@ Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 - Update von energiemaster_und_sauna.js
 
 ### [1.5.1] - 2026-03-16
-- Update von energiemaster_und_sauna.js
+- Update von energiemaster_und_sauna.js (Schwellenwert Sauna auf 7.500 Watt angehoben)
 
 ### [1.4.1] - 2026-03-16
 - Update von trockner.js (weg von alias)
