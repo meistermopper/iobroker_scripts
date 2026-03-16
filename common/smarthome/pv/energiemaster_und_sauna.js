@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * UNIVERSAL MASTER v2.7 - THE ENERGY GUARDIAN
+ * UNIVERSAL MASTER v3.0 - THE ENERGY GUARDIAN
  * =============================================================================
  * ZWECK: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox.
  * RECHENKERN: Physikalische Berechnung von Hausverbrauch und Autarkie.
@@ -10,6 +10,8 @@
  * 3. Smart-Notify: Unterdrückt Telegram-Spam während der Wellness-Phase.
  * 4. Watchdog: Überwacht Änderungen des Min-SoC am Wechselrichter.
  * 5. Safety-Guard: Warnt, wenn die Sauna bei offener Tür heizt.
+ * 6. Datenpunkte Restladezeit und Ladung_final_Uhrzeit glattgezogen
+ * 7. Waschmaschine und Trockner weg vom alias
  * =============================================================================
  */
 
@@ -22,7 +24,7 @@ const IDS = {
   pvPower: "solax.0.data.acpower", // Aktuelle Erzeugung (W)
   pvYield: "solax.0.data.yieldtoday", // Tagesertrag (kWh)
   netPower: "smartmeter.0.1-0:16_7_0__255.value", // Hausanschluss (+Bezug / -Einspeisung)
-  batPower: "modbus.0.inputRegisters.100.842_Battery_Power_(System)", // Batterie (+Entladen / -Laden)
+  batPower: "modbus.0.inputRegisters.100.842_Battery_Power_(System)", // Batterie (+Laden / -Entladen)
   batSoc: "modbus.0.inputRegisters.100.843_Battery_State_of_Charge_(System)", // SoC (%)
 
   // Konfiguration & Steuerung
@@ -78,8 +80,8 @@ async function initSystem() {
     { id: PATH_PV + "Tagesladung", unit: "Wh", type: "number" },
     { id: PATH_PV + "TagesNetzbezug", unit: "Wh", type: "number" },
     { id: PATH_PV + "lade_kwh", unit: "kWh", type: "number" },
-    { id: PATH_PV + "Restentladezeit", unit: "h", type: "string" }, //meint Restladezeit
-    { id: PATH_PV + "Entladung_final_Uhrzeit", unit: "", type: "string" }, //meint Ladungsende Uhrzeit
+    { id: PATH_PV + "Restladezeit", unit: "h", type: "string" },
+    { id: PATH_PV + "Ladung_final_Uhrzeit", unit: "", type: "string" },
     { id: PATH_PV + "Wallbox_Freigabe", unit: "", type: "boolean" },
   ];
 
@@ -104,11 +106,20 @@ async function initSystem() {
     }
   }
   // Werte laden, damit Zähler nach Skript-Neustart weiterlaufen
-  sMax = getState(IDS.speicherMax).val || 9.6;
+  sMax = parseFloat(getState(IDS.speicherMax).val) || 9.6;
+
+  // LIVE-WERTE INITIALISIEREN (Fix für falsche Berechnung nach Neustart)
+  pvP = getState(IDS.pvPower).val || 0;
+  netP = getState(IDS.netPower).val || 0;
+  batP = getState(IDS.batPower).val || 0;
+  soc = getState(IDS.batSoc).val || 0;
+
   tVerbrauchWh = getState(PATH_PV + "Tagesverbrauch").val || 0;
   tLadungWh = getState(PATH_PV + "Tagesladung").val || 0;
   tNetzWh = getState(PATH_PV + "TagesNetzbezug").val || 0;
-  console.log("Master v2.7 (Sauna-Safety) aktiv"); // Doppelten Log-Eintrag entfernt
+
+  console.log(`Master v3.0 gestartet. Speicher: ${sMax} kWh, SoC: ${soc}%, BatPower: ${batP}W`);
+  runUpdate(); // Sofortiger Update-Lauf
 }
 initSystem();
 
@@ -139,8 +150,8 @@ function getBereinigteLast() {
   let gP = [
     "alias.0.kueche.boiler.ENERGY_Power",
     "alias.0.kueche.geschirr.ENERGY_Power",
-    "alias.0.waschen.wasch.ENERGY_Power",
-    "alias.0.waschen.trocknen.ENERGY_Power",
+    "sonoff.0.Waschmaschine.ENERGY_Power",
+    "sonoff.0.Trockner.ENERGY_Power",
     "alias.0.kueche.backofen.ENERGY_Power",
   ];
 
@@ -173,27 +184,33 @@ function runUpdate() {
   // Zeit-Integration für Wh-Zähler
   let h = diff / 3600000;
   tVerbrauchWh += curHausV * h;
-  if (batP > 0) tLadungWh += batP * h; // Nur echte Entladung zählen
+  if (batP > 0) tLadungWh += batP * h; // Nur echte Ladung zählen (Ladeleistung ist positiv)
   if (netP > 0) tNetzWh += netP * h;
   lastTs = now;
 
   // Batterie-Metriken (Wie lange dauert das Laden noch?)
   let curKwh = (sMax * soc) / 100;
-  let entladeEndeUhrzeit = "n. n.",
-    entladeDauerAnzeige = "---";
+  let ladeEndeUhrzeit = "n.v.",
+    ladeDauerAnzeige = "---";
 
+  // Berechnung der Restladezeit, wenn die Batterie geladen wird (positive Leistung)
   if (batP > 50) {
-    // Wenn Batterie geladen wird (Leistung > 50W)
-    let missingKwh = sMax - curKwh;
-    let rSec = (missingKwh / (batP / 1000)) * 3600; // Fehlende Energie / Ladeleistung
-    let rMinTotal = rSec / 60;
-    let hrs = Math.floor(rMinTotal / 60);
-    let mins = Math.floor(rMinTotal % 60);
-    entladeDauerAnzeige =
-      (hrs < 10 ? "0" + hrs : hrs) + ":" + (mins < 10 ? "0" + mins : mins);
-    let t = new Date();
-    t.setSeconds(t.getSeconds() + rSec);
-    entladeEndeUhrzeit = formatDate(t, "hh:mm");
+    const ladeLeistungKW = batP / 1000;
+    const fehlendeKwh = sMax - curKwh;
+
+    // Sicherstellen, dass Werte für die Berechnung gültig sind
+    if (ladeLeistungKW > 0 && fehlendeKwh > 0) {
+      const restStunden = fehlendeKwh / ladeLeistungKW;
+      const restSekunden = restStunden * 3600;
+
+      const stunden = Math.floor(restStunden);
+      const minuten = Math.floor((restStunden * 60) % 60);
+      ladeDauerAnzeige = (stunden < 10 ? "0" + stunden : stunden) + ":" + (minuten < 10 ? "0" + minuten : minuten);
+
+      const endeDatum = new Date();
+      endeDatum.setSeconds(endeDatum.getSeconds() + restSekunden);
+      ladeEndeUhrzeit = formatDate(endeDatum, "hh:mm");
+    }
   }
 
   // Autarkie-Berechnung (Was kommt nicht aus dem Netz?)
@@ -212,8 +229,8 @@ function runUpdate() {
   );
   setState(PATH_PV + "Autarkie", aut, true);
   setState(PATH_PV + "lade_kwh", parseFloat(curKwh.toFixed(1)), true);
-  setState(PATH_PV + "Restentladezeit", entladeDauerAnzeige, true);
-  setState(PATH_PV + "Entladung_final_Uhrzeit", entladeEndeUhrzeit, true);
+  setState(PATH_PV + "Restladezeit", ladeDauerAnzeige, true);
+  setState(PATH_PV + "Ladung_final_Uhrzeit", ladeEndeUhrzeit, true);
 
   // Sommer-Strategie (Flag für VIS)
   const d = new Date();
@@ -301,6 +318,12 @@ on({ id: IDS.batPower, change: "ne" }, function (obj) {
 });
 on({ id: IDS.batSoc, change: "ne" }, function (obj) {
   soc = obj.state.val || 0;
+  runUpdate();
+});
+
+// Trigger für Speichergröße-Änderung (falls in Objekten angepasst)
+on({ id: IDS.speicherMax, change: "ne" }, function (obj) {
+  sMax = parseFloat(obj.state.val) || 9.6;
   runUpdate();
 });
 
