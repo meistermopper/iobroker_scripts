@@ -91,7 +91,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.5.2] - 2026-03-16
-- Update von energiemaster_und_sauna.js
+- Update von energiemaster_und_sauna.js (Datenpunkte funktional angepasst)
 
 ### [1.5.1] - 2026-03-16
 - Update von energiemaster_und_sauna.js (Schwellenwert Sauna auf 7.500 Watt angehoben)
