@@ -89,7 +89,7 @@ on({ id: IDS.batSoc, change: "ne" }, async (obj) => {
 
     // Speicher ist voll (Definition hier: exakt 96% erreicht, vorher weniger)
     // Anmerkung: 96% scheint hier der eingestellte Max-Ladezustand zu sein.
-    if (soc === 96 && oldSoc < 96 && !messageSent) {
+    if (soc === 100 && oldSoc < 100 && !messageSent) {
 
         notify("👌 Bingo! Die Hausbatterie ist aufgeladen.", true, 1);
         messageSent = true;
