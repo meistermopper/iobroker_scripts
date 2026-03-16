@@ -10,7 +10,7 @@
 
 // --- 1. KONFIGURATION ---
 const ID_POWER  = 'alias.0.waschen.wasch.ENERGY_Power';  // Aktuelle Leistung (Watt)
-const ID_ENERGY = 'alias.0.waschen.wasch.ENERGY_Total';  // Gesamt-Zähler (kWh)
+const ID_ENERGY = 'sonoff.0.Waschmaschine.ENERGY_Total';  // Gesamt-Zähler (kWh)
 
 const PATH_STAT = '0_userdata.0.Energie.Statistik';
 const PATH_PRIC = '0_userdata.0.Energie.Strompreise';

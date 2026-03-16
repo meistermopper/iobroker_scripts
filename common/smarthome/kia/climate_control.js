@@ -83,14 +83,20 @@ async function starteHeizung() {
 
 // --- ZEITPLÄNE ---
 
-// Montag bis Donnerstag (wie bisher)
-schedule("37 9 * * 1", () => {
+// Montag
+schedule("40 9 * * 1", () => {
   starteHeizung();
 });
+
+// Dienstag
 //schedule("0 8 * * 2", () => { starteHeizung(); });
+
+// Mittwoch
 schedule("0 8 * * 3", () => {
   starteHeizung();
 });
+
+// Donnerstag
 schedule("0 7 * * 4", () => {
   starteHeizung();
 });

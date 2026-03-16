@@ -17,7 +17,7 @@ let messageSent = false;
  */
 function isWinter() {
     const month = new Date().getMonth() + 1; // 1-12
-    return (month >= 10 || month <= 3);
+    return (month >= 10 || month <= 2);
 }
 
 /**
@@ -51,17 +51,28 @@ schedule({ astro: "goldenHour", shift: 0 }, async () => {
 
     const soc = getState(IDS.batSoc).val;
     const minSoc = getState(IDS.minSocRead).val;
+    const month = new Date().getMonth() + 1;
 
-    // Kriterien: Winter UND Akku nicht voll (<84%) UND MinSoc ist noch niedrig (<40%)
-    if (isWinter() && soc < 84 && minSoc < 40) {
-
-        setState(IDS.minSocWrite, 40);
-
-        notify(
-            `Schonung des Speichers im Winterhalbjahr: 🔋 Min SoC wurde auf 40 % festgelegt, weil der Speicher nicht vollgeladen wurde.\n\n Akkustand: ${soc} %.`,
-            false,
-            1
-        );
+    // Kriterium: Akku wurde nicht voll (< 84%)
+    if (soc < 84) {
+        // Winter-Logik (Oktober - Februar): MinSoC auf 40% anheben, falls er niedriger ist.
+        if ((month >= 10 || month <= 2) && minSoc < 40) {
+            setState(IDS.minSocWrite, 40);
+            notify(
+                `Schonung des Speichers im Winter: 🔋 Min SoC wurde auf 40 % festgelegt, weil der Speicher nicht vollgeladen wurde.\n\n Akkustand: ${soc} %.`,
+                false,
+                1
+            );
+        }
+        // Übergangs-Logik (März): MinSoC auf 30% anheben, falls er niedriger ist.
+        else if (month === 3 && minSoc < 30) {
+            setState(IDS.minSocWrite, 30);
+            notify(
+                `Schonung des Speichers im Übergang: 🔋 Min SoC wurde auf 30 % festgelegt, weil der Speicher nicht vollgeladen wurde.\n\n Akkustand: ${soc} %.`,
+                false,
+                1
+            );
+        }
     }
 });
 
