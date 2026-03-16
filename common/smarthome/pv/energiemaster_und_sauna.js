@@ -348,9 +348,9 @@ schedule("0 0 * * *", function () {
  */
 function checkSaunaSafety(load) {
   const doorOpen = getState(IDS.saunaTuer).val;
-  // Wir nehmen > 5000W an, da der Saunaofen (8kW) deutlich darüber liegt.
+  // Wir nehmen > 7500W an, um Fehlalarme durch andere Verbraucher zu vermeiden.
   // Dies verhindert Fehlalarme durch andere Verbraucher (Föhn, Wasserkocher).
-  const isHeating = load > 5000;
+  const isHeating = load > 7500;
 
   if (doorOpen && isHeating) {
     if (!tSaunaSafety) {
@@ -359,7 +359,7 @@ function checkSaunaSafety(load) {
       );
       tSaunaSafety = setTimeout(() => {
         // Erneute Prüfung nach Ablauf der Zeit
-        if (getState(IDS.saunaTuer).val && getBereinigteLast() > 5000) {
+        if (getState(IDS.saunaTuer).val && getBereinigteLast() > 7500) {
           const msg =
             "Achtung: Die Sauna heizt bei offener Tür, bitte überprüfen";
           notify(msg);
