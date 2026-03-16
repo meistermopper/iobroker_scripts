@@ -91,10 +91,10 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.4.1] - 2026-03-16
-- Update von trockner.js
-- Update von waschmaschine.js
-- Update von climate_control.js
-- Update von batterie_voll.js
+- Update von trockner.js (weg von alias)
+- Update von waschmaschine.js (weg von alias)
+- Update von climate_control.js (temp. Änderung)
+- Update von batterie_voll.js (ab März auf 30%)
 - Update von march_minsoc.js
 
 ### [1.3.7] - 2026-03-14
