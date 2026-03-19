@@ -90,9 +90,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
-### [1.5.5] - 2026-03-19
-- Update von climate_control.js
-
 ### [1.5.4] - 2026-03-16
 - Update von chromecast_ban_heos.js
 
