@@ -97,10 +97,7 @@ schedule("0 8 * * 3", () => {
 });
 
 // Donnerstag
-schedule("0 7 * * 4", () => {
-  starteHeizung();
-});
-//schedule("15 7 * * 4", () => { starteHeizung(); });
+//schedule("0 7 * * 4", () => { starteHeizung(); });
 
 // FREITAG LOGIK
 // 07:00 Uhr: Nur in ungeraden Wochen
