@@ -9,7 +9,7 @@
 
 // --- 1. KONFIGURATION ---
 const ID_POWER_T  = 'alias.0.waschen.trocknen.ENERGY_Power';  // Aktuelle Leistung
-const ID_ENERGY_T = 'sonoff.0.Trockner.ENERGY_Total';  // Gesamt-Zähler
+const ID_ENERGY_T = 'alias.0.waschen.trocknen.ENERGY_Total';  // Gesamt-Zähler
 
 const PATH_STAT_T = '0_userdata.0.Energie.Statistik';
 const PATH_PRIC_T = '0_userdata.0.Energie.Strompreise';
