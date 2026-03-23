@@ -91,10 +91,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.6.1] - 2026-03-23
-- Code-Optimierungen und Updates
-
-### [1.5.7] - 2026-03-23
-- Update von charge_master.js
+- Update von charge_master.js (Überschussladen wenn Wallbox "Finishing")
 
 ### [1.5.6] - 2026-03-21
 - Update von trockner.js
