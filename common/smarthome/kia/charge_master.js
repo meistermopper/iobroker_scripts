@@ -1,9 +1,9 @@
 /**
  * =============================================================================
- * SKRIPT: EV3 LADE-MASTER v6.3.1
+ * SKRIPT: EV3 LADE-MASTER v6.4.1
  * =============================================================================
  * KONZEPT: Fokussiertes Start/Stop Management für den Kia EV3.
- * STRATEGIE: Nutzung der fixen 6A (ca. 4,1 kW) für zwei Betriebsmodi:
+ * STRATEGIE: Nutzung der fixen 6A (ca. 3,960 kW) für zwei Betriebsmodi:
  * 1. MANUELL: User schaltet in VIS (Automatik AUS).
  * 2. PV-AUTO: Skript schaltet nach Überschuss (Automatik AN).
  * ÄNDERUNGEN:
@@ -141,7 +141,7 @@ on({ id: IDS.pvAverage, change: "ne" }, (obj) => {
   // START: Genügend Sonne (>4,6kW) und Hausspeicher gut gefüllt (>75%)
   if (!isTransActive && mittel > PV_START_LIMIT && batSoc > 75) {
     const wbStatus = getState(IDS.wbStat).val;
-    if (wbStatus === "Preparing") {
+    if (wbStatus === "Preparing" || wbStatus === "Finishing") {
       setState(IDS.wbTrans, true);
       ev3Notify(
         "🔋 Das Überschussladen des IWi three wurde mit 6 Ampere aktiviert",
