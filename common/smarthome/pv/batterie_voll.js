@@ -39,7 +39,8 @@ function notify(msg, speak = false, prio = 5) {
 
     // 3. Sprachausgabe (SayIt) - nur tagsüber
     if (speak && compareTime("08:00", "20:00", "between")) {
-        sendTo("sayit", "say", { text: msg });
+        const cleanMsg = msg.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF])/g, "");
+        sendTo("sayit", "say", { text: cleanMsg });
     }
 }
 
@@ -87,8 +88,7 @@ on({ id: IDS.batSoc, change: "ne" }, async (obj) => {
     const soc = obj.state.val;
     const oldSoc = obj.oldState ? obj.oldState.val : 0;
 
-    // Speicher ist voll (Definition hier: exakt 96% erreicht, vorher weniger)
-    // Anmerkung: 96% scheint hier der eingestellte Max-Ladezustand zu sein.
+    // Speicher ist voll
     if (soc === 100 && oldSoc < 100 && !messageSent) {
 
         notify("👌 Bingo! Die Hausbatterie ist aufgeladen.", true, 1);
