@@ -3,7 +3,6 @@ const IDS = {
     batSoc:      "modbus.0.inputRegisters.100.843_Battery_State_of_Charge_(System)",
     minSocWrite: "modbus.0.holdingRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
     minSocRead:  "modbus.0.inputRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
-    zigbeeDoor:  "zigbee.0.00158d0005435fe1.opened",
     gotifyToken: "0_userdata.0.gotifytoken.iobroker"
 };
 
@@ -94,20 +93,15 @@ on({ id: IDS.batSoc, change: "ne" }, async (obj) => {
         notify("👌 Bingo! Die Hausbatterie ist aufgeladen.", true, 1);
         messageSent = true;
 
-        // --- SONDERLOGIK WINTER & TÜR/FENSTER ---
+        // --- SONDERLOGIK WINTER ---
         // Wenn Winter UND MinSoC > 20%
         const minSoc = getState(IDS.minSocRead).val;
 
         if (minSoc > 20 && isWinter()) {
-
-            // Prüfen, ob Zigbee-Sensor (z.B. Saunatür/Fenster?) offen ist
-            const isDoorOpen = getState(IDS.zigbeeDoor).val;
-
-            // Wenn MinSoC noch nicht 30 ist UND Tür offen -> Setze auf 30%
-            if (minSoc !== 30 && isDoorOpen) {
+            // Wenn MinSoC noch nicht 30 ist -> Setze auf 30%
+            if (minSoc !== 30) {
                 setState(IDS.minSocWrite, 30);
-
-                notify("Winterhalbjahr: 🔋Min SoC wurde auf 30% festgelegt (Auslöser: Tür offen bei voller Batterie).", false, 1);
+                notify("Winterhalbjahr: 🔋Min SoC wurde auf 30% festgelegt (Auslöser: Batterie voll).", false, 1);
             }
         }
     }
