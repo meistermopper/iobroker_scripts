@@ -91,10 +91,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.6.3] - 2026-03-24
-- Update von batterie_voll.js
-
-### [1.6.2] - 2026-03-24
-- Update von batterie_voll.js
+- Update von batterie_voll.js (Emojie werden nicht mehr ausgesprochen)
 
 ### [1.6.1] - 2026-03-23
 - Update von charge_master.js (Überschussladen wenn Wallbox "Finishing")
