@@ -91,7 +91,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.6.4] - 2026-03-31
-- Update von anwesenheit_unifi.js
+- Update von anwesenheit_unifi.js (Anwesenheit um Thomas_6G erweitert)
 
 ### [1.6.3] - 2026-03-24
 - Update von batterie_voll.js (Emojis werden nicht mehr ausgesprochen)
