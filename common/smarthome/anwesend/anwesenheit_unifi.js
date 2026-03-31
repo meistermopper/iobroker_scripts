@@ -1,7 +1,8 @@
 // --- KONFIGURATION ---
 const people = [
     { name: 'Thomas', mac: 'dc:e5:5b:11:b8:7e', delay: 120000 }, // 2 Minuten Puffer
-    { name: 'Kiki',   mac: '78:53:64:01:8b:04', delay: 120000 }
+    { name: 'Kiki',   mac: '78:53:64:01:8b:04', delay: 120000 },
+    { name: 'Thomas_6G', mac: '1e:4a:b7:65:28:3c', delay: 120000 }
 ];
 
 const basePath = '0_userdata.0.Unifi.Anwesenheit';
@@ -13,7 +14,7 @@ async function init() {
     for (const person of people) {
         await createStateAsync(`${basePath}.${person.name}_IsOnline`, { name: `${person.name} Status`, type: 'boolean', role: 'indicator.connected', def: false });
         await createStateAsync(`${basePath}.${person.name}`, { name: `${person.name} Text`, type: 'string', role: 'text', def: 'noch leer' });
-        
+
         setupPresenceLogic(person);
     }
 }
@@ -60,7 +61,7 @@ function updateStatus(person, isOnline) {
 
     // Telegram & Gotify
     sendTo('telegram.0', { user: telegramUser, text: text });
-    
+
     const token = getState(gotifyTokenDP).val;
     if (token) {
         exec(`curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker" -F "message=${text}" -F "priority=1"`);
