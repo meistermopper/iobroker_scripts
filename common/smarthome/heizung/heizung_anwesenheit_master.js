@@ -93,7 +93,7 @@ on({ id: [PROG.AUSSERHAUS, PROG.ZUHAUSE], change: "ne" }, (obj) => {
     setMainProfiles(1, "⛱️ Modus Urlaub/Zuhause aktiv (Komfortprofil)");
   } else {
     setState(PROG.STANDARD, true, true);
-    setMainProfiles(3, "👨‍💻 Standard-Modus aktiv (Profil 3)");
+    setMainProfiles(1, "👨‍💻 Standard-Modus aktiv (Profil 1)");
   }
 });
 
