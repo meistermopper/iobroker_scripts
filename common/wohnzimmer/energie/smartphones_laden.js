@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * SKRIPT: SMART-CHARGING ZENTRALE (V2.7 - FINAL & CLEAN)
+ * SKRIPT: SMART-CHARGING ZENTRALE (V3.0 - ohne Anwesenheitsprüfung)
  * =============================================================================
  * ZWECK:
  * Dieses Skript überwacht Deine Geräte und steuert die Ladung so, dass der
@@ -11,6 +11,7 @@
  * Neustart nicht alles vergessen wird.
  * 2. SELF-HEALING: Erstellt fehlende Datenpunkte automatisch beim Start.
  * 3. SPRACH-TRIGGER: Spezielle Ansage für Thomas und das Tablet.
+ * 4. Keine Abhängigkeit von Anwesenheiten mehr, da der Pflegeaufwand zu groß ist.
  * =============================================================================
  */
 
@@ -21,7 +22,6 @@ const geraete = {
     levelId: "0_userdata.0.Energie.Smartphone.Kiki_level", // Woher kommt der Akkustand?
     powerId:
       "alias.0.wohnzimmer.energie.ladestation_kiki.Ladestation_Kiki.POWER", // Eigene Dose für Kiki
-    presenceId: "unifi-network.0.clients.users.78:53:64:01:8b:04.isOnline", // Nur melden, wenn Kiki da ist
     notifiedFullId: "0_userdata.0.Energie.Smartphone.Kiki_MeldungVoll", // Speicher für "Schon gemeldet"
     lowBatId: "0_userdata.0.Energie.Smartphone.Kiki_lowBat", // Rotes Icon in der VIS
     min: 30,
@@ -31,7 +31,6 @@ const geraete = {
   "Das Smartphone von Thomas": {
     levelId: "0_userdata.0.Energie.Smartphone.Thomas_level",
     powerId: "alias.0.wohnzimmer.energie.smartlader.on", // Nutzt den zentralen Alias
-    presenceId: "unifi-network.0.clients.users.dc:e5:5b:11:b8:7e.isOnline",
     notifiedFullId: "0_userdata.0.Energie.Smartphone.ThomasMeldungVoll", // Laut Grafik ohne Unterstrich
     lowBatId: "0_userdata.0.Energie.Smartphone.Thomas_lowBat",
     min: 30,
@@ -89,7 +88,6 @@ initStates(); // Führt die Prüfung sofort beim Start aus
 
 // --- 3. BENACHRICHTIGUNGS-HELFER ---
 function notify(name, msg, priority = 1, user = "", sayIt = false) {
-  const config = geraete[name];
   const timeOk = compareTime("08:00", "20:00", "between"); // Keine Ansagen mitten in der Nacht
   const token = getState("0_userdata.0.gotifytoken.iobroker").val;
 
@@ -99,10 +97,8 @@ function notify(name, msg, priority = 1, user = "", sayIt = false) {
     `curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=Akku" -F "message=${msg}" -F "priority=${priority}"`,
   );
 
-  // Sprachausgabe nur, wenn gewünscht, die Zeit passt und die Person im WLAN ist
-  let isPresent =
-    config && config.presenceId ? getState(config.presenceId).val : true;
-  if (sayIt && timeOk && isPresent) {
+  // Sprachausgabe nur, wenn gewünscht und die Zeit passt
+  if (sayIt && timeOk) {
     const cleanMsg = msg
       .replace(
         /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF])/g,
