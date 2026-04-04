@@ -91,7 +91,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.7.2] - 2026-04-04
-- Update von smartphones_laden.js
+- Update von smartphones_laden.js (Anwesenheitskriterium entfernt, da zu viel Pflegeaufwand)
 
 ### [1.7.1] - 2026-04-04
 - Update von heizung_anwesenheit_master.js (Standardprofil von 3 auf 1 geändert)
