@@ -88,7 +88,7 @@ on({ id: [PROG.AUSSERHAUS, PROG.ZUHAUSE], change: "ne" }, (obj) => {
     setStateDelayed("enigma2.0.main_command.DEEP_STANDBY", true, 3000, false);
     setStateDelayed("enigma2.1.main_command.DEEP_STANDBY", true, 6000, false);
   } else if (hier) {
-    setState(PROG.STANDARD, false, true);
+    setState(PROG.STANDARD, true, true);
     setState("alias.0.kueche.boiler.POWER", true);
     setMainProfiles(1, "⛱️ Modus Urlaub/Zuhause aktiv (Komfortprofil)");
   } else {
