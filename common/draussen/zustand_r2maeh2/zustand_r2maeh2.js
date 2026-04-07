@@ -85,12 +85,16 @@ on({ id: IDS.socket_state, change: 'ne' }, function (obj) {
 });
 
 // --- 2. FROST-CHECK ---
-schedule("1 18 * * *", function () {
+schedule("1 18 * * *", async function () {
     if (!isSaison()) return;
     var pState = getState(IDS.power);
     var tState = getState(IDS.tempLow);
     if (pState && tState && pState.val > 10 && tState.val < 5) {
         notifyR2('+++ ❄️ R2Maeh2 muss in den Keller. Es wird zu kalt! +++', 2);
+
+        if (compareTime('08:00', '20:00', 'between')) {
+            await googleWatchdogAnnounce("Achtung, es wird zu kalt für Erzwo mäh zwo. Bitte bringe ihn in den Keller.", 40);
+        }
     }
 });
 
@@ -114,7 +118,7 @@ on({ id: IDS.power, change: 'ne' }, async function (obj) {
         notifyR2('+++ 🚜 R2Maeh2 hat mit dem Mähen losgelegt +++');
 
         if (compareTime('08:00', '20:00', 'between')) {
-            await googleWatchdogAnnounce("RzwoMähzwo ist fleißig", 40);
+            await googleWatchdogAnnounce("ErzwoMähzwo ist fleißig", 40);
         }
     }
     // LOGIK: Mäher kehrt zurück
@@ -125,7 +129,7 @@ on({ id: IDS.power, change: 'ne' }, async function (obj) {
         notifyR2('+++ 🔌 R2Maeh2 ist zurück und wird geladen +++');
 
         if (compareTime('08:00', '20:00', 'between')) {
-            await googleWatchdogAnnounce("RzwoMähzwo wird geladen", 40);
+            await googleWatchdogAnnounce("ErzwoMähzwo wird geladen", 40);
         }
     }
 });
