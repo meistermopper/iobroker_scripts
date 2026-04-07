@@ -2,7 +2,10 @@
  * Name:   R2Maeh2 Maehroboter-Steuerung (Master)
  * Zweck:  Status, Frostwarnung, Durchschnitt & Steckdosen-Check
  * Stand:  01.03.2026 - Version mit Start-Sync & Debug-Log
+ * Stand:  07.04.2026 - Einführung der Sprachansagen
  */
+
+const WARTEZEIT_RESUME_MS = 8000; // Zeit bis Musik nach Ansage weiterläuft
 
 const IDS = {
     power: 'alias.0.draussen.r2maeh2.ENERGY_Power',
@@ -16,7 +19,7 @@ const IDS = {
 };
 
 // --- NEU: INITIALISIERUNG ---
-// Wir laden beim Start den echten Zustand aus dem Datenpunkt, 
+// Wir laden beim Start den echten Zustand aus dem Datenpunkt,
 // damit das Skript weiß, ob er gerade schon mäht oder nicht.
 var maehtState = getState(IDS.userMaeht);
 var maeht = (maehtState && maehtState.val === true) ? true : false;
@@ -24,15 +27,15 @@ var maeht = (maehtState && maehtState.val === true) ? true : false;
 console.log('R2Maeh2: Skript gestartet. Aktueller Maeh-Status: ' + (maeht ? 'MAEHT' : 'BEREIT'));
 
 function isSaison() {
-    var monat = new Date().getMonth(); 
-    return (monat >= 2 && monat <= 8); 
+    var monat = new Date().getMonth();
+    return (monat >= 2 && monat <= 8);
 }
 
 function notifyR2(text, priority) {
     var p = priority || 1;
     sendTo('telegram', 'send', { text: text });
     console.log('R2Maeh2-Meldung: ' + text);
-    
+
     var gState = getState(IDS.gotify);
     if (gState && gState.val) {
         var command = 'curl "https://mygotify.meistermopper.de/message?token=' + gState.val + '" ';
@@ -41,6 +44,37 @@ function notifyR2(text, priority) {
         command += '-F "priority=' + p + '"';
         exec(command);
     }
+}
+
+/**
+ * --- GOOGLE-ANSAGE FUNKTION ---
+ * Sucht alle aktiven Chromecasts, pausiert sie, macht die Ansage
+ * und setzt die Musik (falls vorher laufend) fort.
+ */
+async function googleWatchdogAnnounce(text, vol) {
+    const players = $(`chromecast.0.*.status.playerState`);
+
+    players.each(async function(id) {
+        const base = id.split('.status.')[0];
+        const isPlaying = (getState(id).val === 'playing');
+
+        let oldVol, oldUrl;
+
+        // Aktuellen Status sichern, um ihn später wiederherzustellen
+        if (isPlaying) {
+            oldVol = getState(base + '.player.volume').val;
+            oldUrl = getState(base + '.player.url2play').val;
+        }
+
+        // Ansage über die SayIt-Instanz triggern
+        sendTo("sayit", "say", { text: text, volume: vol });
+
+        // Musik nach der Wartezeit fortsetzen (Resume)
+        if (isPlaying) {
+            setStateDelayed(base + '.player.url2play', oldUrl, WARTEZEIT_RESUME_MS, false);
+            setStateDelayed(base + '.player.volume', oldVol, WARTEZEIT_RESUME_MS + 500, false);
+        }
+    });
 }
 
 // --- 1. STECKDOSEN-UEBERWACHUNG ---
@@ -61,9 +95,9 @@ schedule("1 18 * * *", function () {
 });
 
 // --- 3. STATUS-UEBERWACHUNG (MIT DEBUG-LOG) ---
-on({ id: IDS.power, change: 'ne' }, function (obj) {
+on({ id: IDS.power, change: 'ne' }, async function (obj) {
     if (!isSaison()) return;
-    
+
     var watt = obj.state.val;
     var oldWatt = obj.oldState ? obj.oldState.val : 0;
     var zeitFenster = compareTime('10:00', '18:01', 'between');
@@ -78,13 +112,21 @@ on({ id: IDS.power, change: 'ne' }, function (obj) {
         maeht = true;
         setState(IDS.userMaeht, true, true);
         notifyR2('+++ 🚜 R2Maeh2 hat mit dem Mähen losgelegt +++');
-    } 
+
+        if (compareTime('08:00', '20:00', 'between')) {
+            await googleWatchdogAnnounce("RzwoMähzwo ist fleißig", 40);
+        }
+    }
     // LOGIK: Mäher kehrt zurück
     // Wenn Watt über 10 steigt (Ladevorgang startet)
     else if (zeitFenster && watt > 10 && oldWatt <= 10 && maeht) {
         maeht = false;
         setState(IDS.userMaeht, false, true);
         notifyR2('+++ 🔌 R2Maeh2 ist zurück und wird geladen +++');
+
+        if (compareTime('08:00', '20:00', 'between')) {
+            await googleWatchdogAnnounce("RzwoMähzwo wird geladen", 40);
+        }
     }
 });
 
