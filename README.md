@@ -90,9 +90,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
-### [1.7.6] - 2026-04-07
-- Update von zustand_r2maeh2.js
-
 ### [1.7.5] - 2026-04-07
 - R2Mäh2 spricht wieder
 
