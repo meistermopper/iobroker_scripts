@@ -91,7 +91,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.7.5] - 2026-04-07
-- Code-Optimierungen und Updates
+- R2Mäh2 spricht wieder
 
 ### [1.7.3] - 2026-04-05
 - Update von heizung_anwesenheit_master.js
