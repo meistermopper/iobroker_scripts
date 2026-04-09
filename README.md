@@ -90,10 +90,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
-### [1.7.8] - 2026-04-09
-- Update von post_da.js
-- Update von charge_master.js
-
 ### [1.7.7] - 2026-04-09
 - Update von smartphones_laden.js (Kiki 35-80 %)
 
