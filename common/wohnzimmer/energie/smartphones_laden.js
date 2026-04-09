@@ -24,9 +24,9 @@ const geraete = {
       "alias.0.wohnzimmer.energie.ladestation_kiki.Ladestation_Kiki.POWER", // Eigene Dose für Kiki
     notifiedFullId: "0_userdata.0.Energie.Smartphone.Kiki_MeldungVoll", // Speicher für "Schon gemeldet"
     lowBatId: "0_userdata.0.Energie.Smartphone.Kiki_lowBat", // Rotes Icon in der VIS
-    min: 30,
+    min: 35,
     max: 80,
-    notificationUser: "", // Grenzwerte (30% an, 80% aus)
+    notificationUser: "", // Grenzwerte (35% an, 80% aus)
   },
   "Das Smartphone von Thomas": {
     levelId: "0_userdata.0.Energie.Smartphone.Thomas_level",
