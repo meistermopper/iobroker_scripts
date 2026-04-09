@@ -91,7 +91,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.7.7] - 2026-04-09
-- Update von smartphones_laden.js
+- Update von smartphones_laden.js (Kiki 35-80 %)
 
 ### [1.7.5] - 2026-04-07
 - R2Mäh2 spricht wieder
