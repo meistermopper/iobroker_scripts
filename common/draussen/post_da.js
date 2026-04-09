@@ -9,14 +9,14 @@
 
 // --- 1. KONFIGURATION ---
 const WARTEZEIT_RESUME_MS = 8000; // Zeit bis Musik nach Ansage weiterläuft
-const POSTKASTEN_STATE_ID = 'alias.0.draussen.postkasten.STATE'; 
-const POSTKASTEN_VIS_ID   = '0_userdata.0.Haushalt.Briefkasten'; 
+const POSTKASTEN_STATE_ID = 'alias.0.draussen.postkasten.STATE';
+const POSTKASTEN_VIS_ID   = '0_userdata.0.Haushalt.Briefkasten';
 const GOTIFY_TOKEN_ID     = '0_userdata.0.gotifytoken.iobroker';
 const GOTIFY_URL          = "https://mygotify.meistermopper.de/message?token=";
 
 // Sperren zur Vermeidung von Mehrfach-Meldungen innerhalb einer Minute
-let Sperre = false;        
-let Sperre_stumm = false; 
+let Sperre = false;
+let Sperre_stumm = false;
 
 /**
  * --- 2. GOOGLE-ANSAGE FUNKTION ---
@@ -25,13 +25,13 @@ let Sperre_stumm = false;
  */
 async function googleWatchdogAnnounce(text, vol) {
     const players = $(`chromecast.0.*.status.playerState`);
-    
+
     players.each(async function(id) {
-        const base = id.split('.status.')[0]; 
+        const base = id.split('.status.')[0];
         const isPlaying = (getState(id).val === 'playing');
-        
+
         let oldVol, oldUrl;
-        
+
         // Aktuellen Status sichern, um ihn später wiederherzustellen
         if (isPlaying) {
             oldVol = getState(base + '.player.volume').val;
@@ -56,20 +56,20 @@ async function googleWatchdogAnnounce(text, vol) {
 on({ id: POSTKASTEN_STATE_ID, change: 'ne' }, async (obj) => {
     // Sicherheits-Check: Nur reagieren, wenn Sensor "wahr" meldet
     if (!obj.state || !obj.state.val) return;
-    
+
     // Wenn in der VIS der Kasten noch als "voll" (true) markiert ist, nichts tun
     if (getState(POSTKASTEN_VIS_ID).val === true) return;
 
     const gotifyToken = getState(GOTIFY_TOKEN_ID).val;
-    const msgText  = '📫 Es war gerade jemand am Postkasten.'; 
-    const msgVoice = 'Es war gerade jemand am Postkasten.';    
+    const msgText  = '📫 Es war gerade jemand am Postkasten.';
+    const msgVoice = 'Es war gerade jemand am Postkasten.';
 
     // FALL A: Tagsüber (08:00 - 20:00 Uhr) -> Volles Programm mit Ansage
     if (!Sperre && compareTime('08:00', '20:00', 'between', null)) {
-        Sperre = true; 
-        
+        Sperre = true;
+
         console.log('Postkasten: Ereignis erkannt, starte Ansage & VIS-Update');
-        
+
         // 1. Status in VIS auf "voll" setzen (Das hat in V2.4.1 gefehlt!)
         setState(POSTKASTEN_VIS_ID, true);
 
@@ -81,21 +81,21 @@ on({ id: POSTKASTEN_STATE_ID, change: 'ne' }, async (obj) => {
         exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=Postkasten" -F "message=${msgText}" -F "priority=1"`);
 
         // Sperre nach einer Minute wieder aufheben
-        setTimeout(() => { Sperre = false; }, 60000); 
-    } 
-    
+        setTimeout(() => { Sperre = false; }, 60000);
+    }
+
     // FALL B: Nachts oder während der aktiven Sperre -> Nur Text-Benachrichtigung
     else if (!Sperre_stumm) {
         Sperre_stumm = true;
-        
+
         console.log('Postkasten: Stummes Ereignis, nur VIS-Update & Textnachricht');
 
         // Status in VIS auf "voll" setzen
         setState(POSTKASTEN_VIS_ID, true);
-        
+
         sendTo('telegram.0', 'send', { text: msgText });
         exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=Postkasten" -F "message=${msgText}" -F "priority=5"`);
-        
+
         setTimeout(() => { Sperre_stumm = false; }, 60000);
     }
 });
@@ -109,11 +109,11 @@ on({ id: POSTKASTEN_VIS_ID, change: 'ne' }, async (obj) => {
     if (obj.state.val === false) {
         const gotifyToken = getState(GOTIFY_TOKEN_ID).val;
         const msgScharf = '📪 Der Briefkasten wurde wieder scharfgeschaltet.';
-        
+
         // Bestätigung per Textnachricht
         sendTo('telegram.0', 'send', { text: msgScharf });
         exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=Postkasten" -F "message=${msgScharf}" -F "priority=1"`);
-        
+
         console.log('Postkasten: System manuell zurückgesetzt');
     }
 });

@@ -13,6 +13,7 @@
  * - Batterieschutz: Bei manuellem Laden wird der Min-SoC der Hausbatterie
  *   auf den aktuellen Wert gesetzt, um eine Entladung zu verhindern.
  * - Nach Ladeende (auch wenn das Fzg beendet hat) wird der ursprüngliche Min-SoC wiederhergestellt.
+ * - Sprache temporär ausgeschaltet
  * =============================================================================
  */
 
@@ -83,9 +84,9 @@ async function initLadeSystem() {
       name: "Ladeziel",
     });
 
-  console.log(
-    "[EV3 Master] v6.3.1 Initialisierung abgeschlossen. Manuelles Laden schützt jetzt den Haus-Akku",
-  );
+  //console.log(
+  //  "[EV3 Master] v6.3.1 Initialisierung abgeschlossen. Manuelles Laden schützt jetzt den Haus-Akku",
+  //);
 }
 initLadeSystem();
 
@@ -106,7 +107,7 @@ function ev3Notify(text, prio = 1, spoken = null) {
       .replace(/%/g, " Prozent")
       .replace(/SOC/gi, "Ladestand")
       .replace(/🔋|🔌|⚠️|🚗|❌/g, "");
-    sendTo("sayit", "say", { text: voice });
+    // sendTo("sayit", "say", { text: voice });
   }
 }
 
@@ -152,7 +153,7 @@ on({ id: IDS.pvAverage, change: "ne" }, (obj) => {
   else if (isTransActive && mittel < 4100) {
     setState(IDS.wbTrans, false);
     ev3Notify(
-      "⏸️ Das Laden des IWi three wurde beendet, der Ertrag ist zu gering.",
+      "Das Laden des IWi three wurde beendet, der Ertrag ist zu gering.",
     );
   }
 });
