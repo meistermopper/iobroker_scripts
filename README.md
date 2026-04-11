@@ -96,7 +96,6 @@ Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 ### [1.7.10] - 2026-04-09
 - Code-Optimierungen und Updates
 
-<<<<<<< HEAD
 ### [1.7.9] - 2026-04-09
 - Code-Optimierungen und Updates
 
