@@ -91,7 +91,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.8.1] - 2026-04-11
-- Update von charge_master.js
+- Update von charge_master.js (debounce 45s after change "Charching")
 
 ### [1.7.10] - 2026-04-09
 - Code-Optimierungen und Updates
@@ -100,9 +100,6 @@ Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 ### [1.7.9] - 2026-04-09
 - Code-Optimierungen und Updates
 
-
-=======
->>>>>>> b73d6d2f9e535d97ab4ee6748bab45a1ef9847f3
 ### [1.7.7] - 2026-04-09
 - Update von smartphones_laden.js (Kiki 35-80 %)
 
