@@ -9,11 +9,11 @@
  * ÄNDERUNGEN:
  * - Beibehaltung aller Statistiken und Schutzfunktionen.
  * - Wechseln der Sayit-Ansagen von Stunden auf Minuten, wenn 0 Std.
- * ÄNDERUNGEN v6.3.0:
  * - Batterieschutz: Bei manuellem Laden wird der Min-SoC der Hausbatterie
  *   auf den aktuellen Wert gesetzt, um eine Entladung zu verhindern.
  * - Nach Ladeende (auch wenn das Fzg beendet hat) wird der ursprüngliche Min-SoC wiederhergestellt.
  * - Sprache temporär ausgeschaltet
+ * - Debounce von 45 Sekunden, wenn Charging geändert wurde
  * =============================================================================
  */
 
@@ -63,6 +63,7 @@ const GOTIFY_TOKEN = getState("0_userdata.0.gotifytoken.iobroker").val;
 
 let startZeitLaden = null; // Merker für Statistik
 let originalMinSoc = null; // Merker für Min-SoC bei manuellem Laden
+let stopTimer = null;      // Timer zur Entprellung von kurzen Lade-Unterbrechungen
 
 // --- 2. INITIALISIERUNG ---
 
@@ -145,7 +146,7 @@ on({ id: IDS.pvAverage, change: "ne" }, (obj) => {
     if (wbStatus === "Preparing" || wbStatus === "Finishing") {
       setState(IDS.wbTrans, true);
       ev3Notify(
-        "🔋 Das Überschussladen des IWi three wurde mit 6 Ampere aktiviert",
+        "🔋 Das Überschussladen des EV 3 wurde mit 6 Ampere aktiviert",
       );
     }
   }
@@ -153,7 +154,7 @@ on({ id: IDS.pvAverage, change: "ne" }, (obj) => {
   else if (isTransActive && mittel < 4100) {
     setState(IDS.wbTrans, false);
     ev3Notify(
-      "Das Laden des IWi three wurde beendet, der Ertrag ist zu gering.",
+      "Das Laden des EV 3 wurde beendet, der Ertrag ist zu gering",
     );
   }
 });
@@ -170,7 +171,15 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
   const isAuto = getState(IDS.u_auto).val;
 
   if (status === "Charging") {
-    startZeitLaden = Date.now();
+    // Falls ein Stop-Timer läuft: Abbrechen, da es nur ein kurzer Schluckauf war
+    if (stopTimer) {
+      clearTimeout(stopTimer);
+      stopTimer = null;
+      console.log("[EV3 Master] Kurze Unterbrechung beendet, lade weiter...");
+      return;
+    }
+
+    if (!startZeitLaden) startZeitLaden = Date.now();
     // Da die Box starr 6A lädt, setzen wir den festen Watt-Wert
     setState(IDS.u_power, FIXED_CHARGE_W, true);
 
@@ -190,47 +199,48 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       status === "SuspendedEV" ||
       status === "SuspendedEVSE")
   ) {
-    // NEU: Batterieschutz bei manuellem Laden aufheben
-    if (!isAuto && originalMinSoc !== null) {
-      setState(IDS.minSocSet, originalMinSoc);
-      const msg = `Manuelles Laden beendet. Haus-Akku auf ${originalMinSoc}% freigegeben.`;
-      console.log(`[EV3 Master] ${msg}`);
-      ev3Notify(`🔌 ${msg}`);
-      originalMinSoc = null; // Merker zurücksetzen
-    }
+    // Wir warten 45 Sekunden, ob der Status wieder auf "Charging" springt (Entprellung)
+    if (stopTimer) clearTimeout(stopTimer);
 
-    // 1. Dauer des aktuellen Ladevorgangs in Minuten berechnen
-    let dauerMin = Math.round((Date.now() - startZeitLaden) / 60000);
+    stopTimer = setTimeout(() => {
+      // NEU: Batterieschutz bei manuellem Laden aufheben
+      if (!isAuto && originalMinSoc !== null) {
+        setState(IDS.minSocSet, originalMinSoc);
+        const msg = `Manuelles Laden beendet. Haus-Akku auf ${originalMinSoc}% freigegeben.`;
+        console.log(`[EV3 Master] ${msg}`);
+        ev3Notify(`🔌 ${msg}`);
+        originalMinSoc = null; // Merker zurücksetzen
+      }
 
-    // 2. Gesamtdauer für heute ermitteln (Bisherige Zeit + Aktuelle Zeit)
-    let totalMin = (getState(IDS.u_timeDay).val || 0) + dauerMin;
-    setState(IDS.u_timeDay, totalMin, true);
+      // 1. Dauer des aktuellen Ladevorgangs in Minuten berechnen
+      let dauerMin = Math.round((Date.now() - startZeitLaden) / 60000);
 
-    setTimeout(() => {
-      // 3. Optimierung der Sprachausgabe (SayIt)
-      // Wir zerlegen die Gesamtminuten in Stunden und Restminuten,
-      // damit Alexa/Google nicht "0 Uhr 49" sagt, sondern "49 Minuten".
-      let h = Math.floor(totalMin / 60); // Ganze Stunden
-      let m = totalMin % 60; // Verbleibende Minuten
+      // 2. Gesamtdauer für heute ermitteln (Bisherige Zeit + Aktuelle Zeit)
+      let totalMin = (getState(IDS.u_timeDay).val || 0) + dauerMin;
+      setState(IDS.u_timeDay, totalMin, true);
 
-      // Fallunterscheidung für natürliche Sprache:
-      // - Wenn Stunden > 0: "1 Stunde und 15 Minuten"
-      // - Wenn Stunden = 0: "49 Minuten"
-      let spokenTime =
-        h > 0
-          ? `${h} Stunde${h === 1 ? "" : "n"} und ${m} Minuten`
-          : `${m} Minuten`;
+      setTimeout(() => {
+        // 3. Optimierung der Sprachausgabe (SayIt)
+        let h = Math.floor(totalMin / 60); // Ganze Stunden
+        let m = totalMin % 60; // Verbleibende Minuten
 
-      // 4. Benachrichtigung senden (Text vs. Sprache getrennt)
-      ev3Notify(
-        `❌ Ladung beendet. Heute geladen: ${getState(IDS.aliasDur).val}`,
-        1,
-        `Ladung beendet. Heute geladen: ${spokenTime}`,
-      );
-    }, 2000);
+        let spokenTime =
+          h > 0
+            ? `${h} Stunde${h === 1 ? "" : "n"} und ${m} Minuten`
+            : `${m} Minuten`;
 
-    startZeitLaden = null;
-    setState(IDS.u_power, 0, true);
+        // 4. Benachrichtigung senden
+        ev3Notify(
+          `❌ Ladung beendet. Heute geladen: ${getState(IDS.aliasDur).val}`,
+          1,
+          `Ladung beendet. Heute geladen: ${spokenTime}`,
+        );
+      }, 2000);
+
+      startZeitLaden = null;
+      setState(IDS.u_power, 0, true);
+      stopTimer = null;
+    }, 45000); // 45 Sekunden Pufferzeit
   }
 });
 
