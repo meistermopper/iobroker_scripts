@@ -91,9 +91,9 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.9.1] - 2026-04-14
-- Update von Auswertung_guenstigste_Tankstelle.js
-- Update von guenstige_Tankstelle.js
-- Update von telegram_menue.js
+- Update von Auswertung_guenstigste_Tankstelle.js (del)
+- Update von guenstige_Tankstelle.js (del)
+- Update von telegram_menue.js (del Sprit)
 
 ### [1.8.1] - 2026-04-11
 - Update von charge_master.js (debounce 45s after change "Charching")
