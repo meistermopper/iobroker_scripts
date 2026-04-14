@@ -58,12 +58,12 @@ function getKlimaStatus(user) {
         const conf = RAEUME[raum];
         const tS = (conf.type === "heizung") ? "heizung.ACTUAL_TEMPERATURE" : "klima.temperature";
         const hS = (conf.type === "heizung") ? "heizung.HUMIDITY" : "klima.humidity";
-        
+
         if (!existsState(`alias.0.${conf.aliasName}.${tS}`)) continue;
 
         const t = getState(`alias.0.${conf.aliasName}.${tS}`).val;
         const h = getState(`alias.0.${conf.aliasName}.${hS}`).val;
-        
+
         if (h > 60) {
             hasCritical = true;
             msg += `⚠️ ${raum}: <b>${t.toFixed(1)}°C / ${Math.round(h)}%</b> 💧\n`;
@@ -105,23 +105,9 @@ function getKia(user) {
     });
 }
 
-async function getSprit(user) {
-    const stations = [
-        { n: 'Oil Treysa', id: 'tankerkoenig.0.stations.0.e5.feed' },
-        { n: 'BFT Treysa', id: 'tankerkoenig.0.stations.1.e5.feed' },
-        { n: 'Honsel Homberg', id: 'tankerkoenig.0.stations.5.e5.feed' },
-        { n: 'Raiff. Frielendorf', id: 'tankerkoenig.0.stations.4.e5.feed' },
-        { n: 'Shell Lützelwig', id: 'tankerkoenig.0.stations.3.e5.feed' }
-    ];
-    let list = stations.map(s => ({ name: s.n, price: getState(s.id).val })).filter(s => s.price > 0).sort((a, b) => a.price - b.price);
-    let msg = '<b>⛽ Top 3 Spritpreise:</b>\n\n';
-    list.slice(0, 3).forEach((s, i) => { msg += `${i === 0 ? '🏆' : '📍'} <b>${s.price.toFixed(2)}€</b> - ${s.name}\n`; });
-    smartNotify(user, msg);
-}
-
 function menuMain(user) {
     showMenu(user, '<b>🏠 ioBroker Zentrale</b>\nBitte wählen:', [
-        [{ text: '🚗 Standort Kia', callback_data: 'kia_pos' }, { text: '⛽ Spritpreise', callback_data: 'sprit' }],
+        [{ text: '🚗 Standort Kia', callback_data: 'kia_pos' }],
         [{ text: '🌡️ Klima-Check', callback_data: 'menu_klima' }, { text: '💡 Schaltungen', callback_data: 'menu_sw' }],
         [{ text: '📅 Termine', callback_data: 'termine' }, { text: '🪟 Fenster', callback_data: 'fenster' }],
         [{ text: '☀️ Astro', callback_data: 'astro' }]
@@ -159,9 +145,6 @@ on({ id: 'telegram.0.communicate.request', change: 'any' }, async (obj) => {
             break;
         case 'menu_sw':
             menuSchalter(user);
-            break;
-        case 'sprit':
-            await getSprit(user);
             break;
         case 'kia_pos':
             getKia(user);
