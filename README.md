@@ -90,9 +90,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
-### [1.9.3] - 2026-04-15
-- Update von sayit_autofix.js
-
 ### [1.9.2] - 2026-04-14
 - Update von sayit_autofix.js
 
