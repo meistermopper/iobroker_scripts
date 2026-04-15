@@ -34,7 +34,7 @@ function runShell(cmd) {
  * Prüft den Symlink auf Systemebene und die Config in der Datenbank.
  */
 async function repairSayItSystem() {
-    log('--- SayIt-Check: Starte Überprüfung der Cache-Struktur ---', 'info');
+    //log('--- SayIt-Check: Starte Überprüfung der Cache-Struktur ---', 'info');
 
     try {
         // 1. SYSTEM-EBENE: Ordner und Symlink
@@ -59,7 +59,7 @@ async function repairSayItSystem() {
 
             log('Symlink wurde erfolgreich wiederhergestellt.', 'info');
         } else {
-            log('Symlink in node_modules ist korrekt vorhanden.', 'info');
+            //log('Symlink in node_modules ist korrekt vorhanden.', 'info');
         }
 
         // 2. IOBROKER-EBENE: Instanz-Konfiguration
@@ -85,7 +85,7 @@ async function repairSayItSystem() {
             }
         }
 
-        log('--- SayIt-Check: Alles im grünen Bereich ---', 'info');
+        //log('--- SayIt-Check: Alles im grünen Bereich ---', 'info');
 
     } catch (err) {
         log(`Kritischer Fehler bei SayIt-Reparatur: ${err}`, 'error');
