@@ -3,7 +3,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.9.4-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.9.5-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -90,9 +90,11 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
+### [1.9.5] - 2026-04-16
+- Code-Optimierungen und Updates
+
 ### [1.9.4] - 2026-04-16
-- Update von location_and_status.js
-- Update von location_and_status_call.js
+- Update von location_and_status.js (Location Google Maps anstatt Open Map)
 
 ### [1.9.2] - 2026-04-14
 - Update von sayit_autofix.js
