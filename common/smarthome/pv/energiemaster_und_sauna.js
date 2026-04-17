@@ -254,7 +254,7 @@ function runUpdate() {
     if (tSaunaReset) {
       clearTimeout(tSaunaReset);
       tSaunaReset = null;
-      console.log("Sauna: Ofen heizt wieder, Abschalt-Timer gelöscht");
+      //console.log("Sauna: Ofen heizt wieder, Abschalt-Timer gelöscht");
     }
 
     if (!sL && !tSaunaStart) {
@@ -272,9 +272,9 @@ function runUpdate() {
   } else if (bLast < 1000 && sL) {
     // Ofen ist aus (Takt-Pause oder Sauna wirklich fertig)
     if (!tSaunaReset) {
-      console.log(
-        "Sauna: Ofen taktet aus, 35-Minuten-Überwachungsphase gestartet",
-      );
+      //console.log(
+     //   "Sauna: Ofen taktet aus, 35-Minuten-Überwachungsphase gestartet",
+     // );
       stopSauna();
     }
   }
@@ -377,9 +377,9 @@ function checkSaunaSafety(load) {
 
   if (doorOpen && isHeating) {
     if (!tSaunaSafety) {
-      console.log(
-        "Sauna-Safety: Kritischer Zustand, Tür offen & Heizung an, Timer gestartet",
-      );
+      //console.log(
+      //  "Sauna-Safety: Kritischer Zustand, Tür offen & Heizung an, Timer gestartet",
+      //);
       tSaunaSafety = setTimeout(() => {
         // Erneute Prüfung nach Ablauf der Zeit
         if (getState(IDS.saunaTuer).val && getBereinigteLast() > 7500) {
@@ -397,9 +397,9 @@ function checkSaunaSafety(load) {
     // Entwarnung: Tür zu oder Ofen hat abgeschaltet (Thermostat)
     clearTimeout(tSaunaSafety);
     tSaunaSafety = null;
-    console.log(
-      "Sauna-Safety: Situation bereinigt (Tür zu oder Heizung aus), Timer gestoppt",
-    );
+    //console.log(
+    //  "Sauna-Safety: Situation bereinigt (Tür zu oder Heizung aus), Timer gestoppt",
+    //);
   }
 }
 
