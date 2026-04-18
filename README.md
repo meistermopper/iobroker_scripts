@@ -90,9 +90,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
-### [1.9.9] - 2026-04-18
-- Code-Optimierungen und Updates
-
 ### [1.9.8] - 2026-04-18
 - Update von raumwerte_lueften.js (Sayit in Lüftungsskript wieder aktiviert)
 
