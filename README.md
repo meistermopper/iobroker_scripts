@@ -90,9 +90,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
-### [1.9.11] - 2026-04-18
-- Code-Optimierungen und Updates
-
 ### [1.9.10] - 2026-04-18
 - Update von device_not_available.js (Zigbee-Ausfall erst nach 15 Minuten melden)
 
