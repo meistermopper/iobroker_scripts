@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * RAUMKLIMA-MASTER v3.4.1 (MONITORING, LÜFTUNG & MORGEN-REPORT)
+ * RAUMKLIMA-MASTER v4.0.0 (MONITORING, LÜFTUNG & MORGEN-REPORT)
  * =============================================================================
  * ZWECK: Überwachung der Luftfeuchtigkeit und Temperatur in allen Räumen.
  * PHYSIK: Nutzt den Taupunkt und den absoluten Feuchtegehalt (g/m³), um zu
@@ -17,8 +17,6 @@ const Dewpoint = require("dewpoint"); // Erfordert das NPM-Modul 'dewpoint'
 // --- 1. KONFIGURATION ---
 const PFAD = "Raumklima.";
 const RAUM_PFAD = "Raum.";
-const USER_ONLINE_ID =
-  "unifi-network.0.clients.users.dc:e5:5b:11:b8:7e.isOnline";
 const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";
 
 const HUNN = 250; // Höhe über NN
@@ -131,8 +129,7 @@ const RAEUME = {
 
 function internalNotify(text, priority = 1) {
   // Telegram-Versand
-  sendTo("telegram.0", "send", {
-    user: "MeisterMopper / Thomas",
+  sendTo("telegram", "send", {
     text: text,
     parse_mode: "HTML",
   });
@@ -273,8 +270,12 @@ function notify(dp, msg) {
   internalNotify(msg, prio);
 
   if (existsState(dp)) setState(dp, true, true);
-  if (isDay && getState(USER_ONLINE_ID).val) {
-    sendTo("sayit", "say", { text: msg.replace(/_/g, " ") });
+  if (isDay) {
+    // Alle SayIt-Instanzen dynamisch finden und benachrichtigen
+    $(`system.adapter.sayit.*.alive`).each(function (id) {
+      const instance = id.split(".").slice(2, 4).join(".");
+      sendTo(instance, "say", { text: msg.replace(/_/g, " ") });
+    });
   }
   notificationTimeouts[dp] = setTimeout(() => {
     if (existsState(dp)) setState(dp, false, true);
