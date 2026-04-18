@@ -7,6 +7,7 @@
  * - Anti-Spam: Meldet erst, wenn ein Gerät länger als 30 Sek. offline ist.
  * - Hybrid-Benachrichtigung: Telegram & Gotify integriert.
  * - Ignorier-Liste: Für Geräte, die man manuell stromlos schaltet.
+ * - Reaktion erst nach 15 Minuten Verbindungsverlust
  */
 
 // --- 1. KONFIGURATION ---
@@ -14,9 +15,9 @@ const CONFIG = {
   // Geräte-Namen, die keine Meldung auslösen sollen
   ignoreList: ["Testgeraet_1", "Alte_Lampe", "Deko_Leuchte_Advent"],
 
-  // Zeitpuffer in Millisekunden (30 Sek).
-  // Verhindert Alarme bei ganz kurzen Funklöchern.
-  offlineThreshold: 30000,
+  // Zeitpuffer in Millisekunden (15 Min).
+  // Verhindert Alarme bei temporären Funklöchern (wie beim Sauna Radio beobachtet).
+  offlineThreshold: 900000,
 
   services: {
     useTelegram: true,
