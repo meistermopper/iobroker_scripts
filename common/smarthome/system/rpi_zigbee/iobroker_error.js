@@ -36,9 +36,6 @@ on({ id: ID_HOST_ALIVE, change: "ne" }, (obj) => {
       // Host kam innerhalb der 5 Minuten zurück
       clearTimeout(watchdogTimer);
       watchdogTimer = null;
-      console.log(
-        "[Watchdog] rpizigbee ist wieder da (innerhalb des Zeitlimits).",
-      );
     }
 
     if (wasReportedDown) {

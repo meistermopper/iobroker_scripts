@@ -1,4 +1,5 @@
 let timeout_ventilator;
+let wasReportedOffline = false;
 
 const ID_ONLINE = "alias.0.wohnzimmer.klima.ventilator.online";
 
@@ -22,13 +23,16 @@ on({ id: ID_ONLINE, change: "ne" }, async (obj) => {
         const msg = "🛞 Der Deckenventilator ist offline.";
         sendTo("telegram", "send", { text: msg });
         console.warn(msg);
+        wasReportedOffline = true;
       }
     }, 120000); // 120 Sekunden
-  } else if (isOnline && obj.oldState.val === false) {
+  } else if (isOnline) {
     // --- ONLINE LOGIK ---
-    // Nur senden, wenn er vorher wirklich als "false" bekannt war (verhindert Meldung beim Skriptstart)
-    const msg = "🛞 Der Deckenventilator ist wieder online.";
-    sendTo("telegram", "send", { text: msg });
-    console.log(msg);
+    if (wasReportedOffline) {
+      const msg = "🛞 Der Deckenventilator ist wieder online.";
+      sendTo("telegram", "send", { text: msg });
+      console.log(msg);
+      wasReportedOffline = false;
+    }
   }
 });
