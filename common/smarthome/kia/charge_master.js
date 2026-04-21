@@ -223,6 +223,7 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
         // 3. Optimierung der Sprachausgabe (SayIt)
         let h = Math.floor(totalMin / 60); // Ganze Stunden
         let m = totalMin % 60; // Verbleibende Minuten
+        let formattedTime = `${h}:${m < 10 ? "0" + m : m} Std`;
 
         let spokenTime =
           h > 0
@@ -231,7 +232,7 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
 
         // 4. Benachrichtigung senden
         ev3Notify(
-          `❌ Ladung beendet. Heute geladen: ${getState(IDS.aliasDur).val}`,
+          `❌ Ladung beendet. Heute geladen: ${formattedTime}`,
           1,
           `Ladung beendet. Heute geladen: ${spokenTime}`,
         );
