@@ -15,7 +15,7 @@ const POSTKASTEN_SN = '0000DA499F3C4A'; // Seriennummer des Briefkastens (ignori
 const AUSSENTEMPERATUR_ID = 'alias.0.draussen.thermometer.ACTUAL_TEMPERATURE';
 
 // Dunstabzug-Sonderfall (Küche)
-const KUECHE_FENSTER_ID = 'hm-rpc.1.0000DA498D6099'; 
+const KUECHE_FENSTER_ID = 'hm-rpc.1.0000DA498D6099';
 const DUNSTABZUG_POWER_ID = 'alias.0.kueche.dunstabzug.ENERGY_Power';
 const DUNSTABZUG_THRESHOLD = 17; // Watt (Grenze für "An")
 
@@ -26,7 +26,7 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
     const id = obj.id;
     const status = obj.state.val; // true = offen / false = geschlossen
     const nameRaw = obj.common ? obj.common.name : id;
-    
+
     // 1. Postkasten-Sensor ignorieren
     if (id.includes(POSTKASTEN_SN)) return;
 
@@ -41,12 +41,12 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
 
             // Timer starten
             timeouts[id] = setTimeout(async () => {
-                
+
                 // --- PRÜFUNG SONDERFALL KÜCHE ---
                 // Falls das Küchenfenster triggert, prüfen wir den Dunstabzug
                 if (id.includes(KUECHE_FENSTER_ID)) {
                     const essePower = getState(DUNSTABZUG_POWER_ID).val;
-                    
+
                     if (essePower > DUNSTABZUG_THRESHOLD) {
                         console.log(`Fenster: Küche offen, aber Dunstabzug läuft (${essePower}W), Warnung unterdrückt`);
                         delete timeouts[id];
@@ -68,12 +68,12 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
                 const volltext = `${artikel} ${nameKlartext} steht seit 30 Minuten offen und sollte geschlossen werden. Die Außentemperatur beträgt ${aktuelleTemp} Grad Celsius`;
 
                 // --- BENACHRICHTIGUNG ---
-                
+
                 // A) Telegram (Immer senden)
                 sendTo('telegram', 'send', { text: volltext });
 
                 // B) SayIt (NUR zwischen 08:00 und 20:00 Uhr)
-                if (compareTime('08:00', '20:00', 'between')) {
+                if (compareTime('07:30', '20:00', 'between')) {
                     sendTo("sayit", "say", { text: meldung });
                     //console.log(`Fenster: Sprachausgabe gesendet für ${nameKlartext}`);
                 } else {
@@ -81,11 +81,11 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
                 }
 
                 console.warn(`Lüftungswarnung gesendet: ${nameKlartext} steht offen`);
-                
+
                 delete timeouts[id]; // Timer-Referenz nach Ausführung löschen
-            }, WARTEZEIT_MS); 
+            }, WARTEZEIT_MS);
         }
-    } 
+    }
     // 3. LOGIK BEI SCHLIESSUNG
     else {
         // Falls das Fenster geschlossen wird, bevor die Zeit abgelaufen ist: Timer löschen
