@@ -1,6 +1,6 @@
 {
   "name": "iobroker_js",
-  "version": "1.9.15",
+  "version": "1.9.16",
   "description": "Meine ioBroker Skript-Sammlung",
   "main": "index.js",
   "author": "Thomas"

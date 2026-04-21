@@ -58,7 +58,7 @@ const IDS = {
 
 // --- PARAMETER ---
 const PV_START_LIMIT = 4600; // Startschwelle (Sonne muss > 4,6kW + Puffer liefern)
-const FIXED_CHARGE_W = 3690; // Fixe Leistung bei 6A (220V * 3 Phasen * 6A)
+const FIXED_CHARGE_W = 3960; // Fixe Leistung bei 6A (220V * 3 Phasen * 6A)
 const GOTIFY_TOKEN = getState("0_userdata.0.gotifytoken.iobroker").val;
 
 let startZeitLaden = null; // Merker für Statistik
