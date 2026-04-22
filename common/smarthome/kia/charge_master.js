@@ -13,6 +13,9 @@
  *   auf den aktuellen Wert gesetzt, um eine Entladung zu verhindern.
  * - Nach Ladeende (auch wenn das Fzg beendet hat) wird der ursprüngliche Min-SoC wiederhergestellt.
  * - Sprache temporär ausgeschaltet
+ * - Überprüfung der Wallbox-Verbindung (OCPP Online-Status)
+ * - Optimierte Zeitformatierung und Kilometer-Berechnung
+ * - Fahrzeug-Kapazität: 81.4 kWh | Reichweite: 550km (Sommer) / 450km (Winter)
  * - Debounce von 45 Sekunden, wenn Charging geändert wurde
  * =============================================================================
  */
@@ -28,6 +31,7 @@ const IDS = {
   wbTrans:
     "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.transactionActive", // [2] Schaltet den Stromfluss
   wbAvail: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.availability", // [3] Reset / Verfügbarkeit
+  wbConn:  "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.connected",      // Verbindung zum ioBroker
 
   // Fahrzeugdaten (Cloud)
   soc: `${VIN}.vehicleStatusRaw.Green.BatteryManagement.BatteryRemain.Ratio`, // [4] Ladestand %
@@ -133,31 +137,41 @@ schedule("* * * * *", () => {
  * Überwacht den PV-Durchschnitt und schaltet die Ladung automatisch,
  * sofern der Automatik-Schalter in der VIS aktiv ist.
  */
-on({ id: IDS.pvAverage, change: "ne" }, (obj) => {
-  if (!getState(IDS.u_auto).val) return; // Abbrechen, wenn Manuell-Modus gewählt ist
+function checkPvAutomation() {
+  if (!getState(IDS.u_auto).val) return;
 
-  const mittel = obj.state.val;
+  // Abbrechen, wenn Wallbox offline ist
+  if (!getState(IDS.wbConn).val) {
+    console.warn("[EV3 Master] PV-Check: Wallbox ist offline. Befehl aufgeschoben.");
+    return;
+  }
+
+  const mittel = getState(IDS.pvAverage).val;
   const isTransActive = getState(IDS.wbTrans).val;
   const batSoc = getState(IDS.batSocPV).val;
+  const wbStatus = getState(IDS.wbStat).val;
 
   // START: Genügend Sonne (>4,6kW) und Hausspeicher gut gefüllt (>75%)
   if (!isTransActive && mittel > PV_START_LIMIT && batSoc > 75) {
-    const wbStatus = getState(IDS.wbStat).val;
-    if (wbStatus === "Preparing" || wbStatus === "Finishing") {
+    // Erlaubte Status für Start: Fahrzeug eingesteckt (Preparing), Pausiert (Suspended) oder gerade beendet (Finishing)
+    // 'Available' wird ignoriert, da dort kein Stecker steckt.
+    const readyToStart = ["Preparing", "Finishing", "SuspendedEVSE", "SuspendedEV"].includes(wbStatus);
+
+    if (readyToStart) {
       setState(IDS.wbTrans, true);
-      ev3Notify(
-        "🔋 Das Überschussladen des EV 3 wurde mit 6 Ampere aktiviert",
-      );
+      ev3Notify("🔋 Das Überschussladen des EV 3 wurde mit 6 Ampere aktiviert");
     }
   }
   // STOP: Überschuss sinkt unter die Ladeleistung (Pausierung)
   else if (isTransActive && mittel < 4100) {
     setState(IDS.wbTrans, false);
-    ev3Notify(
-      "Das Laden des EV 3 wurde beendet, der Ertrag ist zu gering",
-    );
+    ev3Notify("Das Laden des EV 3 wurde beendet");
   }
-});
+}
+
+// Trigger bei neuen PV-Werten sowie bei Wiederherstellung der Verbindung
+on({ id: IDS.pvAverage, change: "ne" }, checkPvAutomation);
+on({ id: IDS.wbConn, val: true, change: "ne" }, checkPvAutomation);
 
 // --- 6. MONITORING & STATISTIK ---
 
@@ -222,19 +236,24 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       setTimeout(() => {
         // 3. Optimierung der Sprachausgabe (SayIt)
         let h = Math.floor(totalMin / 60); // Ganze Stunden
-        let m = totalMin % 60; // Verbleibende Minuten
-        let formattedTime = `${h}:${m < 10 ? "0" + m : m} Std`;
+        let m = totalMin % 60;             // Verbleibende Minuten
+
+        let formattedTime = h > 0 ? `${h}:${m < 10 ? "0" + m : m} Std` : `${m} Minuten`;
+
+        // Kilometer-Berechnung (81.4 kWh Kapazität)
+        const energyKWh = (totalMin / 60) * (FIXED_CHARGE_W / 1000);
+        const month = new Date().getMonth();
+        const rangeMax = (month >= 3 && month <= 10) ? 550 : 450; // April-Okt: 550km, Okt-April: 450km
+        const kmToday = Math.round((energyKWh / 81.4) * rangeMax);
 
         let spokenTime =
-          h > 0
-            ? `${h} Stunde${h === 1 ? "" : "n"} und ${m} Minuten`
-            : `${m} Minuten`;
+          h > 0 ? `${h} Stunde${h === 1 ? "" : "n"} und ${m} Minuten` : `${m} Minuten`;
 
         // 4. Benachrichtigung senden
         ev3Notify(
-          `❌ Ladung beendet. Heute geladen: ${formattedTime}`,
+          `❌ Ladung beendet. Heute geladen: ${formattedTime} (+ca. ${kmToday} km)`,
           1,
-          `Ladung beendet. Heute geladen: ${spokenTime}`,
+          `Ladung beendet. Heute geladen: ${spokenTime}. Das entspricht etwa ${kmToday} Kilometern Reichweite.`,
         );
       }, 2000);
 
