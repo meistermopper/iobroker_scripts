@@ -91,10 +91,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
 ### [1.10.1] - 2026-04-22
-- Update von charge_master.js
-
-### [1.9.16] - 2026-04-21
-- Update von charge_master.js (change Ladeleistung auf 3960 W)
+- Update von charge_master.js (Improved charging range and reliability)
 
 ### [1.9.10] - 2026-04-18
 - Update von device_not_available.js (Zigbee-Ausfall erst nach 15 Minuten melden)
