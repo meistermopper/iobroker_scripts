@@ -32,6 +32,7 @@ const IDS = {
     "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.transactionActive", // [2] Schaltet den Stromfluss
   wbAvail: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.availability", // [3] Reset / Verfügbarkeit
   wbConn:  "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.connected",      // Verbindung zum ioBroker
+  unifiReconnect: "unifi-network.0.clients.users.60:09:c3:2f:46:49.reconnect", // [22] Reconnect via UniFi
 
   // Fahrzeugdaten (Cloud)
   soc: `${VIN}.vehicleStatusRaw.Green.BatteryManagement.BatteryRemain.Ratio`, // [4] Ladestand %
@@ -62,12 +63,15 @@ const IDS = {
 
 // --- PARAMETER ---
 const PV_START_LIMIT = 4600; // Startschwelle (Sonne muss > 4,6kW + Puffer liefern)
+const PV_STOP_LIMIT = 4100;  // Stoppschwelle (Ladevorgang pausieren, wenn Überschuss sinkt)
 const FIXED_CHARGE_W = 3960; // Fixe Leistung bei 6A (220V * 3 Phasen * 6A)
 const GOTIFY_TOKEN = getState("0_userdata.0.gotifytoken.iobroker").val;
 
 let startZeitLaden = null; // Merker für Statistik
 let originalMinSoc = null; // Merker für Min-SoC bei manuellem Laden
 let stopTimer = null;      // Timer zur Entprellung von kurzen Lade-Unterbrechungen
+let reconnectTimer = null; // Timer für Wallbox-Recovery
+let wasOfflineReported = false; // Status für Anti-Spam Meldungen
 
 // --- 2. INITIALISIERUNG ---
 
@@ -142,7 +146,6 @@ function checkPvAutomation() {
 
   // Abbrechen, wenn Wallbox offline ist
   if (!getState(IDS.wbConn).val) {
-    console.warn("[EV3 Master] PV-Check: Wallbox ist offline. Befehl aufgeschoben.");
     return;
   }
 
@@ -163,7 +166,7 @@ function checkPvAutomation() {
     }
   }
   // STOP: Überschuss sinkt unter die Ladeleistung (Pausierung)
-  else if (isTransActive && mittel < 4100) {
+  else if (isTransActive && mittel < PV_STOP_LIMIT) {
     setState(IDS.wbTrans, false);
     ev3Notify("Das Laden des EV 3 wurde beendet");
   }
@@ -265,6 +268,35 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
 });
 
 // --- 7. ZUSATZFUNKTIONEN ---
+
+/**
+ * Verbindungswächter: Überwacht die Erreichbarkeit der Wallbox.
+ * Meldet Statusänderungen (Anti-Spam) und triggert nach 3 Min. Offline einen Reconnect via UniFi.
+ */
+on({ id: IDS.wbConn, change: "ne" }, (obj) => {
+  const isConnected = !!obj.state.val;
+
+  if (!isConnected) {
+    // Nur beim ersten Mal warnen
+    if (!wasOfflineReported) {
+      console.warn("[EV3 Master] Wallbox-Verbindung verloren. Reconnect-Timer (3 Min) gestartet.");
+      wasOfflineReported = true;
+    }
+    // Reconnect-Timer starten (falls nicht schon einer läuft)
+    if (!reconnectTimer) {
+      reconnectTimer = setTimeout(() => {
+        console.log("[EV3 Master] Führe WiFi-Reconnect der Wallbox via UniFi Accesspoint aus...");
+        setState(IDS.unifiReconnect, true);
+        reconnectTimer = null;
+      }, 180000); // 3 Minuten
+    }
+  } else {
+    // Wieder da: Status zurücksetzen und Timer stoppen
+    if (wasOfflineReported) console.log("[EV3 Master] Wallbox-Verbindung wiederhergestellt.");
+    wasOfflineReported = false;
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+  }
+});
 
 /**
  * Formatiert die verbleibende Ladezeit für die Anzeige in der VIS.
