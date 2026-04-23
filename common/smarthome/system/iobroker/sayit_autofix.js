@@ -51,7 +51,7 @@ async function repairSayItSystem(reason = "Routine") {
             // Neuen Symlink erstellen: verknüpfe SAFE_CACHE_DIR mit LINK_PATH
             await runShell(`ln -s ${SAFE_CACHE_DIR} ${LINK_PATH}`);
 
-            log('Symlink und Berechtigungen wurden erfolgreich wiederhergestellt.', 'info');
+            log('Symlink und Berechtigungen wurden erfolgreich wiederhergestellt', 'info');
         } else {
             //log('Infrastruktur ist intakt. Kein Eingreifen erforderlich.', 'info');
         }
