@@ -24,7 +24,7 @@ const REL_CACHE_PATH = '../../cache/';
  * @param {string} reason - Grund des Aufrufs (für das Log)
  */
 async function repairSayItSystem(reason = "Routine") {
-    log(`--- SayIt-Check (${reason}): Starte Überprüfung ---`, 'info');
+    //log(`--- SayIt-Check (${reason}): Starte Überprüfung ---`, 'info');
 
     try {
         // SCHRITT 1: Physischen Ordner sicherstellen
@@ -53,7 +53,7 @@ async function repairSayItSystem(reason = "Routine") {
 
             log('Symlink und Berechtigungen wurden erfolgreich wiederhergestellt.', 'info');
         } else {
-            log('Infrastruktur ist intakt. Kein Eingreifen erforderlich.', 'info');
+            //log('Infrastruktur ist intakt. Kein Eingreifen erforderlich.', 'info');
         }
 
         // SCHRITT 4: ioBroker-Objekte synchronisieren
