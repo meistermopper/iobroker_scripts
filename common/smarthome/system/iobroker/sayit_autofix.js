@@ -1,104 +1,121 @@
 /**
  * =============================================================================
- * SCRIPT: SayIt_AutoFix_Persistent.js
- * BESCHREIBUNG: Repariert den flüchtigen Symlink für den SayIt-Cache und
- * konfiguriert alle Instanzen automatisch auf den sicheren Pfad.
- * AUTOMATISIERUNG: Läuft stündlich und bei jedem Skript-Start.
+ * NAME: SayIt_AutoFix_Ultimate.js
+ * ZWECK: Stellt den flüchtigen Symlink für den SayIt-Cache sicher.
+ * * FUNKTIONSWEISE:
+ * 1. Proaktiv: Prüft alle 10 Minuten den Zustand des Symlinks.
+ * 2. Reaktiv: Reagiert sofort auf 'ENOENT'-Fehlermeldungen im ioBroker-Log.
+ * 3. Datenbank-Sync: Hält die ioBroker-Objekte auf dem korrekten Cache-Pfad.
  * =============================================================================
  */
 
 const { exec } = require('child_process');
 
 // --- KONFIGURATION ---
+// Der Ort, an dem die MP3-Dateien permanent liegen (sicher vor Updates)
 const SAFE_CACHE_DIR = '/opt/iobroker/iobroker-data/sayit_cache';
+// Die "Soll-Stelle", an der der Adapter den Ordner 'cache' erwartet
 const LINK_PATH = '/opt/iobroker/node_modules/cache';
-const REL_CACHE_PATH = '../../cache/'; // Relativ gesehen vom Adapter-Folder
+// Der Pfad, der in die ioBroker-Objekte geschrieben wird (relativ zum Adapter-Verzeichnis)
+const REL_CACHE_PATH = '../../cache/';
 
 /**
- * Hilfsfunktion zur Ausführung von Shell-Befehlen (Promise-basiert)
- * @param {string} cmd - Der auszuführende Linux-Befehl
+ * Kernfunktion: Prüft das System und führt bei Bedarf Reparaturen aus.
+ * @param {string} reason - Grund des Aufrufs (für das Log)
  */
-function runShell(cmd) {
-    return new Promise((resolve, reject) => {
-        exec(cmd, (error, stdout, stderr) => {
-            if (error) {
-                return reject(`Fehler bei [${cmd}]: ${error.message}`);
-            }
-            resolve(stdout ? stdout.trim() : stderr.trim());
-        });
-    });
-}
-
-/**
- * Kernfunktion der Reparatur
- * Prüft den Symlink auf Systemebene und die Config in der Datenbank.
- */
-async function repairSayItSystem() {
-    //log('--- SayIt-Check: Starte Überprüfung der Cache-Struktur ---', 'info');
+async function repairSayItSystem(reason = "Routine") {
+    log(`--- SayIt-Check (${reason}): Starte Überprüfung ---`, 'info');
 
     try {
-        // 1. SYSTEM-EBENE: Ordner und Symlink
-        // Wir stellen sicher, dass der Zielordner existiert
-        await runShell(`mkdir -p ${SAFE_CACHE_DIR}`);
+        // SCHRITT 1: Physischen Ordner sicherstellen
+        // 'mkdir -p' erstellt den Ordner nur, wenn er noch nicht existiert.
+        await runShell(`sudo mkdir -p ${SAFE_CACHE_DIR}`);
 
-        // Wir prüfen, ob der Symlink korrekt ist
-        // -L prüft auf Symlink, readlink prüft das Ziel
+        // SCHRITT 2: Symlink-Zustand abfragen
+        // 'readlink -f' gibt das reale Ziel eines Symlinks aus.
         let currentLink;
         try {
             currentLink = await runShell(`readlink -f ${LINK_PATH}`);
         } catch (e) {
+            // Falls der Link gar nicht existiert, liefert readlink einen Fehler
             currentLink = 'NOT_FOUND';
         }
 
+        // SCHRITT 3: Reparatur bei Abweichung
+        // Falls der Link fehlt oder auf das falsche Ziel zeigt:
         if (currentLink !== SAFE_CACHE_DIR) {
-            log(`Symlink fehlerhaft oder fehlt (aktuell: ${currentLink}). Repariere...`, 'warn');
+            log(`Abweichung erkannt! Ziel: ${SAFE_CACHE_DIR}, Ist-Zustand: ${currentLink}`, 'warn');
 
-            // Alten Pfad/Link radikal entfernen und neu setzen
-            await runShell(`rm -rf ${LINK_PATH}`);
-            await runShell(`ln -s ${SAFE_CACHE_DIR} ${LINK_PATH}`);
+            // Alten (toten) Link oder falschen Ordner löschen
+            await runShell(`sudo rm -rf ${LINK_PATH}`);
+            // Neuen Symlink erstellen: verknüpfe SAFE_CACHE_DIR mit LINK_PATH
+            await runShell(`sudo ln -s ${SAFE_CACHE_DIR} ${LINK_PATH}`);
 
-            log('Symlink wurde erfolgreich wiederhergestellt.', 'info');
+            // Rechte korrigieren: -h stellt sicher, dass der Link selbst den Besitzer wechselt
+            await runShell(`sudo chown -h iobroker:iobroker ${LINK_PATH}`);
+            // Den Inhalt des Cache-Ordners ebenfalls dem ioBroker-User zuordnen
+            await runShell(`sudo chown -R iobroker:iobroker ${SAFE_CACHE_DIR}`);
+
+            log('Symlink und Berechtigungen wurden erfolgreich wiederhergestellt.', 'info');
         } else {
-            //log('Symlink in node_modules ist korrekt vorhanden.', 'info');
+            log('Infrastruktur ist intakt. Kein Eingreifen erforderlich.', 'info');
         }
 
-        // 2. IOBROKER-EBENE: Instanz-Konfiguration
-        // Wir suchen alle SayIt-Instanz-Objekte
+        // SCHRITT 4: ioBroker-Objekte synchronisieren
+        // Wir suchen alle Instanzen von SayIt (sayit.0, sayit.1, etc.)
         const instances = await $(`system.adapter.sayit.*`);
 
         for (const id of instances) {
-            // Wir filtern nur die Haupt-Instanzen (z.B. system.adapter.sayit.0)
+            // Nur die Haupt-Objekte bearbeiten (nicht .alive oder .connected)
             if (id.match(/^system\.adapter\.sayit\.\d+$/)) {
                 const obj = await getObjectAsync(id);
 
-                // Nur aktualisieren, wenn Cache aus ist oder der Pfad nicht stimmt
+                // Prüfen, ob Cache aktiviert ist UND der Pfad stimmt
                 if (!obj.native.cache || obj.native.cacheDir !== REL_CACHE_PATH) {
-                    log(`Aktualisiere Konfiguration für ${id}...`, 'info');
+                    log(`Konfiguration für ${id} war unvollständig. Korrigiere...`, 'info');
                     await extendObjectAsync(id, {
                         native: {
                             cache: true,
                             cacheDir: REL_CACHE_PATH
                         }
                     });
-                    // ioBroker startet die Instanz nach extendObject automatisch neu
                 }
             }
         }
-
-        //log('--- SayIt-Check: Alles im grünen Bereich ---', 'info');
-
     } catch (err) {
-        log(`Kritischer Fehler bei SayIt-Reparatur: ${err}`, 'error');
+        log(`Fehler bei der Reparatur-Ausführung: ${err}`, 'error');
     }
 }
 
-// --- AUTOMATISIERUNG ---
+/**
+ * Hilfsfunktion zum Ausführen von Shell-Befehlen via Sudo
+ */
+function runShell(cmd) {
+    return new Promise((resolve, reject) => {
+        exec(cmd, (error, stdout, stderr) => {
+            if (error) return reject(error.message);
+            // stdout trimmen, um Zeilenumbrüche zu entfernen
+            resolve(stdout ? stdout.trim() : stderr.trim());
+        });
+    });
+}
 
-// 1. Ausführung beim Start des Skripts (oder Neustart des JS-Adapters)
-repairSayItSystem();
-
-// 2. Regelmäßige Ausführung (Schedule)
-// Wir prüfen jede Stunde zur Minute , ob der Link noch da ist.
-schedule("27 * * * *", () => {
-    repairSayItSystem();
+// --- TRIGGER 1: REAKTIVE LOG-ÜBERWACHUNG ---
+// Sobald ein 'error' im Log auftaucht, der von 'sayit' kommt und 'ENOENT' enthält,
+// schlägt das Skript sofort Alarm und repariert.
+onLog('error', (data) => {
+    if (data.from.startsWith('sayit') && data.message.includes('ENOENT')) {
+        repairSayItSystem("Event-Trigger: ENOENT Fehler im Log erkannt");
+    }
 });
+
+// --- TRIGGER 2: PROAKTIVER ZEITPLAN ---
+// Alle 10 Minuten wird prophylaktisch geprüft. Das verhindert, dass das System
+// lange im defekten Zustand verbleibt, falls der Log-Trigger mal nicht greift.
+schedule("*/10 * * * *", () => {
+    repairSayItSystem("Zeitplan-Trigger (10 Min)");
+});
+
+// --- TRIGGER 3: SKRIPTSTART ---
+// Beim Speichern des Skripts oder Neustart des JS-Adapters einmal prüfen.
+repairSayItSystem("Initialer Skriptstart");
