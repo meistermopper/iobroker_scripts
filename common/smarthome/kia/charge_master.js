@@ -63,7 +63,7 @@ const IDS = {
 
 // --- PARAMETER ---
 const PV_START_LIMIT = 4600; // Startschwelle (Sonne muss > 4,6kW + Puffer liefern)
-const PV_STOP_LIMIT = 4100;  // Stoppschwelle (Ladevorgang pausieren, wenn Überschuss sinkt)
+const PV_STOP_LIMIT = 4000;  // Stoppschwelle (Ladevorgang pausieren, wenn Überschuss sinkt)
 const FIXED_CHARGE_W = 3960; // Fixe Leistung bei 6A (220V * 3 Phasen * 6A)
 const GOTIFY_TOKEN = getState("0_userdata.0.gotifytoken.iobroker").val;
 
