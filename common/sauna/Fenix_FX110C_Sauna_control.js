@@ -9,17 +9,21 @@
 // --- KONFIGURATION & GLOBALE VARIABLEN ---
 const BASE_PATH      = '0_userdata.0.Energie.Sauna'; // Speicherort der Datenpunkte
 const axios          = require('axios');             // Bibliothek für HTTP-Anfragen (Kommunikation mit dem Web)
-const REFRESH_MS     = 60000;                        // Aktualisierungsrate (60 Sekunden)
+const REFRESH_MS     = 60 * 1000;                    // Aktualisierungsrate (60 Sekunden)
+const LOGIN_REFRESH  = 50 * 60 * 1000;               // Token-Erneuerung (50 Minuten)
 
 // Identifikations-Daten: Diese sind fest mit deinem Sauna-Account verknüpft.
 const CLIENT_ID      = '24emhb2mm0v4sscqhbdev86b2v';
 const FIXED_ID       = '73293847-550d-40da-8bcf-3d6e2fcf5add';
 const PARTNER_ID     = 'ORG/prod:0:6656:0';
 
+const client = axios.create({ timeout: 10000 });     // Axios-Instanz mit 10s Timeout
+
 // Zwischenspeicher für die Sitzung:
 let idToken      = ''; // Das "Ticket", das wir beim Login bekommen und bei jeder Anfrage vorzeigen.
 let dataBaseUrl  = ''; // Die dynamische Adresse des Servers, der unsere Daten bereitstellt.
 let authUrl      = ''; // Die Adresse für die Anmeldung.
+let isLoggingIn  = false; // Verhindert doppelte Login-Versuche (Race Condition Schutz)
 
 /**
  * 1. INITIALISIERUNG (ensureStatesExist)
@@ -57,11 +61,14 @@ async function ensureStatesExist() {
  */
 async function fetchConfig() {
     try {
-        const response = await axios.get("https://api.harvia.io/endpoints");
+        const response = await client.get("https://api.harvia.io/endpoints");
         dataBaseUrl = response.data.endpoints.RestApi.data.https;
         authUrl = `${response.data.endpoints.RestApi.generics.https}/auth/token`;
         return true;
-    } catch (err) { return false; }
+    } catch (err) {
+        log(`[Harvia] Fehler beim Laden der API-Konfiguration: ${err.message}`, 'error');
+        return false;
+    }
 }
 
 /**
@@ -71,17 +78,37 @@ async function fetchConfig() {
  * alle weiteren Anfragen.
  */
 async function login() {
+    if (isLoggingIn) return false; // Bereits ein Login-Prozess aktiv
+    isLoggingIn = true;
+
     const user = getState(`${BASE_PATH}.user`).val;
     const pass = getState(`${BASE_PATH}.password`).val;
-    if (!user || !pass) return false;
+
+    if (!user || !pass) {
+        log('[Harvia] Login fehlgeschlagen: Benutzername oder Passwort in Objekten nicht gesetzt!', 'warn');
+        isLoggingIn = false;
+        return false;
+    }
 
     try {
-        const response = await axios.post(authUrl, {
+        // Vor dem Login sicherstellen, dass wir die aktuellen Endpunkte haben
+        if (!(await fetchConfig())) {
+            log('[Harvia] Login abgebrochen: Konfiguration konnte nicht geladen werden.', 'warn');
+            return false;
+        }
+
+        const response = await client.post(authUrl, {
             username: user, password: pass, client_id: CLIENT_ID
         });
         idToken = response.data.idToken;
+        log('[Harvia] Login erfolgreich, Token erhalten.', 'info');
         return true;
-    } catch (err) { return false; }
+    } catch (err) {
+        log(`[Harvia] Login fehlgeschlagen: ${err.message}`, 'error');
+        return false;
+    } finally {
+        isLoggingIn = false;
+    }
 }
 
 /**
@@ -92,26 +119,37 @@ async function updateStatus() {
     if (!idToken || !dataBaseUrl) return; // Ohne Token keine Anfrage
     try {
         // GET-Request mit dem 'idToken' im Header (der Ausweis).
-        const response = await axios.get(`${dataBaseUrl}/data/latest-data?deviceId=${FIXED_ID}`, {
+        const response = await client.get(`${dataBaseUrl}/data/latest-data?deviceId=${FIXED_ID}`, {
             headers: { 'Authorization': `Bearer ${idToken}`, 'x-harvia-partner-id': PARTNER_ID }
         });
 
         const p = response.data?.data; // 'p' enthält das JSON-Paket vom Server
         if (p) {
             // Verteilung der Daten in die ioBroker-Objekt-Struktur
-            setState(`${BASE_PATH}.temp`, parseFloat(p.temp), true);
-            setState(`${BASE_PATH}.panelTemp`, parseFloat(p.panelTemp), true);
-            setState(`${BASE_PATH}.heaterPower`, parseFloat(p.heaterPower), true);
-            setState(`${BASE_PATH}.totalBathingHours`, parseFloat(p.totalBathingHours), true);
-            setState(`${BASE_PATH}.totalSessions`, parseInt(p.totalSessions), true);
-            setState(`${BASE_PATH}.totalOperatingHours`, parseFloat(p.totalHours), true);
-            setState(`${BASE_PATH}.targetTemp`, parseFloat(p.targetTemp), true);
-            setState(`${BASE_PATH}.heatOn`, p.heatOn === 1, true);
-            setState(`${BASE_PATH}.lightOn`, p.lightOn === 1, true);
+            if (p.temp !== undefined) setState(`${BASE_PATH}.temp`, parseFloat(p.temp), true);
+            if (p.panelTemp !== undefined) setState(`${BASE_PATH}.panelTemp`, parseFloat(p.panelTemp), true);
+            if (p.heaterPower !== undefined) setState(`${BASE_PATH}.heaterPower`, parseFloat(p.heaterPower), true);
+            if (p.totalBathingHours !== undefined) setState(`${BASE_PATH}.totalBathingHours`, parseFloat(p.totalBathingHours), true);
+            if (p.totalSessions !== undefined) setState(`${BASE_PATH}.totalSessions`, parseInt(p.totalSessions), true);
+            if (p.totalHours !== undefined) setState(`${BASE_PATH}.totalOperatingHours`, parseFloat(p.totalHours), true);
+            if (p.targetTemp !== undefined) setState(`${BASE_PATH}.targetTemp`, parseFloat(p.targetTemp), true);
+            setState(`${BASE_PATH}.heatOn`, !!(p.heatOn === 1 || p.heatOn === true), true);
+            setState(`${BASE_PATH}.lightOn`, !!(p.lightOn === 1 || p.lightOn === true), true);
             setState(`${BASE_PATH}.doorSafety`, p.doorSafetyState === 1, true);
             setState(`${BASE_PATH}.online`, true, true);
         }
-    } catch (err) { log(`[Harvia] Abruf-Fehler: ${err.message}`, 'error'); }
+    } catch (err) {
+        if (err.response && err.response.status === 401) {
+            log('[Harvia] Token abgelaufen, versuche Re-Login...', 'warn');
+            await login();
+        } else {
+            log(`[Harvia] Abruf-Fehler: ${err.message}`, 'error');
+            setState(`${BASE_PATH}.online`, false, true);
+        }
+    } finally {
+        // Rekursiver Aufruf statt festem Intervall verhindert Überlappung
+        setTimeout(updateStatus, REFRESH_MS);
+    }
 }
 
 /**
@@ -119,14 +157,19 @@ async function updateStatus() {
  * Hier wird alles nacheinander gestartet.
  */
 async function main() {
-    log('[Harvia] Skript v78.0 startet...');
+    log('[Harvia] Skript-Initialisierung...', 'info');
     await ensureStatesExist(); // Schritt 1: Schubladen vorbereiten
-    if (await fetchConfig() && await login()) { // Schritt 2: Einloggen
+
+    if (await login()) { // Schritt 2: Einloggen (fetchConfig ist nun im login integriert)
         await updateStatus(); // Schritt 3: Erster Datendurchlauf
 
-        // Schritt 4: Dauerhafte Überwachung einrichten
-        setInterval(updateStatus, REFRESH_MS); // Alle 60s Daten holen
-        setInterval(login, 50 * 60 * 1000);   // Alle 50min Token erneuern
+        // Token-Refresh Intervall
+        setInterval(async () => {
+            await login();
+        }, LOGIN_REFRESH);
+    } else {
+        log('[Harvia] Initialer Login fehlgeschlagen. Starte neuen Versuch in 5 Minuten...', 'warn');
+        setTimeout(main, 5 * 60 * 1000);
     }
 }
 main();
