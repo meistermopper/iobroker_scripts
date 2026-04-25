@@ -101,7 +101,7 @@ async function login() {
             username: user, password: pass, client_id: CLIENT_ID
         });
         idToken = response.data.idToken;
-        log('[Harvia] Login erfolgreich, Token erhalten.', 'info');
+        //log('[Harvia] Login erfolgreich, Token erhalten.', 'info');
         return true;
     } catch (err) {
         log(`[Harvia] Login fehlgeschlagen: ${err.message}`, 'error');
