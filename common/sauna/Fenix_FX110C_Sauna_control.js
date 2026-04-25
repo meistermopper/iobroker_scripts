@@ -93,7 +93,7 @@ async function login() {
     try {
         // Vor dem Login sicherstellen, dass wir die aktuellen Endpunkte haben
         if (!(await fetchConfig())) {
-            log('[Harvia] Login abgebrochen: Konfiguration konnte nicht geladen werden.', 'warn');
+            log('[Harvia] Login abgebrochen: Konfiguration konnte nicht geladen werden', 'warn');
             return false;
         }
 
@@ -157,7 +157,7 @@ async function updateStatus() {
  * Hier wird alles nacheinander gestartet.
  */
 async function main() {
-    log('[Harvia] Skript-Initialisierung...', 'info');
+    log('[Harvia] Skript-Initialisierung', 'info');
     await ensureStatesExist(); // Schritt 1: Schubladen vorbereiten
 
     if (await login()) { // Schritt 2: Einloggen (fetchConfig ist nun im login integriert)
@@ -168,7 +168,7 @@ async function main() {
             await login();
         }, LOGIN_REFRESH);
     } else {
-        log('[Harvia] Initialer Login fehlgeschlagen. Starte neuen Versuch in 5 Minuten...', 'warn');
+        log('[Harvia] Initialer Login fehlgeschlagen. Starte neuen Versuch in 5 Minuten', 'warn');
         setTimeout(main, 5 * 60 * 1000);
     }
 }
