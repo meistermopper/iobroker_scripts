@@ -17,6 +17,7 @@
  * - Optimierte Zeitformatierung und Kilometer-Berechnung
  * - Fahrzeug-Kapazität: 81.4 kWh | Reichweite: 550km (Sommer) / 450km (Winter)
  * - Debounce von 45 Sekunden, wenn Charging geändert wurde
+ * - Kein Ladestart, wenn das Ladeziel erreicht wurde
  * =============================================================================
  */
 
@@ -39,6 +40,7 @@ const IDS = {
   bat12v: `${VIN}.vehicleStatusRaw.Electronics.Battery.Level`, // [5] 12V Batterie-Schutz
   conn: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.ConnectorFastening.State`, // [6] Stecker-Status
   remTime: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.Charging.RemainTime`, // [7] Restzeit in Min.
+  targetSocSrv: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.TargetSoC.Standard`, // [23] Ladeziel vom Fahrzeug
   refresh: `${VIN}.control.force_refresh`, // [8] Fahrzeug aufwecken
 
   // Energie-Zentrum (Hardware-Werte)
@@ -154,8 +156,13 @@ function checkPvAutomation() {
   const batSoc = getState(IDS.batSocPV).val;
   const wbStatus = getState(IDS.wbStat).val;
 
+  // Fahrzeug-SOC und Ladeziele (VIS vs. Auto-Einstellung)
+  const evSoc = getState(IDS.soc).val || 0;
+  const limitVis = getState(IDS.u_limit).val || 100;
+  const limitCar = getState(IDS.targetSocSrv).val || 100;
+
   // START: Genügend Sonne (>4,6kW) und Hausspeicher gut gefüllt (>75%)
-  if (!isTransActive && mittel > PV_START_LIMIT && batSoc > 75) {
+  if (!isTransActive && mittel > PV_START_LIMIT && batSoc > 75 && evSoc < limitVis && evSoc < limitCar) {
     // Erlaubte Status für Start: Fahrzeug eingesteckt (Preparing), Pausiert (Suspended) oder gerade beendet (Finishing)
     // 'Available' wird ignoriert, da dort kein Stecker steckt.
     const readyToStart = ["Preparing", "Finishing", "SuspendedEVSE", "SuspendedEV"].includes(wbStatus);
@@ -166,7 +173,7 @@ function checkPvAutomation() {
     }
   }
   // STOP: Überschuss sinkt unter die Ladeleistung (Pausierung)
-  else if (isTransActive && mittel < PV_STOP_LIMIT) {
+  else if (isTransActive && (mittel < PV_STOP_LIMIT || evSoc >= limitVis || evSoc >= limitCar)) {
     setState(IDS.wbTrans, false);
     ev3Notify("Das Laden des EV 3 wurde beendet");
   }
@@ -174,6 +181,7 @@ function checkPvAutomation() {
 
 // Trigger bei neuen PV-Werten sowie bei Wiederherstellung der Verbindung
 on({ id: IDS.pvAverage, change: "ne" }, checkPvAutomation);
+on({ id: IDS.soc, change: "ne" }, checkPvAutomation);
 on({ id: IDS.wbConn, val: true, change: "ne" }, checkPvAutomation);
 
 // --- 6. MONITORING & STATISTIK ---
