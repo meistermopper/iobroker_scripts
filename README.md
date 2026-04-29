@@ -3,7 +3,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.12.3-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.12.4-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -90,8 +90,11 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
+### [1.12.4] - 2026-04-29
+- Code-Optimierungen und Updates
+
 ### [1.12.3] - 2026-04-29
-- Update von chromecast_ban_heos.js
+- Update von chromecast_ban_heos.js (auf alle Geräte erweitert)
 
 ### [1.12.1] - 2026-04-28
 - charge-master.js (Kein Ladestart, wenn das Ladeziel erreicht wurde)
