@@ -1,57 +1,75 @@
 /**
- * SCRIPT: Chromecast-Filter (Anti-HEOS-Sauna)
+ * SCRIPT: HEOS-Filter für den Chromecast-Adapter
  * -----------------------------------------------------------------------------
- * ZWECK:
- * Da der chromecast-Adapter (v4.0.0+) HEOS-Geräte fälschlicherweise per mDNS
- * erkennt und dadurch "socket"-Fehler im Log erzeugt, dient dieses Skript als
- * automatischer Filter. Sobald das Objekt 'HEOS_Sauna' angelegt wird, löscht
- * dieses Skript den Eintrag wieder.
- * * VORAUSSETZUNG:
- * Der JavaScript-Adapter muss installiert sein.
+ * Problem: Der chromecast-Adapter v4.0.0 findet per mDNS ungefragt HEOS-Geräte.
+ * Diese verursachen Socket-Fehler, da sie das Protokoll nicht voll unterstützen.
+ * * Lösung: Dieses Skript löscht die unerwünschten Geräte-Instanzen automatisch,
+ * sobald der Adapter sie anlegt.
  * -----------------------------------------------------------------------------
  */
 
-// Konfiguration: Der Pfad zum unerwünschten Gerät
-// Bitte prüfe unter 'Objekte', ob der Ordner exakt so heißt.
-const devicePath = 'chromecast.0.HEOS_Sauna';
+// Liste deiner HEOS-Geräte, die NICHT im Chromecast-Adapter sein sollen.
+// Die Namen müssen exakt so geschrieben sein, wie sie im Objektbaum erscheinen.
+const heosDevices = [
+    'HEOS Sauna',
+    'Marantz CINEMA 60',
+    'Heos5'
+];
 
-let tRemove = null; // Timer-Variable für Debounce
+// Die Instanz des Adapters
+const adapterInstance = 'chromecast.0';
 
 /**
- * Funktion zum sauberen Löschen des Gerätes
+ * Funktion zum Löschen eines Geräts inklusive aller States.
+ * @param {string} deviceName - Der Name des Geräts (wie im Adapter angezeigt)
  */
-function removeHeosSauna() {
-    // Wir prüfen zuerst, ob das Objekt überhaupt existiert
-    if (existsObject(devicePath)) {
-        log('HEOS Sauna wurde vom Chromecast-Adapter erkannt. Löschvorgang gestartet...', 'warn');
+function deleteHeosDevice(deviceName) {
+    // ioBroker wandelt Leerzeichen in IDs oft in Unterstriche um.
+    // Wir bauen den Pfad zusammen: z.B. chromecast.0.HEOS_Sauna
+    const deviceId = deviceName.replace(/\s+/g, '_');
+    const fullPath = adapterInstance + '.' + deviceId;
 
-        // deleteObject mit {recursive: true} löscht den Ordner samt aller Unter-States
-        deleteObject(devicePath, true, (err) => {
+    // Prüfen, ob das Objekt existiert
+    if (existsObject(fullPath)) {
+        log('Unerwünschtes HEOS-Gerät "' + deviceName + '" erkannt. Lösche Pfad: ' + fullPath, 'warn');
+
+        // deleteDevice löscht den gesamten Ordner-Zweig rekursiv
+        deleteDevice(fullPath, (err) => {
             if (err) {
-                log('Fehler beim automatischen Löschen der HEOS Sauna: ' + err, 'error');
+                log('Fehler beim Löschen von ' + deviceName + ': ' + err, 'error');
             } else {
-                log('HEOS Sauna erfolgreich aus dem Chromecast-Zweig entfernt', 'info');
+                log('Erfolgreich bereinigt: ' + deviceName, 'info');
             }
         });
     }
 }
 
 /**
- * TRIGGER: Überwachung auf Neuerstellung
- * Wir nutzen jetzt einen RegEx, der auf JEDEN Datenpunkt unterhalb des Geräts reagiert.
- * Das ist viel sicherer als nur auf '.name' zu warten.
+ * TRIGGER: Wir überwachen den chromecast-Adapter auf neue States.
+ * Wir reagieren auf den ".name" State, da dieser beim Discovery fast immer
+ * als einer der ersten States befüllt wird.
  */
-on({ id: new RegExp('^' + devicePath.replace(/\./g, '\\.') + '\\..*'), change: "any" }, function (obj) {
-    // Timer zurücksetzen, falls er schon läuft (verhindert Mehrfachausführung)
-    if (tRemove) clearTimeout(tRemove);
+on({id: /^chromecast\.\d+\..*\.name$/, change: 'any'}, function (obj) {
+    const detectedName = obj.state.val;
 
-    // Löschvorgang mit 2 Sekunden Verzögerung starten
-    tRemove = setTimeout(removeHeosSauna, 2000);
+    // Prüfen, ob der neu gefundene Name in unserer Verbotsliste steht
+    if (heosDevices.includes(detectedName)) {
+        log('Filter-Alarm: ' + detectedName + ' wurde vom Adapter gefangen!', 'info');
+
+        // Wir warten 5 Sekunden, damit der Adapter seinen Schreibvorgang
+        // beenden kann, bevor wir ihm die Daten unterm Hintern wegwischen.
+        // Das verhindert Schreib-Lösch-Konflikte.
+        setTimeout(() => {
+            deleteHeosDevice(detectedName);
+        }, 5000);
+    }
 });
 
 /**
- * INITIALISIERUNG
- * Beim Start des Skripts prüfen wir einmalig, ob die "Leiche" noch da ist.
+ * INITIALISIERUNG:
+ * Beim Skriptstart einmalig alle bekannten Problem-Geräte löschen.
  */
-log('Chromecast-Filter-Skript aktiv. Überwache: ' + devicePath, 'info');
-removeHeosSauna();
+log('HEOS-Schutzschild für Chromecast-Adapter gestartet...', 'info');
+heosDevices.forEach((name) => {
+    deleteHeosDevice(name);
+});
