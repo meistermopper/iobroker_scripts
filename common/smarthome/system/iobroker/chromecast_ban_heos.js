@@ -1,16 +1,16 @@
 /**
- * SCRIPT: HEOS-Filter für den Chromecast-Adapter
+ * SCRIPT: Chromecast Cleaner & HEOS-Filter
  * -----------------------------------------------------------------------------
- * Problem: Der chromecast-Adapter v4.0.0 findet per mDNS ungefragt HEOS-Geräte.
- * Diese verursachen Socket-Fehler, da sie das Protokoll nicht voll unterstützen.
- * * Lösung: Dieses Skript löscht die unerwünschten Geräte-Instanzen automatisch,
- * sobald der Adapter sie anlegt.
+ * Problem: Der chromecast-Adapter v4.0.0+ erzeugt oft Geister-Einträge:
+ * 1. HEOS-Geräte, die Socket-Fehler verursachen.
+ * 2. Einträge mit dem Zusatz "(unvollständig)", die Ansagen (SayIt) blockieren.
+ * * Lösung: Dieses Skript überwacht den Adapter und löscht diese Problemfälle
+ * automatisch, sobald sie auftauchen oder beim Skriptstart vorhanden sind.
  * -----------------------------------------------------------------------------
  */
 
-// Liste deiner HEOS-Geräte, die NICHT im Chromecast-Adapter sein sollen.
-// Die Namen müssen exakt so geschrieben sein, wie sie im Objektbaum erscheinen.
-const heosDevices = [
+// Liste der explizit unerwünschten Geräte-Namen (z.B. HEOS)
+const bannedDeviceNames = [
     'HEOS Sauna',
     'Marantz CINEMA 60',
     'Heos5'
@@ -20,56 +20,78 @@ const heosDevices = [
 const adapterInstance = 'chromecast.0';
 
 /**
- * Funktion zum Löschen eines Geräts inklusive aller States.
- * @param {string} deviceName - Der Name des Geräts (wie im Adapter angezeigt)
+ * Kernfunktion zum Löschen eines fehlerhaften Geräts
+ * @param {string} devicePath - Der vollständige ioBroker-Pfad (z.B. chromecast.0.xyz)
+ * @param {string} reason - Grund der Löschung für das Log
  */
-function deleteHeosDevice(deviceName) {
-    // ioBroker wandelt Leerzeichen in IDs oft in Unterstriche um.
-    // Wir bauen den Pfad zusammen: z.B. chromecast.0.HEOS_Sauna
-    const deviceId = deviceName.replace(/\s+/g, '_');
-    const fullPath = adapterInstance + '.' + deviceId;
-
-    // Prüfen, ob das Objekt existiert
-    if (existsObject(fullPath)) {
-        log('Unerwünschtes HEOS-Gerät "' + deviceName + '" erkannt. Lösche Pfad: ' + fullPath, 'warn');
+function cleanUpDevice(devicePath, reason) {
+    if (existsObject(devicePath)) {
+        log('Bereinigung: Pfad "' + devicePath + '" wird gelöscht. Grund: ' + reason, 'warn');
 
         // deleteDevice löscht den gesamten Ordner-Zweig rekursiv
-        deleteDevice(fullPath, (err) => {
+        deleteDevice(devicePath, (err) => {
             if (err) {
-                log('Fehler beim Löschen von ' + deviceName + ': ' + err, 'error');
+                log('Fehler beim Löschen von ' + devicePath + ': ' + err, 'error');
             } else {
-                log('Erfolgreich bereinigt: ' + deviceName, 'info');
+                log('Erfolgreich gelöscht: ' + devicePath, 'info');
             }
         });
     }
 }
 
 /**
- * TRIGGER: Wir überwachen den chromecast-Adapter auf neue States.
- * Wir reagieren auf den ".name" State, da dieser beim Discovery fast immer
- * als einer der ersten States befüllt wird.
+ * Funktion, die einen Namen prüft und bei Bedarf die Löschung einleitet
+ * @param {string} name - Der Anzeigename des Geräts
+ * @param {string} fullId - Die vollständige ID des States
  */
-on({id: /^chromecast\.\d+\..*\.name$/, change: 'any'}, function (obj) {
-    const detectedName = obj.state.val;
+function checkAndFilter(name, fullId) {
+    if (!name || typeof name !== 'string') return;
 
-    // Prüfen, ob der neu gefundene Name in unserer Verbotsliste steht
-    if (heosDevices.includes(detectedName)) {
-        log('Filter-Alarm: ' + detectedName + ' wurde vom Adapter gefangen!', 'info');
+    // Wir extrahieren den Gerätepfad aus der State-ID
+    // (von "chromecast.0.id.name" zu "chromecast.0.id")
+    const parts = fullId.split('.');
+    if (parts.length < 3) return;
+    const devicePath = parts[0] + '.' + parts[1] + '.' + parts[2];
 
-        // Wir warten 5 Sekunden, damit der Adapter seinen Schreibvorgang
-        // beenden kann, bevor wir ihm die Daten unterm Hintern wegwischen.
-        // Das verhindert Schreib-Lösch-Konflikte.
+    let shouldDelete = false;
+    let reason = '';
+
+    // Prüfung 1: Ist es in der HEOS-Verbotsliste?
+    if (bannedDeviceNames.includes(name)) {
+        shouldDelete = true;
+        reason = 'Gerät steht auf der Verbotsliste (HEOS-Filter)';
+    }
+
+    // Prüfung 2: Ist der Eintrag als unvollständig markiert?
+    if (name.includes('(unvollständig)')) {
+        shouldDelete = true;
+        reason = 'Unvollständiger Eintrag erkannt (Chromecast-Fehler)';
+    }
+
+    if (shouldDelete) {
+        // Wir warten kurz, um dem Adapter Zeit für interne Prozesse zu lassen
         setTimeout(() => {
-            deleteHeosDevice(detectedName);
+            cleanUpDevice(devicePath, reason);
         }, 5000);
     }
+}
+
+/**
+ * TRIGGER: Überwachung auf neue oder geänderte Gerätenamen
+ */
+on({id: new RegExp('^' + adapterInstance.replace('.', '\\.') + '\\..*\\.name$'), change: 'any'}, function (obj) {
+    checkAndFilter(obj.state.val, obj.id);
 });
 
 /**
  * INITIALISIERUNG:
- * Beim Skriptstart einmalig alle bekannten Problem-Geräte löschen.
+ * Beim Skriptstart suchen wir einmalig alle vorhandenen Namen durch.
  */
-log('HEOS-Schutzschild für Chromecast-Adapter gestartet...', 'info');
-heosDevices.forEach((name) => {
-    deleteHeosDevice(name);
+log('Chromecast-Cleaner & HEOS-Schutzschild aktiv...', 'info');
+
+// Alle ".name" Zustände der Instanz abfragen
+const currentNames = $(adapterInstance + '.*.name');
+currentNames.each(function(id) {
+    const val = getState(id).val;
+    checkAndFilter(val, id);
 });
