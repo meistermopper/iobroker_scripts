@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * SKRIPT: EV3 LADE-MASTER v6.4.1
+ * SKRIPT: EV3 LADE-MASTER v6.4.2
  * =============================================================================
  * KONZEPT: Fokussiertes Start/Stop Management für den Kia EV3.
  * STRATEGIE: Nutzung der fixen 6A (ca. 3,960 kW) für zwei Betriebsmodi:
@@ -18,6 +18,7 @@
  * - Fahrzeug-Kapazität: 81.4 kWh | Reichweite: 550km (Sommer) / 450km (Winter)
  * - Debounce von 45 Sekunden, wenn Charging geändert wurde
  * - Kein Ladestart, wenn das Ladeziel erreicht wurde
+ * - NEU: Intelligenter Wallbox-Reset vor jedem Ladevorgang, um Startprobleme zu beheben.
  * =============================================================================
  */
 
@@ -61,6 +62,7 @@ const IDS = {
   u_rest: `${PATH_USER}.Restladezeit`, // [19] HH:MM Anzeige
   aliasKm: "alias.0.umrechnen.kia_ladekm", // [20] gewonnene Reichweite
   aliasDur: "alias.0.umrechnen.kia_ladezeit", // [21] Zeit-Objekt
+  u_startChargeRequest: `${PATH_USER}.Start_Charge_Request`, // [NEW] Request to start charging
 };
 
 // --- PARAMETER ---
@@ -93,6 +95,13 @@ async function initLadeSystem() {
     await createStateAsync(IDS.u_limit, 80, {
       type: "number",
       name: "Ladeziel",
+    });
+  // NEU: Datenpunkt für den Lade-Start-Request
+  if (!existsState(IDS.u_startChargeRequest))
+    await createStateAsync(IDS.u_startChargeRequest, false, {
+      type: "boolean",
+      name: "Ladevorgang starten (Request)",
+      role: "button",
     });
 
   //console.log(
