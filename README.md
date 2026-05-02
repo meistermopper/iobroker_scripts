@@ -3,7 +3,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.13.7-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.13.8-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -90,8 +90,11 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
+### [1.13.8] - 2026-05-02
+- Code-Optimierungen und Updates
+
 ### [1.13.7] - 2026-05-02
-- Update von failover_dyndns_master.js
+- Update von failover_dyndns_master.js (Timout  für Amazon IP-Abfrage auf 10 s verlängert)
 
 ### [1.13.3] - 2026-05-01
 - Update von chromecast_ban_heos.js (Also delete devices that were entered incorrectly)
