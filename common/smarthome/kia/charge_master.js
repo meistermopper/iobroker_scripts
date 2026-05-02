@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * SKRIPT: EV3 LADE-MASTER v6.4.5
+ * SKRIPT: EV3 LADE-MASTER v6.4.6
  * =============================================================================
  * KONZEPT: Fokussiertes Start/Stop Management für den Kia EV3.
  * STRATEGIE: Nutzung der fixen 6A (ca. 3,960 kW) für zwei Betriebsmodi:
@@ -41,7 +41,7 @@ const IDS = {
   bat12v: `${VIN}.vehicleStatusRaw.Electronics.Battery.Level`, // [5] 12V Batterie-Schutz
   conn: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.ConnectorFastening.State`, // [6] Stecker-Status
   remTime: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.Charging.RemainTime`, // [7] Restzeit in Min.
-  targetSocSrv: `${VIN}.control.charge_limit_slow`, // [23] Ladeziel (AC) vom Fahrzeug/VIS
+  targetSocSrv: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.TargetSoC.Standard`, // [23] Ladeziel (AC) vom Fahrzeug
   refresh: `${VIN}.control.force_refresh`, // [8] Fahrzeug aufwecken
 
   // Energie-Zentrum (Hardware-Werte)
@@ -168,33 +168,31 @@ function checkPvAutomation() {
 
   // Fahrzeug-SOC und Ladeziele (VIS vs. Auto-Einstellung)
   const evSoc = getState(IDS.soc).val || 0;
-  const limitVis = getState(IDS.u_limit).val || 100;
   const limitCar = getState(IDS.targetSocSrv).val || 100;
 
   // Diagnose-Log bei ausreichendem Überschuss, falls nicht geladen wird
   if (!isTransActive && mittel > PV_START_LIMIT) {
-      console.log(`[EV3 Master] Prüfe Startbedingungen: Auto-Mode=${getState(IDS.u_auto).val}, WB-Conn=${getState(IDS.wbConn).val}, PV-Avg=${mittel}W, Bat=${batSoc}%, EV-SoC=${evSoc}%, Lim-VIS=${limitVis}%, Lim-Car=${limitCar}%, Status=${wbStatus}`);
+      console.log(`[EV3 Master] Prüfe Startbedingungen: Auto-Mode=${getState(IDS.u_auto).val}, PV-Avg=${mittel}W, Bat=${batSoc}%, EV-SoC=${evSoc}%, Ziel=${limitCar}%, Status=${wbStatus}`);
   }
 
   // START: Genügend Sonne (>4,6kW) und Hausspeicher gut gefüllt (>75%)
-  if (!isTransActive && mittel > PV_START_LIMIT && batSoc > 75 && evSoc < limitVis && evSoc < limitCar) {
+  if (!isTransActive && mittel > PV_START_LIMIT && batSoc > 75 && evSoc < limitCar) {
     // Erlaubte Status für Start: Fahrzeug eingesteckt (Preparing), Pausiert (Suspended) oder gerade beendet (Finishing)
     // 'Available' wird ignoriert, da dort kein Stecker steckt.
     const readyToStart = ["Preparing", "Finishing", "SuspendedEVSE", "SuspendedEV"].includes(wbStatus);
 
     if (readyToStart) {
-      setState(IDS.wbTrans, true);
-      ev3Notify("🔋 Das Überschussladen des EV 3 wurde mit 6 Ampere aktiviert");
-      // NEU: Wallbox-Reset/Re-Authorize via Availability vor Start (behebt OCPP-Hänger)
+      console.log(`[EV3 Master] Bedingungen erfüllt. Starte Reset-Sequenz für Wallbox-Status: ${wbStatus}`);
       setState(IDS.wbAvail, "Inoperative");
-
+      setState(IDS.wbAvail, false); // Korrektur: Erwartet Boolean, nicht String
       setTimeout(() => {
-          setState(IDS.wbAvail, "Operative");
+          setState(IDS.wbAvail, true); // Korrektur: Erwartet Boolean, nicht String
           setTimeout(() => {
+              // Erst jetzt, nach dem Reset, die Transaktion starten
               setState(IDS.wbTrans, true);
-              ev3Notify("🔋 Das Überschussladen des EV 3 wurde nach Wallbox-Reset aktiviert");
-          }, 2000);
-      }, 1000);
+              ev3Notify("🔋 Das Überschussladen des EV 3 wurde nach Wallbox-Reset mit 6A aktiviert");
+          }, 3000); // Mehr Zeit für den OCPP Handshake
+      }, 1500);
     } else {
         if (wbStatus === "Available") {
             console.warn("[EV3 Master] Start verhindert: Wallbox meldet 'Available' (kein Fahrzeug erkannt)");
@@ -202,11 +200,10 @@ function checkPvAutomation() {
     }
   }
   // STOP: Überschuss sinkt unter die Ladeleistung (Pausierung)
-  else if (isTransActive && (mittel < PV_STOP_LIMIT || evSoc >= limitVis || evSoc >= limitCar)) {
+  else if (isTransActive && (mittel < PV_STOP_LIMIT || evSoc >= limitCar)) {
     // Detailliertes Logging der Stop-Ursache
     let reason = "";
     if (mittel < PV_STOP_LIMIT) reason = `Zu wenig PV-Leistung (${mittel}W < ${PV_STOP_LIMIT}W)`;
-    else if (evSoc >= limitVis) reason = `VIS-Ladeziel erreicht (${evSoc}% >= ${limitVis}%)`;
     else if (evSoc >= limitCar) reason = `Fahrzeug-Ladeziel erreicht (${evSoc}% >= ${limitCar}%)`;
 
     if (reason) {
@@ -357,6 +354,12 @@ on({ id: IDS.remTime, change: "any" }, (obj) => {
     t = `${hh}:${mm < 10 ? "0" + mm : mm}`;
   }
   setState(IDS.u_rest, t, true);
+});
+
+// NEU: Synchronisierung des VIS-Anzeige-Datenpunkts mit dem echten Ladeziel
+on({ id: IDS.targetSocSrv, change: "ne" }, (obj) => {
+    console.log(`[EV3 Master] Ladeziel-Synchronisierung: VIS-Slider wird auf ${obj.state.val}% gesetzt.`);
+    setState(IDS.u_limit, obj.state.val, true);
 });
 
 // NEU: Manueller Start-Request Handler
