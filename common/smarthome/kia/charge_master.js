@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * SKRIPT: EV3 LADE-MASTER v6.4.4
+ * SKRIPT: EV3 LADE-MASTER v6.4.5
  * =============================================================================
  * KONZEPT: Fokussiertes Start/Stop Management für den Kia EV3.
  * STRATEGIE: Nutzung der fixen 6A (ca. 3,960 kW) für zwei Betriebsmodi:
@@ -41,7 +41,7 @@ const IDS = {
   bat12v: `${VIN}.vehicleStatusRaw.Electronics.Battery.Level`, // [5] 12V Batterie-Schutz
   conn: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.ConnectorFastening.State`, // [6] Stecker-Status
   remTime: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.Charging.RemainTime`, // [7] Restzeit in Min.
-  targetSocSrv: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.TargetSoC.Standard`, // [23] Ladeziel vom Fahrzeug
+  targetSocSrv: `${VIN}.control.charge_limit_slow`, // [23] Ladeziel (AC) vom Fahrzeug/VIS
   refresh: `${VIN}.control.force_refresh`, // [8] Fahrzeug aufwecken
 
   // Energie-Zentrum (Hardware-Werte)
@@ -203,6 +203,16 @@ function checkPvAutomation() {
   }
   // STOP: Überschuss sinkt unter die Ladeleistung (Pausierung)
   else if (isTransActive && (mittel < PV_STOP_LIMIT || evSoc >= limitVis || evSoc >= limitCar)) {
+    // Detailliertes Logging der Stop-Ursache
+    let reason = "";
+    if (mittel < PV_STOP_LIMIT) reason = `Zu wenig PV-Leistung (${mittel}W < ${PV_STOP_LIMIT}W)`;
+    else if (evSoc >= limitVis) reason = `VIS-Ladeziel erreicht (${evSoc}% >= ${limitVis}%)`;
+    else if (evSoc >= limitCar) reason = `Fahrzeug-Ladeziel erreicht (${evSoc}% >= ${limitCar}%)`;
+
+    if (reason) {
+        console.log(`[EV3 Master] Automatisch gestoppt: ${reason}`);
+    }
+
     setState(IDS.wbTrans, false);
     ev3Notify("Das Laden des EV 3 wurde beendet");
   }
