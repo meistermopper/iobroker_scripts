@@ -143,7 +143,7 @@ on({ id: CONFIG.dpWanIp, change: "ne" }, async (obj) => {
  * Alle 30 Minuten: Vergleich der UniFi-IP mit der echten Welt (Amazon Check).
  */
 schedule(CONFIG.checkInterval, async () => {
-  httpGet("http://checkip.amazonaws.com", (error, response) => {
+  httpGet("http://checkip.amazonaws.com", { timeout: 10000 }, (error, response) => {
     if (error || !response || response.statusCode !== 200) return;
 
     const echteIp = response.data.trim();
