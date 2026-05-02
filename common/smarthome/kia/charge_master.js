@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * SKRIPT: EV3 LADE-MASTER v6.4.2
+ * SKRIPT: EV3 LADE-MASTER v6.4.4
  * =============================================================================
  * KONZEPT: Fokussiertes Start/Stop Management für den Kia EV3.
  * STRATEGIE: Nutzung der fixen 6A (ca. 3,960 kW) für zwei Betriebsmodi:
@@ -106,6 +106,7 @@ async function initLadeSystem() {
 
   //console.log(
   //  "[EV3 Master] v6.3.1 Initialisierung abgeschlossen. Manuelles Laden schützt jetzt den Haus-Akku",
+  //  "[EV3 Master] v6.4.3 Initialisierung abgeschlossen. Diagnose-Logging aktiviert.",
   //);
 }
 initLadeSystem();
@@ -153,14 +154,14 @@ schedule("* * * * *", () => {
  * sofern der Automatik-Schalter in der VIS aktiv ist.
  */
 function checkPvAutomation() {
-  if (!getState(IDS.u_auto).val) return;
+  const isAuto = getState(IDS.u_auto).val;
+  const mittel = getState(IDS.pvAverage).val;
 
   // Abbrechen, wenn Wallbox offline ist
-  if (!getState(IDS.wbConn).val) {
-    return;
-  }
+  const isConnected = getState(IDS.wbConn).val;
+  if (!isConnected && mittel > PV_START_LIMIT) console.warn("[EV3 Master] Start wegen fehlender WB-Verbindung (OCPP Offline) nicht möglich.");
+  if (!isAuto || !isConnected) return;
 
-  const mittel = getState(IDS.pvAverage).val;
   const isTransActive = getState(IDS.wbTrans).val;
   const batSoc = getState(IDS.batSocPV).val;
   const wbStatus = getState(IDS.wbStat).val;
@@ -169,6 +170,11 @@ function checkPvAutomation() {
   const evSoc = getState(IDS.soc).val || 0;
   const limitVis = getState(IDS.u_limit).val || 100;
   const limitCar = getState(IDS.targetSocSrv).val || 100;
+
+  // Diagnose-Log bei ausreichendem Überschuss, falls nicht geladen wird
+  if (!isTransActive && mittel > PV_START_LIMIT) {
+      console.log(`[EV3 Master] Prüfe Startbedingungen: Auto-Mode=${getState(IDS.u_auto).val}, WB-Conn=${getState(IDS.wbConn).val}, PV-Avg=${mittel}W, Bat=${batSoc}%, EV-SoC=${evSoc}%, Lim-VIS=${limitVis}%, Lim-Car=${limitCar}%, Status=${wbStatus}`);
+  }
 
   // START: Genügend Sonne (>4,6kW) und Hausspeicher gut gefüllt (>75%)
   if (!isTransActive && mittel > PV_START_LIMIT && batSoc > 75 && evSoc < limitVis && evSoc < limitCar) {
@@ -179,6 +185,20 @@ function checkPvAutomation() {
     if (readyToStart) {
       setState(IDS.wbTrans, true);
       ev3Notify("🔋 Das Überschussladen des EV 3 wurde mit 6 Ampere aktiviert");
+      // NEU: Wallbox-Reset/Re-Authorize via Availability vor Start (behebt OCPP-Hänger)
+      setState(IDS.wbAvail, "Inoperative");
+
+      setTimeout(() => {
+          setState(IDS.wbAvail, "Operative");
+          setTimeout(() => {
+              setState(IDS.wbTrans, true);
+              ev3Notify("🔋 Das Überschussladen des EV 3 wurde nach Wallbox-Reset aktiviert");
+          }, 2000);
+      }, 1000);
+    } else {
+        if (wbStatus === "Available") {
+            console.warn("[EV3 Master] Start verhindert: Wallbox meldet 'Available' (kein Fahrzeug erkannt)");
+        }
     }
   }
   // STOP: Überschuss sinkt unter die Ladeleistung (Pausierung)
@@ -327,6 +347,15 @@ on({ id: IDS.remTime, change: "any" }, (obj) => {
     t = `${hh}:${mm < 10 ? "0" + mm : mm}`;
   }
   setState(IDS.u_rest, t, true);
+});
+
+// NEU: Manueller Start-Request Handler
+on({ id: IDS.u_startChargeRequest, val: true, change: "any" }, () => {
+    console.log("[EV3 Master] Manueller Start-Request via VIS/Button empfangen.");
+    setState(IDS.wbTrans, true);
+    setTimeout(() => {
+        setState(IDS.u_startChargeRequest, false, true);
+    }, 1000);
 });
 
 // Täglicher Reset der Ladestatistik um 02:05 Uhr
