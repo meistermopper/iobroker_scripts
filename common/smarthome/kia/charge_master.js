@@ -142,7 +142,20 @@ schedule("* * * * *", () => {
   const current = Number(getState(IDS.pvPower).val) || 0;
   const oldAvg = Number(getState(IDS.pvAverage).val) || current;
   const inertia = Number(getState(IDS.u_smooth).val) || 10;
-  let alpha = current < oldAvg ? 0.5 : 1 / inertia;
+  const batSoc = getState(IDS.batSocPV).val || 0;
+
+  let alpha;
+  if (current < oldAvg) {
+    // ABFALL: Wenn der Haus-Akku voll ist (>85%), reagieren wir träger (0.2 statt 0.5).
+    // Das verhindert unnötige Ladestopps bei kurzen Wolken.
+    alpha = (batSoc > 85) ? 0.2 : 0.5;
+  } else {
+    // ANSTIEG: Wenn der Akku noch leer ist (<50%), warten wir länger auf stabile Sonne.
+    // Ist der Akku voll, nehmen wir die Sonne schneller mit.
+    const dynamicInertia = (batSoc > 75) ? Math.max(2, inertia / 2) : inertia;
+    alpha = 1 / dynamicInertia;
+  }
+
   const newAvg = alpha * current + (1 - alpha) * oldAvg;
   setState(IDS.pvAverage, Math.round(newAvg), true);
 });
