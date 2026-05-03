@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * SKRIPT: EV3 LADE-MASTER v6.4.6
+ * SKRIPT: EV3 LADE-MASTER v6.5.4 (Cleaned Gold Standard)
  * =============================================================================
  * KONZEPT: Fokussiertes Start/Stop Management für den Kia EV3.
  * STRATEGIE: Nutzung der fixen 6A (ca. 3,960 kW) für zwei Betriebsmodi:
@@ -40,8 +40,8 @@ const IDS = {
   soc: `${VIN}.vehicleStatusRaw.Green.BatteryManagement.BatteryRemain.Ratio`, // [4] Ladestand %
   bat12v: `${VIN}.vehicleStatusRaw.Electronics.Battery.Level`, // [5] 12V Batterie-Schutz
   conn: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.ConnectorFastening.State`, // [6] Stecker-Status
-  remTime: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.Charging.RemainTime`, // [7] Restzeit in Min.
-  targetSocSrv: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.TargetSoC.Standard`, // [23] Ladeziel (AC) vom Fahrzeug
+  remTime: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.Charging.RemainTime`, // [7] Restzeit in Min. (vom Fahrzeug gemeldet)
+  targetSocSrv: `${VIN}.control.charge_limit_slow`, // [23] Ladeziel (AC) vom Fahrzeug (Steuerungspunkt)
   refresh: `${VIN}.control.force_refresh`, // [8] Fahrzeug aufwecken
 
   // Energie-Zentrum (Hardware-Werte)
@@ -54,7 +54,7 @@ const IDS = {
   minSocRead: "modbus.0.inputRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
 
   // Steuerung & Statistik (VIS)
-  u_auto: `${PATH_USER}.autoladen`, // [14] Schalter: PV-Automatik an/aus
+  u_auto: `${PATH_USER}.autoladen`, // [14] Schalter: PV-Automatik an/aus (Boolean)
   u_limit: `${PATH_USER}.Ladeprozent`, // [15] Ziel-SOC Slider
   u_smooth: `${PATH_USER}.Glaettung_Zeit`, // [16] EMA-Trägheit Slider
   u_power: `${PATH_USER}.Ladeleistung`, // [17] Anzeige Watt (fest 3690W)
@@ -63,19 +63,29 @@ const IDS = {
   aliasKm: "alias.0.umrechnen.kia_ladekm", // [20] gewonnene Reichweite
   aliasDur: "alias.0.umrechnen.kia_ladezeit", // [21] Zeit-Objekt
   u_startChargeRequest: `${PATH_USER}.Start_Charge_Request`, // [NEW] Request to start charging
+  u_startTs: `${PATH_USER}.LastStartTimestamp`, // [PERSISTENCE] Merker für Startzeit
+  u_origSoc: `${PATH_USER}.LastOriginalMinSoc`, // [PERSISTENCE] Merker für Batterie-Schutz
 };
 
 // --- PARAMETER ---
 const PV_START_LIMIT = 4600; // Startschwelle (Sonne muss > 4,6kW + Puffer liefern)
 const PV_STOP_LIMIT = 4000;  // Stoppschwelle (Ladevorgang pausieren, wenn Überschuss sinkt)
 const FIXED_CHARGE_W = 3960; // Fixe Leistung bei 6A (220V * 3 Phasen * 6A)
+const CAR_CAPACITY_KWH = 81.4;
+const RANGE_SUMMER = 550;
+const RANGE_WINTER = 450;
 const GOTIFY_TOKEN = getState("0_userdata.0.gotifytoken.iobroker").val;
+
+// --- TIMING KONSTANTEN ---
+const DEBOUNCE_STOP_MS = 45000;  // 45 Sek. warten vor endgültigem Stop
+const RECONNECT_WB_MS = 180000;  // 3 Min. bis WiFi-Reset
 
 let startZeitLaden = null; // Merker für Statistik
 let originalMinSoc = null; // Merker für Min-SoC bei manuellem Laden
 let stopTimer = null;      // Timer zur Entprellung von kurzen Lade-Unterbrechungen
 let reconnectTimer = null; // Timer für Wallbox-Recovery
 let wasOfflineReported = false; // Status für Anti-Spam Meldungen
+let isStartingSequenceActive = false; // Lock gegen Race Conditions beim Start
 
 // --- 2. INITIALISIERUNG ---
 
@@ -103,21 +113,74 @@ async function initLadeSystem() {
       name: "Ladevorgang starten (Request)",
       role: "button",
     });
+  if (!existsState(IDS.u_startTs))
+    await createStateAsync(IDS.u_startTs, 0, { type: "number", name: "Startzeitstempel" });
+  if (!existsState(IDS.u_origSoc))
+    await createStateAsync(IDS.u_origSoc, 0, { type: "number", name: "Original MinSoc Backup" });
 
-  //console.log(
-  //  "[EV3 Master] v6.3.1 Initialisierung abgeschlossen. Manuelles Laden schützt jetzt den Haus-Akku",
-  //  "[EV3 Master] v6.4.3 Initialisierung abgeschlossen. Diagnose-Logging aktiviert.",
-  //);
+  // Wiederherstellung laufender Prozesse nach Skript-Neustart
+  if (getState(IDS.wbStat).val === "Charging") {
+      startZeitLaden = getState(IDS.u_startTs).val || Date.now();
+      const savedSoc = getState(IDS.u_origSoc).val;
+      originalMinSoc = (savedSoc !== null && savedSoc !== 0) ? savedSoc : null;
+      setState(IDS.u_power, FIXED_CHARGE_W, true);
+  }
 }
 initLadeSystem();
 
+// --- 2.1 HILFSFUNKTION: AKTUELLE LEISTUNGSMETRIKEN ABFRAGEN ---
+/**
+ * Sammelt alle relevanten Leistungs- und SoC-Werte aus den Datenpunkten.
+ * Stellt sicher, dass die Werte als Zahlen vorliegen.
+ */
+function getPowerMetrics() {
+    return {
+        pvPower: Math.max(0, Number(getState(IDS.pvPower).val) || 0),
+        pvAverage: Number(getState(IDS.pvAverage).val) || 0,
+        batSoc: Number(getState(IDS.batSocPV).val) || 0,
+        evSoc: Number(getState(IDS.soc).val) || 0,
+    };
+}
+
 // --- 3. KOMMUNIKATION ---
+
+/**
+ * Führt die intelligente Start-Sequenz der Wallbox aus.
+ */
+async function triggerStartSequence(reason = "PV-Überschuss") {
+  if (isStartingSequenceActive) return;
+
+  const wbStatus = getState(IDS.wbStat).val;
+  const readyToStart = ["Preparing", "Finishing", "SuspendedEVSE", "SuspendedEV"].includes(wbStatus);
+
+  if (!readyToStart) {
+    if (wbStatus === "Available") console.warn(`[EV3 Master] Start (${reason}) abgebrochen: Kein Fahrzeug erkannt.`);
+    return;
+  }
+
+  isStartingSequenceActive = true;
+  console.log(`[EV3 Master] Starte Reset-Sequenz für Modus: ${reason} (Status: ${wbStatus})`);
+
+  try {
+      setState(IDS.wbAvail, false);
+      await wait(1500);
+      setState(IDS.wbAvail, true);
+      await wait(3500); // Erhöhter Puffer für OCPP-Handshake
+      setState(IDS.wbTrans, true);
+      ev3Notify(`🔋 Das Laden des EV 3 wurde via ${reason} mit 6A aktiviert`);
+  } finally {
+      isStartingSequenceActive = false;
+  }
+}
 
 function ev3Notify(text, prio = 1, spoken = null) {
   sendTo("telegram", "send", { text: text });
-  exec(
-    `curl "https://mygotify.meistermopper.de/message?token=${GOTIFY_TOKEN}" -F "title=EV3 Master" -F "message=${text}" -F "priority=${prio}"`,
-  );
+
+  // Effizienter HTTP-Post statt Shell-Prozess
+  const url = `https://mygotify.meistermopper.de/message?token=${GOTIFY_TOKEN}`;
+  httpPost(url, { title: "EV3 Master", message: text, priority: prio }, (err) => {
+      if (err) console.error(`[EV3 Master] Gotify Error: ${err}`);
+  });
 
   // Sprachausgabe tagsüber
   if (compareTime("08:00", "20:00", "between")) {
@@ -138,11 +201,9 @@ function ev3Notify(text, prio = 1, spoken = null) {
  * Errechnet den Durchschnitt der PV-Leistung zur Stabilisierung der Regelung.
  * Reagiert bei Abfall schnell, bei Anstieg träge.
  */
-schedule("* * * * *", () => {
-  const current = Number(getState(IDS.pvPower).val) || 0;
-  const oldAvg = Number(getState(IDS.pvAverage).val) || current;
+schedule("* * * * *", async () => {
+  const { pvPower: current, pvAverage: oldAvg, batSoc } = getPowerMetrics();
   const inertia = Number(getState(IDS.u_smooth).val) || 10;
-  const batSoc = getState(IDS.batSocPV).val || 0;
 
   let alpha;
   if (current < oldAvg) {
@@ -167,52 +228,31 @@ schedule("* * * * *", () => {
  * sofern der Automatik-Schalter in der VIS aktiv ist.
  */
 function checkPvAutomation() {
-  const isAuto = getState(IDS.u_auto).val;
-  const mittel = getState(IDS.pvAverage).val;
+  const isAuto = !!getState(IDS.u_auto).val; // Automatik-Schalter
+  const { pvAverage: mittel, batSoc, evSoc } = getPowerMetrics(); // Aktuelle Leistungsmetriken
 
   // Abbrechen, wenn Wallbox offline ist
-  const isConnected = getState(IDS.wbConn).val;
+  const isConnected = !!getState(IDS.wbConn).val;
   if (!isConnected && mittel > PV_START_LIMIT) console.warn("[EV3 Master] Start wegen fehlender WB-Verbindung (OCPP Offline) nicht möglich.");
   if (!isAuto || !isConnected) return;
 
-  const isTransActive = getState(IDS.wbTrans).val;
-  const batSoc = getState(IDS.batSocPV).val;
+  const isTransActive = !!getState(IDS.wbTrans).val;
   const wbStatus = getState(IDS.wbStat).val;
-
-  // Fahrzeug-SOC und Ladeziele (VIS vs. Auto-Einstellung)
-  const evSoc = getState(IDS.soc).val || 0;
   const limitCar = getState(IDS.targetSocSrv).val || 100;
 
   // Diagnose-Log bei ausreichendem Überschuss, falls nicht geladen wird
-  if (!isTransActive && mittel > PV_START_LIMIT) {
-      console.log(`[EV3 Master] Prüfe Startbedingungen: Auto-Mode=${getState(IDS.u_auto).val}, PV-Avg=${mittel}W, Bat=${batSoc}%, EV-SoC=${evSoc}%, Ziel=${limitCar}%, Status=${wbStatus}`);
+  if (!isTransActive && (mittel > (PV_START_LIMIT - 500))) {
+      console.log(`[EV3 Master] Status: ${wbStatus} | PV-Avg: ${mittel}W | Bat-SoC: ${batSoc}% | EV-SoC: ${evSoc}% / Ziel: ${limitCar}%`);
   }
 
   // START: Genügend Sonne (>4,6kW) und Hausspeicher gut gefüllt (>75%)
-  if (!isTransActive && mittel > PV_START_LIMIT && batSoc > 75 && evSoc < limitCar) {
-    // Erlaubte Status für Start: Fahrzeug eingesteckt (Preparing), Pausiert (Suspended) oder gerade beendet (Finishing)
-    // 'Available' wird ignoriert, da dort kein Stecker steckt.
-    const readyToStart = ["Preparing", "Finishing", "SuspendedEVSE", "SuspendedEV"].includes(wbStatus);
-
-    if (readyToStart) {
-      console.log(`[EV3 Master] Bedingungen erfüllt. Starte Reset-Sequenz für Wallbox-Status: ${wbStatus}`);
-      setState(IDS.wbAvail, "Inoperative");
-      setState(IDS.wbAvail, false); // Korrektur: Erwartet Boolean, nicht String
-      setTimeout(() => {
-          setState(IDS.wbAvail, true); // Korrektur: Erwartet Boolean, nicht String
-          setTimeout(() => {
-              // Erst jetzt, nach dem Reset, die Transaktion starten
-              setState(IDS.wbTrans, true);
-              ev3Notify("🔋 Das Überschussladen des EV 3 wurde nach Wallbox-Reset mit 6A aktiviert");
-          }, 3000); // Mehr Zeit für den OCPP Handshake
-      }, 1500);
-    } else {
-        if (wbStatus === "Available") {
-            console.warn("[EV3 Master] Start verhindert: Wallbox meldet 'Available' (kein Fahrzeug erkannt)");
-        }
-    }
+  if (!isTransActive && !isStartingSequenceActive && mittel > PV_START_LIMIT && batSoc > 75 && evSoc < limitCar) {
+      triggerStartSequence("PV-Automatik");
   }
+
   // STOP: Überschuss sinkt unter die Ladeleistung (Pausierung)
+  // oder Ladeziel erreicht
+  // oder Wallbox-Verbindung verloren (wird durch !isConnected am Anfang abgefangen, aber hier als Redundanz)
   else if (isTransActive && (mittel < PV_STOP_LIMIT || evSoc >= limitCar)) {
     // Detailliertes Logging der Stop-Ursache
     let reason = "";
@@ -239,10 +279,29 @@ on({ id: IDS.wbConn, val: true, change: "ne" }, checkPvAutomation);
  * Erfasst Ladedauer und setzt die Leistungsanzeige.
  * Erfasst Ladedauer, setzt die Leistungsanzeige und schützt bei manuellem
  * Laden die Hausbatterie vor Entladung.
+ * Berechnet die Statistiken für den aktuellen oder abgeschlossenen Ladevorgang.
  */
+function updateChargeStatistics(sessionDurationMs) {
+    const dauerMin = Math.max(1, Math.round(sessionDurationMs / 60000)); // Mindestens 1 Minute zählen
+    const currentTotalMin = (getState(IDS.u_timeDay).val || 0);
+    const totalMinToday = currentTotalMin + dauerMin;
+
+    // Energie und Reichweite
+    const energyKWh = (totalMinToday / 60) * (FIXED_CHARGE_W / 1000);
+    const month = new Date().getMonth();
+    const rangeMax = (month >= 3 && month <= 10) ? RANGE_SUMMER : RANGE_WINTER;
+    const kmToday = Math.round((energyKWh / CAR_CAPACITY_KWH) * rangeMax);
+
+    const h = Math.floor(totalMinToday / 60);
+    const m = totalMinToday % 60;
+    const formattedTime = h > 0 ? `${h}:${m < 10 ? "0" + m : m} Std` : `${m} Min`;
+
+    return { totalMinToday, formattedTime, kmToday, spokenTime: h > 0 ? `${h} Std, ${m} Min` : `${m} Min` };
+}
+
 on({ id: IDS.wbStat, change: "ne" }, (obj) => {
-  const status = obj.state.val;
-  const isAuto = getState(IDS.u_auto).val;
+  const status = String(obj.state.val);
+  const isAuto = !!getState(IDS.u_auto).val;
 
   if (status === "Charging") {
     // Falls ein Stop-Timer läuft: Abbrechen, da es nur ein kurzer Schluckauf war
@@ -253,15 +312,21 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       return;
     }
 
-    if (!startZeitLaden) startZeitLaden = Date.now();
+    if (!startZeitLaden) {
+        startZeitLaden = Date.now();
+        setState(IDS.u_startTs, startZeitLaden, true);
+    }
+
     // Da die Box starr 6A lädt, setzen wir den festen Watt-Wert
     setState(IDS.u_power, FIXED_CHARGE_W, true);
 
     // NEU: Batterieschutz bei manuellem Laden (Automatik AUS)
     if (!isAuto && originalMinSoc === null) {
       originalMinSoc = getState(IDS.minSocRead).val;
+      setState(IDS.u_origSoc, originalMinSoc, true);
       const currentBatSoc = getState(IDS.batSocPV).val;
-      setState(IDS.minSocSet, currentBatSoc);
+      // Sicherstellen, dass der MinSoc nicht unter 0 fällt
+      setState(IDS.minSocSet, Math.max(0, currentBatSoc));
       const msg = `Manuelles Laden gestartet. Haus-Akku auf ${currentBatSoc}% gesperrt (vorher: ${originalMinSoc}%)`;
       console.log(`[EV3 Master] ${msg}`);
       ev3Notify(`🔋 ${msg}`);
@@ -279,48 +344,30 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
     stopTimer = setTimeout(() => {
       // NEU: Batterieschutz bei manuellem Laden aufheben
       if (!isAuto && originalMinSoc !== null) {
-        setState(IDS.minSocSet, originalMinSoc);
+        // Sicherstellen, dass der MinSoc nicht unter 0 fällt
+        setState(IDS.minSocSet, Math.max(0, originalMinSoc));
         const msg = `Manuelles Laden beendet. Haus-Akku auf ${originalMinSoc}% freigegeben.`;
         console.log(`[EV3 Master] ${msg}`);
         ev3Notify(`🔌 ${msg}`);
-        originalMinSoc = null; // Merker zurücksetzen
+        originalMinSoc = null;
+        setState(IDS.u_origSoc, 0, true);
       }
 
-      // 1. Dauer des aktuellen Ladevorgangs in Minuten berechnen
-      let dauerMin = Math.round((Date.now() - startZeitLaden) / 60000);
+      // Statistik berechnen und speichern
+      const stats = updateChargeStatistics(Date.now() - startZeitLaden);
+      setState(IDS.u_timeDay, stats.totalMinToday, true);
 
-      // 2. Gesamtdauer für heute ermitteln (Bisherige Zeit + Aktuelle Zeit)
-      let totalMin = (getState(IDS.u_timeDay).val || 0) + dauerMin;
-      setState(IDS.u_timeDay, totalMin, true);
-
-      setTimeout(() => {
-        // 3. Optimierung der Sprachausgabe (SayIt)
-        let h = Math.floor(totalMin / 60); // Ganze Stunden
-        let m = totalMin % 60;             // Verbleibende Minuten
-
-        let formattedTime = h > 0 ? `${h}:${m < 10 ? "0" + m : m} Std` : `${m} Minuten`;
-
-        // Kilometer-Berechnung (81.4 kWh Kapazität)
-        const energyKWh = (totalMin / 60) * (FIXED_CHARGE_W / 1000);
-        const month = new Date().getMonth();
-        const rangeMax = (month >= 3 && month <= 10) ? 550 : 450; // April-Okt: 550km, Okt-April: 450km
-        const kmToday = Math.round((energyKWh / 81.4) * rangeMax);
-
-        let spokenTime =
-          h > 0 ? `${h} Stunde${h === 1 ? "" : "n"} und ${m} Minuten` : `${m} Minuten`;
-
-        // 4. Benachrichtigung senden
-        ev3Notify(
-          `❌ Ladung beendet. Heute geladen: ${formattedTime} (+ca. ${kmToday} km)`,
-          1,
-          `Ladung beendet. Heute geladen: ${spokenTime}. Das entspricht etwa ${kmToday} Kilometern Reichweite.`,
-        );
-      }, 2000);
+      ev3Notify(
+        `❌ Ladung beendet. Heute geladen: ${stats.formattedTime} (+ca. ${stats.kmToday} km)`,
+        1,
+        `Ladung beendet. Heute geladen: ${stats.spokenTime}. Reichweite ca. ${stats.kmToday} Kilometer.`
+      );
 
       startZeitLaden = null;
+      setState(IDS.u_startTs, 0, true);
       setState(IDS.u_power, 0, true);
       stopTimer = null;
-    }, 45000); // 45 Sekunden Pufferzeit
+    }, DEBOUNCE_STOP_MS);
   }
 });
 
@@ -345,7 +392,7 @@ on({ id: IDS.wbConn, change: "ne" }, (obj) => {
         console.log("[EV3 Master] Führe WiFi-Reconnect der Wallbox via UniFi Accesspoint aus...");
         setState(IDS.unifiReconnect, true);
         reconnectTimer = null;
-      }, 180000); // 3 Minuten
+      }, RECONNECT_WB_MS);
     }
   } else {
     // Wieder da: Status zurücksetzen und Timer stoppen
@@ -378,7 +425,7 @@ on({ id: IDS.targetSocSrv, change: "ne" }, (obj) => {
 // NEU: Manueller Start-Request Handler
 on({ id: IDS.u_startChargeRequest, val: true, change: "any" }, () => {
     console.log("[EV3 Master] Manueller Start-Request via VIS/Button empfangen.");
-    setState(IDS.wbTrans, true);
+    triggerStartSequence("VIS-Manuell");
     setTimeout(() => {
         setState(IDS.u_startChargeRequest, false, true);
     }, 1000);
