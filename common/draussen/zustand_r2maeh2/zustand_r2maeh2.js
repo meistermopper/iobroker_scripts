@@ -15,10 +15,36 @@ const IDS = {
     userMaeht: '0_userdata.0.Energie.R2Mäh2.mäht',
     userListe: '0_userdata.0.Energie.R2Mäh2.Liste_Durchschnitt',
     userMittel: '0_userdata.0.Energie.R2Mäh2.Durchschnitt',
+    userMittelKosten: '0_userdata.0.Energie.R2Mäh2.Durchschnittskosten',
+    price: '0_userdata.0.Energie.Strompreise.akt_Preis',
     gotify: '0_userdata.0.gotifytoken.iobroker'
 };
 
 // --- NEU: INITIALISIERUNG ---
+// Erzeugt alle benötigten Datenpunkte automatisch, falls sie fehlen
+async function initDP() {
+    const states = [
+        { id: IDS.userMaeht, val: false, type: 'boolean', name: 'R2Mäh2 mäh-Status' },
+        { id: IDS.userListe, val: [0, 0, 0, 0, 0, 0, 0], type: 'array', name: 'Historie der letzten 7 Tage' },
+        { id: IDS.userMittel, val: 0, type: 'number', name: 'Durchschnittsverbrauch 7 Tage' },
+        { id: IDS.userMittelKosten, val: '0,00', type: 'string', name: 'Durchschnittskosten pro Tag' },
+        { id: IDS.price, val: 0.35, type: 'number', name: 'Aktueller Strompreis' }
+    ];
+
+    for (const s of states) {
+        if (!existsState(s.id)) {
+            await createStateAsync(s.id, s.val, {
+                name: s.name,
+                type: s.type,
+                role: s.id === IDS.userMittelKosten ? 'text' : 'state'
+            });
+            console.log(`[R2Maeh2] Datenpunkt ${s.id} wurde neu angelegt.`);
+        }
+    }
+}
+
+initDP(); // Ausführen der Initialisierung
+
 // Wir laden beim Start den echten Zustand aus dem Datenpunkt,
 // damit das Skript weiß, ob er gerade schon mäht oder nicht.
 var maehtState = getState(IDS.userMaeht);
@@ -145,6 +171,18 @@ schedule("59 23 * * *", function () {
     setState(IDS.userListe, liste, true);
     var summe = 0;
     for (var i = 0; i < liste.length; i++) { summe += liste[i]; }
-    var mittel = (summe / (liste.length || 1)).toFixed(2);
+    var mittel = parseFloat((summe / (liste.length || 1)).toFixed(2));
     setState(IDS.userMittel, mittel, true);
+
+    // NEU: Kostenberechnung am Ende des Tages
+    var preis = getState(IDS.price).val || 0;
+    var mittelKosten = (mittel * preis).toFixed(2).replace('.', ',');
+    setState(IDS.userMittelKosten, mittelKosten, true);
+});
+
+// NEU: Sofortige Aktualisierung der Kosten bei Preisänderung
+on({ id: IDS.price, change: 'ne' }, function (obj) {
+    var mittel = getState(IDS.userMittel).val || 0;
+    var mittelKosten = (mittel * (obj.state.val || 0)).toFixed(2).replace('.', ',');
+    setState(IDS.userMittelKosten, mittelKosten, true);
 });
