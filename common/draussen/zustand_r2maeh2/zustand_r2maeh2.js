@@ -3,9 +3,11 @@
  * Zweck:  Status, Frostwarnung, Durchschnitt & Steckdosen-Check
  * Stand:  01.03.2026 - Version mit Start-Sync & Debug-Log
  * Stand:  07.04.2026 - Einführung der Sprachansagen
+ * Stand:  03.05.2026 - Meldung bei Nichtrückkehr
  */
 
 const WARTEZEIT_RESUME_MS = 8000; // Zeit bis Musik nach Ansage weiterläuft
+const MAX_MAEHZEIT_MS = 120 * 60 * 1000; // 120 Minuten Überwachung
 
 const IDS = {
     power: 'alias.0.draussen.r2maeh2.ENERGY_Power',
@@ -19,6 +21,8 @@ const IDS = {
     price: '0_userdata.0.Energie.Strompreise.akt_Preis',
     gotify: '0_userdata.0.gotifytoken.iobroker'
 };
+
+let stuckTimer; // Timer für die "Liegen geblieben" Erkennung
 
 // --- NEU: INITIALISIERUNG ---
 // Erzeugt alle benötigten Datenpunkte automatisch, falls sie fehlen
@@ -52,9 +56,36 @@ var maeht = (maehtState && maehtState.val === true) ? true : false;
 
 console.log('R2Maeh2: Skript gestartet. Aktueller Maeh-Status: ' + (maeht ? 'MAEHT' : 'BEREIT'));
 
+/**
+ * Startet die Überwachung auf Liegenbleiben
+ */
+function startStuckTimer() {
+    stopStuckTimer();
+    stuckTimer = setTimeout(async function() {
+        const msg = "Achtung: Erzwo mäh zwo mäht seit über 120 Minuten. Er ist vermutlich irgendwo liegen geblieben.";
+        notifyR2('⚠️ ' + msg, 2);
+        if (compareTime('08:00', '20:00', 'between')) {
+            await googleWatchdogAnnounce(msg, 45);
+        }
+    }, MAX_MAEHZEIT_MS);
+}
+
+/**
+ * Stoppt die Überwachung
+ */
+function stopStuckTimer() {
+    if (stuckTimer) {
+        clearTimeout(stuckTimer);
+        stuckTimer = null;
+    }
+}
+
+if (maeht) startStuckTimer(); // Falls beim Start bereits gemäht wird
+
+// Definition Mähsaison 0=Jan, 1=Feb => 9=Okt)
 function isSaison() {
     var monat = new Date().getMonth();
-    return (monat >= 2 && monat <= 8);
+    return (monat >= 2 && monat <= 9);
 }
 
 function notifyR2(text, priority) {
@@ -141,6 +172,7 @@ on({ id: IDS.power, change: 'ne' }, async function (obj) {
     if (zeitFenster && watt < 4 && oldWatt >= 4 && !maeht) {
         maeht = true;
         setState(IDS.userMaeht, true, true);
+        startStuckTimer();
         notifyR2('+++ 🚜 R2Maeh2 hat mit dem Mähen losgelegt +++');
 
         if (compareTime('08:00', '20:00', 'between')) {
@@ -152,6 +184,7 @@ on({ id: IDS.power, change: 'ne' }, async function (obj) {
     else if (zeitFenster && watt > 10 && oldWatt <= 10 && maeht) {
         maeht = false;
         setState(IDS.userMaeht, false, true);
+        stopStuckTimer();
         notifyR2('+++ 🔌 R2Maeh2 ist zurück und wird geladen +++');
 
         if (compareTime('08:00', '20:00', 'between')) {
