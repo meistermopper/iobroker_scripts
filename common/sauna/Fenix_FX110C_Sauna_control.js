@@ -1,9 +1,9 @@
 /**
  * ioBroker Script: Harvia Fenix FX 110C
  * -----------------------------------------------------------------------------
- * LOGIK-ÜBERSICHT:
- * Das Skript arbeitet nach dem Prinzip "Abfragen -> Auswerten -> Visualisieren".
- * Es agiert als Brücke zwischen der Harvia-Cloud und dem ioBroker-System.
+ * LOGIK-ÜBERSICHT: Das Skript dient der reinen Überwachung der Sauna.
+ * Es fragt regelmäßig (60s) Live-Daten von der Harvia-Cloud ab
+ * und aktualisiert die entsprechenden ioBroker-Datenpunkte.
  */
 
 // --- KONFIGURATION & GLOBALE VARIABLEN ---
@@ -22,6 +22,7 @@ const client = axios.create({ timeout: 10000 });     // Axios-Instanz mit 10s Ti
 // Zwischenspeicher für die Sitzung:
 let idToken      = ''; // Das "Ticket", das wir beim Login bekommen und bei jeder Anfrage vorzeigen.
 let dataBaseUrl  = ''; // Die dynamische Adresse des Servers, der unsere Daten bereitstellt.
+let controlBaseUrl = ''; // Die Basis-Adresse für Steuerbefehle
 let authUrl      = ''; // Die Adresse für die Anmeldung.
 let isLoggingIn  = false; // Verhindert doppelte Login-Versuche (Race Condition Schutz)
 
@@ -63,6 +64,7 @@ async function fetchConfig() {
     try {
         const response = await client.get("https://api.harvia.io/endpoints");
         dataBaseUrl = response.data.endpoints.RestApi.data.https;
+        controlBaseUrl = response.data.endpoints.RestApi.generics.https;
         authUrl = `${response.data.endpoints.RestApi.generics.https}/auth/token`;
         return true;
     } catch (err) {
@@ -108,6 +110,48 @@ async function login() {
         return false;
     } finally {
         isLoggingIn = false;
+    }
+}
+
+/**
+ * Sends a command to the Harvia API to change a sauna setting.
+ * @param {string} stateName - The name of the state to change (e.g., 'lightOn', 'heatOn', 'targetTemp').
+ * @param {any} value - The new value for the state.
+ */
+async function setSaunaState(stateName, value) {
+    if (!idToken || !dataBaseUrl) {
+        log(`[Harvia] Befehl '${stateName}' kann nicht gesendet werden: Token oder dataBaseUrl fehlen.`, 'warn');
+        return;
+    }
+
+    // Konvertierung für Harvia API (1 für an, 0 für aus)
+    const apiValue = (typeof value === 'boolean') ? (value ? 1 : 0) : value;
+
+    // Der regionale Endpunkt erwartet den Wert direkt im Body.
+    // Die deviceId ist bereits Teil der URL.
+    const payload = {};
+    payload[stateName] = apiValue;
+
+    const requestUrl = `${dataBaseUrl}/control/deviceId/${FIXED_ID}`;
+
+    try {
+        // Wir nutzen exakt das gleiche Header-Format wie beim erfolgreichen updateStatus.
+        // WICHTIG: Kein Padding-Ersatz, da dies den Token ungültig machen kann.
+        await client.post(requestUrl, payload, {
+            headers: {
+                'Authorization': `Bearer ${idToken.trim()}`,
+                'x-harvia-partner-id': PARTNER_ID
+            }
+        });
+        log(`[Harvia] Befehl '${stateName}' (${apiValue}) erfolgreich gesendet.`, 'info');
+    } catch (err) {
+        const detail = err.response && err.response.data ? JSON.stringify(err.response.data) : err.message;
+        log(`[Harvia] Steuerungsfehler '${stateName}': ${detail}`, 'error');
+
+        if (err.response && err.response.status === 401) {
+            log('[Harvia] Token abgelaufen bei Steuerung, löse Re-Login aus...', 'warn');
+            await login();
+        }
     }
 }
 
