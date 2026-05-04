@@ -3,7 +3,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.17.9-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.17.10-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -90,11 +90,11 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.
 
-### [1.17.9] - 2026-05-04
-- Update von Fenix_FX110C_Sauna_control.js
-
-### [1.17.8] - 2026-05-03
+### [1.17.10] - 2026-05-04
 - Code-Optimierungen und Updates
+
+### [1.17.9] - 2026-05-04
+- Update von Fenix_FX110C_Sauna_control.js (nach Test zurück zur Überwachung)
 
 ### [1.17.6] - 2026-05-03
 - Update von zustand_r2maeh2.js (add error-warnings (liegengeblieben))
