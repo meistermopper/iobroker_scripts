@@ -3,7 +3,7 @@
 // =============================================================================
 
 // --- KONFIGURATION ---
-const ID_DEVICE_CONNECTED = "chromecast.0.f0ef862c5b50.status.connected";
+const ID_DEVICE_CONNECTED = "chromecast.0.Mini-Schlazi.status.connected";
 const INSTANCE_TELEGRAM = "telegram.0";
 const GOTIFY_SERVER = "mygotify.meistermopper.de";
 const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";

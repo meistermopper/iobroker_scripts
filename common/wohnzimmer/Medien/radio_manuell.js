@@ -7,9 +7,9 @@ const BASE_DP = '0_userdata.0.heos.Wohnzimmer.';
 const SOURCE_DPs = ['sat_tv', 'tunein', 'spotify', 'netflix', 'heos', 'magenta', 'online_musik'];
 
 const ID_PLAY_STATUS = BASE_DP + 'play_status';
-const ID_CC_DISPLAY  = 'chromecast.0.b87bd4deaa73.status.displayName';
-const ID_CC_STATE    = 'chromecast.0.b87bd4deaa73.player.state';
-const ID_CC_URL      = 'chromecast.0.b87bd4deaa73.player.url2play';
+const ID_CC_DISPLAY  = 'chromecast.0.Mini-Wozi.status.displayName';
+const ID_CC_STATE    = 'chromecast.0.Mini-Wozi3.player.state';
+const ID_CC_URL      = 'chromecast.0.Mini-Wozi.player.url2play';
 const ID_SENDER_TUNE = BASE_DP + 'sender_tunein';
 
 const HARMONY_PREFIX = 'harmony.0.Harmony_Wozi.activities.';
@@ -45,7 +45,7 @@ function setExclusiveSource(activeSource) {
 // A: Harmony Aktivitäten
 on({ id: [HARMONY_PREFIX + 'SAT_TV', HARMONY_PREFIX + 'Online_Music', HARMONY_PREFIX + 'Chromecast_Musik', HARMONY_PREFIX + 'Chromecast_Video', ID_H_STATUS], change: 'ne' }, () => {
     const hStatus = getState(ID_H_STATUS).val;
-    
+
     if (hStatus === 0) {
         setExclusiveSource(null); // Alles aus
         setState(ID_PLAY_STATUS, false);

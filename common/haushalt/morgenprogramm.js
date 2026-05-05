@@ -2,8 +2,8 @@
  * Finales Morgenprogramm - 20 Min Lichtwecker & Schutz
  *******************************************************/
 
-let timerMorgen = []; 
-let programmLaeuft = false; 
+let timerMorgen = [];
+let programmLaeuft = false;
 
 function stopAllTimers() {
     timerMorgen.forEach(t => clearTimeout(t));
@@ -21,13 +21,13 @@ async function Morgenprogramm(typ) {
         return;
     }
 
-    stopAllTimers(); 
+    stopAllTimers();
     programmLaeuft = true;
     log("Morgenprogramm gestartet für: " + typ);
 
     // Initialisierung Geräte
-    setState('chromecast.0.f0ef862c5b50.player.volume', 20);
-    setState('chromecast.0.f0ef862c5b50.player.url2play', 'https://dispatcher.rndfnk.com/hr/hr1/live/mp3/high');
+    setState('chromecast.0.Mini-Schlazi.player.volume', 20);
+    setState('chromecast.0.Mini-Schlazi.player.url2play', 'https://dispatcher.rndfnk.com/hr/hr1/live/mp3/high');
     setState('alias.0.schlafzimmer.energie.schrank.state', true);
     setState('alias.0.schlafzimmer.energie.bett.state', true);
 
@@ -36,12 +36,12 @@ async function Morgenprogramm(typ) {
 
     // Radio-Logik (Ablaufsteuerung)
     timerMorgen.push(setTimeout(() => {
-        setState('chromecast.0.f0ef862c5b50.player.stop', true);
+        setState('chromecast.0.Mini-Schlazi.player.stop', true);
         setState('0_userdata.0.heos.Bad.sender', 'hr1');
-        
+
         timerMorgen.push(setTimeout(() => {
-            setState('chromecast.0.f0ef862c5b50.player.volume', 20);
-            setState('chromecast.0.f0ef862c5b50.player.url2play', 'https://dispatcher.rndfnk.com/hr/hr1/live/mp3/high');
+            setState('chromecast.0.Mini-Schlazi.player.volume', 20);
+            setState('chromecast.0.Mini-Schlazi.player.url2play', 'https://dispatcher.rndfnk.com/hr/hr1/live/mp3/high');
             timerMorgen.push(setTimeout(() => setState('chromecast.0.f0ef862c5b50.player.stop', true), 180000));
         }, 1020000));
     }, 180000));
@@ -51,13 +51,13 @@ async function Morgenprogramm(typ) {
         setState('hue.0.Nachttisch.on', false);
         setState('alias.0.schlafzimmer.energie.schrank.state', false);
         setState('alias.0.schlafzimmer.energie.bett.state', false);
-        programmLaeuft = false; 
+        programmLaeuft = false;
     }, 1500000));
 
     // Küchenradio
     timerMorgen.push(setTimeout(() => {
-        setState('chromecast.0.d86c63581a19.player.volume', 20);
-        setState('chromecast.0.d86c63581a19.player.url2play', 'https://dispatcher.rndfnk.com/hr/hr1/live/mp3/high');
+        setState('chromecast.0.Mini-Schlazi.player.volume', 20);
+        setState('chromecast.0.Mini-Schlazi.player.url2play', 'https://dispatcher.rndfnk.com/hr/hr1/live/mp3/high');
         timerMorgen.push(setTimeout(() => setState('chromecast.0.d86c63581a19.player.stop', true), 2100000));
     }, 1800000));
 }

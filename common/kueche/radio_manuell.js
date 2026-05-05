@@ -7,7 +7,7 @@ const heosStatusDP = "0_userdata.0.heos.heos5.radio_status";
 const heosVolume = 25;
 
 // IDs Chromecast Küche
-const chromeID = "chromecast.0.d86c63581a19";
+const chromeID = "chromecast.0.Home-Kueche";
 const chromePath = "0_userdata.0.heos.Kueche";
 const chromeVolume = 15; // Standardlautstärke für die Küche (0-100)
 

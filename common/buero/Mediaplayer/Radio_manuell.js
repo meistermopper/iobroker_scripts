@@ -4,7 +4,7 @@
  */
 
 // --- KONFIGURATION ---
-const CHROMECAST_ID = "chromecast.0.d4f54704fa54";
+const CHROMECAST_ID = "chromecast.0.Mini-Buero";
 const USER_DATA_BASE = "0_userdata.0.heos.Buero";
 
 const STREAM_URLS = {
@@ -23,7 +23,7 @@ const STREAM_URLS = {
 // 1. App-Status (TuneIn / Spotify) synchronisieren
 on({id: `${CHROMECAST_ID}.status.displayName`, change: "ne"}, (obj) => {
     const appName = obj.state.val;
-    
+
     // Setzt tunein/spotify auf true/false basierend auf dem App-Namen
     setState(`${USER_DATA_BASE}.tunein`, appName === 'TuneIn Free', true);
     setState(`${USER_DATA_BASE}.spotify`, appName === 'Spotify', true);
@@ -33,7 +33,7 @@ on({id: `${CHROMECAST_ID}.status.displayName`, change: "ne"}, (obj) => {
 on({id: `${CHROMECAST_ID}.status.playerState`, change: "ne"}, (obj) => {
     const state = obj.state.val;
     const isPlaying = (state === 'playing');
-    
+
     // Setzt radio_status auf true wenn 'playing', sonst false
     setState(`${USER_DATA_BASE}.radio_status`, isPlaying, true);
 });
@@ -41,7 +41,7 @@ on({id: `${CHROMECAST_ID}.status.playerState`, change: "ne"}, (obj) => {
 // 3. Sender-Umschalter
 on({id: `${USER_DATA_BASE}.tunein_sender`, change: "any"}, (obj) => {
     const url = STREAM_URLS[obj.state.val];
-    
+
     if (url) {
         setStateDelayed(`${CHROMECAST_ID}.player.url2play`, url, 500, false);
         console.log(`Büro Chromecast: Spiele Sender ${obj.state.val} von URL ${url}`);
