@@ -79,7 +79,7 @@ on({ id: ID_POWER, change: 'ne' }, (obj) => {
         if (timerEnd) {
             clearTimeout(timerEnd);
             timerEnd = null;
-            console.log("Waschmaschine: Start erkannt, Ende-Timer abgebrochen.");
+            console.log("Waschmaschine: Start erkannt, Ende-Timer abgebrochen");
         }
 
         // Status sofort setzen, um Logik zu starten und Mehrfach-Trigger zu verhindern
@@ -132,7 +132,7 @@ async function processFinish() {
     }
 
     // Sicherheits-Pause für die Übertragung der letzten Watts/kWh
-    console.log("Waschmaschine: Warte 10s auf finalen Zählerstand (Datenbank-Sync)...");
+    console.log("Waschmaschine: Warte 10s auf finalen Zählerstand (Datenbank-Sync)");
     await new Promise(resolve => setTimeout(resolve, 10000));
 
     // Jetzt erzwingen wir ein asynchrones Lesen direkt aus dem ioBroker-Core (Bypass Cache)

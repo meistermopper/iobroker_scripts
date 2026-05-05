@@ -16,8 +16,8 @@ on({ id: ID_RESTART_TRIGGER, change: 'ne' }, async (obj) => {
     try {
         // 1. Adapter neu starten
         await restartInstanceAsync(ADAPTER_INSTANCE);
-        
-        const startMsg = '⚙️ Der Miele-Adapter wurde neu gestartet.';
+
+        const startMsg = '⚙️ Der Miele-Adapter wurde neu gestartet';
         sendTo('telegram', 'send', { text: startMsg });
         console.log(startMsg);
 
@@ -27,11 +27,11 @@ on({ id: ID_RESTART_TRIGGER, change: 'ne' }, async (obj) => {
         // 3. Status-Check nach 10 Sekunden
         mieleTimeout = setTimeout(async () => {
             const connected = (await getStateAsync(ID_ADAPTER_CONN)).val;
-            
-            const statusMsg = connected 
-                ? '✅ Der Miele-Adapter ist wieder verbunden.' 
-                : '⚠️ Der Miele-Adapter konnte keine Verbindung zum Server herstellen.';
-            
+
+            const statusMsg = connected
+                ? '✅ Der Miele-Adapter ist wieder verbunden'
+                : '⚠️ Der Miele-Adapter konnte keine Verbindung zum Server herstellen';
+
             sendTo('telegram', 'send', { text: statusMsg });
             console.log(statusMsg);
 

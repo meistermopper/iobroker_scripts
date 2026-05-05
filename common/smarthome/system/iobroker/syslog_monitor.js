@@ -25,7 +25,7 @@ async function repariereDatenpunkt() {
             obj.common.type = "string";
             obj.common.role = "html";
             await setObjectAsync(LOG_DP, obj);
-            console.log(`[Log-Monitor] Metadaten für ${LOG_DP} wurden repariert.`);
+            console.log(`[Log-Monitor] Metadaten für ${LOG_DP} wurden repariert`);
         }
     }
 }
@@ -44,14 +44,14 @@ function updateLog() {
                                .filter(z => z.trim() !== "")
                                .slice(-ANZAHL_ZEILEN)
                                .reverse();
-            
+
             let htmlLog = '<div style="font-family: monospace; font-size: 11px; line-height: 1.4;">';
             zeilen.forEach(zeile => {
                 let farbe = "#aaa";
                 if (zeile.includes("error")) farbe = "#f44336";
                 else if (zeile.includes("warn")) farbe = "#ff9800";
                 else if (zeile.includes("info")) farbe = "#4caf50";
-                
+
                 htmlLog += `<div style="color: ${farbe}; border-bottom: 1px solid #222; padding: 4px 0;">${zeile}</div>`;
             });
             htmlLog += '</div>';

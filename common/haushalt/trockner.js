@@ -91,7 +91,7 @@ on({ id: ID_POWER_T, change: 'ne' }, (obj) => {
         isRunningT = true;
         startTimeT = Date.now();
         setState(ID_VIS_T, true, true);
-        console.log("Trockner: Trocknung gestartet. Lese Start-Zählerstand in 15 Sekunden...");
+        console.log("Trockner: Trocknung gestartet. Lese Start-Zählerstand in 15 Sekunden");
 
         // Verzögertes Lesen des Zählerstands, um der Steckdose Zeit zum Aktualisieren zu geben.
         setTimeout(() => {

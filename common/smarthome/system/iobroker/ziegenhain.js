@@ -89,7 +89,7 @@ on({ id: ID_TRIGGER, val: true, change: 'any' }, async (obj) => {
         setState(ID_TRIGGER, false, true);
 
         // Dokumentation im Log zur Erfolgskontrolle
-        log(`Navigation: Route nach Ziegenhain wird über ${targetInstance} ausgegeben.`);
+        log(`Navigation: Route nach Ziegenhain wird über ${targetInstance} ausgegeben`);
 
         ziegenhainTimer = null; // Timer-Variable wieder freigeben
     }, 3000);

@@ -87,7 +87,7 @@ on({id: new RegExp('^' + adapterInstance.replace('.', '\\.') + '\\..*\\.name$'),
  * INITIALISIERUNG:
  * Beim Skriptstart suchen wir einmalig alle vorhandenen Namen durch.
  */
-log('Chromecast-Cleaner & HEOS-Schutzschild aktiv...', 'info');
+log('Chromecast-Cleaner & HEOS-Schutzschild aktiv', 'info');
 
 // Alle ".name" Zustände der Instanz abfragen
 const currentNames = $(adapterInstance + '.*.name');

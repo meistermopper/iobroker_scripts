@@ -12,7 +12,7 @@ on({ id: ID_TRIGGER, change: "any" }, async (obj) => {
   // 1. Echten Neustart der Instanz auslösen
   try {
     console.warn(
-      `Vaillant-Watchdog: Neustart der Instanz ${INSTANCE} eingeleitet...`,
+      `Vaillant-Watchdog: Neustart der Instanz ${INSTANCE} eingeleitet`,
     );
     await restartInstanceAsync(INSTANCE);
 
@@ -31,7 +31,7 @@ on({ id: ID_TRIGGER, change: "any" }, async (obj) => {
     // setState(ID_TRIGGER, false, true);
 
     console.log(
-      `Vaillant-Watchdog: Neustart-Prozess für ${INSTANCE} abgeschlossen.`,
+      `Vaillant-Watchdog: Neustart-Prozess für ${INSTANCE} abgeschlossen`,
     );
     vaillantTimeout = null;
   }, 5000); // 5 Sekunden Pause bis zum nächsten möglichen Reset

@@ -71,7 +71,7 @@ function repairAndHide() {
             `[Abendlicht] Fehler bei Reparatur von ${cfg.id}: ${err}`,
           );
         // Info-Meldung nur beim Skript-Start zur Kontrolle
-        else console.log(`[Abendlicht] Info: ${cfg.id} initialisiert.`);
+        else console.log(`[Abendlicht] Info: ${cfg.id} initialisiert`);
       },
     );
   });
@@ -113,7 +113,7 @@ on({ id: ID_TRIGGER, change: "ne", ack: false }, (obj) => {
     // Geplanter Übergang um 22:30 Uhr
     transitionSchedule = schedule("30 22 * * *", () => {
       // Notification für den Übergang (gemäß Vorgabe aktiv)
-      console.log(`[Abendlicht] 22:30 Uhr: Sanfter Übergang startet...`);
+      console.log(`[Abendlicht] 22:30 Uhr: Sanfter Übergang startet`);
 
       setState(
         ALIAS_KOMMODE,

@@ -67,7 +67,7 @@ async function repairSayItSystem(reason = "Routine") {
 
                 // Prüfen, ob Cache aktiviert ist UND der Pfad stimmt
                 if (!obj.native.cache || obj.native.cacheDir !== REL_CACHE_PATH) {
-                    log(`Konfiguration für ${id} war unvollständig. Korrigiere...`, 'info');
+                    log(`Konfiguration für ${id} war unvollständig. Korrigiere`, 'info');
                     await extendObjectAsync(id, {
                         native: {
                             cache: true,

@@ -42,12 +42,12 @@ async function checkTasmotaVersion(retryCount = 0) {
 
         if (retryCount < maxRetries - 1) {
           console.warn(
-            `Tasmota: Fehler beim Abruf (${errorMsg}). Erneuter Versuch in 60 Sekunden...`,
+            `Tasmota: Fehler beim Abruf (${errorMsg}). Erneuter Versuch in 60 Sekunden`,
           );
           setTimeout(() => checkTasmotaVersion(retryCount + 1), 60000); // Nach 1 Minute erneut versuchen
         } else {
           console.error(
-            `Tasmota: GitHub konnte nach ${maxRetries} Versuchen nicht erreicht werden. Abbruch.`,
+            `Tasmota: GitHub konnte nach ${maxRetries} Versuchen nicht erreicht werden. Abbruch`,
           );
         }
         return;
@@ -111,11 +111,11 @@ async function checkTasmotaVersion(retryCount = 0) {
 
           if (logging)
             console.warn(
-              `Tasmota: Update-Meldung versendet für ${updateDevices.length} Geräte.`,
+              `Tasmota: Update-Meldung versendet für ${updateDevices.length} Geräte`,
             );
         } else if (logging) {
           console.log(
-            `Tasmota: Check beendet. System ist auf dem neuesten Stand (${latestFullVersion}).`,
+            `Tasmota: Check beendet. System ist auf dem neuesten Stand (${latestFullVersion})`,
           );
         }
       } catch (parseError) {

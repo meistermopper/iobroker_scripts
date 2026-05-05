@@ -25,7 +25,7 @@ on({ id: $(ID_SELECTOR), change: "ne" }, (obj) => {
       );
     }
 
-    console.warn(`Watchdog: ${deviceName} ist offline.`);
+    console.warn(`Watchdog: ${deviceName} ist offline`);
   }
   // Optional: Meldung, wenn das Gerät wieder online kommt
   else if (obj.state.val === true && obj.oldState.val === false) {
