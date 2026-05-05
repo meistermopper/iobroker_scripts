@@ -3,9 +3,9 @@
  * SKRIPT: Intelligente Navigations-Ansage "Ziegenhain"
  * =============================================================================
  * ZWECK:
- * Dieses Skript reagiert auf einen Trigger (z.B. ausgelöst durch eine Google-Routine).
+ * Dieses Skript reagiert auf einen Sprach-Trigger ("Hey google, fahr zur Hölle!").
  * Es berechnet, auf welchem Google-Gerät der Befehl gegeben wurde, und gibt nur dort
- * eine humorvolle Bestätigung aus.
+ * die humorvolle Bestätigung aus.
  *
  * LOGIK:
  * Da Google/ioBroker standardmäßig nicht mitteilen, welches Gerät einen Befehl
