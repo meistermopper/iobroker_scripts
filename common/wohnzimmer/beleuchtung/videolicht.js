@@ -19,43 +19,58 @@ const HARMONY_VIDEO = [
 // --- 2. HILFSFUNKTIONEN ---
 
 function istDunkel() {
-  const lux = getState(ID_ILLU).val || 0;
+  const lux = parseFloat(getState(ID_ILLU).val) || 0;
   const istNacht = compareTime(
     getAstroDate("sunrise"),
     getAstroDate("sunset"),
     "not between",
   );
+  // Wenn Nacht ODER Lux unter Schwelle
   return istNacht || lux <= 1000;
 }
 
 function videoAktiv() {
-  return HARMONY_VIDEO.some((id) => getState(id).val === 2);
+  // Prüft auf 2 (Number/String) oder true, falls der Adapter-Typ schwankt
+  return HARMONY_VIDEO.some((id) => {
+    const val = getState(id).val;
+    return val == 2 || val === true || val === "2";
+  });
 }
 
 // --- 3. HAUPTLOGIK ---
 
 on({ id: [...HARMONY_VIDEO, ID_ILLU], change: "ne" }, async (obj) => {
-  const lux = getState(ID_ILLU).val || 0;
-  const tvLichtAn = getState(ID_FERNSEHLICHT).val;
+  const luxState = getState(ID_ILLU);
+  const lux = (luxState && luxState.val !== null) ? parseFloat(luxState.val) : 0;
+  const tvLichtAn = !!(getState(ID_FERNSEHLICHT).val);
   const amSchauen = videoAktiv();
 
   // Feststellen, ob der Trigger der Lux-Sensor war
   const istLuxAenderung = obj.id === ID_ILLU;
 
-  // FALL A: KINO-MODUS STARTEN (Licht anpassen)
-  if (amSchauen && istDunkel() && !tvLichtAn) {
-    // Galaxie nur an, wenn der Weihnachtsbaum aus ist
-    if (!getState(ID_WEIHNACHTEN).val) {
-      setState(ID_GALAXIE, true);
-    }
+  // Debug-Logging (kann nach Erfolg entfernt werden)
+  // console.log(`[Videolicht] Trigger: ${obj.id} | Aktiv: ${amSchauen} | Lux: ${lux} | TV-Licht: ${tvLichtAn}`);
 
-    setStateDelayed(ID_QUADER, false, 1000, true);
-    setStateDelayed(ID_SPIRALE, false, 2000, true);
-    setStateDelayed(ID_FERNSEHLICHT, true, 3000, true);
+  // FALL A: KINO-MODUS STARTEN (Licht anpassen)
+  if (amSchauen && istDunkel()) {
+    // Nur triggern, wenn es entweder keine Lux-Änderung ist (also Start der Aktivität)
+    // ODER wenn das Fernsehlicht noch aus ist (Nachdunkeln während des Films)
+    if (!istLuxAenderung || !tvLichtAn) {
+      console.log(`[Videolicht] Kino-Modus wird aktiviert (Lux: ${lux})`);
+      // Galaxie nur an, wenn der Weihnachtsbaum aus ist
+      if (!getState(ID_WEIHNACHTEN).val) {
+        setState(ID_GALAXIE, true);
+      }
+
+      setStateDelayed(ID_QUADER, false, 1000, true);
+      setStateDelayed(ID_SPIRALE, false, 2000, true);
+      if (!tvLichtAn) setStateDelayed(ID_FERNSEHLICHT, true, 3000, true);
+    }
   }
 
   // FALL B: AUSSCHALTEN (Nur wenn Video beendet wurde und NICHT durch Lux-Änderung)
-  else if (!amSchauen && tvLichtAn && !istLuxAenderung) {
+  else if (!amSchauen && !istLuxAenderung) {
+    // Wir räumen immer auf, wenn die Aktivität endet, unabhängig vom aktuellen tvLichtAn Status
     setState(ID_GALAXIE, false);
     setStateDelayed(ID_QUADER, false, 1000, true);
     setStateDelayed(ID_SPIRALE, false, 2000, true);
