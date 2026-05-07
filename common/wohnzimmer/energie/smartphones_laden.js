@@ -1,17 +1,18 @@
 /**
  * =============================================================================
- * SKRIPT: SMART-CHARGING ZENTRALE (V3.0 - ohne Anwesenheitsprüfung)
+ * SKRIPT: SMART-CHARGING ZENTRALE (V4.0 - mit Plugged-Erkennung)
  * =============================================================================
  * ZWECK:
- * Dieses Skript überwacht Deine Geräte und steuert die Ladung so, dass der
- * Akku geschont wird (30% bis 80%). Es verhindert doppelte Meldungen und
- * reagiert auf Sprachbefehle zum Laden.
+ * Überwacht Akkustände und steuert Ladestationen zur Akkuschonung (30% bis 80%).
+ *
  * * FEATURES:
- * 1. REBOOT-FEST: Speichert Zustände in '0_userdata.0', damit nach einem
- * Neustart nicht alles vergessen wird.
+ * 1. REBOOT-FEST: Speichert Zustände in '0_userdata.0' für Persistenz.
  * 2. SELF-HEALING: Erstellt fehlende Datenpunkte automatisch beim Start.
- * 3. SPRACH-TRIGGER: Spezielle Ansage für Thomas und das Tablet.
- * 4. Keine Abhängigkeit von Anwesenheiten mehr, da der Pflegeaufwand zu groß ist.
+ * 3. SMART-NOTIFY: Unterdrückt "Bitte laden"-Meldungen, wenn das Gerät bereits
+ *    als eingesteckt (plugged) erkannt wurde (implementiert für Thomas).
+ * 4. SPRACH-STEUERUNG: Manuelle Lade-Trigger für Tablet und Smartphone.
+ * 5. NACHT-RUHE: Sprachausgaben sind auf die Zeit von 08:00 bis 20:00 Uhr begrenzt.
+ * 6. WARTUNGSARM: Keine komplexen Anwesenheitsprüfungen erforderlich.
  * =============================================================================
  */
 
@@ -30,6 +31,7 @@ const geraete = {
   },
   "Das Smartphone von Thomas": {
     levelId: "0_userdata.0.Energie.Smartphone.Thomas_level",
+    pluggedId: "0_userdata.0.Energie.Smartphone.Thomas_plugged", // Erkennt, ob das Gerät physisch verbunden ist
     powerId: "alias.0.wohnzimmer.energie.smartlader.on", // Nutzt den zentralen Alias
     notifiedFullId: "0_userdata.0.Energie.Smartphone.ThomasMeldungVoll", // Laut Grafik ohne Unterstrich
     lowBatId: "0_userdata.0.Energie.Smartphone.Thomas_lowBat",
@@ -82,11 +84,28 @@ async function initStates() {
         def: false,
       });
     }
+    // D. NEU: Plugged-Status (erkennt ob Gerät verbunden ist)
+    if (config.pluggedId && !existsState(config.pluggedId)) {
+      await createStateAsync(config.pluggedId, false, {
+        name: "Gerät am Stromnetz (Plugged)",
+        type: "boolean",
+        role: "state",
+        def: false,
+      });
+    }
   }
 }
 initStates(); // Führt die Prüfung sofort beim Start aus
 
 // --- 3. BENACHRICHTIGUNGS-HELFER ---
+/**
+ * Zentrale Funktion für Benachrichtigungen (Telegram, Gotify, SayIt)
+ * @param {string} name - Anzeigename des Geräts
+ * @param {string} msg - Die zu sendende Nachricht
+ * @param {number} priority - Priorität für Gotify
+ * @param {string} user - Optionaler Telegram-Empfänger
+ * @param {boolean} sayIt - Ob eine Sprachausgabe erfolgen soll
+ */
 function notify(name, msg, priority = 1, user = "", sayIt = false) {
   const timeOk = compareTime("08:00", "20:00", "between"); // Keine Ansagen mitten in der Nacht
   const token = getState("0_userdata.0.gotifytoken.iobroker").val;
@@ -119,6 +138,9 @@ Object.keys(geraete).forEach((name) => {
     const istAn = getState(config.powerId).val; // Ist der Strom an?
     const alreadyNotified = getState(config.notifiedFullId).val; // Wurde heute schon gemeldet?
 
+    // NEU: Prüfen, ob das Gerät eingesteckt ist (falls pluggedId in config vorhanden)
+    const isPlugged = config.pluggedId ? getState(config.pluggedId).val : undefined;
+
     // 1. VIS LADESTATUS AKTUALISIEREN
     let targetLaedtId = config.levelId.replace("_level", "_laedt");
     if (existsState(targetLaedtId)) {
@@ -140,13 +162,22 @@ Object.keys(geraete).forEach((name) => {
     if (level < config.min && !istAn) {
       setState(config.powerId, true);
       if (config.lowBatId) setState(config.lowBatId, true);
-      notify(
-        name,
-        "🪫 " + name + " sollte geladen werden.\nStand: " + level + "%",
-        1,
-        config.notificationUser,
-        true,
-      );
+
+      // LOGIK-OPTIMIERUNG:
+      // Wir senden nur eine Nachricht, wenn das Gerät NICHT eingesteckt ist (isPlugged === false).
+      // Wenn es bereits eingesteckt ist (true), aktivieren wir nur lautlos den Strom.
+      // Geräte ohne plugged-Sensor (wie Kiki aktuell) melden sich wie gewohnt immer.
+      if (isPlugged === true) {
+          console.log(`[Smart-Charging] ${name} ist bereits eingesteckt (${level}%). Ladung wurde lautlos gestartet.`);
+      } else {
+          notify(
+            name,
+            "🪫 " + name + " sollte geladen werden.\nStand: " + level + "%",
+            1,
+            config.notificationUser,
+            true,
+          );
+      }
     }
 
     // 4. AUSSCHALT-LOGIK (Akku >= 80%)
