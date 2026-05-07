@@ -21,7 +21,7 @@ let ziegenhainTimer = null; // Speicher für den Timer, um Mehrfach-Trigger abzu
  * TRIGGER-LOGIK
  * Reagiert, wenn der Datenpunkt auf 'true' gesetzt wird.
  */
-on({ id: ID_TRIGGER, val: true, change: 'any' }, async (obj) => {
+on({ id: ID_TRIGGER, val: true, change: 'any' }, (obj) => {
     /**
      * SCHUTZ VOR DOPPEL-TRIGGER (Entprellen):
      * Falls der Befehl von Google doppelt gesendet wird oder der Datenpunkt
@@ -35,43 +35,30 @@ on({ id: ID_TRIGGER, val: true, change: 'any' }, async (obj) => {
      * Wir warten 3 Sekunden. Das gibt dem System Zeit, sich zu beruhigen,
      * bevor die Sprachausgabe auf allen Lautsprechern startet.
      */
-    ziegenhainTimer = setTimeout(async () => {
-        const message = 'Okay, die Route zu den Lattch-Köppen nach Ziegenhain wird berechnet!';
+    ziegenhainTimer = setTimeout(() => {
+        const message = 'Okay, die Route nach Ziegenhain wird berechnet!';
+        const defaultVolume = 50; // Standardlautstärke für die Ansage
 
         /**
          * DYNAMISCHE SUCHE DER AUSGABEGERÄTE:
-         * Der Selektor $('system.adapter.sayit.*') findet alle Objekte im Systembaum,
-         * die zum SayIt-Adapter gehören.
+         * Wir suchen alle aktiven (alive) SayIt-Instanzen.
+         * Dies folgt der Logik aus dem Raumklima-Skript, die sich als stabil erwiesen hat.
          */
-        const instances = $('system.adapter.sayit.*');
+        $(`system.adapter.sayit.*.alive`).each(function (id) {
+            const sayitInstance = id.split('.').slice(2, 4).join('.');
+            const state = getState(id);
 
-        for (const id of instances) {
-            /**
-             * FILTERUNG:
-             * Wir suchen gezielt nach den Haupt-Instanz-Objekten (z.B. system.adapter.sayit.0).
-             * Die Regex stellt sicher, dass wir keine Unterpunkte wie ".alive" direkt in der Schleife verarbeiten.
-             */
-            if (id.match(/^system\.adapter\.sayit\.\d+$/)) {
-
-                // Wir extrahieren den technischen Namen der Instanz (z.B. "sayit.0")
-                const sayitInstance = id.replace('system.adapter.', '');
-
-                /**
-                 * ERREICHBARKEITS-CHECK:
-                 * Wir prüfen über das ".alive"-Flag, ob der jeweilige Adapter-Prozess überhaupt läuft.
-                 * Das verhindert Fehlerversuche bei deaktivierten Instanzen.
-                 */
-                if (existsState(`${id}.alive`) && getState(`${id}.alive`).val) {
-                    // Den Text-zu-Sprache Befehl an die Instanz senden
+            if (state && state.val === true) {
+                try {
                     sendTo(sayitInstance, "say", {
-                        text: message
+                        text: message,
+                        volume: defaultVolume
                     });
-                    log(`Navigation: Route nach Ziegenhain wird über ${sayitInstance} ausgegeben`);
-                } else {
-                    log(`Navigation: SayIt-Instanz ${sayitInstance} ist nicht aktiv, überspringe.`);
+                } catch (e) {
+                    log(`Navigation: Fehler beim Senden an ${sayitInstance}: ${e}`, 'error');
                 }
             }
-        }
+        });
 
         /**
          * TRIGGER ZURÜCKSETZEN:
