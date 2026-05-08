@@ -241,9 +241,9 @@ function checkPvAutomation() {
   const limitCar = getState(IDS.targetSocSrv).val || 100;
 
   // Diagnose-Log bei ausreichendem Überschuss, falls nicht geladen wird
-  if (!isTransActive && (mittel > (PV_START_LIMIT - 500))) {
-      console.log(`[EV3 Master] Status: ${wbStatus} | PV-Avg: ${mittel}W | Bat-SoC: ${batSoc}% | EV-SoC: ${evSoc}% / Ziel: ${limitCar}%`);
-  }
+  //if (!isTransActive && (mittel > (PV_START_LIMIT - 500))) {
+  //    console.log(`[EV3 Master] Status: ${wbStatus} | PV-Avg: ${mittel}W | Bat-SoC: ${batSoc}% | EV-SoC: ${evSoc}% / Ziel: ${limitCar}%`);
+  //}
 
   // START: Genügend Sonne (>4,6kW) und Hausspeicher gut gefüllt (>75%)
   if (!isTransActive && !isStartingSequenceActive && mittel > PV_START_LIMIT && batSoc > 75 && evSoc < limitCar) {
