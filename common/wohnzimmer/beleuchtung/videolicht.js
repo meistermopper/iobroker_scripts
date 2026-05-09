@@ -56,7 +56,7 @@ on({ id: [...HARMONY_VIDEO, ID_ILLU], change: "ne" }, async (obj) => {
     // Nur triggern, wenn es entweder keine Lux-Änderung ist (also Start der Aktivität)
     // ODER wenn das Fernsehlicht noch aus ist (Nachdunkeln während des Films)
     if (!istLuxAenderung || !tvLichtAn) {
-      console.log(`[Videolicht] Kino-Modus wird aktiviert (Lux: ${lux})`);
+      //console.log(`[Videolicht] Kino-Modus wird aktiviert (Lux: ${lux})`);
       // Galaxie nur an, wenn der Weihnachtsbaum aus ist
       if (!getState(ID_WEIHNACHTEN).val) {
         setState(ID_GALAXIE, true);
