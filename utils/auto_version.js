@@ -25,7 +25,7 @@ function runGitCommand(command) {
 
 // 1. Prüfung: Wir führen die Versionierung nur auf dem 'main' Branch aus
 const currentBranch = runGitCommand('git rev-parse --abbrev-ref HEAD');
-if (currentBranch !== 'main') {
+if (currentBranch !== 'main' && currentBranch !== 'master') {
     console.log(`ℹ️  Info: Branch ist "${currentBranch}" - Keine automatische Versionierung`);
     process.exit(0);
 }
@@ -110,7 +110,7 @@ try {
     // Wichtig: ### verwenden, damit es zur README-Struktur passt
     const newEntry = `### [${newV}] - ${date}\n${fileList}`;
 
-    const changelogMarker = 'Alle wichtigen Änderungen dieses Projekts werden hier dokumentiert.';
+    const changelogMarker = '## 📝 Changelog';
     const markerIndex = readmeContent.indexOf(changelogMarker);
 
     if (markerIndex !== -1) {
