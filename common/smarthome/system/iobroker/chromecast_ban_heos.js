@@ -11,8 +11,8 @@
 
 // Liste der explizit unerwünschten Geräte-Namen (z.B. HEOS)
 const bannedDeviceNames = [
-    'HEOS Sauna',
-    'Marantz CINEMA 60',
+    'HEOS_Sauna',
+    'Marantz_CINEMA_60',
     'Heos5'
 ];
 
