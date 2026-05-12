@@ -3,7 +3,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.19.13-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.19.14-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -88,12 +88,11 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 ## 📝 Changelog
 
-### [1.19.13] - 2026-05-12
-- Update von heizen_rh.js
-- Update von heizen_rh.js
-
-### [1.19.12] - 2026-05-10
+### [1.19.14] - 2026-05-12
 - Code-Optimierungen und Updates
+
+### [1.19.13] - 2026-05-12
+- Update von heizen_rh.js (Bad oben und unten - Race Condition abgefangen (Fenster/Thermostat))
 
 ### [1.19.11] - 2026-05-10
 - Update von chromecast_ban_heos.js (Heos-Namen angepasst)
