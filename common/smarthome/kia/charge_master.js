@@ -154,7 +154,7 @@ async function triggerStartSequence(reason = "PV-Überschuss") {
   const readyToStart = ["Preparing", "Finishing", "SuspendedEVSE", "SuspendedEV"].includes(wbStatus);
 
   if (!readyToStart) {
-    if (wbStatus === "Available") console.warn(`[EV3 Master] Start (${reason}) abgebrochen: Kein Fahrzeug erkannt.`);
+    if (wbStatus === "Available") //console.warn(`[EV3 Master] Start (${reason}) abgebrochen: Kein Fahrzeug erkannt.`);
     return;
   }
 
