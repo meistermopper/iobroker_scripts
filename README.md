@@ -3,7 +3,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.19.15-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.19.16-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -88,8 +88,11 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 ## 📝 Changelog
 
+### [1.19.16] - 2026-05-13
+- Code-Optimierungen und Updates
+
 ### [1.19.15] - 2026-05-13
-- Update von charge_master.js
+- Update von charge_master.js (log_Flut abgestellt bei Fzg nicht angestöpselt)
 
 ### [1.19.14] - 2026-05-12
 - Code-Optimierungen und Updates
