@@ -3,7 +3,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.19.20-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.19.21-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -88,7 +88,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 ## 📝 Changelog
 
-### [1.19.20] - 2026-05-14
+### [1.19.21] - 2026-05-14
 - Code-Optimierungen und Updates
 
 ### [1.19.19] - 2026-05-14
@@ -99,9 +99,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 ### [1.19.15] - 2026-05-13
 - Update von charge_master.js (log_Flut abgestellt bei Fzg nicht angestöpselt)
-
-### [1.19.14] - 2026-05-12
-- Code-Optimierungen und Updates
 
 ### [1.19.13] - 2026-05-12
 - Update von heizen_rh.js (Bad oben und unten - Race Condition abgefangen (Fenster/Thermostat))
@@ -146,9 +143,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 ### [1.10.11] - 2026-04-23
 - Update von sayit_autofix.js
 
-### [1.10.10] - 2026-04-23
-- Code-Optimierungen und Updates
-
 ### [1.10.3] - 2026-04-23
 - Update von sayit_autofix.js (Strengere Überwachung)
 
@@ -174,12 +168,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 ### [1.8.1] - 2026-04-11
 - Update von charge_master.js (debounce 45s after change "Charching")
-
-### [1.7.10] - 2026-04-09
-- Code-Optimierungen und Updates
-
-### [1.7.9] - 2026-04-09
-- Code-Optimierungen und Updates
 
 ### [1.7.7] - 2026-04-09
 - Update von smartphones_laden.js (Kiki 35-80 %)
@@ -255,9 +243,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 ### [1.2.3] - 2026-03-09
 - Update von charge_master.js (Ergänzung der Minutenansage)
-
-### [1.1.1] - 2026-03-08
-- Code-Optimierungen und Updates
 
 ### [1.0.12] - 2026-03-08
 - Update von fenster_offen.js
