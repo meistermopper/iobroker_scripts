@@ -17,7 +17,7 @@ const CLIENT_ID      = '24emhb2mm0v4sscqhbdev86b2v';
 const FIXED_ID       = '73293847-550d-40da-8bcf-3d6e2fcf5add';
 const PARTNER_ID     = 'ORG/prod:0:6656:0';
 
-const client = axios.create({ timeout: 10000 });     // Axios-Instanz mit 10s Timeout
+const client = axios.create({ timeout: 20000 });     // Axios-Instanz mit 20s Timeout
 
 // Zwischenspeicher für die Sitzung:
 let idToken      = ''; // Das "Ticket", das wir beim Login bekommen und bei jeder Anfrage vorzeigen.
@@ -68,8 +68,12 @@ async function fetchConfig() {
         authUrl = `${response.data.endpoints.RestApi.generics.https}/auth/token`;
         return true;
     } catch (err) {
-        log(`[Harvia] Fehler beim Laden der API-Konfiguration: ${err.message}`, 'error');
-        return false;
+        log(`[Harvia] Fehler beim Laden der API-Konfiguration: ${err.message}. Nutze Fallback-URLs.`, 'warn');
+        // Fallback auf Standard-Produktions-Endpunkte (EU-West-1)
+        dataBaseUrl = 'https://api-prod-eu-west-1.harvia.io';
+        controlBaseUrl = 'https://api-prod-eu-west-1.harvia.io';
+        authUrl = 'https://api-prod-eu-west-1.harvia.io/auth/token';
+        return true; // Wir fahren mit den Fallbacks fort
     }
 }
 
