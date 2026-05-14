@@ -11,9 +11,15 @@
 
 // Liste der explizit unerwünschten Geräte-Namen (z.B. HEOS)
 const bannedDeviceNames = [
-    'HEOS_Sauna',
-    'Marantz_CINEMA_60',
+    'HEOS Sauna',
+    'Marantz CINEMA 60',
     'Heos5'
+];
+
+// Liste der IDs, die auf jeden Fall ignoriert werden sollen
+const bannedDeviceIds = [
+    '0005cd77e0a8', // Marantz CINEMA 60
+    '000678ef039d'  // HEOS Sauna
 ];
 
 // Die Instanz des Adapters
@@ -28,8 +34,8 @@ function cleanUpDevice(devicePath, reason) {
     if (existsObject(devicePath)) {
         log('Bereinigung: Pfad "' + devicePath + '" wird gelöscht. Grund: ' + reason, 'warn');
 
-        // deleteDevice löscht den gesamten Ordner-Zweig rekursiv
-        deleteDevice(devicePath, (err) => {
+        // deleteObject mit recursive=true löscht den gesamten Zweig zuverlässig
+        deleteObject(devicePath, true, (err) => {
             if (err) {
                 log('Fehler beim Löschen von ' + devicePath + ': ' + err, 'error');
             } else {
@@ -52,18 +58,26 @@ function checkAndFilter(name, fullId) {
     const parts = fullId.split('.');
     if (parts.length < 3) return;
     const devicePath = parts[0] + '.' + parts[1] + '.' + parts[2];
+    const deviceId = parts[2];
 
     let shouldDelete = false;
     let reason = '';
 
-    // Prüfung 1: Ist es in der HEOS-Verbotsliste?
-    if (bannedDeviceNames.includes(name)) {
+    // Prüfung 1: Ist die ID in der Verbotsliste?
+    if (bannedDeviceIds.includes(deviceId)) {
+        shouldDelete = true;
+        reason = `Geräte-ID '${deviceId}' steht auf der schwarzen Liste`;
+    }
+
+    // Prüfung 2: Ist es in der HEOS-Verbotsliste (Name)?
+    const cleanName = name.trim();
+    if (!shouldDelete && bannedDeviceNames.includes(cleanName)) {
         shouldDelete = true;
         reason = 'Gerät steht auf der Verbotsliste (HEOS-Filter)';
     }
 
-    // Prüfung 2: Ist der Eintrag als unvollständig markiert?
-    if (name.includes('(unvollständig)')) {
+    // Prüfung 3: Ist der Eintrag als unvollständig markiert?
+    if (!shouldDelete && name.includes('(unvollständig)')) {
         shouldDelete = true;
         reason = 'Unvollständiger Eintrag erkannt (Chromecast-Fehler)';
     }
