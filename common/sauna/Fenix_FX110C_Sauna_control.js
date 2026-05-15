@@ -110,7 +110,7 @@ async function fetchConfig() {
             throw new Error('API-Endpunkte (RestApi) konnten nicht lokalisiert werden.');
         }
 
-        log(`[Harvia] API-Konfiguration geladen (Region: ${region}, Partner: ${partnerId}, IdentityPool: ${identityPoolId})`, 'info');
+        //log(`[Harvia] API-Konfiguration geladen (Region: ${region}, Partner: ${partnerId}, IdentityPool: ${identityPoolId})`, 'info');
 
         if (!identityPoolId || !userPoolId) {
             log(`[Harvia] Kritischer Fehler: IdentityPoolId oder UserPoolId fehlen in der API-Antwort!`, 'error');
@@ -152,7 +152,7 @@ async function getAwsCredentials() {
         awsSecretAccessKey = creds.SecretKey;
         awsSessionToken = creds.SessionToken;
 
-        log(`[Harvia] AWS Credentials erfolgreich für Region ${region} abgerufen.`, 'info');
+        //log(`[Harvia] AWS Credentials erfolgreich für Region ${region} abgerufen.`, 'info');
         return true;
     } catch (err) {
         const detail = err.response && err.response.data ? JSON.stringify(err.response.data) : err.message;
@@ -250,7 +250,7 @@ async function setSaunaState(stateName, value) {
 
     try {
         await axios.post(`https://${requestOptions.host}${requestOptions.path}`, requestOptions.body, { headers: requestOptions.headers });
-        log(`[Harvia] Befehl '${stateName}' (${apiValue}) erfolgreich gesendet.`, 'info');
+        //log(`[Harvia] Befehl '${stateName}' (${apiValue}) erfolgreich gesendet.`, 'info');
     } catch (err) {
         const detail = err.response && err.response.data ? JSON.stringify(err.response.data) : err.message;
         log(`[Harvia] Steuerungsfehler '${stateName}': ${detail}`, 'error');
