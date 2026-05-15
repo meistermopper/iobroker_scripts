@@ -147,7 +147,7 @@ async function setSaunaState(stateName, value) {
                 'x-harvia-partner-id': PARTNER_ID
             }
         });
-        log(`[Harvia] Befehl '${stateName}' (${apiValue}) erfolgreich gesendet.`, 'info');
+        //log(`[Harvia] Befehl '${stateName}' (${apiValue}) erfolgreich gesendet.`, 'info');
     } catch (err) {
         const detail = err.response && err.response.data ? JSON.stringify(err.response.data) : err.message;
         log(`[Harvia] Steuerungsfehler '${stateName}': ${detail}`, 'error');
