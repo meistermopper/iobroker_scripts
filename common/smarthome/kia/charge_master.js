@@ -383,13 +383,13 @@ on({ id: IDS.wbConn, change: "ne" }, (obj) => {
   if (!isConnected) {
     // Nur beim ersten Mal warnen
     if (!wasOfflineReported) {
-      console.warn("[EV3 Master] Wallbox-Verbindung verloren. Reconnect-Timer (3 Min) gestartet.");
+      //console.warn("[EV3 Master] Wallbox-Verbindung verloren. Reconnect-Timer (3 Min) gestartet.");
       wasOfflineReported = true;
     }
     // Reconnect-Timer starten (falls nicht schon einer läuft)
     if (!reconnectTimer) {
       reconnectTimer = setTimeout(() => {
-        console.log("[EV3 Master] Führe WiFi-Reconnect der Wallbox via UniFi Accesspoint aus...");
+        //console.log("[EV3 Master] Führe WiFi-Reconnect der Wallbox via UniFi Accesspoint aus...");
         setState(IDS.unifiReconnect, true);
         reconnectTimer = null;
       }, RECONNECT_WB_MS);
