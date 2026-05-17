@@ -3,7 +3,7 @@
  * -----------------------------------------------------------------------------
  * LOGIK-ÜBERSICHT: Das Skript überwacht nicht nur die Live-Daten der Sauna,
  * sondern ermöglicht auch die vollständige Steuerung (Heizung, Licht, Temperatur)
- * über die offiziellen REST-API-Endpunkte des Harvia Device Service.
+ * über die offiziellen REST-API-Endpunkte des Harvia Device Service./
  */
 
 // --- KONFIGURATION & GLOBALE VARIABLEN ---
