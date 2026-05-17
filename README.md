@@ -89,7 +89,7 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 ## 📝 Changelog
 
 ### [1.20.1] - 2026-05-17
-- Update von Fenix_FX110C_Sauna_control.js
+- Update von Fenix_FX110C_Sauna_control.js (Sauna ist steuerbar)
 
 ### [1.19.31] - 2026-05-16
 - Code-Optimierungen und Updates
