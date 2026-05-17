@@ -3,7 +3,7 @@
  * -----------------------------------------------------------------------------
  * LOGIK-ÜBERSICHT: Das Skript überwacht nicht nur die Live-Daten der Sauna,
  * sondern ermöglicht auch die vollständige Steuerung (Heizung, Licht, Temperatur)
- * über die offiziellen REST-API-Endpunkte des Harvia Device Service./
+ * über die offiziellen REST-API-Endpunkte des Harvia Device Service.
  */
 
 // --- KONFIGURATION & GLOBALE VARIABLEN ---
@@ -77,7 +77,7 @@ async function fetchConfig() {
         authUrl = `${ep.generics.https}/auth/token`;
         return true;
     } catch (err) {
-        log(`[Harvia] Fehler beim Laden der API-Konfiguration: ${err.message}. Nutze Fallback-URLs.`, 'warn');
+        log(`[Harvia] Fehler beim Laden der API-Konfiguration: ${err.message} - Nutze Fallback-URLs`, 'warn');
         return false;
     }
 }
@@ -193,6 +193,7 @@ async function setSaunaState(stateName, value) {
         }
     } catch (err) {
         const detail = err.response && err.response.data ? JSON.stringify(err.response.data) : err.message;
+        log(`[Harvia] Fehler bei der Steuerung: ${detail}`, 'error');
 
         // RE-LOGIN LOGIK: Falls der Token während der Laufzeit ungültig wurde
         // Automatischer Re-Login bei abgelaufenem Token (HTTP 401)
