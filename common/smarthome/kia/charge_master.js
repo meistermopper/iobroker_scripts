@@ -178,11 +178,13 @@ function ev3Notify(text, prio = 1, spoken = null) {
 
   // Effizienter HTTP-Post statt Shell-Prozess
   const url = `https://mygotify.meistermopper.de/message?token=${GOTIFY_TOKEN}`;
-  httpPost(url, {
-      body: JSON.stringify({ title: "EV3 Master", message: text, priority: prio }),
-      headers: { 'Content-Type': 'application/json' },
-      timeout: 10000
-  }, (err) => {
+  const payload = { title: "EV3 Master", message: text, priority: prio };
+  const options = {
+    headers: { 'Content-Type': 'application/json' },
+    timeout: 10000
+  };
+
+  httpPost(url, payload, options, (err) => {
       if (err) console.error(`[EV3 Master] Gotify Error: ${err}`);
   });
 

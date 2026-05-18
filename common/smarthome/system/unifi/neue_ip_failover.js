@@ -60,9 +60,14 @@ function sendAlert(text) {
 
   const token = getState(ID_GOTIFY_TOKEN).val;
   const gotifyUrl = `https://mygotify.meistermopper.de/message?token=${token}`;
-  exec(
-    `curl -s "${gotifyUrl}" -F "title=ioBroker System" -F "message=${text}" -F "priority=1"`,
-  );
+  const payload = {
+    title: "ioBroker System",
+    message: text,
+    priority: 1
+  };
+  const options = { headers: { 'Content-Type': 'application/json' }, timeout: 10000 };
+
+  httpPost(gotifyUrl, payload, options);
 
   console.log(`System-Meldung: ${text}`);
 }

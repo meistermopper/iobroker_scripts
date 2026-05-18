@@ -24,14 +24,15 @@ function notify(title, msg, priority = 3) {
   const token = getState(ID_GOTIFY_TOKEN).val;
   if (token) {
     const url = `https://mygotify.meistermopper.de/message?token=${token}`;
-    // httpPost ist sauberer als exec(curl)
-    httpPost(
-      url,
-      { title: title, message: msg, priority: priority },
-      (error) => {
-        if (error) console.error(`[UniFi-Guard] Gotify Fehler: ${error}`);
-      },
-    );
+    const payload = { title: title, message: msg, priority: priority };
+    const options = {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+    };
+
+    httpPost(url, payload, options, (error) => {
+      if (error) console.error(`[UniFi-Guard] Gotify Fehler: ${error}`);
+    });
   }
 }
 

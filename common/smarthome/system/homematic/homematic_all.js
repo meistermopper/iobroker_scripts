@@ -73,7 +73,7 @@ function checkHomematicService() {
     // --- TEIL 3: Ergebnisse schreiben ---
     setState(`${PATH}.Firmware_Update`, fwUpdate, true);
     setState(`${PATH}.Anzahl`, anzahl, true);
-    
+
     const finalBuffer = anzahl > 0 ? textList.join('<br>') : "keine Service-Meldungen vorhanden";
     setState(`${PATH}.Text`, finalBuffer, true);
 
@@ -99,15 +99,22 @@ on({ id: `${PATH}.Anzahl`, change: 'gt' }, (obj) => {
     const anzahl = obj.state.val;
 
     const msg = `⚠️ <b>Homematic Servicemeldung</b>\n\nAktuelle Meldungen (${anzahl}):\n${text.replace(/<br>/g, '\n')}`;
-    
+
     sendTo('telegram', 'send', {
         text: msg,
         parse_mode: 'HTML'
     });
-    
+
     // Optional: Auch an Gotify senden
     const token = getState('0_userdata.0.gotifytoken.iobroker').val;
     if (token) {
-        exec(`curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=HM Service" -F "message=${msg.replace(/<[^>]*>/g, '')}" -F "priority=1"`);
+        const url = `https://mygotify.meistermopper.de/message?token=${token}`;
+        const payload = {
+            title: "HM Service",
+            message: msg.replace(/<[^>]*>/g, ''),
+            priority: 1
+        };
+        const options = { headers: { 'Content-Type': 'application/json' }, timeout: 10000 };
+        httpPost(url, payload, options);
     }
 });

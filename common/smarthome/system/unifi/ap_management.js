@@ -10,11 +10,17 @@ const GOTIFY_TOKEN_ID = '0_userdata.0.gotifytoken.iobroker';
 // Hilfsfunktion für Benachrichtigungen (Telegram & Gotify)
 function notify(text, priority = 1) {
     sendTo('telegram', 'send', { text: text });
-    
+
     const token = getState(GOTIFY_TOKEN_ID).val;
     const url = `https://mygotify.meistermopper.de/message?token=${token}`;
-    exec(`curl -s "${url}" -F "title=ioBroker AP-Manager" -F "message=${text}" -F "priority=${priority}"`);
-    
+    const payload = {
+        title: "ioBroker AP-Manager",
+        message: text,
+        priority: priority
+    };
+    const options = { headers: { 'Content-Type': 'application/json' }, timeout: 10000 };
+
+    httpPost(url, payload, options);
     console.log(`AP-Manager: ${text}`);
 }
 
@@ -36,6 +42,6 @@ schedule("29 2 * * *", () => {
         setTimeout(() => {
             setState(`${BASE_PATH}.${ap.id}.restart`, true);
             notify(`🛜 AP ${ap.name} wurde planmäßig neu gestartet.`, 1);
-        }, index * 300000); 
+        }, index * 300000);
     });
 });

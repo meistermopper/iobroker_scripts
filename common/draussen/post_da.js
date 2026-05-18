@@ -78,7 +78,13 @@ on({ id: POSTKASTEN_STATE_ID, change: 'ne' }, async (obj) => {
 
         // 3. Textnachrichten versenden
         sendTo('telegram.0', 'send', { text: msgText });
-        exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=Postkasten" -F "message=${msgText}" -F "priority=1"`);
+        const payload = {
+            title: "Postkasten",
+            message: msgText,
+            priority: 1
+        };
+        const options = { headers: { 'Content-Type': 'application/json' }, timeout: 10000 };
+        httpPost(`${GOTIFY_URL}${gotifyToken}`, payload, options);
 
         // Sperre nach einer Minute wieder aufheben
         setTimeout(() => { Sperre = false; }, 60000);
@@ -94,7 +100,13 @@ on({ id: POSTKASTEN_STATE_ID, change: 'ne' }, async (obj) => {
         setState(POSTKASTEN_VIS_ID, true);
 
         sendTo('telegram.0', 'send', { text: msgText });
-        exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=Postkasten" -F "message=${msgText}" -F "priority=5"`);
+        const payload = {
+            title: "Postkasten",
+            message: msgText,
+            priority: 5
+        };
+        const options = { headers: { 'Content-Type': 'application/json' }, timeout: 10000 };
+        httpPost(`${GOTIFY_URL}${gotifyToken}`, payload, options);
 
         setTimeout(() => { Sperre_stumm = false; }, 60000);
     }
@@ -112,7 +124,13 @@ on({ id: POSTKASTEN_VIS_ID, change: 'ne' }, async (obj) => {
 
         // Bestätigung per Textnachricht
         sendTo('telegram.0', 'send', { text: msgScharf });
-        exec(`curl "${GOTIFY_URL}${gotifyToken}" -F "title=Postkasten" -F "message=${msgScharf}" -F "priority=1"`);
+        const payload = {
+            title: "Postkasten",
+            message: msgScharf,
+            priority: 1
+        };
+        const options = { headers: { 'Content-Type': 'application/json' }, timeout: 10000 };
+        httpPost(`${GOTIFY_URL}${gotifyToken}`, payload, options);
 
         console.log('Postkasten: System manuell zurückgesetzt');
     }

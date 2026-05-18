@@ -37,11 +37,15 @@ function sendSyncNotify(msg, priority = 1) {
     // Gotify-Nachricht absetzen (falls Token vorhanden)
     const tokenState = getState(GOTIFY_TOKEN_ID);
     if (tokenState && tokenState.val && tokenState.val.length > 5) {
-        httpPost("https://" + GOTIFY_SERVER + "/message?token=" + tokenState.val, {
+        const url = "https://" + GOTIFY_SERVER + "/message?token=" + tokenState.val;
+        const payload = {
             title: "ioBroker Sync",
             message: msg,
             priority: priority
-        });
+        };
+        const options = { timeout: 10000 }; // Erhöhtes Timeout, um den Fehler zu vermeiden
+
+        httpPost(url, payload, options);
     }
 }
 

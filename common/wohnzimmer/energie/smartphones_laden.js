@@ -112,9 +112,14 @@ function notify(name, msg, priority = 1, user = "", sayIt = false) {
 
   // Telegram & Gotify Nachrichten senden
   sendTo("telegram", "send", { text: msg, user: user });
-  exec(
-    `curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=Akku" -F "message=${msg}" -F "priority=${priority}"`,
-  );
+  const url = `https://mygotify.meistermopper.de/message?token=${token}`;
+  const payload = {
+    title: "Akku",
+    message: msg,
+    priority: priority
+  };
+  const options = { headers: { 'Content-Type': 'application/json' }, timeout: 10000 };
+  httpPost(url, payload, options);
 
   // Sprachausgabe nur, wenn gewünscht und die Zeit passt
   if (sayIt && timeOk) {
