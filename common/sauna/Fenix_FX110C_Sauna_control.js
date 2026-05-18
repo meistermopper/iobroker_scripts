@@ -142,7 +142,8 @@ async function setSaunaState(stateName, value) {
         // TYP A: Schaltsignale (Licht/Heizung) via POST
         if (stateName === 'heatOn' || stateName === 'lightOn') {
             const commandType = stateName === 'heatOn' ? 'SAUNA' : 'LIGHTS';
-            const stateStr = value ? 'on' : 'off';
+            const boolValue = toBoolean(value);
+            const stateStr = boolValue ? 'on' : 'off';
 
             const payload = {
                 deviceId: FIXED_ID,
@@ -164,7 +165,7 @@ async function setSaunaState(stateName, value) {
                 log(`[Harvia] Befehl '${commandType}' erfolgreich auf '${stateStr}' gesetzt.`, 'info');
 
                 // BESTÄTIGUNG: Wir setzen ack: true sofort, damit die UI nicht "springt"
-                setState(`${BASE_PATH}.${stateName}`, value, true);
+                setState(`${BASE_PATH}.${stateName}`, boolValue, true);
 
                 lastCommandTime = Date.now(); // Timestamp für Latenz-Schutz setzen
             } else {
