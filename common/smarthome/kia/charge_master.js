@@ -178,7 +178,11 @@ function ev3Notify(text, prio = 1, spoken = null) {
 
   // Effizienter HTTP-Post statt Shell-Prozess
   const url = `https://mygotify.meistermopper.de/message?token=${GOTIFY_TOKEN}`;
-  httpPost(url, { title: "EV3 Master", message: text, priority: prio }, (err) => {
+  httpPost(url, {
+      body: JSON.stringify({ title: "EV3 Master", message: text, priority: prio }),
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+  }, (err) => {
       if (err) console.error(`[EV3 Master] Gotify Error: ${err}`);
   });
 
@@ -264,7 +268,7 @@ function checkPvAutomation() {
     }
 
     setState(IDS.wbTrans, false);
-    ev3Notify("Das Laden des EV 3 wurde beendet");
+    //ev3Notify("Das Laden des EV 3 wurde beendet");
   }
 }
 
