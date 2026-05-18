@@ -238,7 +238,11 @@ async function updateStatus() {
 
             if (currentTemp !== undefined) setState(`${BASE_PATH}.temp`, parseFloat(currentTemp), true);
             if (p.panelTemp !== undefined) setState(`${BASE_PATH}.panelTemp`, parseFloat(p.panelTemp), true);
-            if (p.heaterPower !== undefined) setState(`${BASE_PATH}.heaterPower`, parseFloat(p.heaterPower), true);
+
+            // Normalisierung der Heizleistung (heaterPower vs power)
+            const currentPower = p.heaterPower !== undefined ? p.heaterPower : p.power;
+            if (currentPower !== undefined) setState(`${BASE_PATH}.heaterPower`, parseFloat(currentPower), true);
+
             if (p.totalBathingHours !== undefined) setState(`${BASE_PATH}.totalBathingHours`, parseFloat(p.totalBathingHours), true);
             if (p.totalSessions !== undefined) setState(`${BASE_PATH}.totalSessions`, parseInt(p.totalSessions), true);
             if (p.totalHours !== undefined) setState(`${BASE_PATH}.totalOperatingHours`, parseFloat(p.totalHours), true);
