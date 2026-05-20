@@ -28,6 +28,8 @@ let authUrl        = ''; // Endpunkt für die Anmeldung
 
 // Logik-Flags
 let isLoggingIn     = false; // Verhindert doppelte Login-Aufrufe (Race Condition Guard)
+let isSendingCommand = false; // Verhindert parallele Befehle an die Cloud
+let lastEventTime   = {};     // Speichert Zeitstempel pro Datenpunkt zur Entprellung
 let lastCommandTime = 0;     // Timestamp der letzten Aktion, um Polling-Überschreiben zu verhindern
 const LATENCY_MS    = 5000;  // Zeit (5s), die wir nach einem Befehl warten, bevor wir Telemetrie wieder trauen
 
@@ -131,18 +133,27 @@ async function login() {
 /**
  * 4. REMOTE-STEUERUNG (setSaunaState)
  * Sendet Steuerbefehle an den korrekten Device Service der Harvia Cloud.
+ * @param {boolean} isRetry - Flag, ob es sich um einen internen Wiederholungsversuch handelt
  */
-async function setSaunaState(stateName, value) {
+async function setSaunaState(stateName, value, isRetry = false) {
     if (!idToken || !deviceBaseUrl) {
         log(`[Harvia] Abbruch: Noch nicht eingeloggt oder Endpunkte unbekannt.`, 'warn');
         return;
     }
 
+    // Lock-Check: Nur blockieren, wenn es kein interner Retry ist
+    if (isSendingCommand && !isRetry) {
+        log(`[Harvia] Befehl '${stateName}' blockiert: Eine Cloud-Anfrage ist bereits aktiv.`, 'debug');
+        return;
+    }
+
+    isSendingCommand = true;
+
     try {
         // TYP A: Schaltsignale (Licht/Heizung) via POST
         if (stateName === 'heatOn' || stateName === 'lightOn') {
             const commandType = stateName === 'heatOn' ? 'SAUNA' : 'LIGHTS';
-            const boolValue = toBoolean(value);
+            const boolValue = !!value; // Sicherstellung der Boolean-Konvertierung
             const stateStr = boolValue ? 'on' : 'off';
 
             const payload = {
@@ -162,7 +173,7 @@ async function setSaunaState(stateName, value) {
             });
 
             if (response.data && response.data.handled) {
-                log(`[Harvia] Befehl '${commandType}' erfolgreich auf '${stateStr}' gesetzt.`, 'info');
+                log(`[Harvia] ${commandType === 'SAUNA' ? 'Heizung' : 'Licht'} -> ${stateStr}`, 'info');
 
                 // BESTÄTIGUNG: Wir setzen ack: true sofort, damit die UI nicht "springt"
                 setState(`${BASE_PATH}.${stateName}`, boolValue, true);
@@ -187,24 +198,34 @@ async function setSaunaState(stateName, value) {
                     'Content-Type': 'application/json'
                 }
             });
-            log(`[Harvia] Zieltemperatur auf ${value}°C geändert.`, 'info');
+            log(`[Harvia] Temp-Soll -> ${value}°C`, 'info');
             // Sofortige Bestätigung im ioBroker
             setState(`${BASE_PATH}.targetTemp`, parseFloat(value), true);
             lastCommandTime = Date.now();
         }
     } catch (err) {
         const detail = err.response && err.response.data ? JSON.stringify(err.response.data) : err.message;
-        log(`[Harvia] Fehler bei der Steuerung: ${detail}`, 'error');
+
+        // "Device unavailable" ist ein Cloud-Sperr-Effekt bei schnellen Klicks.
+        // Wir loggen das nur noch als Debug, um das Info-Log sauber zu halten.
+        if (detail.includes('Device unavailable')) {
+            log(`[Harvia] Cloud-Sperre: Gerät belegt, Befehl wird verworfen.`, 'debug');
+        } else {
+            log(`[Harvia] Fehler bei der Steuerung: ${detail}`, 'error');
+        }
 
         // RE-LOGIN LOGIK: Falls der Token während der Laufzeit ungültig wurde
         // Automatischer Re-Login bei abgelaufenem Token (HTTP 401)
         if (err.response && err.response.status === 401) {
             log('[Harvia] Token abgelaufen bei Steuerung, löse Re-Login aus...', 'warn');
+            isSendingCommand = false; // Lock kurz lösen für den Login
             if (await login()) {
                 // Nach erfolgreichem Login Befehl einmal wiederholen
-                await setSaunaState(stateName, value);
+                await setSaunaState(stateName, value, true);
             }
         }
+    } finally {
+        isSendingCommand = false;
     }
 }
 
@@ -213,8 +234,11 @@ async function setSaunaState(stateName, value) {
  * Ruft die Live-Daten (Telemetrie) regelmäßig über den Data-Service ab.
  */
 async function updateStatus() {
-    if (!idToken || !dataBaseUrl) return;
     try {
+        if (!idToken || !dataBaseUrl) {
+            return; // Noch nicht bereit, aber finally sorgt für Neustart
+        }
+
         const response = await client.get(`${dataBaseUrl}/data/latest-data?deviceId=${FIXED_ID}`, {
             headers: { 'Authorization': `Bearer ${idToken}`, 'x-harvia-partner-id': PARTNER_ID }
         });
@@ -287,22 +311,52 @@ async function updateStatus() {
  * Wichtig: Reagiert nur auf ack:false (Benutzereingabe), nicht auf Skript-Updates (ack:true).
  */
 function setupListeners() {
+    // Interne Hilfsfunktion zur Entprellung von ioBroker-Events (Race Condition Schutz)
+    function shouldProcess(id) {
+        const now = Date.now();
+        if (lastEventTime[id] && (now - lastEventTime[id] < 1500)) {
+            return false; // Ignoriere Events innerhalb von 1500ms (VIS-Prellen)
+        }
+        lastEventTime[id] = now;
+        return true;
+    }
+
     on({ id: `${BASE_PATH}.heatOn`, change: 'ne', ack: false }, async (obj) => {
-        log(`[Harvia] ioBroker-Trigger: Sauna-Heizung wird auf '${obj.state.val}' gesetzt.`, 'info');
-        await setSaunaState('heatOn', obj.state.val);
+        if (!shouldProcess(obj.id)) return;
+        // Konvertierung sicherstellen (VIS sendet oft Strings)
+        const val = obj.state.val === true || obj.state.val === 'true' || obj.state.val === 1;
+        await setSaunaState('heatOn', val);
     });
 
     // Event-Trigger für Licht an/aus
     on({ id: `${BASE_PATH}.lightOn`, change: 'ne', ack: false }, async (obj) => {
-        log(`[Harvia] ioBroker-Trigger: Saunalicht wird auf '${obj.state.val}' gesetzt.`, 'info');
-        await setSaunaState('lightOn', obj.state.val);
+        if (!shouldProcess(obj.id)) return;
+        const val = obj.state.val === true || obj.state.val === 'true' || obj.state.val === 1;
+        await setSaunaState('lightOn', val);
     });
 
     // Event-Trigger für Änderung der Zieltemperatur
     on({ id: `${BASE_PATH}.targetTemp`, change: 'ne', ack: false }, async (obj) => {
-        log(`[Harvia] ioBroker-Trigger: Zieltemperatur wird auf ${obj.state.val}°C geändert.`, 'info');
+        if (!shouldProcess(obj.id)) return;
         await setSaunaState('targetTemp', obj.state.val);
     });
+}
+
+/**
+ * Hilfsfunktion für den Cloud-Connect Loop
+ * Trennt die einmalige Initialisierung von der wiederkehrenden Login-Logik.
+ */
+async function startCloudConnection() {
+    if (await login()) {
+        await updateStatus(); // Ersten Poll starten
+        // Token-Refresh-Intervall einrichten
+        setInterval(async () => {
+            await login();
+        }, LOGIN_REFRESH);
+    } else {
+        log('[Harvia] Login fehlgeschlagen. Versuche es in 5 Minuten erneut...', 'warn');
+        setTimeout(startCloudConnection, 5 * 60 * 1000);
+    }
 }
 
 /**
@@ -324,17 +378,8 @@ async function main() {
 
     setupListeners();          // 3. Auf Klicks in VIS warten
 
-    if (await login()) {       // 3. Cloud-Verbindung herstellen
-        await updateStatus();  // Schritt 4: Ersten Datendurchlauf starten
-
-        // Token-Refresh-Intervall einrichten
-        setInterval(async () => {
-            await login();
-        }, LOGIN_REFRESH);
-    } else {
-        log('[Harvia] Initialer Login fehlgeschlagen. Starte neuen Versuch in 5 Minuten', 'warn');
-        setTimeout(main, 5 * 60 * 1000);
-    }
+    // 4. Cloud-Verbindung starten
+    await startCloudConnection();
 }
 
 // Skript-Start ausführen
