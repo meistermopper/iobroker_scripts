@@ -18,6 +18,7 @@
 // --- 1. KONFIGURATION (PFADE & ADRESSEN) ---
 const PATH_PV = "0_userdata.0.Energie.PV.";
 const PATH_SAUNA = "0_userdata.0.Haushalt.";
+const PATH_SAUNA_DATA = "0_userdata.0.Energie.Sauna.";
 
 const IDS = {
   // Hardware-Eingänge (Wechselrichter & Zähler)
@@ -83,6 +84,7 @@ async function initSystem() {
     { id: PATH_PV + "Restladezeit", unit: "h", type: "string" },
     { id: PATH_PV + "Ladung_final_Uhrzeit", unit: "", type: "string" },
     { id: PATH_PV + "Wallbox_Freigabe", unit: "", type: "boolean" },
+    { id: PATH_SAUNA_DATA + "Sauna_Heizt_aktiv", unit: "", type: "boolean" },
   ];
 
   for (let s of states) {
@@ -243,6 +245,10 @@ function runUpdate() {
 
   // Sicherheits-Check: Heizt die Sauna bei offener Tür?
   checkSaunaSafety(bLast);
+
+  // ECHTZEIT-STATUS: Zieht der Ofen gerade physikalisch Strom?
+  // (Unabhängig von der 35-Minuten-Logik für die Batterie)
+  setState(PATH_SAUNA_DATA + "Sauna_Heizt_aktiv", bLast > 7500, true);
 
   let sL = getState(IDS.saunaLogik).val;
 

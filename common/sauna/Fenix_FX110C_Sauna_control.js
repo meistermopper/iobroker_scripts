@@ -245,17 +245,17 @@ async function updateStatus() {
 
         const p = response.data?.data;
 
-        // Debug-Log für Sicherheitszustände (hilft bei der Analyse von Sensor-Problemen)
-        if (p && (p.doorSafetyState !== undefined || p.remoteControlState !== undefined)) {
-            // log(`[Harvia] Rohdaten - Tür-Sensor: ${p.doorSafetyState}, Fernstart-Modus: ${p.remoteControlState}`, 'debug');
-        }
-
         if (p) {
             // LATENZ-SCHUTZ:
             // Die Cloud braucht oft Zeit, um den Status zu aktualisieren. Wenn wir vor weniger
             // als 5s einen Befehl gesendet haben, ignorieren wir dieses Update, um zu
             // verhindern, dass der Schalter in der VIS kurz zurückspringt.
             if (Date.now() - lastCommandTime < LATENCY_MS) return;
+
+            // DEBUG-LOG: Einmalig aktivieren, um alle verfügbaren API-Felder im Log zu sehen
+            // if (p.heatState === 1 || p.heat === 'on') {
+            //     log(`[Harvia] API Rohdaten bei Heizung AN: ${JSON.stringify(p)}`, 'info');
+            // }
 
             // NORMALISIERUNG: Harvia nutzt je nach Modell 'temp' oder 'temperature'.
             const currentTemp = p.temperature !== undefined ? p.temperature : p.temp;
@@ -275,14 +275,24 @@ async function updateStatus() {
             if (tTemp !== undefined) setState(`${BASE_PATH}.targetTemp`, parseFloat(tTemp), true);
 
             // STATUS-FIX (Licht/Heizung):
-            // Wir werten NUR Felder mit "State" am Ende aus. Felder wie 'light' oder 'heat'
-            // ohne "State" geben oft nur an, ob das Gerät die Funktion ÜBERHAUPT hat.
-            const actualHeat  = p.heatState;
-            const actualLight = p.lightState;
+            // Robuste Abfrage durch Prüfung von State-Feldern und Basis-Feldern.
+            // Manche Cloud-Versionen lassen Felder bei 'off' komplett weg oder nutzen alternative Namen.
+            const actualHeat  = p.heatState  !== undefined ? p.heatState  : p.heat;
+            const actualLight = p.lightState !== undefined ? p.lightState : p.light;
 
             // Umrechnung von 0/1 oder "on"/"off" in echtes Boolean für ioBroker
-            if (actualHeat !== undefined) setState(`${BASE_PATH}.heatOn`,  !!(actualHeat === 1  || actualHeat === true  || actualHeat === 'on'),  true);
-            if (actualLight !== undefined) setState(`${BASE_PATH}.lightOn`, !!(actualLight === 1 || actualLight === true || actualLight === 'on'), true);
+            if (actualHeat !== undefined && actualHeat !== null) {
+                setState(`${BASE_PATH}.heatOn`, !!(actualHeat === 1 || actualHeat === true || actualHeat === 'on'), true);
+            } else if (p.online) {
+                // Wenn das Gerät online ist, aber kein Heat-Feld liefert, ist es meist aus.
+                setState(`${BASE_PATH}.heatOn`, false, true);
+            }
+
+            if (actualLight !== undefined && actualLight !== null) {
+                setState(`${BASE_PATH}.lightOn`, !!(actualLight === 1 || actualLight === true || actualLight === 'on'), true);
+            } else if (p.online) {
+                setState(`${BASE_PATH}.lightOn`, false, true);
+            }
 
             // Fernstart-Bereitschaft (Wurde die Sicherheitskette am Panel quittiert?)
             if (p.remoteControlState !== undefined) {
