@@ -84,7 +84,7 @@ async function initSystem() {
     { id: PATH_PV + "Restladezeit", unit: "h", type: "string" },
     { id: PATH_PV + "Ladung_final_Uhrzeit", unit: "", type: "string" },
     { id: PATH_PV + "Wallbox_Freigabe", unit: "", type: "boolean" },
-    { id: PATH_SAUNA_DATA + "Sauna_Heizt_aktiv", unit: "", type: "boolean" },
+    { id: PATH_SAUNA_DATA + "sauna_heizt_aktiv", unit: "", type: "boolean" },
   ];
 
   for (let s of states) {
@@ -248,7 +248,7 @@ function runUpdate() {
 
   // ECHTZEIT-STATUS: Zieht der Ofen gerade physikalisch Strom?
   // (Unabhängig von der 35-Minuten-Logik für die Batterie)
-  setState(PATH_SAUNA_DATA + "Sauna_Heizt_aktiv", bLast > 7500, true);
+  setState(PATH_SAUNA_DATA + "sauna_heizt_aktiv", bLast > 7500, true);
 
   let sL = getState(IDS.saunaLogik).val;
 
