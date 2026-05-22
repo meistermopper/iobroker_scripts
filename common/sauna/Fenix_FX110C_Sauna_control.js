@@ -55,7 +55,8 @@ async function ensureStatesExist() {
         { id: 'totalSessions',      type: 'number',  role: 'value.number',          def: 0 },
         { id: 'targetTemp',         type: 'number',  role: 'level.temperature',     unit: '°C', def: 90 },
         { id: 'doorSafety',         type: 'boolean', role: 'indicator.safety',      def: false },
-        { id: 'remoteControl',      type: 'boolean', role: 'indicator.state',       def: false }
+        { id: 'remoteControl',      type: 'boolean', role: 'indicator.state',       def: false },
+        { id: 'errorMsg',           type: 'string',  role: 'text',                  def: '' }
     ];
     for (const s of states) {
         await createStateAsync(`${BASE_PATH}.${s.id}`, s.def, {
@@ -178,10 +179,12 @@ async function setSaunaState(stateName, value, isRetry = false) {
                 // BESTÄTIGUNG: Wir setzen ack: true sofort, damit die UI nicht "springt"
                 setState(`${BASE_PATH}.${stateName}`, boolValue, true);
 
+                if (stateName === 'heatOn') setState(`${BASE_PATH}.errorMsg`, '', true);
                 lastCommandTime = Date.now(); // Timestamp für Latenz-Schutz setzen
             } else {
                 const reason = response.data ? response.data.failureReason : 'Unbekannt';
                 log(`[Harvia] Cloud lehnt Befehl ab: ${reason}`, 'warn');
+                setState(`${BASE_PATH}.errorMsg`, `Cloud-Fehler: ${reason}`, true);
             }
 
         // TYP B: Temperatur-Änderung via PATCH
@@ -212,6 +215,7 @@ async function setSaunaState(stateName, value, isRetry = false) {
             log(`[Harvia] Cloud-Sperre: Gerät belegt, Befehl wird verworfen.`, 'debug');
         } else {
             log(`[Harvia] Fehler bei der Steuerung: ${detail}`, 'error');
+            setState(`${BASE_PATH}.errorMsg`, `Fehler: ${err.message}`, true);
         }
 
         // RE-LOGIN LOGIK: Falls der Token während der Laufzeit ungültig wurde
@@ -335,7 +339,20 @@ function setupListeners() {
         if (!shouldProcess(obj.id)) return;
         // Konvertierung sicherstellen (VIS sendet oft Strings)
         const val = obj.state.val === true || obj.state.val === 'true' || obj.state.val === 1;
-        await setSaunaState('heatOn', val);
+
+        // PRÜFUNG: Fernstart-Bereitschaft
+        const isRemoteReady = getState(`${BASE_PATH}.remoteControl`).val;
+
+        if (val && !isRemoteReady) {
+            const msg = 'Fernstart am Panel nicht bereit!';
+            log(`[Harvia] ${msg}`, 'warn');
+            setState(`${BASE_PATH}.errorMsg`, msg, true);
+            // Schalter in VIS sofort wieder auf aus setzen (ack:true)
+            setState(`${BASE_PATH}.heatOn`, false, true);
+        } else {
+            setState(`${BASE_PATH}.errorMsg`, '', true); // Bestehende Fehler löschen
+            await setSaunaState('heatOn', val);
+        }
     });
 
     // Event-Trigger für Licht an/aus
