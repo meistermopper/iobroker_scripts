@@ -9,11 +9,14 @@ const path = require('path');
 const README_PATH = path.join(__dirname, 'README.md');
 const PKG_PATH = path.join(__dirname, 'package.json');
 
+// Dateien, die niemals im Changelog auftauchen sollen
+const EXCLUDE_LIST = [path.basename(__filename), 'package.json', 'package-lock.json', 'README.md'];
+
 try {
     // 1. Letzten Commit-Hash und Nachricht abrufen
-    // Wir nutzen %B für die volle Nachricht und nehmen die erste Zeile.
-    // Zusätzlich entfernen wir potenzielle Anführungszeichen, die Gemini manchmal setzt.
-    let commitMsg = execSync('git log -1 --pretty=%B').toString().split('\n')[0].trim();
+    let fullMsg = execSync('git log -1 --pretty=%B').toString().trim();
+    // Erste Zeile nehmen und Anführungszeichen säubern
+    let commitMsg = fullMsg.split('\n')[0].trim();
     commitMsg = commitMsg.replace(/^["']|["']$/g, '');
 
     // NEU: Manueller Abbruch über die Commit-Nachricht (z.B. bei reinen Doku-Fixes)
@@ -31,16 +34,20 @@ try {
         .toString()
         .trim()
         .split('\n')
-        .filter(f =>
-            f.endsWith('.js') &&
-            f.includes('/') &&              // Nur in Unterordnern (ignoriert Root-Tools)
-            !f.includes('node_modules') &&
-            !f.includes(path.basename(__filename))
-        );
+        .filter(f => {
+            const fileName = path.basename(f);
+            const isJs = f.endsWith('.js');
+            const isInSubfolder = f.includes('/') || f.includes('\\');
+            const isExcluded = EXCLUDE_LIST.includes(fileName) || f.includes('node_modules');
+
+            if (isJs && !isInSubfolder) console.log(`[Changelog] Überspringe Root-Datei: ${fileName}`);
+            if (isExcluded) console.log(`[Changelog] Ignoriere System-Datei: ${fileName}`);
+
+            return isJs && isInSubfolder && !isExcluded;
+        });
 
     if (changedFiles.length === 0) {
-        // Hier landen wir, wenn NUR die README.md oder andere Nicht-JS-Dateien geändert wurden
-        console.log('Nur Dokumentation oder Systemdateien geändert. Changelog bleibt unverändert.');
+        console.log('[Changelog] Keine relevanten Skript-Änderungen im Commit gefunden.');
         process.exit(0);
     }
 
@@ -56,31 +63,32 @@ try {
     // 5. Version im Badge aktualisieren
     content = content.replace(/(Version-)(\d+\.\d+\.\d+)(-success)/, `$1${currentVersion}$3`);
 
-    const changelogMarker = '## 📝 Changelog\n\n';
+    const changelogMarker = '## 📝 Changelog';
 
     // 6. Logik: Existiert die Version für heute schon?
     if (content.includes(versionHeader)) {
-        // Wenn ja: Eintrag unter die existierende Überschrift schieben (falls noch nicht da)
         const checkLine = newEntries.split('\n')[0];
         if (!content.includes(checkLine)) {
-            // Wir fügen die neuen Zeilen direkt nach dem Header ein
             const lines = content.split('\n');
             const headerIndex = lines.findIndex(l => l.includes(versionHeader));
             lines.splice(headerIndex + 1, 0, newEntries);
             content = lines.join('\n');
-            console.log(`Änderungen zur bestehenden Version ${currentVersion} hinzugefügt.`);
+            console.log(`[Changelog] Eintrag zu ${currentVersion} hinzugefügt.`);
         } else {
-            console.log('Änderungen sind bereits im Changelog enthalten.');
+            console.log('[Changelog] Eintrag existiert bereits.');
             process.exit(0);
         }
     } else {
-        // Wenn nein: Neuen Block erstellen
-        const newSection = `${versionHeader}\n${newEntries}\n\n`;
+        const newSection = `\n\n${versionHeader}\n${newEntries}`;
         content = content.replace(changelogMarker, `${changelogMarker}${newSection}`);
-        console.log(`Neuen Changelog-Block für Version ${currentVersion} erstellt.`);
+        console.log(`[Changelog] Neuer Block für Version ${currentVersion} erstellt.`);
     }
 
     fs.writeFileSync(README_PATH, content, 'utf8');
+
+    // Auto-Staging: Fügt die geänderte README direkt wieder dem Git-Index hinzu
+    execSync(`git add "${README_PATH}"`);
+    console.log(`[Changelog] README.md wurde automatisch für den nächsten Sync gestaged.`);
 
 } catch (error) {
     console.error('Fehler beim Aktualisieren der README:', error.message);
