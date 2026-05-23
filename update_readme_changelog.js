@@ -35,11 +35,11 @@ try {
         .trim()
         .split('\n')
         .filter(f => {
+            if (!f) return false;
             const fileName = path.basename(f);
             const isJs = f.endsWith('.js');
-            // More robust subfolder check using path.dirname
-            const isInSubfolder = path.dirname(f) !== '.';
-            const isExcluded = EXCLUDE_LIST.includes(fileName) || f.includes('node_modules');
+            const isInSubfolder = f.includes('/') || f.includes('\\');
+            const isExcluded = EXCLUDE_LIST.includes(fileName) || f.toLowerCase().includes('node_modules');
 
             if (isJs && !isInSubfolder) console.log(`[Changelog] Skipping root file: ${fileName}`);
             if (isExcluded) console.log(`[Changelog] Ignoring system file: ${fileName}`);

@@ -1,28 +1,28 @@
 /**
  * =============================================================================
- * R2Mäh2 MÄHROBOTER-STEUERUNG (MASTER-SKRIPT)
+ * R2Mäh2 ROBOTIC MOWER CONTROL (MASTER SCRIPT)
  * =============================================================================
- * ZWECK:
- * - Überwacht den Status des Mähers anhand des Stromverbrauchs (Watt).
- * - Sendet Benachrichtigungen bei Start, Ende oder Problemen (Telegram/Gotify).
- * - Führt Sprachansagen über Google Home (Chromecast) aus.
- * - Berechnet tägliche Statistiken und Stromkosten.
- * - Frostwarnung: Erinnert im Herbst daran, den Mäher reinzuholen.
+ * PURPOSE:
+ * - Monitors mower status via power consumption (Watts).
+ * - Sends notifications for start, end, or issues (Telegram/Gotify).
+ * - Performs voice announcements via Google Home (Chromecast).
+ * - Calculates daily statistics and electricity costs.
+ * - Frost warning: Reminds user to bring the mower inside during autumn.
  *
- * LOGIK:
- * - Mäht: Wenn die Leistung unter 4W sinkt (Ladestation im Standby, Mäher weg).
- * - Lädt: Wenn die Leistung über 10W steigt (Mäher angedockt und zieht Ladestrom).
+ * LOGIC:
+ * - Mowing: Power drops below 4W (base station idle, mower gone).
+ * - Charging: Power rises above 10W (mower docked and drawing current).
  * =============================================================================
  */
 
-// --- KONFIGURATION & SCHWELLENWERTE ---
-const WARTEZEIT_RESUME_MS = 8000;         // Musik-Fortsetzung nach 8 Sek.
-const MAX_MAEHZEIT_MS     = 120 * 60 * 1000; // 2 Std. bis "Liegen geblieben"-Alarm
-const THRESHOLD_IDLE      = 4;            // Unter 4W gilt die Station als leer (Mäher fährt)
-const THRESHOLD_CHARGING  = 10;           // Über 10W wird der Mäher aktiv geladen
-const VOL_ANNOUNCEMENT    = 40;           // Standard-Lautstärke für Ansagen
+// --- CONFIGURATION & THRESHOLDS ---
+const WARTEZEIT_RESUME_MS = 8000;         // Resume music after 8s
+const MAX_MAEHZEIT_MS     = 120 * 60 * 1000; // 2h until "stuck" alarm
+const THRESHOLD_IDLE      = 4;            // Under 4W: Station is empty (mower is out)
+const THRESHOLD_CHARGING  = 10;           // Over 10W: Mower is actively charging
+const VOL_ANNOUNCEMENT    = 40;           // Default volume for announcements
 
-// --- DATENPUNKTE ---
+// --- DATA POINTS ---
 const IDS = {
     power: 'alias.0.draussen.r2maeh2.ENERGY_Power',
     socket_state: 'alias.0.draussen.r2maeh2.POWER',
