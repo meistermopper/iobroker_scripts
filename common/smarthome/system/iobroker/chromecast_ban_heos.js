@@ -70,10 +70,11 @@ function checkAndFilter(name, fullId) {
     }
 
     // Prüfung 2: Ist es in der HEOS-Verbotsliste (Name)?
-    const cleanName = name.trim();
-    if (!shouldDelete && bannedDeviceNames.includes(cleanName)) {
+    // Wir normalisieren Unterstriche zu Leerzeichen, da der Adapter hier variiert (z.B. HEOS_Sauna vs HEOS Sauna)
+    const normalizedName = name.trim().replace(/_/g, ' ');
+    if (!shouldDelete && bannedDeviceNames.includes(normalizedName)) {
         shouldDelete = true;
-        reason = 'Gerät steht auf der Verbotsliste (HEOS-Filter)';
+        reason = `Gerät '${name}' steht auf der Verbotsliste (HEOS-Filter)`;
     }
 
     // Prüfung 3: Ist der Eintrag als unvollständig markiert?
