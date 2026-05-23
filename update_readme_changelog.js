@@ -11,7 +11,10 @@ const PKG_PATH = path.join(__dirname, 'package.json');
 
 try {
     // 1. Letzten Commit-Hash und Nachricht abrufen
-    const commitMsg = execSync('git log -1 --pretty=%s').toString().trim();
+    // Wir nutzen %B für die volle Nachricht und nehmen die erste Zeile.
+    // Zusätzlich entfernen wir potenzielle Anführungszeichen, die Gemini manchmal setzt.
+    let commitMsg = execSync('git log -1 --pretty=%B').toString().split('\n')[0].trim();
+    commitMsg = commitMsg.replace(/^["']|["']$/g, '');
 
     // NEU: Manueller Abbruch über die Commit-Nachricht (z.B. bei reinen Doku-Fixes)
     if (commitMsg.toLowerCase().includes('[skip log]') || commitMsg.toLowerCase().includes('[no changelog]')) {
@@ -23,15 +26,16 @@ try {
     const pkg = JSON.parse(fs.readFileSync(PKG_PATH, 'utf8'));
     const currentVersion = pkg.version;
 
-    // 2. Geänderte Dateien abrufen (nur .js Dateien)
+    // 3. Geänderte Dateien abrufen (Nur relevante .js Skripte in Unterordnern)
     const changedFiles = execSync('git diff-tree --no-commit-id --name-only -r HEAD')
         .toString()
         .trim()
         .split('\n')
         .filter(f =>
-            f.endsWith('.js') &&            // Nur JavaScript-Dateien
-            !f.includes('node_modules') &&  // Keine Module
-            !f.includes(path.basename(__filename)) // Das Skript ignoriert sich selbst
+            f.endsWith('.js') &&
+            f.includes('/') &&              // Nur in Unterordnern (ignoriert Root-Tools)
+            !f.includes('node_modules') &&
+            !f.includes(path.basename(__filename))
         );
 
     if (changedFiles.length === 0) {
@@ -40,33 +44,43 @@ try {
         process.exit(0);
     }
 
-    // 3. Changelog-Einträge vorbereiten
+    // 4. Changelog-Einträge vorbereiten
     const newEntries = changedFiles
         .map(f => `- Update von ${path.basename(f)} (${commitMsg})`)
         .join('\n');
 
     let content = fs.readFileSync(README_PATH, 'utf8');
     const today = new Date().toISOString().split('T')[0];
+    const versionHeader = `### [${currentVersion}] - ${today}`;
 
-    // 4. Version im Badge aktualisieren (oben im README)
-    // Sucht nach Version-X.X.X-success
+    // 5. Version im Badge aktualisieren
     content = content.replace(/(Version-)(\d+\.\d+\.\d+)(-success)/, `$1${currentVersion}$3`);
 
-    // 5. Neuen Versions-Block im Changelog einfügen
-    // Wir suchen die Überschrift "## 📝 Changelog" und fügen den Block direkt darunter ein
     const changelogMarker = '## 📝 Changelog\n\n';
-    const newSection = `### [${currentVersion}] - ${today}\n${newEntries}\n\n`;
 
-    // Verhindert doppelte Einträge, falls der Hook mehrfach läuft
-    if (content.includes(`### [${currentVersion}] - ${today}`) && content.includes(newEntries.split('\n')[0])) {
-        console.log(`Eintrag für Version ${currentVersion} existiert bereits.`);
-        process.exit(0);
+    // 6. Logik: Existiert die Version für heute schon?
+    if (content.includes(versionHeader)) {
+        // Wenn ja: Eintrag unter die existierende Überschrift schieben (falls noch nicht da)
+        const checkLine = newEntries.split('\n')[0];
+        if (!content.includes(checkLine)) {
+            // Wir fügen die neuen Zeilen direkt nach dem Header ein
+            const lines = content.split('\n');
+            const headerIndex = lines.findIndex(l => l.includes(versionHeader));
+            lines.splice(headerIndex + 1, 0, newEntries);
+            content = lines.join('\n');
+            console.log(`Änderungen zur bestehenden Version ${currentVersion} hinzugefügt.`);
+        } else {
+            console.log('Änderungen sind bereits im Changelog enthalten.');
+            process.exit(0);
+        }
+    } else {
+        // Wenn nein: Neuen Block erstellen
+        const newSection = `${versionHeader}\n${newEntries}\n\n`;
+        content = content.replace(changelogMarker, `${changelogMarker}${newSection}`);
+        console.log(`Neuen Changelog-Block für Version ${currentVersion} erstellt.`);
     }
 
-    const updatedContent = content.replace(changelogMarker, `${changelogMarker}${newSection}`);
-
-    fs.writeFileSync(README_PATH, updatedContent, 'utf8');
-    console.log(`README.md erfolgreich auf Version ${currentVersion} aktualisiert.`);
+    fs.writeFileSync(README_PATH, content, 'utf8');
 
 } catch (error) {
     console.error('Fehler beim Aktualisieren der README:', error.message);
