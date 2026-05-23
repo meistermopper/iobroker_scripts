@@ -3,7 +3,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.21.18-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.21.19-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -88,215 +88,216 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 ## 📝 Changelog
 
-### [1.21.18] - 2026-05-23
-- Update von update_readme_changelog.js
+### [1.21.19] - 2026-05-23
+- Update von update_readme_changelog.js (English)
 
 ### [1.21.11] - 2026-05-23
-- Update von update_readme_changelog.js (Versioning has been optimized)
+- Updated update_readme_changelog.js (Versioning has been optimized)
 
 ### [1.21.10] - 2026-05-23
-- Update von zustand_r2maeh2.js (Script optimizations have been implemented)
+- Updated zustand_r2maeh2.js (Script optimizations have been implemented)
 
 ### [1.21.6] - 2026-05-23
-- Update von chromecast_ban_heos.js (Namensgebung der Devices gehärtet)
+- Updated chromecast_ban_heos.js (Hardened device naming)
 
 ### [1.21.1] - 2026-05-22
-- Update von Fenix_FX110C_Sauna_control.js (Datenpunkt Sauna heizt aktiv hinzugefügt)
-- Update von energiemaster_und_sauna.js
+- Updated Fenix_FX110C_Sauna_control.js (Added data point Sauna heating active)
+- Updated energiemaster_und_sauna.js
 
 ### [1.20.19] - 2026-05-20
-- Update von Fenix_FX110C_Sauna_control.js (Verbesserungen im log)
+- Updated Fenix_FX110C_Sauna_control.js (Improvements in log)
 
 ### [1.20.16] - 2026-05-18
-- Update von Fenix_FX110C_Sauna_control.js (Bezug der Ofenleistung modifiziert)
+- Updated Fenix_FX110C_Sauna_control.js (Modified oven power reference)
 
 ### [1.20.14] - 2026-05-18
-- Update von Fenix_FX110C_Sauna_control.js (string to boolean)
+- Updated Fenix_FX110C_Sauna_control.js (string to boolean)
 
-### [1.20.11] - 2026-05-18 (Gotify auf httpPost anstatt curl umgestellt)
-- Update von post_da.js
-- Update von charge_master.js
-- Update von script_verwaltung.js
-- Update von homematic_all.js
-- Update von ap_management.js
-- Update von dyndns_fail.js
-- Update von neue_ip_failover.js
-- Update von smartphones_laden.js
+### [1.20.11] - 2026-05-18 (Switched Gotify to httpPost instead of curl)
+- Updated post_da.js
+- Updated charge_master.js
+- Updated script_verwaltung.js
+- Updated homematic_all.js
+- Updated ap_management.js
+- Updated dyndns_fail.js
+- Updated neue_ip_failover.js
+- Updated smartphones_laden.js
 
 ### [1.20.9] - 2026-05-18
-- Update von charge_master.js (Timeout verlängert)
+- Updated charge_master.js (Timeout extended)
 
 ### [1.20.3] - 2026-05-17
-- Update von Fenix_FX110C_Sauna_control.js (Fenix ist jetzt steuerbar!)
+- Updated Fenix_FX110C_Sauna_control.js (Fenix is now controllable!)
 
 ### [1.19.30] - 2026-05-16
-- Update von charge_master.js (log reduziert)
+- Updated charge_master.js (Reduced log output)
 
 ### [1.19.19] - 2026-05-14
-- Update von Fenix_FX110C_Sauna_control.js (Fallback-URL für Harvia ergänzt)
+- Updated Fenix_FX110C_Sauna_control.js (Added fallback URL for Harvia)
 
 ### [1.19.17] - 2026-05-14
-- Update von chromecast_ban_heos.js (Heos Namensanpassungen)
+- Updated chromecast_ban_heos.js (Heos name adjustments)
 
 ### [1.19.15] - 2026-05-13
-- Update von charge_master.js (log_Flut abgestellt bei Fzg nicht angestöpselt)
+- Updated charge_master.js (Suppressed log flood when vehicle not plugged in)
 
 ### [1.19.13] - 2026-05-12
-- Update von heizen_rh.js (Bad oben und unten - Race Condition abgefangen (Fenster/Thermostat))
+- Updated heizen_rh.js (Upstairs and downstairs bathroom - Race condition caught (window/thermostat))
 
 ### [1.19.11] - 2026-05-10
-- Update von chromecast_ban_heos.js (Heos-Namen angepasst)
+- Updated chromecast_ban_heos.js (Adjusted Heos names)
 
 ### [1.17.9] - 2026-05-04
-- Update von Fenix_FX110C_Sauna_control.js (nach Test zurück zur Überwachung)
+- Updated Fenix_FX110C_Sauna_control.js (Back to monitoring after test)
 
 ### [1.17.6] - 2026-05-03
-- Update von zustand_r2maeh2.js (add error-warnings (liegengeblieben))
-- Update von r2maeh2.js (deleted)
+- Updated zustand_r2maeh2.js (Added error-warnings (stuck))
+- Updated r2maeh2.js (deleted)
 
 ### [1.17.4] - 2026-05-03
-- Update von zustand_r2maeh2.js (Durchschnittskosten hinzugefügt)
+- Updated zustand_r2maeh2.js (Added average costs)
 
 ### [1.17.1] - 2026-05-02
-- Update von charge_master.js (Intelligentere Glättung implementiert)
+- Updated charge_master.js (Implemented more intelligent smoothing)
 
 ### [1.16.1] - 2026-05-02
-- Update von charge_master.js (Datenpunkte angepasst)
+- Updated charge_master.js (Adjusted data points)
 
 ### [1.13.7] - 2026-05-02
-- Update von failover_dyndns_master.js (Timout  für Amazon IP-Abfrage auf 10 s verlängert)
+- Updated failover_dyndns_master.js (Extended timeout for Amazon IP query to 10s)
 
 ### [1.13.3] - 2026-05-01
-- Update von chromecast_ban_heos.js (Also delete devices that were entered incorrectly)
+- Updated chromecast_ban_heos.js (Also delete devices that were entered incorrectly)
 
 ### [1.13.1] - 2026-05-01
-- Update von charge_master.js (Intelligenter Wallbox-Reset vor jedem Ladevorgang, um Startprobleme zu beheben.)
+- Updated charge_master.js (Intelligent wallbox reset before each charging process to fix startup issues.)
 
 ### [1.12.3] - 2026-04-29
-- Update von chromecast_ban_heos.js (auf alle Geräte erweitert)
+- Updated chromecast_ban_heos.js (Extended to all devices)
 
 ### [1.12.1] - 2026-04-28
-- charge-master.js (Kein Ladestart, wenn das Ladeziel erreicht wurde)
+- charge-master.js (No charging start if charging target reached)
 
 ### [1.11.1] - 2026-04-24
-- Fenix-Sauna implementiert
+- Fenix sauna implemented
 
 ### [1.10.11] - 2026-04-23
-- Update von sayit_autofix.js
+- Updated sayit_autofix.js
 
 ### [1.10.3] - 2026-04-23
-- Update von sayit_autofix.js (Strengere Überwachung)
+- Updated sayit_autofix.js (Stricter monitoring)
 
 ### [1.10.1] - 2026-04-22
-- Update von charge_master.js (Improved charging range and reliability)
+- Updated charge_master.js (Improved charging range and reliability)
 
 ### [1.9.10] - 2026-04-18
-- Update von device_not_available.js (Zigbee-Ausfall erst nach 15 Minuten melden)
+- Updated device_not_available.js (Report Zigbee failure only after 15 minutes)
 
 ### [1.9.8] - 2026-04-18
-- Update von raumwerte_lueften.js (Sayit in Lüftungsskript wieder aktiviert)
+- Updated raumwerte_lueften.js (Sayit reactivated in ventilation script)
 
 ### [1.9.4] - 2026-04-16
-- Update von location_and_status.js (Location Google Maps anstatt Open Map)
+- Updated location_and_status.js (Location Google Maps instead of Open Map)
 
 ### [1.9.2] - 2026-04-14
-- Update von sayit_autofix.js
+- Updated sayit_autofix.js
 
 ### [1.9.1] - 2026-04-14
-- Update von Auswertung_guenstigste_Tankstelle.js (del)
-- Update von guenstige_Tankstelle.js (del)
-- Update von telegram_menue.js (del Sprit)
+- Updated Auswertung_guenstigste_Tankstelle.js (del)
+- Updated guenstige_Tankstelle.js (del)
+- Updated telegram_menue.js (del Fuel)
 
 ### [1.8.1] - 2026-04-11
-- Update von charge_master.js (debounce 45s after change "Charching")
+- Updated charge_master.js (Debounce 45s after change "Charging")
 
 ### [1.7.7] - 2026-04-09
-- Update von smartphones_laden.js (Kiki 35-80 %)
+- Updated smartphones_laden.js (Kiki 35-80%)
 
 ### [1.7.5] - 2026-04-07
-- R2Mäh2 spricht wieder
+- R2Mäh2 speaks again
 
 ### [1.7.3] - 2026-04-05
-- Update von heizung_anwesenheit_master.js
+- Updated heizung_anwesenheit_master.js
 
 ### [1.7.2] - 2026-04-04
-- Update von smartphones_laden.js (Anwesenheitskriterium entfernt, da zu viel Pflegeaufwand)
+- Updated smartphones_laden.js (Presence criterion removed due to high maintenance effort)
 
 ### [1.7.1] - 2026-04-04
-- Update von heizung_anwesenheit_master.js (Standardprofil von 3 auf 1 geändert)
+- Updated heizung_anwesenheit_master.js (Changed default profile from 3 to 1)
 
 ### [1.6.4] - 2026-03-31
-- Update von anwesenheit_unifi.js (Anwesenheit um Thomas_6G erweitert)
+- Updated anwesenheit_unifi.js (Presence extended by Thomas_6G)
 
 ### [1.6.3] - 2026-03-24
-- Update von batterie_voll.js (Emojis werden nicht mehr ausgesprochen)
+- Updated batterie_voll.js (Emojis are no longer spoken)
 
 ### [1.6.1] - 2026-03-23
-- Update von charge_master.js (Überschussladen wenn Wallbox "Finishing")
+- Updated charge_master.js (Excess charging when wallbox "Finishing")
 
 ### [1.5.6] - 2026-03-21
-- Update von trockner.js
-- Update von waschmaschine.js
+- Updated trockner.js
+- Updated waschmaschine.js
 
 ### [1.5.4] - 2026-03-16
-- Update von chromecast_ban_heos.js
+- Updated chromecast_ban_heos.js
 
 ### [1.5.3] - 2026-03-16
-- Update von batterie_voll.js (zurück auf 100%)
+- Updated batterie_voll.js (Back to 100%)
 
 ### [1.5.2] - 2026-03-16
-- Update von energiemaster_und_sauna.js (Datenpunkte funktional angepasst)
+- Updated energiemaster_und_sauna.js (Data points functionally adjusted)
 
 ### [1.5.1] - 2026-03-16
-- Update von energiemaster_und_sauna.js (Schwellenwert Sauna auf 7.500 Watt angehoben)
+- Updated energiemaster_und_sauna.js (Sauna threshold raised to 7,500 watts)
 
 ### [1.4.1] - 2026-03-16
-- Update von trockner.js (weg von alias)
-- Update von waschmaschine.js (weg von alias)
-- Update von climate_control.js (temp. Änderung)
-- Update von batterie_voll.js (ab März auf 30%)
-- Update von march_minsoc.js
+- Updated trockner.js (Removed alias)
+- Updated waschmaschine.js (Removed alias)
+- Updated climate_control.js (Temp. change)
+- Updated batterie_voll.js (From March to 30%)
+- Updated march_minsoc.js
 
 ### [1.3.7] - 2026-03-14
-- Update von waschmaschine.js
+- Updated waschmaschine.js
 
 ### [1.3.6] - 2026-03-14
-- Update von vis_PIN.js
-- PIN wird nicht mehr im Skript angezeigt, neue Datenstruktur unter 0_userdata.0
+- Updated vis_PIN.js
+- PIN is no longer displayed in the script, new data structure under 0_userdata.0
 
 ### [1.3.4] - 2026-03-13
-- Update von batterie_voll.js
-- zurück auf 100 %, Optimierung und Kommentierung verbessert
+- Updated batterie_voll.js
+- Back to 100%, optimization and commenting improved
 
 ### [1.3.3] - 2026-03-13
-- Update von charge_master.js
-- ursprünglicher MinSoc der Hausbatterie, wenn das Kfz geladen ist
+- Updated charge_master.js
+- Original MinSoc of house battery when vehicle is charged
 
 ### [1.3.1] - 2026-03-12
-- Update von charge_master.js
-- Schutz der Hausbatterie bei manuellem Laden (kein Batteriestrom ins Kfz)
+- Updated charge_master.js
+- Protection of the house battery during manual charging (no battery power to the vehicle)
 
 ### [1.2.5] - 2026-03-11
-- Update von kachelofen_ventilator.js
+- Updated kachelofen_ventilator.js
 
 ### [1.2.4] - 2026-03-10 Syntax - Skripte mit Prettier Code Formatter aktualisiert
-- sehen jetzt schick aus
+- Scripts updated with Prettier Code Formatter
+- Now look neat
 
 ### [1.2.3] - 2026-03-09
-- Update von charge_master.js (Ergänzung der Minutenansage)
+- Updated charge_master.js (Added minute announcement)
 
 ### [1.0.12] - 2026-03-08
-- Update von fenster_offen.js
-- Update von trockner.js
-- Update von waschmaschine.js
-- Update von vu_reboot_standby.js
-- Update von auto_version.js
+- Updated fenster_offen.js
+- Updated trockner.js
+- Updated waschmaschine.js
+- Updated vu_reboot_standby.js
+- Updated auto_version.js
 
 ### [1.0.7] - 2026-03-08
-- Dokumentation und Skripte aktualisiert
+- Documentation and scripts updated
 
 ### [1.0.1] - 2026-03-08
-- aktuelle Skripte und automatische Versionierung initiiert
+- Current scripts and automatic versioning initiated
 
 ---
-*Hinweis: Dies ist ein privates Projekt.*
+*Note: This is a private project.*
