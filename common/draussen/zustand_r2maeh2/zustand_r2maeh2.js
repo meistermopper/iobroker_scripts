@@ -1,14 +1,28 @@
 /**
- * Name:   R2Maeh2 Maehroboter-Steuerung (Master)
- * Zweck:  Status, Frostwarnung, Durchschnitt & Steckdosen-Check
- * Stand:  01.03.2026 - Version mit Start-Sync & Debug-Log
- * Stand:  07.04.2026 - Einführung der Sprachansagen
- * Stand:  03.05.2026 - Meldung bei Nichtrückkehr
+ * =============================================================================
+ * R2Mäh2 MÄHROBOTER-STEUERUNG (MASTER-SKRIPT)
+ * =============================================================================
+ * ZWECK:
+ * - Überwacht den Status des Mähers anhand des Stromverbrauchs (Watt).
+ * - Sendet Benachrichtigungen bei Start, Ende oder Problemen (Telegram/Gotify).
+ * - Führt Sprachansagen über Google Home (Chromecast) aus.
+ * - Berechnet tägliche Statistiken und Stromkosten.
+ * - Frostwarnung: Erinnert im Herbst daran, den Mäher reinzuholen.
+ *
+ * LOGIK:
+ * - Mäht: Wenn die Leistung unter 4W sinkt (Ladestation im Standby, Mäher weg).
+ * - Lädt: Wenn die Leistung über 10W steigt (Mäher angedockt und zieht Ladestrom).
+ * =============================================================================
  */
 
-const WARTEZEIT_RESUME_MS = 8000; // Zeit bis Musik nach Ansage weiterläuft
-const MAX_MAEHZEIT_MS = 120 * 60 * 1000; // 120 Minuten Überwachung
+// --- KONFIGURATION & SCHWELLENWERTE ---
+const WARTEZEIT_RESUME_MS = 8000;         // Musik-Fortsetzung nach 8 Sek.
+const MAX_MAEHZEIT_MS     = 120 * 60 * 1000; // 2 Std. bis "Liegen geblieben"-Alarm
+const THRESHOLD_IDLE      = 4;            // Unter 4W gilt die Station als leer (Mäher fährt)
+const THRESHOLD_CHARGING  = 10;           // Über 10W wird der Mäher aktiv geladen
+const VOL_ANNOUNCEMENT    = 40;           // Standard-Lautstärke für Ansagen
 
+// --- DATENPUNKTE ---
 const IDS = {
     power: 'alias.0.draussen.r2maeh2.ENERGY_Power',
     socket_state: 'alias.0.draussen.r2maeh2.POWER',
@@ -22,11 +36,14 @@ const IDS = {
     gotify: '0_userdata.0.gotifytoken.iobroker'
 };
 
-let stuckTimer; // Timer für die "Liegen geblieben" Erkennung
+let stuckTimer; // Globaler Timer-Handle für die Überwachung
 
-// --- NEU: INITIALISIERUNG ---
-// Erzeugt alle benötigten Datenpunkte automatisch, falls sie fehlen
 async function initDP() {
+    /**
+     * INITIALISIERUNG
+     * Erzeugt alle benötigten Datenpunkte automatisch beim ersten Start.
+     * Dies macht das Skript portabel und verhindert Fehler durch fehlende IDs.
+     */
     const states = [
         { id: IDS.userMaeht, val: false, type: 'boolean', name: 'R2Mäh2 mäh-Status' },
         { id: IDS.userListe, val: [0, 0, 0, 0, 0, 0, 0], type: 'array', name: 'Historie der letzten 7 Tage' },
@@ -47,26 +64,24 @@ async function initDP() {
     }
 }
 
-initDP(); // Ausführen der Initialisierung
+initDP();
 
-// Wir laden beim Start den echten Zustand aus dem Datenpunkt,
-// damit das Skript weiß, ob er gerade schon mäht oder nicht.
-var maehtState = getState(IDS.userMaeht);
-var maeht = (maehtState && maehtState.val === true) ? true : false;
+// Start-Synchronisation: Status aus dem Datenpunkt lesen
+const maehtState = getState(IDS.userMaeht);
+let maeht = !!(maehtState && maehtState.val);
 
-console.log('R2Maeh2: Skript gestartet. Aktueller Maeh-Status: ' + (maeht ? 'MAEHT' : 'BEREIT'));
+console.log(`R2Maeh2: Skript gestartet. Aktueller Maeh-Status: ${maeht ? 'MAEHT' : 'BEREIT'}`);
 
-/**
- * Startet die Überwachung auf Liegenbleiben
- */
 function startStuckTimer() {
+    /**
+     * Überwachung: Liegen geblieben?
+     * Wenn der Mäher länger als 120 Min. weg ist, wird Alarm geschlagen.
+     */
     stopStuckTimer();
-    stuckTimer = setTimeout(async function() {
+    stuckTimer = setTimeout(async () => {
         const msg = "Achtung: Erzwo mäh zwo mäht seit über 120 Minuten. Er ist vermutlich irgendwo liegen geblieben.";
-        notifyR2('⚠️ ' + msg, 2);
-        if (compareTime('08:00', '20:00', 'between')) {
-            await googleWatchdogAnnounce(msg, 45);
-        }
+        notifyR2(`⚠️ ${msg}`, 2);
+        await announceIfTime(msg, 45);
     }, MAX_MAEHZEIT_MS);
 }
 
@@ -80,37 +95,61 @@ function stopStuckTimer() {
     }
 }
 
-if (maeht) startStuckTimer(); // Falls beim Start bereits gemäht wird
+// Falls das Skript während des Mähens neu gestartet wird, Timer wieder aktivieren
+if (maeht) startStuckTimer();
 
-// Definition Mähsaison 0=Jan, 1=Feb => 9=Okt)
 function isSaison() {
-    var monat = new Date().getMonth();
+    /**
+     * Mähsaison-Check (März bis Oktober)
+     */
+    const monat = new Date().getMonth();
     return (monat >= 2 && monat <= 9);
 }
 
-function notifyR2(text, priority) {
-    var p = priority || 1;
-    sendTo('telegram', 'send', { text: text });
-    console.log('R2Maeh2-Meldung: ' + text);
-
-    var gState = getState(IDS.gotify);
-    if (gState && gState.val) {
-        var command = 'curl "https://mygotify.meistermopper.de/message?token=' + gState.val + '" ';
-        command += '-F "title=ioBroker: R2Maeh2" ';
-        command += '-F "message=' + text + '" ';
-        command += '-F "priority=' + p + '"';
-        exec(command);
+async function announceIfTime(text, vol = VOL_ANNOUNCEMENT) {
+    /**
+     * Hilfsfunktion: Führt Ansage nur im erlaubten Zeitfenster aus.
+     */
+    if (compareTime('08:00', '20:00', 'between')) {
+        await googleWatchdogAnnounce(text, vol);
     }
 }
 
 /**
- * --- GOOGLE-ANSAGE FUNKTION ---
- * Sucht alle aktiven Chromecasts, pausiert sie, macht die Ansage
- * und setzt die Musik (falls vorher laufend) fort.
+ * Zentrale Benachrichtigungsfunktion (Telegram & Gotify)
+ * @param {string} text - Die Nachricht
+ * @param {number} [priority=1] - Gotify Priorität (1=Leise, 2=Normal/Ton)
+ */
+function notifyR2(text, priority = 1) {
+    sendTo('telegram', 'send', { text });
+    console.log(`R2Maeh2-Meldung: ${text}`);
+
+    const token = getState(IDS.gotify).val;
+    if (token) {
+        const url = `https://mygotify.meistermopper.de/message?token=${token}`;
+        const payload = {
+            title: 'ioBroker: R2Maeh2',
+            message: text,
+            priority: priority
+        };
+
+        httpPost(url, payload, { timeout: 5000 }, (error) => {
+            if (error) console.error(`[R2Maeh2] Gotify Fehler: ${error}`);
+        });
+    }
+}
+
+/**
+ * Google-Cast-Watchdog
+ * Pausiert laufende Musik auf allen Chromecasts, macht die Ansage
+ * und setzt die Musik danach fort.
  */
 async function googleWatchdogAnnounce(text, vol) {
-    const players = $(`chromecast.0.*.status.playerState`);
+    // 1. Die eigentliche Ansage einmalig auslösen
+    sendTo("sayit", "say", { text: text, volume: vol });
 
+    // 2. Alle Player suchen und ggf. Resume vorbereiten
+    const players = $(`chromecast.0.*.status.playerState`);
     players.each(async function(id) {
         const base = id.split('.status.')[0];
         const isPlaying = (getState(id).val === 'playing');
@@ -123,13 +162,10 @@ async function googleWatchdogAnnounce(text, vol) {
             oldUrl = getState(base + '.player.url2play').val;
         }
 
-        // Ansage über die SayIt-Instanz triggern
-        sendTo("sayit", "say", { text: text, volume: vol });
-
-        // Musik nach der Wartezeit fortsetzen (Resume)
-        if (isPlaying) {
+        // Wenn vorher Musik lief, diese nach der Wartezeit wieder starten
+        if (isPlaying && oldUrl) {
             setStateDelayed(base + '.player.url2play', oldUrl, WARTEZEIT_RESUME_MS, false);
-            setStateDelayed(base + '.player.volume', oldVol, WARTEZEIT_RESUME_MS + 500, false);
+            setStateDelayed(base + '.player.volume', oldVol || 30, WARTEZEIT_RESUME_MS + 500, false);
         }
     });
 }
@@ -144,78 +180,78 @@ on({ id: IDS.socket_state, change: 'ne' }, function (obj) {
 // --- 2. FROST-CHECK ---
 schedule("1 18 * * *", async function () {
     if (!isSaison()) return;
-    var pState = getState(IDS.power);
-    var tState = getState(IDS.tempLow);
+    const pState = getState(IDS.power);
+    const tState = getState(IDS.tempLow);
+
+    // Wenn der Strom an ist (Mäher draußen), aber Frost droht (< 5°C)
     if (pState && tState && pState.val > 10 && tState.val < 5) {
         notifyR2('+++ ❄️ R2Maeh2 muss in den Keller. Es wird zu kalt! +++', 2);
-
-        if (compareTime('08:00', '20:00', 'between')) {
-            await googleWatchdogAnnounce("Achtung, es wird zu kalt für Erzwo mäh zwo. Bitte bringe ihn in den Keller.", 40);
-        }
+        await announceIfTime("Achtung, es wird zu kalt für Erzwo mäh zwo. Bitte bringe ihn in den Keller.");
     }
 });
 
-// --- 3. STATUS-UEBERWACHUNG (MIT DEBUG-LOG) ---
+// --- 3. STATUS-UEBERWACHUNG (CORE LOGIK) ---
 on({ id: IDS.power, change: 'ne' }, async function (obj) {
     if (!isSaison()) return;
+    if (!obj.state || obj.state.ack) return; // Nur auf echte Hardware-Änderungen reagieren
 
-    var watt = obj.state.val;
-    var oldWatt = obj.oldState ? obj.oldState.val : 0;
-    var zeitFenster = compareTime('10:00', '18:01', 'between');
+    const watt = obj.state.val;
+    const oldWatt = obj.oldState ? obj.oldState.val : 0;
+    const zeitFenster = compareTime('10:00', '18:01', 'between');
 
     // DEBUG: Wir schreiben jeden Watt-Wechsel kurz ins Log, um die Werte zu sehen
     // (Kannst du später löschen, wenn alles läuft)
-    console.debug('R2Maeh2 Watt-Check: Aktuell ' + watt + 'W (vorher ' + oldWatt + 'W). Fenster: ' + zeitFenster + ', Status: ' + maeht);
+    console.debug(`R2Maeh2 Watt-Check: Aktuell ${watt}W (vorher ${oldWatt}W). Fenster: ${zeitFenster}, Status: ${maeht}`);
 
-    // LOGIK: Mäher fährt los
-    // Wenn Watt unter 4 sinkt und vorher höher war (Station wird fast stromlos)
-    if (zeitFenster && watt < 4 && oldWatt >= 4 && !maeht) {
+    // FALL 1: MÄHER FÄHRT LOS
+    // Die Station geht in den Leerlauf (< 4W), da der Mäher die Kontakte verlassen hat.
+    if (zeitFenster && watt < THRESHOLD_IDLE && oldWatt >= THRESHOLD_IDLE && !maeht) {
         maeht = true;
         setState(IDS.userMaeht, true, true);
         startStuckTimer();
         notifyR2('+++ 🚜 R2Maeh2 hat mit dem Mähen losgelegt +++');
-
-        if (compareTime('08:00', '20:00', 'between')) {
-            await googleWatchdogAnnounce("ErzwoMähzwo ist fleißig", 40);
-        }
+        await announceIfTime("ErzwoMähzwo ist fleißig");
     }
-    // LOGIK: Mäher kehrt zurück
-    // Wenn Watt über 10 steigt (Ladevorgang startet)
-    else if (zeitFenster && watt > 10 && oldWatt <= 10 && maeht) {
+    // FALL 2: MÄHER KEHRT ZURÜCK
+    // Die Station erkennt den Mäher und startet den Ladevorgang (> 10W).
+    else if (zeitFenster && watt > THRESHOLD_CHARGING && oldWatt <= THRESHOLD_CHARGING && maeht) {
         maeht = false;
         setState(IDS.userMaeht, false, true);
         stopStuckTimer();
         notifyR2('+++ 🔌 R2Maeh2 ist zurück und wird geladen +++');
-
-        if (compareTime('08:00', '20:00', 'between')) {
-            await googleWatchdogAnnounce("ErzwoMähzwo wird geladen", 40);
-        }
+        await announceIfTime("ErzwoMähzwo wird geladen");
     }
 });
 
 // --- 4. DURCHSCHNITT ---
 schedule("59 23 * * *", function () {
     if (!isSaison()) return;
-    var lState = getState(IDS.userListe);
-    var liste = (lState && Array.isArray(lState.val)) ? lState.val : [0, 0, 0, 0, 0, 0, 0];
-    var tState = getState(IDS.today);
-    liste.unshift(tState ? tState.val : 0);
+
+    const liste = (getState(IDS.userListe).val || [0, 0, 0, 0, 0, 0, 0]);
+    const heute = (getState(IDS.today).val || 0);
+
+    liste.unshift(heute);
     if (liste.length > 7) liste.pop();
     setState(IDS.userListe, liste, true);
-    var summe = 0;
-    for (var i = 0; i < liste.length; i++) { summe += liste[i]; }
-    var mittel = parseFloat((summe / (liste.length || 1)).toFixed(2));
+
+    const summe = liste.reduce((a, b) => a + b, 0);
+    const mittel = parseFloat((summe / (liste.length || 1)).toFixed(2));
     setState(IDS.userMittel, mittel, true);
 
-    // NEU: Kostenberechnung am Ende des Tages
-    var preis = getState(IDS.price).val || 0;
-    var mittelKosten = (mittel * preis).toFixed(2).replace('.', ',');
-    setState(IDS.userMittelKosten, mittelKosten, true);
+    updateCosts(mittel, getState(IDS.price).val);
 });
 
 // NEU: Sofortige Aktualisierung der Kosten bei Preisänderung
-on({ id: IDS.price, change: 'ne' }, function (obj) {
-    var mittel = getState(IDS.userMittel).val || 0;
-    var mittelKosten = (mittel * (obj.state.val || 0)).toFixed(2).replace('.', ',');
-    setState(IDS.userMittelKosten, mittelKosten, true);
+on({ id: IDS.price, change: 'ne' }, (obj) => {
+    updateCosts(getState(IDS.userMittel).val, obj.state.val);
 });
+
+function updateCosts(verbrauch, preis) {
+    /**
+     * Hilfsfunktion zur Kostenberechnung
+     */
+    const p = preis || 0.35;
+    const v = verbrauch || 0;
+    const mittelKosten = (v * p).toFixed(2).replace('.', ',');
+    setState(IDS.userMittelKosten, mittelKosten, true);
+}
