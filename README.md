@@ -88,9 +88,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 ## 📝 Changelog
 
-### [1.21.15] - 2026-05-23
-- Code-Optimierungen und Updates
-
 ### [1.21.11] - 2026-05-23
 - Update von update_readme_changelog.js (Versioning has been optimized)
 
