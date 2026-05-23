@@ -8,7 +8,7 @@ const SOURCE_DPs = ['sat_tv', 'tunein', 'spotify', 'netflix', 'heos', 'magenta',
 
 const ID_PLAY_STATUS = BASE_DP + 'play_status';
 const ID_CC_DISPLAY  = 'chromecast.0.Mini-Wozi.status.displayName';
-const ID_CC_STATE    = 'chromecast.0.Mini-Wozi3.player.state';
+const ID_CC_STATE    = 'chromecast.0.Mini-Wozi.player.state';
 const ID_CC_URL      = 'chromecast.0.Mini-Wozi.player.url2play';
 const ID_SENDER_TUNE = BASE_DP + 'sender_tunein';
 
