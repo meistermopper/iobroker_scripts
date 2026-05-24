@@ -1,92 +1,92 @@
 <img src="media/iobroker.png" align="right" width="100" alt="Projekt Logo">
-# ioBroker Skript-Sammlung
+# ioBroker Script Collection
 
-![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
-![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.21.30-success?style=flat-square)
+![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
+![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.21.31-success?style=flat-square)
 
-Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
+This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
 ## 📂 Struktur
-Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
+The scripts are logically organized by rooms and functions:
 
 ### ⚡ Energie & Laden
-* **UNIVERSAL MASTER v2.7 - THE ENERGY GUARDIAN**: ZWECK: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox.
- * RECHENKERN: Physikalische Berechnung von Hausverbrauch und Autarkie.
- * SCHUTZLOGIKEN:
- * 1. Sauna-Priorisierung: Schützt die Batterie vor Hochstrom-Entladung.
- * 2. Anti-Zappel: Verhindert Min-SoC-Sprünge bei taktendem Saunaofen.
- * 3. Watchdog: Überwacht Änderungen des Min-SoC am Wechselrichter.
- * 4. Safety-Guard: Warnt, wenn die Sauna bei offener Tür heizt.
-* **Überschussladen**: steuert die Wallbox in Abhängigkeit von Stromüberschuss und Ladeziel des Kfz
-* **Energie-Master**: Zentrale Steuerung von PV, Batterie, Sauna und Wallbox mit physikalischer Berechnung von Hausverbrauch und Autarkie (`energiemaster_und_sauna.js`)
-* **Smart Charging**: Intelligente Ladesteuerung für Wandtablet (`fully_smart_laden.js`) und Smartphones (`smartphones_laden.js`) zur Akkuschonung
-* **Solarprognose**: Visualisierung der Werte von heute und morgen
-* **USV-Management**: Sichert und stellt den Zustand von Lampen und Steckdosen nach einem Stromausfall wieder her (`hue_zigbee_states_restore.js`)
+* **EV Charging Master (`charge_master.js`)**: Manages focused start/stop for Kia EV3 charging based on PV surplus or manual input. Includes battery protection for the house battery during manual charging, robust stop mechanisms for hanging wallbox states, connection monitoring, and intelligent wallbox resets to ensure reliable charging. Optimizes time formatting, kilometer calculation, and provides detailed statistics.
+* **Harvia Sauna Control (`Fenix_FX110C_Sauna_control.js`)**: Provides full remote control of the Harvia Fenix FX 110C sauna, including heating, lighting, and temperature settings via REST API. Features robust token management, error handling, and real-time status monitoring.
+* **Smart Charging (`fully_smart_laden.js`, `smartphones_laden.js`)**: Intelligent charging control for wall-mounted tablets and smartphones to protect battery life (e.g., 30-70% strategy) and manage automatic display shutdown. Includes self-healing data points, smart notifications, and voice control triggers.
+* **Solar Forecast**: Visualizes today's and tomorrow's solar energy production values.
+* **UPS Management**: Secures and restores the state of lights and sockets after a power outage (`hue_zigbee_states_restore.js`).
 
 ### 💡 Licht & Präsenz
-* **Raumlogik**: Präsenz- und helligkeitsabhängige Lichtsteuerung für verschiedene Bereiche:
-    * **Bad unten**: Szenen für Morgen- und Standardlicht mit Dimm-Vorwarnung (`licht_bewegung_dunkel.js`)
-    * **Garderobe**: Einfache "Presence Follower"-Logik (`garderobenlicht.js`)
-    * **Küche**: Tag- und Nachtmodus mit gestaffeltem Schalten von Spots und Hue-Lampen (`licht_presence.js`)
-    * **Wohnzimmer**: Helligkeits- und medienabhängige Lichtsteuerung
+* **Room Logic**: Presence and brightness-dependent lighting control for various areas:
+    * **Lower Bathroom**: Scenes for morning and standard lighting with dimming pre-warning (`licht_bewegung_dunkel.js`).
+    * **Wardrobe (`garderobenlicht.js`)**: Simple "Presence Follower" logic, ensuring lights efficiently match the state of the presence detector.
+    * **Kitchen**: Day and night modes with staggered switching of spots and Hue lamps (`licht_presence.js`).
+    * **Living Room**: Brightness and media-dependent lighting control.
 
 ### 🏡 Haushalt & Außenbereich
-* **Postkasten-Monitor**: Benachrichtigung bei Posteinwurf mit Sprachansage und VIS-Status (`post_da.js`)
-* **Müllmeldung**: Am Vortag wird um 18:00 Uhr per Sprache und Nachricht die Abholung der Müllart am Folgetag angekündigt und visualisiert.
-* **Lüftungsempfehlungen**: In Abhängigkeit von Temperatur und Luftfeuchtigkeit (innen und außen)
-* **Spritpreise**: Auswertung günstigste Tankstelle in der Nähe und Visualisierung
-* **Alarmmelder**: Rauch- und Wasserwarnungen akustisch und per Nachricht
-* **Haushaltsgeräte**: Statusmeldungen für Waschmaschine, Geschirrspüler und Trocker
-* **Anwesenheit**: Über Smartphones vermittels WLAN (UniFi-Network-Adapter)
-* **Heizungssteuerung**: je nach Anwesenheit
-* **Homematic Service-Zentrale**:  überwacht UNREACH, LOWBAT, CONFIG_PENDING und CCU-Firmware
-* **Ladezustände**: überwacht alle akkubetriebenen Geräte und warnt bei Niedrigstand
+* **Mailbox Monitor (`post_da.js`)**: Notifies upon mail delivery with voice announcements and updates VIS status. Prevents duplicate notifications and handles day/night modes for announcements.
+* **Robotic Mower Control (R2Mäh2) (`zustand_r2maeh2.js`)**: Monitors mower status via power consumption, sends notifications (start, end, issues, frost warning), performs voice announcements, and calculates daily statistics and electricity costs.
+* **Bathroom Dehumidification (`heizen_rh.js`)**: Controls underfloor heating in the bathroom to reduce humidity after showering (mold prevention). Activates heating to 24°C when humidity rises, with window protection and automatic reset to previous or default temperatures.
+* **Waste Collection Notification**: Announces and visualizes the next day's waste collection type via voice and message at 6:00 PM the day before.
+* **Ventilation Recommendations**: Based on indoor and outdoor temperature and humidity.
+* **Fuel Prices**: Evaluates the cheapest gas station nearby and visualizes it.
+* **Alarm Detectors**: Acoustic and message-based smoke and water warnings.
+* **Household Appliances**: Status messages for washing machine, dishwasher, and dryer.
+* **Presence Detection**: Via smartphones using WLAN (UniFi Network Adapter).
+* **Heating Control**: Depending on presence.
+* **Homematic Service Center**: Monitors UNREACH, LOWBAT, CONFIG_PENDING, and CCU firmware.
+* **Battery Levels**: Monitors all battery-powered devices and warns when levels are low.
 
 ### 🛠️ System & Monitoring
-* **ioBroker-Wächter**:
-    * Überwacht Adapter und meldet Ausfälle nach einer Wartezeit (`adapter_off.js`)
-    * Implementiert einen PIN-Schutz für sensible VIS-Views (`vis_PIN.js`)
-* **Netzwerk-Management**:
-    * Überwacht die WAN-IP auf Wechsel, steuert DDNS-Updates und managt Failover-Szenarien (`failover_dyndns_master.js`)
-* **Proxmox Cluster Master-Wächter**: Überwachung von Temperatur, Festplatten & Status - sendet Alarme an ALLE Telegram-User und gotify.
-* **Fußball-Bundesliga**: Darstellung der aktuellen Tabelle und der nächsten Spiele SGE und FCB mit dem OpenLigaDB-Adapter
+* **ioBroker Watchdog**:
+    * Monitors adapters and reports failures after a waiting period (`adapter_off.js`).
+    * Implements PIN protection for sensitive VIS views (`vis_PIN.js`).
+    * **SayIt AutoFix (`sayit_autofix.js`)**: Proactively monitors and reactively repairs the SayIt adapter's cache symlink, ensuring persistent voice output functionality and preventing 'ENOENT' errors.
+* **Network Management**:
+    * Monitors WAN IP for changes, controls DDNS updates, and manages failover scenarios (`failover_dyndns_master.js`).
+* **Proxmox Cluster Master Watchdog**: Monitors temperature, hard drives & status - sends alarms to ALL Telegram users and Gotify.
+* **Football Bundesliga**: Displays the current table and upcoming matches for SGE and FCB using the OpenLigaDB adapter.
 
 ### 📺🎵 Medien
-* **Medienauswahl**: Wird per Sprachbefehl und Google Home gesteuert
-* **Sauna**: Erkennt, wenn die Sauna läuft/nicht läuft und steuert zeitabhängig die Musikausgabe in Bad und Sauna
+* **Media Selection**: Controlled via voice command and Google Home.
+* **Ziegenhain Navigation Broadcast (`ziegenhain.js`)**: Triggers a humorous voice announcement across all active SayIt instances in the house in response to a specific voice command.
 
 ---
 
 ## 🚀 Workflow & Synchronisation
-Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufzeit (ioBroker).
+Script management is separated between development (VS Code) and runtime (ioBroker).
 
-* **Source of Truth**: Die primäre Entwicklungsumgebung ist **VS Code** auf dem lokalen Rechner.
-* **Git-Status auf dem Server und auf GitHub**
-* **Deployment (Live schalten)**: Die Übertragung zum ioBroker erfolgt manuell über die ioBroker-Extension.
+* **Source of Truth**: The primary development environment is **VS Code** on the local machine.
+* **Git Status**: Maintained on the server and GitHub.
+* **Deployment (Go Live)**: Transfer to ioBroker is done manually via the ioBroker Extension.
 
 ### Täglicher Workflow
-1. **Editieren**: Änderungen direkt in VS Code vornehmen
-2. **Aktivieren**: Den Upload-Pfeil in der ioBroker-Seitenleiste nutzen
-3. **Sichern**: Commit & Push & GitHub Sync in VS Code
+### Daily Workflow
+1. **Edit**: Make changes directly in VS Code.
+2. **Activate**: Use the upload arrow in the ioBroker sidebar.
+3. **Save**: Commit & Push & GitHub Sync in VS Code.
 
 ---
 
 ## ⚙️ Setup
 * ioBroker mit installiertem JavaScript-Adapter
-* VS Code mit der **ioBroker Extension*.
-* Git & GitLens zur Versionsverwaltun.
+* VS Code with the **ioBroker Extension**.
+* Git & GitLens for version control.
 
 ---
 
 ## 📜 Annex: Repository-Standard
-1. **Dateiberechtigungen**: Alle Dateien auf dem Server gehören zwingend dem User `iobroker`.
-2. **Sauberkeit**: Das Repository wird frei von temporären Systemdateien gehalten.
-3. **Source of Truth**: Bei Unstimmigkeiten ist der Stand in VS Code maßgeblich.
+1. **File Permissions**: All files on the server must belong to the `iobroker` user.
+2. **Cleanliness**: The repository is kept free of temporary system files.
+3. **Source of Truth**: In case of discrepancies, the state in VS Code is authoritative.
 
 ---
 
 ## 📝 Changelog
+
+### [1.21.31] - 2026-05-24
+- Code-Optimierungen und Updates
 
 ### [1.21.25] - 2026-05-24
 - Added robust charging stop mechanism and improved error handling for "hanging" wallbox status (charge_master.js)
