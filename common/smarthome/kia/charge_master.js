@@ -32,46 +32,45 @@ const PATH_USER = "0_userdata.0.Energie.Kia_e_niro";
 const IDS = {
   // Wallbox (Hardware via OCPP)
   wbStat: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.status", // [1] Status (Charging, Preparing...)
-  wbTrans:
-    "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.transactionActive", // [2] Schaltet den Stromfluss
-  wbAvail: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.availability", // [3] Reset / Verfügbarkeit
-  wbConn:  "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.connected",      // Verbindung zum ioBroker
+  wbTrans: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.transactionActive", // [2] Controls power flow
+  wbAvail: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.availability", // [3] Reset / Availability
+  wbConn:  "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.connected",      // Connection to ioBroker
   unifiReconnect: "unifi-network.0.clients.users.60:09:c3:2f:46:49.reconnect", // [22] Reconnect via UniFi
 
-  // Fahrzeugdaten (Cloud)
-  soc: `${VIN}.vehicleStatusRaw.Green.BatteryManagement.BatteryRemain.Ratio`, // [4] Ladestand %
-  bat12v: `${VIN}.vehicleStatusRaw.Electronics.Battery.Level`, // [5] 12V Batterie-Schutz
-  conn: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.ConnectorFastening.State`, // [6] Stecker-Status
-  remTime: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.Charging.RemainTime`, // [7] Restzeit in Min. (vom Fahrzeug gemeldet)
-  targetSocSrv: `${VIN}.control.charge_limit_slow`, // [23] Ladeziel (AC) vom Fahrzeug (Steuerungspunkt)
-  refresh: `${VIN}.control.force_refresh`, // [8] Fahrzeug aufwecken
+  // Vehicle Data (Cloud)
+  soc: `${VIN}.vehicleStatusRaw.Green.BatteryManagement.BatteryRemain.Ratio`, // [4] Charge level %
+  bat12v: `${VIN}.vehicleStatusRaw.Electronics.Battery.Level`, // [5] 12V Battery protection
+  conn: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.ConnectorFastening.State`, // [6] Plug status
+  remTime: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.Charging.RemainTime`, // [7] Remaining time in min (reported by vehicle)
+  targetSocSrv: `${VIN}.control.charge_limit_slow`, // [23] Charge target (AC) from vehicle (control point)
+  refresh: `${VIN}.control.force_refresh`, // [8] Wake up vehicle
 
-  // Energie-Zentrum (Hardware-Werte)
-  pvPower: "solax.0.data.acpower", // [9] PV Watt aktuell
-  pvAverage: "0_userdata.0.Energie.PV.Durchschnitt", // [10] Geglätteter Wert (EMA)
-  netPower: "0_userdata.0.Energie.PV.Netzbezug", // [11] Hauszähler (+Bezug/-Einspeisung)
-  hausCons: "0_userdata.0.Energie.PV.Hausverbrauch", // [12] Eigenverbrauch Haus
-  batSocPV: "modbus.0.inputRegisters.100.843_Battery_State_of_Charge_(System)", // [13] Hausspeicher %
+  // Energy Center (Hardware Values)
+  pvPower: "solax.0.data.acpower", // [9] Current PV Watt
+  pvAverage: "0_userdata.0.Energie.PV.Durchschnitt", // [10] Smoothed value (EMA)
+  netPower: "0_userdata.0.Energie.PV.Netzbezug", // [11] House meter (+consumption/-feed-in)
+  hausCons: "0_userdata.0.Energie.PV.Hausverbrauch", // [12] House self-consumption
+  batSocPV: "modbus.0.inputRegisters.100.843_Battery_State_of_Charge_(System)", // [13] Home storage %
   minSocSet: "modbus.0.holdingRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
   minSocRead: "modbus.0.inputRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
 
-  // Steuerung & Statistik (VIS)
-  u_auto: `${PATH_USER}.autoladen`, // [14] Schalter: PV-Automatik an/aus (Boolean)
-  u_limit: `${PATH_USER}.Ladeprozent`, // [15] Ziel-SOC Slider
-  u_smooth: `${PATH_USER}.Glaettung_Zeit`, // [16] EMA-Trägheit Slider
-  u_power: `${PATH_USER}.Ladeleistung`, // [17] Anzeige Watt (fest 3690W)
-  u_timeDay: `${PATH_USER}.Ladezeit`, // [18] Lademinuten heute
-  u_rest: `${PATH_USER}.Restladezeit`, // [19] HH:MM Anzeige
-  aliasKm: "alias.0.umrechnen.kia_ladekm", // [20] gewonnene Reichweite
-  aliasDur: "alias.0.umrechnen.kia_ladezeit", // [21] Zeit-Objekt
+  // Control & Statistics (VIS)
+  u_auto: `${PATH_USER}.autoladen`, // [14] Switch: PV Automatic on/off (Boolean)
+  u_limit: `${PATH_USER}.Ladeprozent`, // [15] Target SOC Slider
+  u_smooth: `${PATH_USER}.Glaettung_Zeit`, // [16] EMA Inertia Slider
+  u_power: `${PATH_USER}.Ladeleistung`, // [17] Display Watt (fixed 3690W)
+  u_timeDay: `${PATH_USER}.Ladezeit`, // [18] Charging minutes today
+  u_rest: `${PATH_USER}.Restladezeit`, // [19] HH:MM Display
+  aliasKm: "alias.0.umrechnen.kia_ladekm", // [20] gained range
+  aliasDur: "alias.0.umrechnen.kia_ladezeit", // [21] time object
   u_startChargeRequest: `${PATH_USER}.Start_Charge_Request`, // [NEW] Request to start charging
   u_startTs: `${PATH_USER}.LastStartTimestamp`, // [PERSISTENCE] Merker für Startzeit
   u_origSoc: `${PATH_USER}.LastOriginalMinSoc`, // [PERSISTENCE] Merker für Batterie-Schutz
 };
 
 // --- PARAMETERS ---
-const PV_START_LIMIT = 4600; // Startschwelle (Sonne muss > 4,6kW + Puffer liefern)
-const PV_STOP_LIMIT = 4000;  // Stoppschwelle (Ladevorgang pausieren, wenn Überschuss sinkt)
+const PV_START_LIMIT = 4600; // Start threshold (Sun must provide > 4.6kW + buffer)
+const PV_STOP_LIMIT = 4000;  // Stop threshold (Pause charging if surplus drops)
 const FIXED_CHARGE_W = 3960; // Fixe Leistung bei 6A (220V * 3 Phasen * 6A)
 const CAR_CAPACITY_KWH = 81.4;
 const RANGE_SUMMER = 550;
@@ -79,7 +78,7 @@ const RANGE_WINTER = 450;
 const GOTIFY_TOKEN = getState("0_userdata.0.gotifytoken.iobroker").val;
 
 // --- TIMING KONSTANTEN ---
-const DEBOUNCE_STOP_MS = 45000;  // 45 Sek. warten vor endgültigem Stop
+const DEBOUNCE_STOP_MS = 45000;  // 45 sec wait before final stop
 // [NEW] Delay before retrying the stop command after the first attempt.
 const FORCE_STOP_RETRY_DELAY_MS = 5000;
 // [NEW] Delay during the availability toggle to give the wallbox time to process.
@@ -102,19 +101,19 @@ async function initLadeSystem() {
   if (!existsState(IDS.u_auto))
     await createStateAsync(IDS.u_auto, true, {
       type: "boolean",
-      name: "PV-Automatik",
+      name: "PV Automatic",
     });
   if (!existsState(IDS.u_smooth))
     await createStateAsync(IDS.u_smooth, 10, {
       type: "number",
-      name: "EMA-Glättung",
+      name: "EMA Smoothing",
     });
   if (!existsState(IDS.u_limit))
     await createStateAsync(IDS.u_limit, 80, {
       type: "number",
-      name: "Ladeziel",
+      name: "Charge Target",
     });
-  // NEU: Datenpunkt für den Lade-Start-Request
+  // NEW: Data point for the charge start request
   if (!existsState(IDS.u_startChargeRequest))
     await createStateAsync(IDS.u_startChargeRequest, false, {
       type: "boolean",
@@ -126,7 +125,7 @@ async function initLadeSystem() {
   if (!existsState(IDS.u_origSoc))
     await createStateAsync(IDS.u_origSoc, 0, { type: "number", name: "Original MinSoc Backup" });
 
-  // Wiederherstellung laufender Prozesse nach Skript-Neustart
+  // Restore ongoing processes after script restart
   if (getState(IDS.wbStat).val === "Charging") {
       startZeitLaden = getState(IDS.u_startTs).val || Date.now();
       const savedSoc = getState(IDS.u_origSoc).val;
@@ -138,8 +137,8 @@ initLadeSystem();
 
 // --- 2.1 HELPER: GET CURRENT POWER METRICS ---
 /**
- * Sammelt alle relevanten Leistungs- und SoC-Werte aus den Datenpunkten.
- * Stellt sicher, dass die Werte als Zahlen vorliegen.
+ * Collects all relevant power and SoC values from the data points.
+ * Ensures that the values are numbers.
  */
 function getPowerMetrics() {
     return {
@@ -153,9 +152,9 @@ function getPowerMetrics() {
 // --- 3. COMMUNICATION ---
 
 /**
- * Führt die intelligente Start-Sequenz der Wallbox aus.
+ * Executes the intelligent start sequence of the wallbox.
  */
-async function triggerStartSequence(reason = "PV-Überschuss") {
+async function triggerStartSequence(reason = "PV-Surplus") {
   if (isStartingSequenceActive) return;
 
   const wbStatus = getState(IDS.wbStat).val;
@@ -247,7 +246,7 @@ async function forceStopCharging() {
 }
 
 function ev3Notify(text, prio = 1, spoken = null) {
-  sendTo("telegram", "send", { text: text });
+  sendTo("telegram", "send", { text: text }); // Send to Telegram
 
   // Effizienter HTTP-Post statt Shell-Prozess
   const url = `https://mygotify.meistermopper.de/message?token=${GOTIFY_TOKEN}`;
@@ -261,7 +260,7 @@ function ev3Notify(text, prio = 1, spoken = null) {
       if (err) console.error(`[EV3 Master] Gotify Error: ${err}`);
   });
 
-  // Sprachausgabe tagsüber
+  // Voice output during the day
   if (compareTime("08:00", "20:00", "between")) {
     // Wenn ein spezieller Sprechtext übergeben wurde (spoken), nutzen wir diesen.
     // Andernfalls nehmen wir den Standardtext.
@@ -277,8 +276,8 @@ function ev3Notify(text, prio = 1, spoken = null) {
 // --- 4. SMART PV SMOOTHING (EMA) ---
 
 /**
- * Errechnet den Durchschnitt der PV-Leistung zur Stabilisierung der Regelung.
- * Reagiert bei Abfall schnell, bei Anstieg träge.
+ * Calculates the average PV power to stabilize the control.
+ * Reacts quickly to drops, slowly to increases.
  */
 schedule("* * * * *", async () => {
   const { pvPower: current, pvAverage: oldAvg, batSoc } = getPowerMetrics();
@@ -286,12 +285,12 @@ schedule("* * * * *", async () => {
 
   let alpha;
   if (current < oldAvg) {
-    // ABFALL: Wenn der Haus-Akku voll ist (>85%), reagieren wir träger (0.2 statt 0.5).
-    // Das verhindert unnötige Ladestopps bei kurzen Wolken.
+    // DROP: If the house battery is full (>85%), react slower (0.2 instead of 0.5).
+    // This prevents unnecessary charging stops during short clouds.
     alpha = (batSoc > 85) ? 0.2 : 0.5;
   } else {
-    // ANSTIEG: Wenn der Akku noch leer ist (<50%), warten wir länger auf stabile Sonne.
-    // Ist der Akku voll, nehmen wir die Sonne schneller mit.
+    // RISE: If the battery is still empty (<50%), wait longer for stable sun.
+    // If the battery is full, take advantage of the sun faster.
     const dynamicInertia = (batSoc > 75) ? Math.max(2, inertia / 2) : inertia;
     alpha = 1 / dynamicInertia;
   }
@@ -303,14 +302,14 @@ schedule("* * * * *", async () => {
 // --- 5. AUTOMATION LOGIC (PV SURPLUS) ---
 
 /**
- * Überwacht den PV-Durchschnitt und schaltet die Ladung automatisch,
- * sofern der Automatik-Schalter in der VIS aktiv ist.
+ * Monitors the PV average and switches charging automatically,
+ * provided the automatic switch in VIS is active.
  */
 function checkPvAutomation() {
-  const isAuto = !!getState(IDS.u_auto).val; // Automatik-Schalter
-  const { pvAverage: mittel, batSoc, evSoc } = getPowerMetrics(); // Aktuelle Leistungsmetriken
+  const isAuto = !!getState(IDS.u_auto).val; // Automatic switch
+  const { pvAverage: mittel, batSoc, evSoc } = getPowerMetrics(); // Current power metrics
 
-  // Abbrechen, wenn Wallbox offline ist
+  // Cancel if wallbox is offline
   const isConnected = !!getState(IDS.wbConn).val;
   if (!isConnected && mittel > PV_START_LIMIT) console.warn("[EV3 Master] Start not possible: Wallbox connection missing (OCPP Offline).");
   if (!isAuto || !isConnected) return;
@@ -319,31 +318,31 @@ function checkPvAutomation() {
   const wbStatus = getState(IDS.wbStat).val;
   const limitCar = getState(IDS.targetSocSrv).val || 100;
 
-  // Diagnose-Log bei ausreichendem Überschuss, falls nicht geladen wird
+  // Diagnostic log for sufficient surplus if not charging
   //if (!isTransActive && (mittel > (PV_START_LIMIT - 500))) {
   //    console.log(`[EV3 Master] Status: ${wbStatus} | PV-Avg: ${mittel}W | Bat-SoC: ${batSoc}% | EV-SoC: ${evSoc}% / Ziel: ${limitCar}%`);
   //}
 
-  // START: Genügend Sonne (>4,6kW) und Hausspeicher gut gefüllt (>75%)
+  // START: Enough sun (>4.6kW) and house storage well filled (>75%)
   if (!isTransActive && !isStartingSequenceActive && mittel > PV_START_LIMIT && batSoc > 75 && evSoc < limitCar) {
-      triggerStartSequence("PV-Automatik");
+      triggerStartSequence("PV-Automatic");
   }
 
-  // STOP: Überschuss sinkt unter die Ladeleistung (Pausierung)
-  // oder Ladeziel erreicht
-  // oder Wallbox-Verbindung verloren (wird durch !isConnected am Anfang abgefangen, aber hier als Redundanz)
+  // STOP: Surplus drops below charging power (pause)
+  // or charging target reached
+  // or wallbox connection lost (caught by !isConnected at the beginning, but here as redundancy)
   else if (isTransActive && (mittel < PV_STOP_LIMIT || evSoc >= limitCar)) {
-    // Detailliertes Logging der Stop-Ursache
+    // Detailed logging of the stop reason
     let reason = "";
-    if (mittel < PV_STOP_LIMIT) reason = `Zu wenig PV-Leistung (${mittel}W < ${PV_STOP_LIMIT}W)`;
-    else if (evSoc >= limitCar) reason = `Fahrzeug-Ladeziel erreicht (${evSoc}% >= ${limitCar}%)`;
+    if (mittel < PV_STOP_LIMIT) reason = `Insufficient PV power (${mittel}W < ${PV_STOP_LIMIT}W)`;
+    else if (evSoc >= limitCar) reason = `Vehicle charging target reached (${evSoc}% >= ${limitCar}%)`;
 
     if (reason) {
-        console.log(`[EV3 Master] Automatisch gestoppt: ${reason}`);
+        console.log(`[EV3 Master] Automatically stopped: ${reason}`);
     }
 
     setState(IDS.wbTrans, false);
-    //ev3Notify("Das Laden des EV 3 wurde beendet");
+    //ev3Notify("EV3 charging ended");
   }
 }
 
@@ -366,9 +365,9 @@ on({ id: IDS.wbTrans, change: "ne" }, async (obj) => {
 // --- 6. MONITORING & STATISTICS ---
 
 /**
- * Erfasst Ladedauer und setzt die Leistungsanzeige.
- * Erfasst Ladedauer, setzt die Leistungsanzeige und schützt bei manuellem
- * Laden die Hausbatterie vor Entladung.
+ * Records charging duration and sets the power display.
+ * Records charging duration, sets the power display, and protects the house battery
+ * from discharge during manual charging.
  * Berechnet die Statistiken für den aktuellen oder abgeschlossenen Ladevorgang.
  */
 function updateChargeStatistics(sessionDurationMs) {
@@ -384,9 +383,9 @@ function updateChargeStatistics(sessionDurationMs) {
 
     const h = Math.floor(totalMinToday / 60);
     const m = totalMinToday % 60;
-    const formattedTime = h > 0 ? `${h}:${m < 10 ? "0" + m : m} Std` : `${m} Min`;
+    const formattedTime = h > 0 ? `${h}:${m < 10 ? "0" + m : m} hrs` : `${m} min`;
 
-    return { totalMinToday, formattedTime, kmToday, spokenTime: h > 0 ? `${h} Std, ${m} Min` : `${m} Min` };
+    return { totalMinToday, formattedTime, kmToday, spokenTime: h > 0 ? `${h} hours, ${m} minutes` : `${m} minutes` };
 }
 
 on({ id: IDS.wbStat, change: "ne" }, (obj) => {
@@ -394,11 +393,11 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
   const isAuto = !!getState(IDS.u_auto).val;
 
   if (status === "Charging") {
-    // Falls ein Stop-Timer läuft: Abbrechen, da es nur ein kurzer Schluckauf war
+    // If a stop timer is running: Cancel, as it was just a short hiccup
     if (stopTimer) {
       clearTimeout(stopTimer);
       stopTimer = null;
-      console.log("[EV3 Master] Short interruption ended, continuing charge...");
+      console.log("[EV3 Master] Short interruption ended, resuming charge...");
       return;
     }
 
@@ -407,10 +406,10 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
         setState(IDS.u_startTs, startZeitLaden, true);
     }
 
-    // Da die Box starr 6A lädt, setzen wir den festen Watt-Wert
+    // Since the box charges rigidly at 6A, we set the fixed Watt value
     setState(IDS.u_power, FIXED_CHARGE_W, true);
 
-    // NEU: Batterieschutz bei manuellem Laden (Automatik AUS)
+    // NEW: Battery protection during manual charging (Automatic OFF)
     if (!isAuto && originalMinSoc === null) {
       originalMinSoc = getState(IDS.minSocRead).val;
       setState(IDS.u_origSoc, originalMinSoc, true);
@@ -428,11 +427,11 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       status === "SuspendedEV" ||
       status === "SuspendedEVSE")
   ) {
-    // Wir warten 45 Sekunden, ob der Status wieder auf "Charging" springt (Entprellung)
+    // We wait 45 seconds to see if the status jumps back to "Charging" (debouncing)
     if (stopTimer) clearTimeout(stopTimer);
 
     stopTimer = setTimeout(() => {
-      // NEU: Batterieschutz bei manuellem Laden aufheben
+      // NEW: Lift battery protection during manual charging
       if (!isAuto && originalMinSoc !== null) {
         // Ensure MinSoc doesn't drop below 0
         setState(IDS.minSocSet, Math.max(0, originalMinSoc));
@@ -443,7 +442,7 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
         setState(IDS.u_origSoc, 0, true);
       }
 
-      // Statistik berechnen und speichern
+      // Calculate and save statistics
       const stats = updateChargeStatistics(Date.now() - startZeitLaden);
       setState(IDS.u_timeDay, stats.totalMinToday, true);
 
@@ -464,14 +463,14 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
 // --- 7. ADDITIONAL FUNCTIONS ---
 
 /**
- * Verbindungswächter: Überwacht die Erreichbarkeit der Wallbox.
- * Meldet Statusänderungen (Anti-Spam) und triggert nach 3 Min. Offline einen Reconnect via UniFi.
+ * Connection watchdog: Monitors the reachability of the wallbox.
+ * Reports status changes (anti-spam) and triggers a reconnect via UniFi after 3 min offline.
  */
 on({ id: IDS.wbConn, change: "ne" }, (obj) => {
   const isConnected = !!obj.state.val;
 
   if (!isConnected) {
-    // Nur beim ersten Mal warnen
+    // Warn only the first time
     if (!wasOfflineReported) {
       //console.warn("[EV3 Master] Wallbox-Verbindung verloren. Reconnect-Timer (3 Min) gestartet.");
       wasOfflineReported = true;
@@ -493,7 +492,7 @@ on({ id: IDS.wbConn, change: "ne" }, (obj) => {
 });
 
 /**
- * Formatiert die verbleibende Ladezeit für die Anzeige in der VIS.
+ * Formats the remaining charging time for display in VIS.
  */
 on({ id: IDS.remTime, change: "any" }, (obj) => {
   const m = obj.state.val;
@@ -512,16 +511,16 @@ on({ id: IDS.targetSocSrv, change: "ne" }, (obj) => {
     setState(IDS.u_limit, obj.state.val, true);
 });
 
-// Manual Start-Request Handler
+// Manual Start Request Handler
 on({ id: IDS.u_startChargeRequest, val: true, change: "any" }, () => {
     console.log("[EV3 Master] Manual start request received via VIS.");
-    triggerStartSequence("VIS-Manuell");
+    triggerStartSequence("VIS-Manual");
     setTimeout(() => {
         setState(IDS.u_startChargeRequest, false, true);
     }, 1000);
 });
 
-// Daily reset of charging stats at 02:05 AM
+// Daily reset of charging statistics at 02:05 AM
 schedule("5 2 * * *", () => {
   setState(IDS.u_timeDay, 0, true);
 });
