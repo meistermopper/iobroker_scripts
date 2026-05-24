@@ -88,13 +88,6 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 ## 📝 Changelog
 
-### [1.21.30] - 2026-05-24
-- Code-Optimierungen und Updates
-
-### [1.21.29] - 2026-05-24
-- Aktualisiere README und entferne veraltete Changelog-Einträge; verbessere Kommentare und Übersetzungen in charge_master.js (charge_master.js)
-- Update von charge_master.js
-
 ### [1.21.25] - 2026-05-24
 - Added robust charging stop mechanism and improved error handling for "hanging" wallbox status (charge_master.js)
 
