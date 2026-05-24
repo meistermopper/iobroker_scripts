@@ -84,12 +84,6 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
-### [1.21.37] - 2026-05-24
-- Code-Optimierungen und Updates
-
-### [1.21.31] - 2026-05-24
-- Code-Optimierungen und Updates
-
 ### [1.21.25] - 2026-05-24
 - Added robust charging stop mechanism and improved error handling for "hanging" wallbox status (charge_master.js)
 
