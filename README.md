@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.21.35-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.21.36-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -84,12 +84,8 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
-### [1.21.35] - 2026-05-24
+### [1.21.36] - 2026-05-24
 - Code-Optimierungen und Updates
-
-### [1.21.34] - 2026-05-24
-- Aktualisiere README: Entferne veraltete Changelog-Einträge und verbessere Kommentare in charge_master.js (charge_master.js)
-- Update von charge_master.js
 
 ### [1.21.25] - 2026-05-24
 - Added robust charging stop mechanism and improved error handling for "hanging" wallbox status (charge_master.js)
