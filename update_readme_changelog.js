@@ -1,6 +1,6 @@
 /**
  * README Changelog Updater
- * Automatisiert das Anhängen von Commit-Kommentaren an die README.md
+ * Automates the addition of commit comments to README.md
  */
 const fs = require('fs');
 const { execSync } = require('child_process');
@@ -9,27 +9,27 @@ const path = require('path');
 const README_PATH = path.join(__dirname, 'README.md');
 const PKG_PATH = path.join(__dirname, 'package.json');
 
-// Dateien, die niemals im Changelog auftauchen sollen
+// Files that should never appear in the changelog
 const EXCLUDE_LIST = [path.basename(__filename), 'package.json', 'package-lock.json', 'README.md'];
 
 try {
-    // 1. Letzten Commit-Hash und Nachricht abrufen
+    // 1. Get the latest commit hash and message
     let fullMsg = execSync('git log -1 --pretty=%B').toString().trim();
-    // Erste Zeile nehmen und Anführungszeichen säubern
+    // Extract first line and clean quotes
     let commitMsg = fullMsg.split('\n')[0].trim();
     commitMsg = commitMsg.replace(/^["']|["']$/g, '');
 
-    // NEU: Manueller Abbruch über die Commit-Nachricht (z.B. bei reinen Doku-Fixes)
+    // Manual skip via commit message tag
     if (commitMsg.toLowerCase().includes('[skip log]') || commitMsg.toLowerCase().includes('[no changelog]')) {
-        console.log('Update übersprungen: [skip log] Tag in Commit-Nachricht gefunden.');
+        console.log('[Changelog] Skipping update: [skip log] tag found.');
         process.exit(0);
     }
 
-    // 2. Aktuelle Version aus der package.json lesen
+    // 2. Read version from package.json
     const pkg = JSON.parse(fs.readFileSync(PKG_PATH, 'utf8'));
     const currentVersion = pkg.version;
 
-    // 3. Geänderte Dateien abrufen (Nur relevante .js Skripte in Unterordnern)
+    // 3. Retrieve changed files (JS scripts in subfolders only)
     const changedFiles = execSync('git diff-tree --no-commit-id --name-only -r HEAD')
         .toString()
         .trim()
@@ -52,10 +52,9 @@ try {
         process.exit(0);
     }
 
-    // 4. Prepare changelog entries in English
-    const newEntries = changedFiles
-        .map(f => `- Updated ${path.basename(f)} (${commitMsg})`)
-        .join('\n');
+    // 4. Prepare entries: One line per commit, grouping files
+    const fileList = changedFiles.map(f => path.basename(f)).join(', ');
+    const newEntry = `- ${commitMsg} (${fileList})`;
 
     let content = fs.readFileSync(README_PATH, 'utf8');
     const today = new Date().toISOString().split('T')[0];
@@ -66,14 +65,16 @@ try {
 
     const changelogMarker = '## 📝 Changelog';
 
-    // 6. Logic: Does the version block for today already exist?
+    // 6. Logic: Handle existing or new version blocks
     if (content.includes(versionHeader)) {
-        // Append to existing block if the entry isn't already there
-        const checkLine = newEntries.split('\n')[0];
-        if (!content.includes(checkLine)) {
-            const lines = content.split('\n');
-            const headerIndex = lines.findIndex(l => l.includes(versionHeader));
-            lines.splice(headerIndex + 1, 0, newEntries);
+        const lines = content.split('\n');
+        const headerIndex = lines.findIndex(l => l.includes(versionHeader));
+
+        // Check if this specific entry already exists for today
+        const entryExists = lines.some((line, index) => index > headerIndex && line.includes(commitMsg));
+
+        if (!entryExists) {
+            lines.splice(headerIndex + 1, 0, newEntry);
             content = lines.join('\n');
             console.log(`[Changelog] Added entry to existing version ${currentVersion}.`);
         } else {
@@ -82,7 +83,7 @@ try {
         }
     } else {
         // Create a new version block
-        const newSection = `\n\n${versionHeader}\n${newEntries}`;
+        const newSection = `\n\n${versionHeader}\n${newEntry}`;
         content = content.replace(changelogMarker, `${changelogMarker}${newSection}`);
         console.log(`[Changelog] Created new block for version ${currentVersion}.`);
     }
