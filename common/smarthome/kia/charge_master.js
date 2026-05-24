@@ -15,6 +15,8 @@
  * - Sprache temporär ausgeschaltet
  * - Überprüfung der Wallbox-Verbindung (OCPP Online-Status)
  * - Optimierte Zeitformatierung und Kilometer-Berechnung
+ * - NEU: Robusterer Ladestopp-Mechanismus, der bei "hängendem" Wallbox-Status
+ *   (transactionActive: false, aber Status: Charging) einen erzwungenen Stopp auslöst.
  * - Fahrzeug-Kapazität: 81.4 kWh | Reichweite: 550km (Sommer) / 450km (Winter)
  * - Debounce von 45 Sekunden, wenn Charging geändert wurde
  * - Kein Ladestart, wenn das Ladeziel erreicht wurde
@@ -78,14 +80,20 @@ const GOTIFY_TOKEN = getState("0_userdata.0.gotifytoken.iobroker").val;
 
 // --- TIMING KONSTANTEN ---
 const DEBOUNCE_STOP_MS = 45000;  // 45 Sek. warten vor endgültigem Stop
-const RECONNECT_WB_MS = 180000;  // 3 Min. bis WiFi-Reset
+// [NEU] Verzögerung für den erneuten Versuch eines Stopp-Befehls nach dem ersten Versuch.
+const FORCE_STOP_RETRY_DELAY_MS = 5000;
+// [NEU] Verzögerung während des Availability-Toggles, um der Wallbox Zeit für die Verarbeitung zu geben.
+const FORCE_STOP_AVAILABILITY_TOGGLE_DELAY_MS = 2000; // 2 Sekunden für Availability-Toggle
 
 let startZeitLaden = null; // Merker für Statistik
 let originalMinSoc = null; // Merker für Min-SoC bei manuellem Laden
 let stopTimer = null;      // Timer zur Entprellung von kurzen Lade-Unterbrechungen
 let reconnectTimer = null; // Timer für Wallbox-Recovery
 let wasOfflineReported = false; // Status für Anti-Spam Meldungen
+// [NEU] Lock-Variable, um Race Conditions beim Start der Ladesequenz zu verhindern.
 let isStartingSequenceActive = false; // Lock gegen Race Conditions beim Start
+// [NEU] Lock-Variable, um Race Conditions beim erzwungenen Stopp zu verhindern.
+let isForceStopping = false; // Lock gegen erneutes Auslösen des erzwungenen Stops
 
 // --- 2. INITIALISIERUNG ---
 
@@ -171,6 +179,68 @@ async function triggerStartSequence(reason = "PV-Überschuss") {
   } finally {
       isStartingSequenceActive = false;
   }
+}
+
+/**
+ * [NEU] forceStopCharging()
+ * Versucht, den Ladevorgang zu beenden, auch wenn der Status "hängt".
+ * Nutzt ggf. den Availability-Toggle als letzten Ausweg.
+ * Diese Funktion wird aufgerufen, wenn `transactionActive` auf `false` gesetzt wurde,
+ * die Wallbox aber weiterhin den Status `Charging` meldet.
+ */
+async function forceStopCharging() {
+    // Verhindert, dass die Funktion mehrfach gleichzeitig ausgeführt wird.
+    if (isForceStopping) {
+        console.log("[EV3 Master] Force stop bereits aktiv, überspringe erneuten Aufruf.");
+        return;
+    }
+    isForceStopping = true;
+    console.warn("[EV3 Master] Initiating forced charging stop sequence.");
+
+    try {
+        // Versuch 1: Einfach nochmal transactionActive auf false setzen
+        // Dies ist der Standardweg, um einen Ladevorgang zu beenden.
+        console.log("[EV3 Master] Force stop attempt 1: Setting wbTrans to false.");
+        setState(IDS.wbTrans, false);
+        // Kurze Wartezeit, um der Wallbox Zeit zur Verarbeitung zu geben.
+        await wait(FORCE_STOP_RETRY_DELAY_MS);
+
+        if (getState(IDS.wbStat).val === "Charging") {
+            console.warn("[EV3 Master] Force stop attempt 1 failed. Proceeding with Availability-Toggle.");
+            // Versuch 2: Availability-Toggle
+            console.log("[EV3 Master] Force stop attempt 2: Toggling wbAvail (false -> true).");
+            setState(IDS.wbAvail, false);
+            // Kurze Wartezeit nach dem Deaktivieren der Verfügbarkeit.
+            await wait(FORCE_STOP_AVAILABILITY_TOGGLE_DELAY_MS);
+            setState(IDS.wbAvail, true);
+            // Kurze Wartezeit nach dem Reaktivieren der Verfügbarkeit, bevor der Stopp-Befehl erneut gesendet wird.
+            await wait(FORCE_STOP_AVAILABILITY_TOGGLE_DELAY_MS);
+            setState(IDS.wbTrans, false); // Erneut Stopp-Befehl nach Availability-Toggle senden
+            ev3Notify("⚠️ Wallbox-Ladestopp erzwungen (Availability-Reset).", 3);
+            console.log("[EV3 Master] Force stop attempt 2 completed.");
+        } else {
+            console.log("[EV3 Master] Forced charging stop successful (first attempt).");
+        }
+    } catch (e) {
+        console.error(`[EV3 Master] Error during forced charging stop: ${e.message}`);
+        ev3Notify(`❌ Fehler beim erzwungenen Ladestopp: ${e.message}`, 5);
+    } finally {
+        isForceStopping = false; // Lock wieder freigeben.
+        // Nach einem erzwungenen Stopp sollten wir auch den stopTimer löschen, falls er lief.
+        if (stopTimer) {
+            clearTimeout(stopTimer);
+            stopTimer = null;
+            console.log("[EV3 Master] Cleared stopTimer after forced stop.");
+        }
+        setState(IDS.u_power, 0, true); // Leistungsanzeige zurücksetzen
+        if (startZeitLaden) { // Statistik aktualisieren, falls eine Session aktiv war
+            const stats = updateChargeStatistics(Date.now() - startZeitLaden);
+            setState(IDS.u_timeDay, stats.totalMinToday, true);
+            ev3Notify(`❌ Ladung beendet (erzwungen). Heute geladen: ${stats.formattedTime} (+ca. ${stats.kmToday} km)`, 1, `Ladung beendet (erzwungen). Heute geladen: ${stats.spokenTime}. Reichweite ca. ${stats.kmToday} Kilometer.`);
+            startZeitLaden = null; setState(IDS.u_startTs, 0, true);
+        }
+        if (originalMinSoc !== null) { setState(IDS.minSocSet, Math.max(0, originalMinSoc)); ev3Notify(`🔌 Haus-Akku auf ${originalMinSoc}% freigegeben nach erzwungenem Stopp.`); originalMinSoc = null; setState(IDS.u_origSoc, 0, true); }
+    }
 }
 
 function ev3Notify(text, prio = 1, spoken = null) {
@@ -279,6 +349,18 @@ on({ id: IDS.pvAverage, change: "ne" }, checkPvAutomation);
 on({ id: IDS.soc, change: "ne" }, checkPvAutomation);
 on({ id: IDS.wbConn, val: true, change: "ne" }, checkPvAutomation);
 
+// [NEU] Listener für den `wbTrans` Datenpunkt.
+// Dieser Listener ist entscheidend für die Erkennung und Behebung von "hängenden" Ladestati.
+// Wenn `wbTrans` auf `false` wechselt (d.h., ein Stopp-Befehl wurde gesendet),
+// aber der `wbStat` der Wallbox immer noch `Charging` anzeigt, wird `forceStopCharging()` aufgerufen.
+// NEU: Listener für wbTrans, um "hängende" Ladestati zu erkennen und zu beheben
+on({ id: IDS.wbTrans, change: "ne" }, async (obj) => {
+    // Wenn wbTrans auf false geht, aber wbStat immer noch "Charging" ist,
+    // bedeutet dies, dass der Stopp-Befehl möglicherweise nicht korrekt verarbeitet wurde.
+    if (obj.state.val === false && getState(IDS.wbStat).val === "Charging") {
+        await forceStopCharging();
+    }
+});
 // --- 6. MONITORING & STATISTIK ---
 
 /**
