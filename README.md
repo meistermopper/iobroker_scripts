@@ -3,7 +3,7 @@
 
 ![Umgebung](https://img.shields.io/badge/Umgebung-ioBroker-orange?style=flat-square)
 ![Zentrale](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.21.28-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.21.30-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung an Automatisierungsskripten für ioBroker. Die Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -88,28 +88,15 @@ Die Verwaltung der Skripte erfolgt getrennt nach Entwicklung (VS Code) und Laufz
 
 ## 📝 Changelog
 
-### [1.21.28] - 2026-05-24
+### [1.21.30] - 2026-05-24
 - Code-Optimierungen und Updates
 
-### [1.21.27] - 2026-05-24
-- Füge robusteren Ladestopp-Mechanismus hinzu und verbessere README Changelog-Updater (charge_master.js)
+### [1.21.29] - 2026-05-24
+- Aktualisiere README und entferne veraltete Changelog-Einträge; verbessere Kommentare und Übersetzungen in charge_master.js (charge_master.js)
 - Update von charge_master.js
-- Update von update_readme_changelog.js
-
-### [1.21.26] - 2026-05-24
-- Code-Optimierungen und Updates
 
 ### [1.21.25] - 2026-05-24
-- Updated charge_master.js (Füge robusteren Ladestopp-Mechanismus hinzu und verbessere Fehlerbehandlung bei "hängendem" Wallbox-Status)
-- Update von charge_master.js
-
-### [1.21.24] - 2026-05-23
-- Code-Optimierungen und Updates
-
-### [1.21.22] - 2026-05-23
-- Updated zustand_r2maeh2.js (Aktualisiere README.md und entferne veralteten Changelog-Eintrag; verbessere Logik zur Handhabung von Changelog-Einträgen in update_readme_changelog.js und passe Kommentare in zustand_r2maeh2.js an)
-- Update von zustand_r2maeh2.js
-- Update von update_readme_changelog.js
+- Added robust charging stop mechanism and improved error handling for "hanging" wallbox status (charge_master.js)
 
 ### [1.21.11] - 2026-05-23
 - Updated update_readme_changelog.js (Versioning has been optimized)
