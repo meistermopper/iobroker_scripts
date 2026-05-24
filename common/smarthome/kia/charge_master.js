@@ -24,7 +24,7 @@
  * =============================================================================
  */
 
-// --- 1. SETUP: DIE DIGITALE NERVENZENTRALE (21 DATENPUNKTE) ---
+// --- 1. SETUP: DIGITAL NERVE CENTER (21 DATA POINTS) ---
 
 const VIN = "bluelink.0.KNAFD81A7S6058382";
 const PATH_USER = "0_userdata.0.Energie.Kia_e_niro";
@@ -69,7 +69,7 @@ const IDS = {
   u_origSoc: `${PATH_USER}.LastOriginalMinSoc`, // [PERSISTENCE] Merker für Batterie-Schutz
 };
 
-// --- PARAMETER ---
+// --- PARAMETERS ---
 const PV_START_LIMIT = 4600; // Startschwelle (Sonne muss > 4,6kW + Puffer liefern)
 const PV_STOP_LIMIT = 4000;  // Stoppschwelle (Ladevorgang pausieren, wenn Überschuss sinkt)
 const FIXED_CHARGE_W = 3960; // Fixe Leistung bei 6A (220V * 3 Phasen * 6A)
@@ -95,7 +95,7 @@ let isStartingSequenceActive = false;
 // [NEW] Lock variable to prevent multiple concurrent forced stop executions.
 let isForceStopping = false;
 
-// --- 2. INITIALISIERUNG ---
+// --- 2. INITIALIZATION ---
 
 async function initLadeSystem() {
   // Erstellt nur noch die für diese Version nötigen Punkte
@@ -136,7 +136,7 @@ async function initLadeSystem() {
 }
 initLadeSystem();
 
-// --- 2.1 HILFSFUNKTION: AKTUELLE LEISTUNGSMETRIKEN ABFRAGEN ---
+// --- 2.1 HELPER: GET CURRENT POWER METRICS ---
 /**
  * Sammelt alle relevanten Leistungs- und SoC-Werte aus den Datenpunkten.
  * Stellt sicher, dass die Werte als Zahlen vorliegen.
@@ -150,7 +150,7 @@ function getPowerMetrics() {
     };
 }
 
-// --- 3. KOMMUNIKATION ---
+// --- 3. COMMUNICATION ---
 
 /**
  * Führt die intelligente Start-Sequenz der Wallbox aus.
@@ -274,7 +274,7 @@ function ev3Notify(text, prio = 1, spoken = null) {
   }
 }
 
-// --- 4. SMART PV-GLÄTTUNG (EMA) ---
+// --- 4. SMART PV SMOOTHING (EMA) ---
 
 /**
  * Errechnet den Durchschnitt der PV-Leistung zur Stabilisierung der Regelung.
@@ -300,7 +300,7 @@ schedule("* * * * *", async () => {
   setState(IDS.pvAverage, Math.round(newAvg), true);
 });
 
-// --- 5. AUTOMATIONS-LOGIK (PV-ÜBERSCHUSS) ---
+// --- 5. AUTOMATION LOGIC (PV SURPLUS) ---
 
 /**
  * Überwacht den PV-Durchschnitt und schaltet die Ladung automatisch,
@@ -363,7 +363,7 @@ on({ id: IDS.wbTrans, change: "ne" }, async (obj) => {
         await forceStopCharging();
     }
 });
-// --- 6. MONITORING & STATISTIK ---
+// --- 6. MONITORING & STATISTICS ---
 
 /**
  * Erfasst Ladedauer und setzt die Leistungsanzeige.
@@ -461,7 +461,7 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
   }
 });
 
-// --- 7. ZUSATZFUNKTIONEN ---
+// --- 7. ADDITIONAL FUNCTIONS ---
 
 /**
  * Verbindungswächter: Überwacht die Erreichbarkeit der Wallbox.
