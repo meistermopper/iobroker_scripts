@@ -10,21 +10,21 @@ This repository contains my personal collection of automation scripts for ioBrok
 ## 📂 Struktur
 The scripts are logically organized by rooms and functions:
 
-### ⚡ Energie & Laden
+### ⚡ Energy & Charging
 * **EV Charging Master (`charge_master.js`)**: Manages focused start/stop for Kia EV3 charging based on PV surplus or manual input. Includes battery protection for the house battery during manual charging, robust stop mechanisms for hanging wallbox states, connection monitoring, and intelligent wallbox resets to ensure reliable charging. Optimizes time formatting, kilometer calculation, and provides detailed statistics.
 * **Harvia Sauna Control (`Fenix_FX110C_Sauna_control.js`)**: Provides full remote control of the Harvia Fenix FX 110C sauna, including heating, lighting, and temperature settings via REST API. Features robust token management, error handling, and real-time status monitoring.
 * **Smart Charging (`fully_smart_laden.js`, `smartphones_laden.js`)**: Intelligent charging control for wall-mounted tablets and smartphones to protect battery life (e.g., 30-70% strategy) and manage automatic display shutdown. Includes self-healing data points, smart notifications, and voice control triggers.
 * **Solar Forecast**: Visualizes today's and tomorrow's solar energy production values.
 * **UPS Management**: Secures and restores the state of lights and sockets after a power outage (`hue_zigbee_states_restore.js`).
 
-### 💡 Licht & Präsenz
+### 💡 Light & Presence
 * **Room Logic**: Presence and brightness-dependent lighting control for various areas:
     * **Lower Bathroom**: Scenes for morning and standard lighting with dimming pre-warning (`licht_bewegung_dunkel.js`).
     * **Wardrobe (`garderobenlicht.js`)**: Simple "Presence Follower" logic, ensuring lights efficiently match the state of the presence detector.
     * **Kitchen**: Day and night modes with staggered switching of spots and Hue lamps (`licht_presence.js`).
     * **Living Room**: Brightness and media-dependent lighting control.
 
-### 🏡 Haushalt & Außenbereich
+### 🏡 Home & Outdoor
 * **Mailbox Monitor (`post_da.js`)**: Notifies upon mail delivery with voice announcements and updates VIS status. Prevents duplicate notifications and handles day/night modes for announcements.
 * **Robotic Mower Control (R2Mäh2) (`zustand_r2maeh2.js`)**: Monitors mower status via power consumption, sends notifications (start, end, issues, frost warning), performs voice announcements, and calculates daily statistics and electricity costs.
 * **Bathroom Dehumidification (`heizen_rh.js`)**: Controls underfloor heating in the bathroom to reduce humidity after showering (mold prevention). Activates heating to 24°C when humidity rises, with window protection and automatic reset to previous or default temperatures.
@@ -48,7 +48,7 @@ The scripts are logically organized by rooms and functions:
 * **Proxmox Cluster Master Watchdog**: Monitors temperature, hard drives & status - sends alarms to ALL Telegram users and Gotify.
 * **Football Bundesliga**: Displays the current table and upcoming matches for SGE and FCB using the OpenLigaDB adapter.
 
-### 📺🎵 Medien
+### 📺🎵 Media
 * **Media Selection**: Controlled via voice command and Google Home.
 * **Ziegenhain Navigation Broadcast (`ziegenhain.js`)**: Triggers a humorous voice announcement across all active SayIt instances in the house in response to a specific voice command.
 
@@ -61,7 +61,6 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 * **Git Status**: Maintained on the server and GitHub.
 * **Deployment (Go Live)**: Transfer to ioBroker is done manually via the ioBroker Extension.
 
-### Täglicher Workflow
 ### Daily Workflow
 1. **Edit**: Make changes directly in VS Code.
 2. **Activate**: Use the upload arrow in the ioBroker sidebar.
@@ -70,7 +69,7 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 ---
 
 ## ⚙️ Setup
-* ioBroker mit installiertem JavaScript-Adapter
+* ioBroker
 * VS Code with the **ioBroker Extension**.
 * Git & GitLens for version control.
 
@@ -84,9 +83,6 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 ---
 
 ## 📝 Changelog
-
-### [1.21.31] - 2026-05-24
-- Code-Optimierungen und Updates
 
 ### [1.21.25] - 2026-05-24
 - Added robust charging stop mechanism and improved error handling for "hanging" wallbox status (charge_master.js)
