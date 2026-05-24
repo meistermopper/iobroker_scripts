@@ -17,14 +17,14 @@ The scripts are logically organized by rooms and functions:
 * **Solar Forecast**: Visualizes today's and tomorrow's solar energy production values.
 * **UPS Management**: Secures and restores the state of lights and sockets after a power outage (`hue_zigbee_states_restore.js`).
 
-### 💡 Licht & Präsenz
+### 💡 Light & Presence
 * **Room Logic**: Presence and brightness-dependent lighting control for various areas:
     * **Lower Bathroom**: Scenes for morning and standard lighting with dimming pre-warning (`licht_bewegung_dunkel.js`).
     * **Wardrobe (`garderobenlicht.js`)**: Simple "Presence Follower" logic, ensuring lights efficiently match the state of the presence detector.
     * **Kitchen**: Day and night modes with staggered switching of spots and Hue lamps (`licht_presence.js`).
     * **Living Room**: Brightness and media-dependent lighting control.
 
-### 🏡 Haushalt & Außenbereich
+### 🏡 Home & Outdoor
 * **Mailbox Monitor (`post_da.js`)**: Notifies upon mail delivery with voice announcements and updates VIS status. Prevents duplicate notifications and handles day/night modes for announcements.
 * **Robotic Mower Control (R2Mäh2) (`zustand_r2maeh2.js`)**: Monitors mower status via power consumption, sends notifications (start, end, issues, frost warning), performs voice announcements, and calculates daily statistics and electricity costs.
 * **Bathroom Dehumidification (`heizen_rh.js`)**: Controls underfloor heating in the bathroom to reduce humidity after showering (mold prevention). Activates heating to 24°C when humidity rises, with window protection and automatic reset to previous or default temperatures.
