@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.21.45-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.21.46-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -84,12 +84,11 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
-### [1.21.45] - 2026-05-25
+### [1.21.46] - 2026-05-25
 - Code-Optimierungen und Updates
 
 ### [1.21.44] - 2026-05-25
 - Aktualisiere Changelog und übersetze Benachrichtigungen in charge_master.js ins Deutsche (charge_master.js)
-- Update von charge_master.js
 
 ### [1.21.42] - 2026-05-25
 - Repariere Alias-Ziele in Abendlicht-Skripten und passe Datentypen für Google Home an (abendlicht_TV_Wind_aus.js, switch_abendlicht.js)
