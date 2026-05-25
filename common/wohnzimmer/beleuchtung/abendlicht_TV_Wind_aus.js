@@ -3,8 +3,8 @@ const ID_TRIGGER_ABENDLICHT = "0_userdata.0.Licht.Wohnzimmer.Abendlicht";
 
 const ALIASE = {
   FERNSEHLICHT: "alias.0.wohnzimmer.licht.fernsehlicht.POWER",
-  HUE_EI: "alias.0.wohnzimmer.licht.ei.command",
-  HUE_KOMMODE: "alias.0.wohnzimmer.licht.kommode.command",
+  HUE_EI: "alias.0.licht.ei.command",
+  HUE_KOMMODE: "alias.0.licht.kommode.command",
   GALAXIE: "alias.0.wohnzimmer.licht.Galaxie.POWER",
   VENTILATOR: "alias.0.wohnzimmer.klima.ventilator.1", // "1" laut deinem Screenshot
   MARANTZ: "alias.0.wohnzimmer.media.marantz.power",

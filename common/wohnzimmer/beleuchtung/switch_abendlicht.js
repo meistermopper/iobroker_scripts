@@ -57,7 +57,9 @@ function repairAndHide() {
       {
         type: "state",
         common: {
-          smartName: false, // Versteckt den Datenpunkt vor Google Home
+          type: "string", // Hue Commands sind JSON-Strings
+          role: "text",   // Verhindert, dass der Adapter den Typ als Lampe fehlinterpretiert
+          smartName: null, // Entfernt den Datenpunkt sicher aus Google Home / Alexa
         },
         native: {
           alias: {
