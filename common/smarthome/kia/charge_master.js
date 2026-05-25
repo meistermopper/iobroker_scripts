@@ -79,6 +79,7 @@ const GOTIFY_TOKEN = getState("0_userdata.0.gotifytoken.iobroker").val;
 
 // --- TIMING KONSTANTEN ---
 const DEBOUNCE_STOP_MS = 45000;  // 45 sec wait before final stop
+const RECONNECT_WB_MS = 180000;  // 3 min wait before WiFi reconnect
 // [NEW] Delay before retrying the stop command after the first attempt.
 const FORCE_STOP_RETRY_DELAY_MS = 5000;
 // [NEW] Delay during the availability toggle to give the wallbox time to process.
