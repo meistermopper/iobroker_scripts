@@ -175,7 +175,7 @@ async function triggerStartSequence(reason = "PV-Surplus") {
       setState(IDS.wbAvail, true);
       await wait(3500); // Increased buffer for OCPP handshake
       setState(IDS.wbTrans, true);
-      ev3Notify(`🔋 EV3 charging activated via ${reason} at 6A`);
+      ev3Notify(`🔋 EV3-Ladung aktiviert via ${reason} mit 6A`);
   } finally {
       isStartingSequenceActive = false;
   }
@@ -216,14 +216,14 @@ async function forceStopCharging() {
             // Wait before retrying stop
             await wait(FORCE_STOP_AVAILABILITY_TOGGLE_DELAY_MS);
             setState(IDS.wbTrans, false);
-            ev3Notify("⚠️ Wallbox charge stop forced (Availability Reset).", 3);
+            ev3Notify("⚠️ Wallbox Ladestop erzwungen (Availability Reset).", 3);
             console.log("[EV3 Master] Force stop attempt 2 completed.");
         } else {
             console.log("[EV3 Master] Forced charging stop successful on first attempt.");
         }
     } catch (e) {
         console.error(`[EV3 Master] Error during forced charging stop: ${e.message}`);
-        ev3Notify(`❌ Error during forced stop: ${e.message}`, 5);
+        ev3Notify(`❌ Fehler beim erzwungenen Ladestopp: ${e.message}`, 5);
     } finally {
         isForceStopping = false;
         if (stopTimer) {
@@ -235,12 +235,12 @@ async function forceStopCharging() {
         if (startZeitLaden) {
             const stats = updateChargeStatistics(Date.now() - startZeitLaden);
             setState(IDS.u_timeDay, stats.totalMinToday, true);
-            ev3Notify(`❌ Charging ended (forced). Charged today: ${stats.formattedTime} (+approx. ${stats.kmToday} km)`, 1);
+            ev3Notify(`❌ Ladung beendet (forced). Heute geladen: ${stats.formattedTime} (+approx. ${stats.kmToday} km)`, 1);
             startZeitLaden = null; setState(IDS.u_startTs, 0, true);
         }
         if (originalMinSoc !== null) {
             setState(IDS.minSocSet, Math.max(0, originalMinSoc));
-            ev3Notify(`🔌 House battery released at ${originalMinSoc}% after forced stop.`);
+            ev3Notify(`🔌 Hausbatterie MinSoc auf ${originalMinSoc}% nach erzwungenem Stop eingestellt.`);
             originalMinSoc = null; setState(IDS.u_origSoc, 0, true);
         }
     }
@@ -326,7 +326,7 @@ function checkPvAutomation() {
 
   // START: Enough sun (>4.6kW) and house storage well filled (>75%)
   if (!isTransActive && !isStartingSequenceActive && mittel > PV_START_LIMIT && batSoc > 75 && evSoc < limitCar) {
-      triggerStartSequence("PV-Automatic");
+      triggerStartSequence("PV-Automatik");
   }
 
   // STOP: Surplus drops below charging power (pause)
@@ -417,7 +417,7 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       const currentBatSoc = getState(IDS.batSocPV).val;
       // Ensure MinSoc doesn't drop below 0
       setState(IDS.minSocSet, Math.max(0, currentBatSoc));
-      const msg = `Manual charging started. House battery locked at ${currentBatSoc}% (was: ${originalMinSoc}%)`;
+      const msg = `Manuelles Laden gestartet. MinSoc auf ${currentBatSoc}% (vorher: ${originalMinSoc}%)`;
       console.log(`[EV3 Master] ${msg}`);
       ev3Notify(`🔋 ${msg}`);
     }
@@ -436,7 +436,7 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       if (!isAuto && originalMinSoc !== null) {
         // Ensure MinSoc doesn't drop below 0
         setState(IDS.minSocSet, Math.max(0, originalMinSoc));
-        const msg = `Manual charging ended. House battery released to ${originalMinSoc}%.`;
+        const msg = `EV3 Manuelles Laden beendet. Hausbatterie MinSoc wieder auf ${originalMinSoc}% gestellt.`;
         console.log(`[EV3 Master] ${msg}`);
         ev3Notify(`🔌 ${msg}`);
         originalMinSoc = null;
@@ -448,9 +448,9 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       setState(IDS.u_timeDay, stats.totalMinToday, true);
 
       ev3Notify(
-        `❌ Charging ended. Charged today: ${stats.formattedTime} (+approx. ${stats.kmToday} km)`,
+        `❌ EV3 Ladung beendet. Heute geladen: ${stats.formattedTime} (+approx. ${stats.kmToday} km)`,
         1,
-        `Charging finished. Charged today: ${stats.spokenTime}. Range approx. ${stats.kmToday} kilometers.`
+        `Ladung beendet. Heute geladen: ${stats.spokenTime}. Reichweite approx. ${stats.kmToday} Kilometer.`
       );
 
       startZeitLaden = null;
