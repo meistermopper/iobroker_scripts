@@ -85,13 +85,8 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 ## 📝 Changelog
 
 ### [1.22.1] - 2026-05-26
+- Nach neuer Firmware der UDM Pro v5.1.12 flutet der Chromecast-Adapter das log mit nicht antwortenden Heos-Geräten
 - Aktualisiere HEOS-Filter: Entferne veraltete Gerätenamen, füge Hilfsfunktion für Verzögerungen hinzu und verbessere die Überprüfung von Zuständen. Aktualisiere Versionsnummer auf 1.22.0. (chromecast_ban_heos.js)
-
-### [1.21.54] - 2026-05-26
-- Aktualisiere Chromecast Cleaner & HEOS-Schutzschild: Verbessere die Fehlerbehandlung, füge neue Filter für IPs und IDs hinzu, und implementiere eine Tiefenreinigung zur Stabilisierung des Adapters. (chromecast_ban_heos.js)
-
-### [1.21.51] - 2026-05-26
-- Aktualisiere HEOS-Filter: Füge zusätzliche verbotene Gerätenamen und IDs hinzu, verbessere Namensprüfung und reduziere Wartezeit vor der Löschung (chromecast_ban_heos.js)
 
 ### [1.21.47] - 2026-05-25
 - Aktualisiere Benachrichtigungstext für volle Stromspeicher in batterie_voll.js (batterie_voll.js)
