@@ -12,14 +12,16 @@
 // Liste der explizit unerwünschten Geräte-Namen (z.B. HEOS)
 const bannedDeviceNames = [
     'HEOS Sauna',
+    'HEOS_Sauna',
     'Marantz CINEMA 60',
+    'Marantz_CINEMA_60',
     'Heos5'
 ];
 
 // Liste der IDs, die auf jeden Fall ignoriert werden sollen
 const bannedDeviceIds = [
-    '0005cd77e0a8', // Marantz CINEMA 60
-    '000678ef039d'  // HEOS Sauna
+    '0005cd77e0a8', // HEOS Sauna
+    '000678ef039d'  // Marantz CINEMA 60
 ];
 
 // Die Instanz des Adapters
@@ -51,8 +53,6 @@ function cleanUpDevice(devicePath, reason) {
  * @param {string} fullId - Die vollständige ID des States
  */
 function checkAndFilter(name, fullId) {
-    if (!name || typeof name !== 'string') return;
-
     // Wir extrahieren den Gerätepfad aus der State-ID
     // (von "chromecast.0.id.name" zu "chromecast.0.id")
     const parts = fullId.split('.');
@@ -69,25 +69,28 @@ function checkAndFilter(name, fullId) {
         reason = `Geräte-ID '${deviceId}' steht auf der schwarzen Liste`;
     }
 
-    // Prüfung 2: Ist es in der HEOS-Verbotsliste (Name)?
-    // Wir normalisieren Unterstriche zu Leerzeichen, da der Adapter hier variiert (z.B. HEOS_Sauna vs HEOS Sauna)
-    const normalizedName = name.trim().replace(/_/g, ' ');
-    if (!shouldDelete && bannedDeviceNames.includes(normalizedName)) {
-        shouldDelete = true;
-        reason = `Gerät '${name}' steht auf der Verbotsliste (HEOS-Filter)`;
-    }
+    // Prüfungen, die einen gültigen Namen erfordern
+    if (!shouldDelete && name && typeof name === 'string') {
+        // Prüfung 2: Ist es in der HEOS-Verbotsliste (Name)?
+        // Wir normalisieren Unterstriche zu Leerzeichen, da der Adapter hier variiert
+        const normalizedName = name.trim().replace(/_/g, ' ');
+        if (bannedDeviceNames.includes(normalizedName)) {
+            shouldDelete = true;
+            reason = `Gerät '${name}' steht auf der Verbotsliste (HEOS-Filter)`;
+        }
 
-    // Prüfung 3: Ist der Eintrag als unvollständig markiert?
-    if (!shouldDelete && name.includes('(unvollständig)')) {
-        shouldDelete = true;
-        reason = 'Unvollständiger Eintrag erkannt (Chromecast-Fehler)';
+        // Prüfung 3: Ist der Eintrag als unvollständig markiert?
+        if (!shouldDelete && name.includes('(unvollständig)')) {
+            shouldDelete = true;
+            reason = 'Unvollständiger Eintrag erkannt (Chromecast-Fehler)';
+        }
     }
 
     if (shouldDelete) {
         // Wir warten kurz, um dem Adapter Zeit für interne Prozesse zu lassen
         setTimeout(() => {
             cleanUpDevice(devicePath, reason);
-        }, 5000);
+        }, 1000);
     }
 }
 
