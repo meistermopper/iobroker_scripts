@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.21.53-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.21.55-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -83,6 +83,13 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 ---
 
 ## 📝 Changelog
+
+### [1.21.55] - 2026-05-26
+- Code-Optimierungen und Updates
+
+### [1.21.54] - 2026-05-26
+- Aktualisiere Chromecast Cleaner & HEOS-Schutzschild: Verbessere die Fehlerbehandlung, füge neue Filter für IPs und IDs hinzu, und implementiere eine Tiefenreinigung zur Stabilisierung des Adapters. (chromecast_ban_heos.js)
+- Update von chromecast_ban_heos.js
 
 ### [1.21.53] - 2026-05-26
 - Code-Optimierungen und Updates
