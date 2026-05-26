@@ -40,8 +40,7 @@ const bannedDeviceNames = [
 // Dies ist unsere "zweite Verteidigungslinie", falls der Name noch nicht geladen wurde.
 const bannedDeviceIds = [
     '0005cd77e0a8', // HEOS Sauna
-    '000678ef039d', // Marantz CINEMA 60
-    'b87bd4deaa73'  // Dubletten-ID aus Logs
+    '000678ef039d' // Marantz CINEMA 60
 ];
 
 // Da deine HEOS-Geräte feste IPs haben, ist dies der sicherste Filter.
