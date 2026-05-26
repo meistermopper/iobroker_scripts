@@ -32,9 +32,7 @@
 // (Wird zur Prüfung normalisiert: Unterstriche werden zu Leerzeichen)
 const bannedDeviceNames = [
     'HEOS Sauna',
-    'HEOS_Sauna',
     'Marantz CINEMA 60',
-    'Marantz_CINEMA_60',
     'Heos5'
 ];
 
@@ -53,6 +51,11 @@ const bannedIPs = [
     '192.168.178.32',  // Beispiel: Marantz
     '192.168.178.34'   // Heos5
 ];
+
+/**
+ * Hilfsfunktion für Verzögerungen
+ */
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Ziel-Instanz, die überwacht wird
 const adapterInstance = 'chromecast.0';
@@ -171,6 +174,10 @@ function checkAndFilter(val, fullId) {
 /**
  * TIEFENREINIGUNG: Stoppt den Adapter, löscht alle Leichen im ioBroker-Baum und startet neu.
  * Dies ist die einzige Methode, um den internen Cache des Adapters sicher zu leeren.
+ *
+ * HINWEIS: Wir verwenden 'neutralizeDevice' auch hier, da ein hartes Löschen
+ * von Objekten im ioBroker oft zu Folgefehlern in Adaptern führt, die ihre
+ * Objekte beim Start nicht sauber neu initialisieren.
  */
 async function performDeepClean() {
     if (isRepairing) return;
@@ -296,11 +303,11 @@ log('Chromecast-Cleaner & HEOS-Schutzschild aktiv', 'info');
 // Alle ".name" Zustände prüfen
 $(adapterInstance + '.*.name').each(function(id) {
     const val = getState(id).val;
-    checkAndFilter(val, id);
+    if (val !== null && val !== undefined) checkAndFilter(val, id);
 });
 
 // Alle ".address" Zustände prüfen
 $(adapterInstance + '.*.address').each(function(id) {
     const val = getState(id).val;
-    checkAndFilter(val, id);
+    if (val !== null && val !== undefined) checkAndFilter(val, id);
 });
