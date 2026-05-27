@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-2.0.2-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.3-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -84,36 +84,14 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
+### [2.0.3] - 2026-05-27
+- Code-Optimierungen und Updates
+
 ### [2.0.2] - 2026-05-27
 - Code-Optimierungen und Updates
 
 ### [2.0.1] - 2026-05-27
 - Refactor notification system to use centralized global notify function (heizen_rh.js, heizen_rh.js, radio.js, muellmeldung.js, post_da.js, zustand_r2maeh2.js, Wasserdruckwarnung.js, alarmmelder.js, playerstate.js, vu_reboot_standby.js, energiemaster_und_sauna.js, script_verwaltung.js, ziegenhain.js, ap_management.js, dyndns_fail.js, failover_dyndns_master.js, neue_ip_failover.js, usv_wartung_eaton_buero.js, device_not_available.js, radio_heos.js, video_auto_aus.js, fully_smart_laden.js, smartphones_laden.js, google_utils.js, notify.js)
-- Update von heizen_rh.js
-- Update von heizen_rh.js
-- Update von radio.js
-- Update von muellmeldung.js
-- Update von post_da.js
-- Update von zustand_r2maeh2.js
-- Update von Wasserdruckwarnung.js
-- Update von alarmmelder.js
-- Update von playerstate.js
-- Update von vu_reboot_standby.js
-- Update von energiemaster_und_sauna.js
-- Update von script_verwaltung.js
-- Update von ziegenhain.js
-- Update von ap_management.js
-- Update von dyndns_fail.js
-- Update von failover_dyndns_master.js
-- Update von neue_ip_failover.js
-- Update von usv_wartung_eaton_buero.js
-- Update von device_not_available.js
-- Update von radio_heos.js
-- Update von video_auto_aus.js
-- Update von fully_smart_laden.js
-- Update von smartphones_laden.js
-- Update von google_utils.js
-- Update von notify.js
 
 ### [1.22.7] - 2026-05-27
 - Changelog aktualisiert und Whitelist für Geräte-IDs im Chromecast-Adapter hinzugefügt (muellmeldung.js, post_da.js, zustand_r2maeh2.js, chromecast_ban_heos.js)
