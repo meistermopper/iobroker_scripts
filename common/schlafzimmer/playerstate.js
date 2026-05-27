@@ -3,34 +3,9 @@
 // =============================================================================
 
 // --- KONFIGURATION ---
-const ID_DEVICE_CONNECTED = "chromecast.0.Mini-Schlazi.status.connected";
-const INSTANCE_TELEGRAM = "telegram.0";
-const GOTIFY_SERVER = "mygotify.meistermopper.de";
-const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";
+const ID_DEVICE_CONNECTED = "chromecast.0.Mini-Schlazi.status.connected"; // Beispiel: Mini-Schlazi
 
 let miniTimeout = null;
-
-// --- HILFSFUNKTION: GOTIFY DIREKT ---
-function sendToGotify(title, message, priority) {
-  const token = getState(ID_GOTIFY_TOKEN).val;
-  if (!token) {
-    console.warn(
-      "Gotify-Monitor: Kein Token in " + ID_GOTIFY_TOKEN + " gefunden!",
-    );
-    return;
-  }
-
-  const url = `https://${GOTIFY_SERVER}/message?token=${token}`;
-  const body = {
-    title: title,
-    message: message,
-    priority: priority,
-  };
-
-  httpPost(url, body, (err, response) => {
-    if (err) console.error("Gotify Fehler: " + err);
-  });
-}
 
 // --- MONITOR LOGIK ---
 on({ id: ID_DEVICE_CONNECTED, change: "ne" }, (obj) => {
@@ -47,11 +22,8 @@ on({ id: ID_DEVICE_CONNECTED, change: "ne" }, (obj) => {
           const notifyText =
             "⚠️ Der Google Mini im Schlafzimmer hat seit zwei Minuten keine WLAN-Verbindung.";
 
-          // 1. Telegram senden
-          sendTo(INSTANCE_TELEGRAM, "send", { text: notifyText });
-
-          // 2. Gotify senden
-          sendToGotify("ioBroker Status", notifyText, 1);
+          // Globale Benachrichtigung
+          sendGlobalNotify(notifyText, "ioBroker Status", 1);
 
           // 3. Log-Eintrag
           console.warn(notifyText);

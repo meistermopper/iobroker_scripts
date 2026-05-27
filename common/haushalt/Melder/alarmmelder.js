@@ -25,18 +25,11 @@ async function sendeAlarm(id) {
     sperreAktiv[id] = true;
     setTimeout(() => { sperreAktiv[id] = false; }, SPERRE_DAUER);
 
-    const gotifyToken = getState('0_userdata.0.gotifytoken.iobroker').val;
     const telegramText = `${sensor.icon} +++ Alarm! ${sensor.msg} +++ ${sensor.icon}`;
     const sprachText = `Alarm! Alarm! ${sensor.msg}`;
 
-    // 1. Telegram
-    sendTo('telegram', 'send', { text: telegramText });
-
-    // 2. Gotify
-    exec(`curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=GEFAHR: ${sensor.type.toUpperCase()}" -F "message=${sensor.msg}" -F "priority=8"`);
-
-    // 3. SayIt
-    sendTo("sayit", "say", { text: sprachText, volume: 60 });
+    // Globale Benachrichtigung mit hoher Priorität und Sprachausgabe
+    await sendGlobalNotify(telegramText, `GEFAHR: ${sensor.type.toUpperCase()}`, 8, 60);
 
     // 4. Loggen
     console.warn(`ALARM AUSGELÖST: ${telegramText}`);

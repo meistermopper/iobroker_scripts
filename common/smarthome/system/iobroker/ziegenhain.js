@@ -39,26 +39,7 @@ on({ id: ID_TRIGGER, val: true, change: 'any' }, (obj) => {
         const message = 'Okay, die Route nach Ziegenhain wird berechnet!';
         const defaultVolume = 50; // Standardlautstärke für die Ansage
 
-        /**
-         * DYNAMISCHE SUCHE DER AUSGABEGERÄTE:
-         * Wir suchen alle aktiven (alive) SayIt-Instanzen.
-         * Dies folgt der Logik aus dem Raumklima-Skript, die sich als stabil erwiesen hat.
-         */
-        $(`system.adapter.sayit.*.alive`).each(function (id) {
-            const sayitInstance = id.split('.').slice(2, 4).join('.');
-            const state = getState(id);
-
-            if (state && state.val === true) {
-                try {
-                    sendTo(sayitInstance, "say", {
-                        text: message,
-                        volume: defaultVolume
-                    });
-                } catch (e) {
-                    log(`Navigation: Fehler beim Senden an ${sayitInstance}: ${e}`, 'error');
-                }
-            }
-        });
+        sendGlobalNotify(message, "Navigation", 1, defaultVolume);
 
         /**
          * TRIGGER ZURÜCKSETZEN:

@@ -13,26 +13,7 @@
 const CONFIG = {
     daysLeft: 'trashschedule.0.next.daysLeft',
     trashTypes: 'trashschedule.0.next.typesText',
-    gotifyToken: '0_userdata.0.gotifytoken.iobroker',
-    gotifyUrl: 'https://mygotify.meistermopper.de/message'
 };
-
-// --- 2. HILFSFUNKTIONEN ---
-
-/**
- * Sendet eine Benachrichtigung an Telegram und Gotify.
- * @param {string} message - Die zu sendende Nachricht.
- */
-function notify(message) {
-    // 1. An Telegram senden
-    sendTo('telegram.0', 'send', { text: `🚮 ${message}` });
-
-    // 2. An Gotify senden
-    const token = getState(CONFIG.gotifyToken).val;
-    if (token) {
-        exec(`curl "${CONFIG.gotifyUrl}?token=${token}" -F "title=ioBroker: Müll" -F "message=🚮 ${message}" -F "priority=5"`);
-    }
-}
 
 // --- 3. HAUPTLOGIK ---
 
@@ -44,14 +25,7 @@ schedule("0 18 * * 0-5", async () => {
         const muellSorte = getState(CONFIG.trashTypes).val;
         const muellText = `Morgen wird ${muellSorte} abgeholt.`;
 
-        // Benachrichtigungen (Text & Sprache) senden
-        notify(muellText);
-
-        // Sprachausgabe mit Fallback
-        if (typeof googleWatchdogAnnounce === 'function') {
-            await googleWatchdogAnnounce(muellText, 40);
-        } else {
-            sendTo("sayit", "say", { text: muellText, volume: 40 });
-        }
+        // Globale Benachrichtigung mit Sprachausgabe
+        await sendGlobalNotify(`🚮 ${muellText}`, "Müll", 5, 40);
     }
 });

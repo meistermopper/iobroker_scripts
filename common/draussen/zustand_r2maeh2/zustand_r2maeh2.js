@@ -33,8 +33,6 @@ const IDS = {
     userMittel: '0_userdata.0.Energie.R2Mäh2.Durchschnitt',
     userMittelKosten: '0_userdata.0.Energie.R2Mäh2.Durchschnittskosten',
     price: '0_userdata.0.Energie.Strompreise.akt_Preis',
-    gotify: '0_userdata.0.gotifytoken.iobroker'
-};
 
 let stuckTimer; // Globaler Timer-Handle für die Überwachung
 
@@ -80,9 +78,8 @@ function startStuckTimer() {
     stopStuckTimer();
     stuckTimer = setTimeout(async () => {
         const msg = "Achtung: Erzwo mäh zwo mäht seit über 120 Minuten. Er ist vermutlich irgendwo liegen geblieben.";
-        notifyR2(`⚠️ ${msg}`, 2);
-        await announceIfTime(msg, 45);
-    }, MAX_MAEHZEIT_MS);
+        await sendGlobalNotify(`⚠️ ${msg}`, "R2Maeh2", 2, compareTime('08:00', '20:00', 'between') ? 45 : null); // Sprachausgabe nur tagsüber
+    }, MAX_MAEHZEIT_MS); // 2 Stunden
 }
 
 /**
@@ -106,80 +103,10 @@ function isSaison() {
     return (monat >= 2 && monat <= 9);
 }
 
-async function announceIfTime(text, vol = VOL_ANNOUNCEMENT) {
-    /**
-     * Hilfsfunktion: Führt Ansage nur im erlaubten Zeitfenster aus.
-     */
-    if (compareTime('08:00', '20:00', 'between')) {
-        await googleWatchdogAnnounce(text, vol);
-    }
-}
-
-/**
- * Zentrale Benachrichtigungsfunktion (Telegram & Gotify)
- * @param {string} text - Die Nachricht
- * @param {number} [priority=1] - Gotify Priorität (1=Leise, 2=Normal/Ton)
- */
-function notifyR2(text, priority = 1) {
-    sendTo('telegram', 'send', { text });
-    console.log(`R2Maeh2-Meldung: ${text}`);
-
-    const token = getState(IDS.gotify).val;
-    if (token) {
-        const url = `https://mygotify.meistermopper.de/message?token=${token}`;
-        const payload = {
-            title: 'ioBroker: R2Maeh2',
-            message: text,
-            priority: priority
-        };
-
-        httpPost(url, payload, { timeout: 5000 }, (error) => {S
-            if (error) console.error(`[R2Maeh2] Gotify Fehler: ${error}`);
-        });
-    }
-}
-
-/**
- * Google-Cast-Watchdog
- * Pausiert laufende Musik auf allen Chromecasts, macht die Ansage
- * und setzt die Musik danach fort.
- */
-async function googleWatchdogAnnounce(text, vol) {
-    const excludeList = ['chromecast.0.CC-Schlazi', 'chromecast.0.b87bd4deaa73'];
-
-    // 1. Die eigentliche Ansage einmalig auslösen
-    sendTo("sayit", "say", { text: text, volume: vol });
-
-    // 2. Alle Player suchen und ggf. Resume vorbereiten
-    const players = $(`chromecast.0.*.status.playerState`);
-    players.each(async function(id) {
-        const base = id.split('.status.')[0];
-
-        // Streamer ohne Audio-Funktion/Bedarf ignorieren
-        if (excludeList.includes(base)) return;
-
-        const isPlaying = (getState(id).val === 'playing');
-
-        let oldVol, oldUrl;
-
-        // Aktuellen Status sichern, um ihn später wiederherzustellen
-        if (isPlaying) {
-            oldVol = getState(base + '.player.volume').val;
-            oldUrl = getState(base + '.player.url2play').val;
-        }
-
-        // Wenn vorher Musik lief, diese nach der Wartezeit wieder starten
-        if (isPlaying && oldUrl) {
-            setStateDelayed(base + '.player.url2play', oldUrl, WARTEZEIT_RESUME_MS, false);
-            setStateDelayed(base + '.player.volume', oldVol || 30, WARTEZEIT_RESUME_MS + 500, false);
-        }
-    });
-}
-
 // --- 1. STECKDOSEN-UEBERWACHUNG ---
 on({ id: IDS.socket_state, change: 'ne' }, function (obj) {
     if (obj.state.val === false) {
-        notifyR2('❌ Die Steckdose von R2Maeh2 wurde ausgeschaltet!', 2);
+        sendGlobalNotify('❌ Die Steckdose von R2Maeh2 wurde ausgeschaltet!', "R2Maeh2", 2);
     }
 });
 
@@ -191,8 +118,12 @@ schedule("1 18 * * *", async function () {
 
     // Wenn der Strom an ist (Mäher draußen), aber Frost droht (< 5°C)
     if (pState && tState && pState.val > 10 && tState.val < 5) {
-        notifyR2('+++ ❄️ R2Maeh2 muss in den Keller. Es wird zu kalt! +++', 2);
-        await announceIfTime("Achtung, es wird zu kalt für Erzwo mäh zwo. Bitte bringe ihn in den Keller.");
+        await sendGlobalNotify(
+            '❄️ R2Maeh2 muss in den Keller. Es wird zu kalt!',
+            "R2Maeh2",
+            2,
+            compareTime('08:00', '20:00', 'between') ? 40 : null
+        );
     }
 });
 
@@ -215,8 +146,12 @@ on({ id: IDS.power, change: 'ne' }, async function (obj) {
         maeht = true;
         setState(IDS.userMaeht, true, true);
         startStuckTimer();
-        notifyR2('+++ 🚜 R2Maeh2 hat mit dem Mähen losgelegt +++');
-        await announceIfTime("ErzwoMähzwo ist fleißig");
+        await sendGlobalNotify(
+            '🚜 R2Maeh2 hat mit dem Mähen losgelegt',
+            "R2Maeh2",
+            1,
+            compareTime('08:00', '20:00', 'between') ? 40 : null
+        );
     }
     // FALL 2: MÄHER KEHRT ZURÜCK
     // Die Station erkennt den Mäher und startet den Ladevorgang (> 10W).
@@ -224,8 +159,12 @@ on({ id: IDS.power, change: 'ne' }, async function (obj) {
         maeht = false;
         setState(IDS.userMaeht, false, true);
         stopStuckTimer();
-        notifyR2('+++ 🔌 R2Maeh2 ist zurück und wird geladen +++');
-        await announceIfTime("ErzwoMähzwo wird geladen");
+        await sendGlobalNotify(
+            '🔌 R2Maeh2 ist zurück und wird geladen',
+            "R2Maeh2",
+            1,
+            compareTime('08:00', '20:00', 'between') ? 40 : null
+        );
     }
 });
 

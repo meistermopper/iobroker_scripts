@@ -27,27 +27,11 @@ const IDS = {
     heosCmd:    'heos.0.players.217493250.command',
     userSender: '0_userdata.0.heos.Bad.sender',
     userStatus: '0_userdata.0.heos.Bad.radio_status',
-    gotifyToken: '0_userdata.0.gotifytoken.iobroker',
     saunaAktiv: '0_userdata.0.Haushalt.sauna_laeuft' // WICHTIG: Verbindung zum Master
 };
 
-const GOTIFY_SERVER = 'mygotify.meistermopper.de';
 let timeoutAusschalten = null;
 let volInterval = null;
-
-// --- HILFSFUNKTIONEN ---
-
-function notify(text) {
-    sendTo('telegram', 'send', { text: `📻 Bad: ${text}` });
-    const token = getState(IDS.gotifyToken).val;
-    if (token) {
-        httpPost(`https://${GOTIFY_SERVER}/message?token=${token}`, {
-            title: "Radio Bad",
-            message: text,
-            priority: 1
-        });
-    }
-}
 
 function stopAllTimers() {
     if (timeoutAusschalten) { clearTimeout(timeoutAusschalten); timeoutAusschalten = null; }
@@ -69,14 +53,14 @@ schedule("0 21 * * *", () => {
 
     if (getState(IDS.userStatus).val) {
         if (!getState(IDS.bwm).val) {
-            setState(IDS.userStatus, false);
-            notify('🌙 Nachtruhe: Bad leer, Radio aus.');
+            setState(IDS.userStatus, false); // Radio ausschalten
+            sendGlobalNotify('🌙 Nachtruhe: Bad leer, Radio aus.', "Radio Bad", 1);
         } else {
             // Warten bis Bad verlassen wird
             const stopSub = on({ id: IDS.bwm, val: false }, () => {
                 if (!getState(IDS.saunaAktiv).val) {
-                    setState(IDS.userStatus, false);
-                    notify('🌙 Nachtruhe: Bad jetzt leer, Radio aus.');
+                    setState(IDS.userStatus, false); // Radio ausschalten
+                    sendGlobalNotify('🌙 Nachtruhe: Bad jetzt leer, Radio aus.', "Radio Bad", 1);
                 }
                 unsubscribe(stopSub);
             });
@@ -88,12 +72,12 @@ schedule("0 21 * * *", () => {
 on({ id: IDS.hueOn, change: 'gt' }, () => {
     setState(IDS.userSender, 'hr1');
     stopAllTimers();
-    
+
     // Auto-Off Timer (Nur wenn Sauna NICHT läuft)
     timeoutAusschalten = setTimeout(() => {
         if (getState(IDS.userStatus).val && !getState(IDS.saunaAktiv).val) {
-            setState(IDS.userStatus, false);
-            notify('📻 Auto-Off (30 Min)');
+            setState(IDS.userStatus, false); // Radio ausschalten
+            sendGlobalNotify('📻 Auto-Off (30 Min)', "Radio Bad", 1);
         }
     }, 1800000);
 });
@@ -104,16 +88,16 @@ on({ id: IDS.hueOff, change: 'gt' }, () => {
 });
 
 // 4. LAUTSTÄRKE (Hue Dimming)
-on({ id: IDS.hueUp, change: 'gt' }, () => { 
-    if (volInterval) clearInterval(volInterval); 
-    volInterval = setInterval(() => changeVolume(2), 250); 
+on({ id: IDS.hueUp, change: 'gt' }, () => {
+    if (volInterval) clearInterval(volInterval);
+    volInterval = setInterval(() => changeVolume(2), 250);
 });
-on({ id: IDS.hueDown, change: 'gt' }, () => { 
-    if (volInterval) clearInterval(volInterval); 
-    volInterval = setInterval(() => changeVolume(-2), 250); 
+on({ id: IDS.hueDown, change: 'gt' }, () => {
+    if (volInterval) clearInterval(volInterval);
+    volInterval = setInterval(() => changeVolume(-2), 250);
 });
-on({ id: IDS.hueStop, change: 'gt' }, () => { 
-    if (volInterval) { clearInterval(volInterval); volInterval = null; } 
+on({ id: IDS.hueStop, change: 'gt' }, () => {
+    if (volInterval) { clearInterval(volInterval); volInterval = null; }
 });
 
 // 5. PLAY/STOP LOGIK
@@ -144,6 +128,6 @@ on({ id: IDS.userSender, change: 'any' }, (obj) => {
         }
 
         setStateDelayed(IDS.userStatus, true, 1000, false);
-        notify(`▶️ ${sender.name} läuft.`);
+        sendGlobalNotify(`▶️ ${sender.name} läuft.`, "Radio Bad", 1);
     }
 });

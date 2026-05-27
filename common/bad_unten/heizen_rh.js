@@ -27,25 +27,11 @@ const ID_HEATING_MODE =
   "vaillant.0.44c040a5-2e4f-4933-b508-22584e0854c2.configuration.zones01.heating.operationModeHeating";
 const ID_ENTFEUCHTEN_VOTUM =
   "0_userdata.0.Heizen.Feuchte.Bad_unten.entfeuchten";
-const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";
 
 // Initialisierung mit Sicherheitscheck
 // Falls das Skript startet, während das Fenster offen ist (10°C), setzen wir 21°C als Default-Rückkehrwert.
 let vorigesTemperaturLevel = getState(ID_SET_TEMP).val > 12 ? getState(ID_SET_TEMP).val : 21;
 let istAmEntfeuchten = false; // Status-Variable: Befinden wir uns gerade im Entfeuchtungs-Modus?
-
-/**
- * Hilfsfunktion für Benachrichtigungen via Telegram und Gotify.
- * @param {string} msg - Die zu sendende Nachricht.
- */
-function sendeMeldung(msg) {
-  //console.warn(`[Bad Entfeuchtung] ${msg}`);
-  sendTo("telegram", "send", { text: msg });
-
-  const token = getState(ID_GOTIFY_TOKEN).val;
-  const url = `https://mygotify.meistermopper.de/message?token=${token}`;
-  exec(`curl "${url}" -F "title=ioBroker" -F "message=${msg}" -F "priority=1"`);
-}
 
 // --- HAUPTLOGIK: REAKTION AUF FEUCHTIGKEITSÄNDERUNG ---
 on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
@@ -80,8 +66,10 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
     setState(ID_SET_TEMP, 24); // Heizung voll aufdrehen
     setState(ID_ENTFEUCHTEN_VOTUM, true, true); // Status für andere Skripte/VIS setzen
 
-    sendeMeldung(
+    sendGlobalNotify(
       `♨️ Entfeuchtung im Bad unten gestartet (${luftfeuchte}% rL).\nTemperatur auf 24°C gesetzt (vorher ${vorigesTemperaturLevel}°C).`,
+      "Klima Bad Unten",
+      1
     );
   }
 
@@ -112,8 +100,10 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
     }
 
     setState(ID_SET_TEMP, neueTemp);
-    sendeMeldung(
+    sendGlobalNotify(
       `✅ Entfeuchtung im Bad unten beendet (${luftfeuchte}% rL).\nHeizung wieder auf ${neueTemp}°C eingestellt.`,
+      "Klima Bad Unten",
+      1
     );
   }
 });

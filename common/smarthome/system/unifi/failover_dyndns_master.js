@@ -11,7 +11,6 @@ const CONFIG = {
   dpWanIp: "unifi-network.0.devices.78:45:58:c7:61:75.ip",
   dpAktuelleIp: "0_userdata.0.System.aktuelle_IP",
   dpDdnssKey: "0_userdata.0.Unifi.ddnss_key",
-  dpGotifyToken: "0_userdata.0.gotifytoken.iobroker",
 
   // IP-Adressen für die Logik
   ipFailover: "192.168.0.27", // Backup-Gateway (LTE)
@@ -30,55 +29,6 @@ let GUARD = {
   discrepancyAlarm: false,
 };
 
-// --- 2. ZENTRALE BENACHRICHTIGUNG (MIT NACHTRUHE) ---
-
-/**
- * Der "Pförtner" für alle Meldungen.
- * Prüft die Uhrzeit und schaltet Telegram/Gotify ggf. stumm.
- */
-function notify(title, msg, priority = 5) {
-  const stunde = new Date().getHours();
-
-  // Ruhezeit-Check: Ist es zwischen 20 Uhr und 8 Uhr?
-  const istRuhezeit =
-    stunde >= CONFIG.startStundeRuhe || stunde < CONFIG.endeStundeRuhe;
-
-  // Telegram Broadcast (Markdown für bessere Optik)
-  sendTo("telegram", "send", {
-    text: `*${title}*\n${msg}`,
-    parse_mode: "Markdown",
-    // Falls Ruhezeit, wird die Nachricht ohne Sound/Vibration zugestellt
-    disable_notification: istRuhezeit,
-  });
-
-  // Gotify-Meldung
-  const token = getState(CONFIG.dpGotifyToken).val;
-  if (token) {
-    // In der Ruhezeit wird die Prio auf 0 (stumm) gesenkt
-    const finalePrio = istRuhezeit ? 0 : priority;
-    const url = `https://mygotify.meistermopper.de/message?token=${token}`;
-
-    httpPost(
-      url,
-      { title: title, message: msg, priority: finalePrio },
-      (err) => {
-        if (err) console.error(`UniFi-Guard: Gotify Fehler - ${err}`);
-      },
-    );
-  }
-
-  // Konsolen-Log zur Nachverfolgung
-  if (istRuhezeit) {
-    console.log(
-      `UniFi-Guard (STUMM): ${title} - ${msg.replace(/\n|`|\*|✅|🌐|⚠️/g, "")}`,
-    );
-  } else {
-    console.warn(
-      `UniFi-Guard (ALARM): ${title} - ${msg.replace(/\n|`|\*|✅|🌐|⚠️/g, "")}`,
-    );
-  }
-}
-
 // --- 3. LOGIK BLOCK A: EREIGNISSE (IP-WECHSEL & FAILOVER) ---
 
 /**
@@ -95,7 +45,7 @@ on({ id: CONFIG.dpWanIp, change: "ne" }, async (obj) => {
   if (neueIp === CONFIG.ipFailover) {
     GUARD.startTime = Date.now();
     GUARD.failoverActive = true;
-    notify(
+    sendGlobalNotify( // Hier wird die globale Funktion verwendet
       "Internet-Failover",
       "Hauptleitung ausgefallen, Backup-LTE ist jetzt aktiv",
       8,
@@ -132,7 +82,7 @@ on({ id: CONFIG.dpWanIp, change: "ne" }, async (obj) => {
       GUARD.failoverActive = false;
     }
 
-    notify(title, msg, 5);
+    sendGlobalNotify(msg, title, 5); // Hier wird die globale Funktion verwendet
     setState(CONFIG.dpAktuelleIp, neueIp, true);
   }
 });
@@ -157,13 +107,13 @@ schedule(CONFIG.checkInterval, async () => {
           `UniFi meldet: ${unifiIp}, ` +
           `Amazon sieht: ${echteIp}, ` +
           `Prüfe die DynDNS-Funktion`;
-        notify("UniFi Guard", warnung, 7);
+        sendGlobalNotify(warnung, "UniFi Guard", 3); // Hier wird die globale Funktion verwendet
         GUARD.discrepancyAlarm = true;
       }
     }
     // Entwarnung, wenn alles wieder passt
     else if (GUARD.discrepancyAlarm) {
-      notify("UniFi Guard", "IP-Abgleich wieder korrekt", 5);
+      sendGlobalNotify("IP-Abgleich wieder korrekt", "UniFi Guard", 1); // Hier wird die globale Funktion verwendet
       GUARD.discrepancyAlarm = false;
     }
   });

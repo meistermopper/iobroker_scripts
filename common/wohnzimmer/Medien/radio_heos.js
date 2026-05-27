@@ -42,9 +42,9 @@ on({ id: ID_SENDER_TRIGGER, change: 'any' }, async (obj) => {
         console.log(`[Radio] Denon Kaltstart für ${config.name}`);
     } else {
         // FALL: Denon ist bereits AN
-        // Hinweis: hr1 schaltet sofort, andere haben im Original teils 8s delay. 
+        // Hinweis: hr1 schaltet sofort, andere haben im Original teils 8s delay.
         // Wir vereinheitlichen das hier: Wenn an, dann sofort (0s).
-        delay = 0; 
+        delay = 0;
         console.log(`[Radio] Denon bereits an, schalte um auf ${config.name}`);
     }
 
@@ -58,7 +58,6 @@ on({ id: ID_SENDER_TRIGGER, change: 'any' }, async (obj) => {
     setStateDelayed(ID_RADIO_STATUS, true, 1000, false);
 
     // Benachrichtigungen
-    const notifyMsg = `+++ Radio im Bad läuft (${config.name}) +++`;
-    sendTo('telegram', 'send', { text: notifyMsg });
-    console.log(`telegram: ${notifyMsg}`);
+    const notifyMsg = `+++ Radio im Wohnzimmer läuft (${config.name}) +++`;
+    sendGlobalNotify(notifyMsg, "Radio", 1);
 });

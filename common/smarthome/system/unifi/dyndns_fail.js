@@ -7,34 +7,9 @@
 // --- 1. KONFIGURATION ---
 const ID_UNIFI_IP = "unifi-network.0.devices.78:45:58:c7:61:75.ip"; // IP laut Controller
 const ID_WAN_IP = "unifi-network.0.settings.wan.ip"; // Offizielle WAN-IP im Adapter
-const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker"; // Pfad zum Token
-const FAILOVER_IP = "192.168.0.27"; // Bekannte Failover-IP (wird ignoriert)
 
-let fehlermeldungGesendet = false; // Status-Speicher, um Spam zu verhindern
-
-// --- 2. HILFSFUNKTION (MELDUNGEN) ---
-function notify(title, msg, priority = 3) {
-  // Telegram Broadcast an alle User
-  sendTo("telegram", "send", {
-    text: `*${title}*\n${msg}`,
-    parse_mode: "Markdown",
-  });
-
-  // Gotify-Meldung
-  const token = getState(ID_GOTIFY_TOKEN).val;
-  if (token) {
-    const url = `https://mygotify.meistermopper.de/message?token=${token}`;
-    const payload = { title: title, message: msg, priority: priority };
-    const options = {
-      headers: { 'Content-Type': 'application/json' },
-      timeout: 10000
-    };
-
-    httpPost(url, payload, options, (error) => {
-      if (error) console.error(`[UniFi-Guard] Gotify Fehler: ${error}`);
-    });
-  }
-}
+const FAILOVER_IP = "192.168.0.27"; // Deine LTE-Backup IP
+let fehlermeldungGesendet = false; // Lokale Sperre für dieses Skript
 
 // --- 3. ÜBERWACHUNGS-SCHLEIFE (Alle 30 Minuten) ---
 schedule("*/30 * * * *", async () => {
@@ -66,7 +41,7 @@ schedule("*/30 * * * *", async () => {
     // Wenn die echte IP NICHT der gemeldeten UniFi-IP entspricht...
     // UND die UniFi-IP nicht die bekannte Failover-IP ist...
     if (aktuelleIP !== unifiIP && unifiIP !== FAILOVER_IP) {
-      // ...und wir noch keine Warnung draußen haben:
+      // ...und wir noch keine Warnung draußen haben (Sperre erfolgt lokal im Skript)
       if (!fehlermeldungGesendet) {
         const msg =
           `⚠️ Dyndns-Abgleich fehlgeschlagen!\n` +
@@ -74,13 +49,13 @@ schedule("*/30 * * * *", async () => {
           `Real extern: ${aktuelleIP}\n` +
           `WAN-Einstellung: ${dyndnsIP}`;
 
-        notify("UniFi Guard", msg, 8);
+        sendGlobalNotify(msg, "UniFi Guard", 8);
         fehlermeldungGesendet = true; // Sperre setzen
       }
     }
     // Falls der Abgleich wieder passt (Heilung):
     else if (fehlermeldungGesendet) {
-      notify(
+      sendGlobalNotify(
         "UniFi Guard",
         "✅ IP-Abgleich wieder korrekt. Die externe Erreichbarkeit sollte stabil sein.",
         5,

@@ -10,7 +10,6 @@
 
 // --- 1. KONFIGURATION ---
 const PATH_SCRIPTS = '/home/iobroker/scripts';
-const GOTIFY_TOKEN_ID = '0_userdata.0.gotifytoken.iobroker';
 const GOTIFY_SERVER = 'mygotify.meistermopper.de';
 const STATE_STATUS = '0_userdata.0.git_sync_last_status';
 const STATE_TRIGGER = '0_userdata.0.git_sync_trigger';
@@ -21,33 +20,6 @@ const STATE_TRIGGER = '0_userdata.0.git_sync_trigger';
  * aktualisiert hat (Endlosschleifen-Schutz).
  */
 const SELF_NAME = 'common.smarthome.system.github.script_verwaltung';
-
-// --- 2. BENACHRICHTIGUNGS-LOGIK ---
-
-/**
- * Schickt Updates an das VIS-Widget, Telegram und Gotify.
- */
-function sendSyncNotify(msg, priority = 1) {
-    // Status im ioBroker-Datenpunkt setzen (für das VIS-Widget)
-    setState(STATE_STATUS, msg, true);
-
-    // Telegram-Nachricht absetzen
-    sendTo('telegram', 'send', { text: "🔄 Git-Sync: " + msg });
-
-    // Gotify-Nachricht absetzen (falls Token vorhanden)
-    const tokenState = getState(GOTIFY_TOKEN_ID);
-    if (tokenState && tokenState.val && tokenState.val.length > 5) {
-        const url = "https://" + GOTIFY_SERVER + "/message?token=" + tokenState.val;
-        const payload = {
-            title: "ioBroker Sync",
-            message: msg,
-            priority: priority
-        };
-        const options = { timeout: 10000 }; // Erhöhtes Timeout, um den Fehler zu vermeiden
-
-        httpPost(url, payload, options);
-    }
-}
 
 // --- 3. RESTART-LOGIK ---
 
@@ -83,7 +55,7 @@ function restartAffectedScripts() {
 
 // --- 4. SYNC-LOGIK ---
 
-function runGitSync() {
+async function runGitSync() {
     const exec = require('child_process').exec;
     const jetzt = new Date();
     // 'hh' sorgt für die korrekte 24h-Anzeige als Ziffern
@@ -97,7 +69,8 @@ function runGitSync() {
     exec(pullCmd, { timeout: 60000 }, (error, stdout, stderr) => {
         if (error) {
             log("[Git-Sync] Fehler beim Pull: " + stderr, 'error');
-            sendSyncNotify("❌ Fehler beim Pull (" + timestamp + ")", 2);
+            setState(STATE_STATUS, "❌ Fehler beim Pull", true);
+            sendGlobalNotify("Fehler beim Pull (" + timestamp + ")", "ioBroker Sync", 2);
             return;
         }
 
@@ -109,7 +82,8 @@ function runGitSync() {
         if (hasChanges) {
             log("[Git-Sync] Änderungen gefunden. Starte Neustarts...");
             setTimeout(restartAffectedScripts, 1500);
-            sendSyncNotify("✅ Update erfolgreich (" + timestamp + ")");
+            setState(STATE_STATUS, "✅ Update erfolgreich", true);
+            sendGlobalNotify("Update erfolgreich (" + timestamp + ")", "ioBroker Sync", 1);
         } else {
             log("[Git-Sync] Alles aktuell.");
             // Optional: Nur noch im Log vermerken, aber keine Telegram/Gotify Nachricht senden

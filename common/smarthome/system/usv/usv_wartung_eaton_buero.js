@@ -20,17 +20,6 @@ const dpPrefix = "0_userdata.0.USV.Wartung.1";
 
 const upsNutPrefix = "nut.1"; // Pfad zum NUT-Adapter (Status der USV)
 const sonoffPower = "alias.0.buero.usv.POWER"; // Pfad zum Aktor (Stromzufuhr USV)
-const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker").val;
-
-// Liste aller SayIt-Instanzen laut deinem System-Screenshot
-const sayitInstances = [
-  "sayit.0",
-  "sayit.1",
-  "sayit.2",
-  "sayit.3",
-  "sayit.4",
-  "sayit.5",
-];
 
 // Verzögerung für die erste Ansage (WLAN-Stabilität nach Umschalt-Peak)
 const wifiStabilizeDelay = 10000;
@@ -76,37 +65,6 @@ async function initDP() {
 
 // --- 3. KOMMUNIKATIONS-FUNKTIONEN ---
 
-/**
- * Textnachricht an Telegram & Gotify.
- */
-function notify(text, priority = 5) {
-  const header = "🔌🔋 USV Büro\n\n";
-  sendTo("telegram", "send", { text: header + text });
-  console.log(`USV-Log: ${text}`);
-  exec(
-    `curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=USV Wartung" -F "message=${text}" -F "priority=${priority}"`,
-  );
-}
-
-/**
- * Verteilt die Sprachansage an alle 5 Google-Geräte.
- */
-function speak(text) {
-  // Check: Ist der Master-Schalter "Speak" in der VIS überhaupt an?
-  if (!getState(`${dpPrefix}.Speak_bei_Wartung`).val) return;
-
-  const vol = getState(`${dpPrefix}.Google_lautstaerke`).val;
-
-  // Schleife durch alle Instanzen (0, 2, 3, 4, 5)
-  sayitInstances.forEach((instance) => {
-    sendTo(instance, "say", { text: `${vol}; ${text}`, volume: vol });
-  });
-
-  console.log(
-    `USV-Audio: Broadcast an ${sayitInstances.length} Google-Geräte gesendet`,
-  );
-}
-
 // --- 4. WARTUNGS-AKTIONEN ---
 
 /**
@@ -116,8 +74,9 @@ async function startWartung(isManual = false) {
   setState(`${dpPrefix}.Wartung_eingeleitet`, true);
   lastSpokenSoc = -1; // Reset für sofortige erste Ansage
   setState(sonoffPower, false); // Trennung vom Netz
-  notify(
+  sendGlobalNotify(
     isManual ? "Manuelle Wartung gestartet" : "Automatische Wartung gestartet",
+    "USV Büro", 1
   );
 }
 
@@ -131,7 +90,7 @@ async function stopWartung(reason = "") {
     setState(`${dpPrefix}.Jetzt_Warten`, false);
   }, 15000);
   const soc = getState(`${upsNutPrefix}.battery.charge`).val;
-  notify(`Wartung beendet (${reason}), Stand: ${soc}%`);
+  sendGlobalNotify(`Wartung beendet (${reason}), Stand: ${soc}%`, "USV Büro", 1);
 }
 
 // --- 5. TRIGGER-LOGIK ---
@@ -159,6 +118,10 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
       ? getState(`${dpPrefix}.Speak_bei_Wartung`).val
       : getState(`${dpPrefix}.Speak_bei_Ausfall`).val;
     if (!canSpeak) return;
+
+    // Nachtruhe nur bei geplanter Wartung, bei echtem Ausfall immer sprechen!
+    const isDay = compareTime('08:00', '20:00', 'between');
+    const voiceVol = (isWartung && !isDay) ? null : getState(`${dpPrefix}.Google_lautstaerke`).val;
 
     // Modulo-Check: Sprechen bei Start, alle 5% oder kurz vor dem Ende
     if (
@@ -194,10 +157,10 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
           "USV-Audio: Warte 10s auf WLAN-Stabilität vor der ersten Ansage",
         );
         speakTimeout = setTimeout(() => {
-          speak(text);
+          sendGlobalNotify(text, "USV Büro", 5, voiceVol);
         }, wifiStabilizeDelay);
       } else {
-        speak(text);
+        sendGlobalNotify(text, "USV Büro", 5, voiceVol);
       }
     }
   }
@@ -210,11 +173,11 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
 on({ id: `${upsNutPrefix}.status.onbattery`, change: "ne" }, async (obj) => {
   const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`).val;
   if (obj.state.val === true && !isWartung) {
-    notify("WARNUNG: Stromversorgung unterbrochen", 8);
+    sendGlobalNotify("WARNUNG: Stromversorgung unterbrochen", "USV Büro", 8, 50); // Immer sprechen!
   } else if (obj.state.val === false) {
     if (speakTimeout) clearTimeout(speakTimeout);
     lastSpokenSoc = -1; // Reset für den nächsten Vorfall
-    if (!isWartung) notify("Netzspannung wiederhergestellt");
+    if (!isWartung) sendGlobalNotify("Netzspannung wiederhergestellt", "USV Büro", 1);
   }
 });
 

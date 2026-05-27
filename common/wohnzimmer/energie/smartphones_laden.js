@@ -97,48 +97,12 @@ async function initStates() {
 }
 initStates(); // Führt die Prüfung sofort beim Start aus
 
-// --- 3. BENACHRICHTIGUNGS-HELFER ---
-/**
- * Zentrale Funktion für Benachrichtigungen (Telegram, Gotify, SayIt)
- * @param {string} name - Anzeigename des Geräts
- * @param {string} msg - Die zu sendende Nachricht
- * @param {number} priority - Priorität für Gotify
- * @param {string} user - Optionaler Telegram-Empfänger
- * @param {boolean} sayIt - Ob eine Sprachausgabe erfolgen soll
- */
-function notify(name, msg, priority = 1, user = "", sayIt = false) {
-  const timeOk = compareTime("08:00", "20:00", "between"); // Keine Ansagen mitten in der Nacht
-  const token = getState("0_userdata.0.gotifytoken.iobroker").val;
-
-  // Telegram & Gotify Nachrichten senden
-  sendTo("telegram", "send", { text: msg, user: user });
-  const url = `https://mygotify.meistermopper.de/message?token=${token}`;
-  const payload = {
-    title: "Akku",
-    message: msg,
-    priority: priority
-  };
-  const options = { headers: { 'Content-Type': 'application/json' }, timeout: 10000 };
-  httpPost(url, payload, options);
-
-  // Sprachausgabe nur, wenn gewünscht und die Zeit passt
-  if (sayIt && timeOk) {
-    const cleanMsg = msg
-      .replace(
-        /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF])/g,
-        "",
-      )
-      .replace(/\n/g, " ");
-    sendTo("sayit", "say", { text: cleanMsg, volume: 50 });
-  }
-}
-
 // --- 4. HAUPT-ÜBERWACHUNG ---
 Object.keys(geraete).forEach((name) => {
   const config = geraete[name];
 
   // Wir "abonnieren" den Akkustand (levelId)
-  on({ id: config.levelId, change: "ne" }, (obj) => {
+  on({ id: config.levelId, change: "ne" }, async (obj) => {
     const level = obj.state.val; // Neuer Prozentwert
     const istAn = getState(config.powerId).val; // Ist der Strom an?
     const alreadyNotified = getState(config.notifiedFullId).val; // Wurde heute schon gemeldet?
@@ -172,15 +136,14 @@ Object.keys(geraete).forEach((name) => {
       // Wir senden nur eine Nachricht, wenn das Gerät NICHT eingesteckt ist (isPlugged === false).
       // Wenn es bereits eingesteckt ist (true), aktivieren wir nur lautlos den Strom.
       // Geräte ohne plugged-Sensor (wie Kiki aktuell) melden sich wie gewohnt immer.
-      if (isPlugged === true) {
-          console.log(`[Smart-Charging] ${name} ist bereits eingesteckt (${level}%). Ladung wurde lautlos gestartet.`);
+      if (isPlugged === true) { // Wenn eingesteckt, aber noch nicht geladen
+        console.log(`[Smart-Charging] ${name} ist bereits eingesteckt (${level}%). Ladung wurde lautlos gestartet.`);
       } else {
-          notify(
-            name,
+        await sendGlobalNotify(
             "🪫 " + name + " sollte geladen werden.\nStand: " + level + "%",
-            1,
-            config.notificationUser,
-            true,
+            "Akku",
+            1, // Priorität
+            compareTime("08:00", "20:00", "between") ? 50 : null // Sprachausgabe Lautstärke 50
           );
       }
     }
@@ -191,12 +154,11 @@ Object.keys(geraete).forEach((name) => {
       setState(config.notifiedFullId, true, true); // Sperre im Datenpunkt setzen
       setState(config.powerId, false); // Dose ausschalten
       if (config.lowBatId) setState(config.lowBatId, false);
-      notify(
-        name,
+      await sendGlobalNotify(
         "🔋 " + name + " ist geladen.\nStand: " + level + "%",
-        1,
-        config.notificationUser,
-        true,
+        "Akku",
+        1, // Priorität
+        compareTime("08:00", "20:00", "between") ? 50 : null // Sprachausgabe Lautstärke 50
       );
     }
   });
@@ -209,15 +171,12 @@ const manualTriggers = [
   "0_userdata.0.Energie.Smartphone.Tablet_laden",
 ];
 
-on({ id: manualTriggers, val: true }, (obj) => {
+on({ id: manualTriggers, val: true }, async (obj) => {
   // A. Ladegerät einschalten
   setState("alias.0.wohnzimmer.energie.smartlader.on", true);
 
-  // B. Die gewünschte Ansage ausgeben
-  const ansage = "Bitte links einstöpseln, ich habe eingeschaltet.";
-  if (compareTime("08:00", "20:00", "between")) {
-    sendTo("sayit", "say", { text: ansage, volume: 50 });
-  }
+  // B. Globale Benachrichtigung mit Sprachausgabe (asynchron)
+  await sendGlobalNotify("Bitte links einstöpseln, ich habe eingeschaltet.", "Akku", 1, 50);
 
   // C. Den Button in der VIS nach 2 Sekunden wieder auf 'false' setzen
   setTimeout(() => {

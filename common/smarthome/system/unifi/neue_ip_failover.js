@@ -2,7 +2,6 @@
 const ID_WAN_IP = "unifi-network.0.devices.78:45:58:c7:61:75.ip";
 const ID_AKTUELL_IP = "0_userdata.0.System.aktuelle_IP";
 const ID_DDNSS_KEY = "0_userdata.0.Unifi.ddnss_key";
-const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";
 
 const IP_FAILOVER = "192.168.0.27"; // Dein Backup-Gateway
 const IP_INTERNAL_GATEWAY = "192.168.1.1";
@@ -23,7 +22,7 @@ on({ id: ID_WAN_IP, change: "ne" }, async (obj) => {
   if (neueIP === IP_FAILOVER) {
     startZeit = Date.now();
     failover = true;
-    sendAlert("+++ 🌐 Internet-Failover aktiviert! +++");
+    sendGlobalNotify("+++ 🌐 Internet-Failover aktiviert! +++", "ioBroker System", 1);
     return;
   }
 
@@ -49,25 +48,7 @@ on({ id: ID_WAN_IP, change: "ne" }, async (obj) => {
       failover = false;
     }
 
-    sendAlert(message);
+    sendGlobalNotify(message, "ioBroker System", 1);
     setState(ID_AKTUELL_IP, neueIP, true);
   }
 });
-
-// Hilfsfunktion für Benachrichtigungen
-function sendAlert(text) {
-  sendTo("telegram", "send", { text: text });
-
-  const token = getState(ID_GOTIFY_TOKEN).val;
-  const gotifyUrl = `https://mygotify.meistermopper.de/message?token=${token}`;
-  const payload = {
-    title: "ioBroker System",
-    message: text,
-    priority: 1
-  };
-  const options = { headers: { 'Content-Type': 'application/json' }, timeout: 10000 };
-
-  httpPost(gotifyUrl, payload, options);
-
-  console.log(`System-Meldung: ${text}`);
-}

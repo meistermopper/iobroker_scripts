@@ -71,18 +71,13 @@ on(
      * Dies deutet auf ein defektes Kabel oder eine hängende Steckdose hin.
      */
       const message = `Achtung: Wandtablet lädt nicht korrekt, Stand: ${currentBatt}% (Sinkend)`;
-
-      // Fehlermeldung im Log und per Telegram
       console.error(message);
-      sendTo("telegram", "send", { text: message });
-
-      // Sprachausgabe (SayIt) nur zwischen 08:00 und 20:00 Uhr (Lärmschutz)
-      if (compareTime("08:00", "20:00", "between", null)) {
-        sendTo("sayit", "say", {
-          text: "Hinweis: Das Wandtablet verliert Energie. Bitte die Stromversorgung prüfen.",
-          volume: 40,
-        });
-      }
+      await sendGlobalNotify(
+        message,
+        "Tablet Alarm",
+        2,
+        compareTime("08:00", "20:00", "between") ? 40 : null, // Sprachausgabe nur tagsüber
+      );
     }
   },
 );

@@ -22,8 +22,6 @@ const CONFIG = {
   services: {
     useTelegram: true,
     useGotify: true,
-    // Pfad zu deinem Gotify-Token (aus deinem Akku-Skript übernommen)
-    idGotifyToken: "0_userdata.0.gotifytoken.iobroker",
   },
 };
 
@@ -53,28 +51,6 @@ function getDeviceName(obj) {
   return "Unbekanntes Gerät";
 }
 
-/**
- * Funktion: sendAlert
- * ZWECK: Schickt die Nachricht über alle aktiven Kanäle.
- */
-async function sendAlert(msg) {
-  console.warn(msg);
-
-  if (CONFIG.services.useTelegram) {
-    sendTo("telegram", "send", { text: msg });
-  }
-
-  if (CONFIG.services.useGotify) {
-    const tokenState = await getStateAsync(CONFIG.services.idGotifyToken);
-    if (tokenState?.val) {
-      // Hier wird deine Gotify-URL genutzt
-      exec(
-        `curl "https://mygotify.meistermopper.de/message?token=${tokenState.val}" -F "title=Zigbee Alarm" -F "message=${msg}" -F "priority=1"`,
-      );
-    }
-  }
-}
-
 // --- 3. ÜBERWACHUNGS-LOGIK ---
 
 // Trigger: Reagiert auf alle "available" Datenpunkte im Zigbee-Adapter
@@ -94,7 +70,7 @@ on({ id: /^zigbee\.0\..*\.available$/, change: "ne" }, async (obj) => {
     if (!activeTimers[deviceId]) {
       activeTimers[deviceId] = setTimeout(() => {
         const msg = `⚠️ Zigbee-Gerät seit ${CONFIG.offlineThreshold / 1000}s offline: ${deviceName}`;
-        sendAlert(msg);
+        sendGlobalNotify(msg, "Zigbee Alarm", 1);
         delete activeTimers[deviceId]; // Timer aufräumen
       }, CONFIG.offlineThreshold);
     }

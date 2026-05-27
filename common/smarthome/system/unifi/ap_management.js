@@ -5,24 +5,6 @@ const AP_DEVICES = [
 ];
 
 const BASE_PATH = 'unifi-network.0.devices';
-const GOTIFY_TOKEN_ID = '0_userdata.0.gotifytoken.iobroker';
-
-// Hilfsfunktion für Benachrichtigungen (Telegram & Gotify)
-function notify(text, priority = 1) {
-    sendTo('telegram', 'send', { text: text });
-
-    const token = getState(GOTIFY_TOKEN_ID).val;
-    const url = `https://mygotify.meistermopper.de/message?token=${token}`;
-    const payload = {
-        title: "ioBroker AP-Manager",
-        message: text,
-        priority: priority
-    };
-    const options = { headers: { 'Content-Type': 'application/json' }, timeout: 10000 };
-
-    httpPost(url, payload, options);
-    console.log(`AP-Manager: ${text}`);
-}
 
 // --- LOGIK 1: FEHLER-ÜBERWACHUNG ---
 const errorIds = AP_DEVICES.map(ap => `${BASE_PATH}.${ap.id}.hasError`);
@@ -30,18 +12,15 @@ const errorIds = AP_DEVICES.map(ap => `${BASE_PATH}.${ap.id}.hasError`);
 on({ id: errorIds, change: 'ne' }, (obj) => {
     // Wenn hasError ungleich 0 (oder true) ist
     if (obj.state.val !== 0) {
-        const ap = AP_DEVICES.find(a => obj.id.includes(a.id));
-        notify(`⚠️ Der Accesspoint ${ap.name} (${ap.id}) benötigt Aufmerksamkeit!`, 5);
+        const ap = AP_DEVICES.find(a => obj.id.includes(a.id)); // Finde den AP, der den Fehler meldet
+        sendGlobalNotify(`⚠️ Der Accesspoint ${ap.name} (${ap.id}) benötigt Aufmerksamkeit!`, "AP-Manager", 5);
     }
 });
 
 // --- LOGIK 2: GEPLANTER NEUSTART (Täglich 02:29 Uhr) ---
 schedule("29 2 * * *", () => {
     AP_DEVICES.forEach((ap, index) => {
-        // Zeitversetzt neustarten (0 Min, 5 Min, 10 Min...)
-        setTimeout(() => {
-            setState(`${BASE_PATH}.${ap.id}.restart`, true);
-            notify(`🛜 AP ${ap.name} wurde planmäßig neu gestartet.`, 1);
-        }, index * 300000);
+        // Zeitversetzt neustarten (0 Min, 5 Min, 10 Min...) und globale Benachrichtigung
+        setTimeout(() => { setState(`${BASE_PATH}.${ap.id}.restart`, true); sendGlobalNotify(`🛜 AP ${ap.name} wurde planmäßig neu gestartet.`, "AP-Manager", 1); }, index * 300000);
     });
 });

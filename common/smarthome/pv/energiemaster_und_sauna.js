@@ -43,16 +43,6 @@ const IDS = {
     "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.configuration.evb_MaximumStationCurrent",
 };
 
-const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
-const sayitInstances = [
-  "sayit.0",
-  "sayit.1",
-  "sayit.2",
-  "sayit.3",
-  "sayit.4",
-  "sayit.5",
-];
-
 // Interne Speicher für Berechnungen
 let pvP = 0,
   netP = 0,
@@ -126,19 +116,6 @@ async function initSystem() {
 initSystem();
 
 // --- 3. HILFSFUNKTIONEN ---
-
-/**
- * Zentrales Benachrichtigungssystem.
- * Sendet Meldungen an Telegram und Gotify.
- */
-function notify(msg) {
-  sendTo("telegram", "send", { text: msg });
-  if (gotifyToken) {
-    exec(
-      `curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=Energiemaster" -F "message=${msg}" -F "priority=1"`,
-    );
-  }
-}
 
 /**
  * Berechnet die Last im Haus abzüglich bekannter Großverbraucher.
@@ -347,7 +324,7 @@ on({ id: IDS.minSocRead, change: "ne" }, function (obj) {
       `Min-SoC Watchdog: Sauna-Modus aktiv, Änderung auf ${newVal}% wird ignoriert`,
     );
   } else {
-    notify(text);
+    sendGlobalNotify(text, "Energiemaster", 1);
     console.warn(`Min-SoC Watchdog: ${text}`);
   }
 });
@@ -389,12 +366,7 @@ function checkSaunaSafety(load) {
       tSaunaSafety = setTimeout(() => {
         // Erneute Prüfung nach Ablauf der Zeit
         if (getState(IDS.saunaTuer).val && getBereinigteLast() > 7500) {
-          const msg =
-            "Achtung: Die Sauna heizt bei offener Tür, bitte überprüfen";
-          notify(msg);
-          sayitInstances.forEach((inst) => {
-            sendTo(inst, "say", { text: msg, volume: 70 });
-          });
+          sendGlobalNotify("Achtung: Die Sauna heizt bei offener Tür, bitte überprüfen", "Energiemaster", 8, 70);
         }
         tSaunaSafety = null;
       }, 60000); // Warnung nach 1 Minute Dauer-Heizen bei offener Tür

@@ -25,7 +25,6 @@ const ID_HEIZUNG_STATE = "alias.0.bad_oben.fenster.STATE";
 const ID_VAILLANT_MODE =
   "vaillant.0.44c040a5-2e4f-4933-b508-22584e0854c2.configuration.zones01.heating.operationModeHeating";
 const ID_FEUCHTE_HOCH = "0_userdata.0.Heizen.Feuchte.Bad_oben.Feuchte_hoch";
-const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";
 
 // IDs für Programme
 const ID_PROG_GAST = "0_userdata.0.Heizen.Programme.Gast_oben";
@@ -36,27 +35,10 @@ const ID_PROG_TAGUNG = "0_userdata.0.Heizen.Programme.Tagung";
 let alteTemperatur = getState(ID_SETPOINT).val > 12 ? getState(ID_SETPOINT).val : 21;
 let entfeuchten = false; // Status-Variable: Befinden wir uns gerade im Entfeuchtungs-Modus?
 
-// --- HILFSFUNKTIONEN ---
-
-/**
- * Hilfsfunktion für Benachrichtigungen via Telegram und Gotify.
- */
-function sendeMeldung(msg) {
-  // Telegram
-  sendTo("telegram", "send", { text: msg });
-
-  // Gotify
-  const token = getState(ID_GOTIFY_TOKEN).val;
-  const url = `https://mygotify.meistermopper.de/message?token=${token}`;
-  exec(`curl "${url}" -F "title=ioBroker" -F "message=${msg}" -F "priority=1"`);
-
-  //console.log(msg); // Im Log als Info, statt Warn
-}
-
 // --- LOGIK ---
 
 // --- 1. HAUPTLOGIK: REAKTION AUF FEUCHTIGKEITSÄNDERUNG ---
-on({ id: ID_HUMIDITY, change: "ne" }, (obj) => {
+on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
   const luftfeuchte = obj.state.val;
   const fensterZu = getState(ID_HEIZUNG_STATE).val === 0;
   const aktuelleTemp = getState(ID_TEMP_AKTUELL).val;
@@ -92,7 +74,7 @@ on({ id: ID_HUMIDITY, change: "ne" }, (obj) => {
       `♨️ Die Entfeuchtung im Bad oben wurde gestartet (${luftfeuchte}% rL).\n` +
       `Die Temperatur wurde auf 24°C eingestellt.\n` +
       `Vorherige Zieltemperatur: ${alteTemperatur}°C.`;
-    sendeMeldung(msg);
+    await sendGlobalNotify(msg, "Klima Bad Oben", 1, null); // Keine Sprachausgabe, da es nur eine Info ist
   }
 
   /**
@@ -131,7 +113,7 @@ on({ id: ID_HUMIDITY, change: "ne" }, (obj) => {
     const msg =
       `+++ ✅ Die Entfeuchtung im Bad oben wurde beendet +++\n` +
       `(${luftfeuchte}% rL). Heizung wieder auf ${neueTemp}°C. ✔️`;
-    sendeMeldung(msg);
+    await sendGlobalNotify(msg, "Klima Bad Oben", 1, null); // Keine Sprachausgabe, da es nur eine Info ist
   }
 });
 
