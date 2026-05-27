@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.22.6-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.22.8-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -84,11 +84,15 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
-### [1.22.6] - 2026-05-26
+### [1.22.8] - 2026-05-27
 - Code-Optimierungen und Updates
 
-### [1.22.4] - 2026-05-26
-- Entferne ID von cc-wozi aus der Liste der gesperrten Geräte-IDs im Chromecast-Adapter. (chromecast_ban_heos.js)
+### [1.22.7] - 2026-05-27
+- Changelog aktualisiert und Whitelist für Geräte-IDs im Chromecast-Adapter hinzugefügt (muellmeldung.js, post_da.js, zustand_r2maeh2.js, chromecast_ban_heos.js)
+- Update von muellmeldung.js
+- Update von post_da.js
+- Update von zustand_r2maeh2.js
+- Update von chromecast_ban_heos.js
 
 ### [1.22.1] - 2026-05-26
 - Nach neuer Firmware der UDM Pro v5.1.12 flutet der Chromecast-Adapter das log mit nicht antwortenden Heos-Geräten

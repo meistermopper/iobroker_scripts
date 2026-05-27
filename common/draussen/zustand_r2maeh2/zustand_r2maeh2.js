@@ -133,7 +133,7 @@ function notifyR2(text, priority = 1) {
             priority: priority
         };
 
-        httpPost(url, payload, { timeout: 5000 }, (error) => {
+        httpPost(url, payload, { timeout: 5000 }, (error) => {S
             if (error) console.error(`[R2Maeh2] Gotify Fehler: ${error}`);
         });
     }
@@ -145,6 +145,8 @@ function notifyR2(text, priority = 1) {
  * und setzt die Musik danach fort.
  */
 async function googleWatchdogAnnounce(text, vol) {
+    const excludeList = ['chromecast.0.CC-Schlazi', 'chromecast.0.b87bd4deaa73'];
+
     // 1. Die eigentliche Ansage einmalig auslösen
     sendTo("sayit", "say", { text: text, volume: vol });
 
@@ -152,6 +154,10 @@ async function googleWatchdogAnnounce(text, vol) {
     const players = $(`chromecast.0.*.status.playerState`);
     players.each(async function(id) {
         const base = id.split('.status.')[0];
+
+        // Streamer ohne Audio-Funktion/Bedarf ignorieren
+        if (excludeList.includes(base)) return;
+
         const isPlaying = (getState(id).val === 'playing');
 
         let oldVol, oldUrl;

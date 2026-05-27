@@ -25,9 +25,17 @@ let Sperre_stumm = false;
  */
 async function googleWatchdogAnnounce(text, vol) {
     const players = $(`chromecast.0.*.status.playerState`);
+    const excludeList = ['chromecast.0.CC-Schlazi', 'chromecast.0.b87bd4deaa73'];
+
+    // Ansage nur EINMAL triggern (Master-Broadcast), statt in der Schleife pro Gerät
+    sendTo("sayit", "say", { text: text, volume: vol });
 
     players.each(async function(id) {
         const base = id.split('.status.')[0];
+
+        // Streamer ohne Audio-Funktion/Bedarf ignorieren
+        if (excludeList.includes(base)) return;
+
         const isPlaying = (getState(id).val === 'playing');
 
         let oldVol, oldUrl;
@@ -37,9 +45,6 @@ async function googleWatchdogAnnounce(text, vol) {
             oldVol = getState(base + '.player.volume').val;
             oldUrl = getState(base + '.player.url2play').val;
         }
-
-        // Ansage über die SayIt-Instanz triggern
-        sendTo("sayit", "say", { text: text, volume: vol });
 
         // Musik nach der Wartezeit fortsetzen (Resume)
         if (isPlaying) {

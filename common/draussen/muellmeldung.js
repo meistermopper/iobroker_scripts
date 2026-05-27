@@ -39,7 +39,7 @@ function notify(message) {
 // Trigger: Jeden Sonntag bis Freitag um 18:00 Uhr
 schedule("0 18 * * 0-5", async () => {
     const daysLeft = getState(CONFIG.daysLeft).val;
-    
+
     if (daysLeft === 1) {
         const muellSorte = getState(CONFIG.trashTypes).val;
         const muellText = `Morgen wird ${muellSorte} abgeholt.`;

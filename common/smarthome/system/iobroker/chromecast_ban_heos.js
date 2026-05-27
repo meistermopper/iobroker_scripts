@@ -51,6 +51,19 @@ const bannedIPs = [
     '192.168.178.34'   // Heos5
 ];
 
+// Geräte-IDs, die explizit NICHT blockiert werden dürfen (z.B. cc-wozi).
+const whitelistDeviceIds = [
+    'b87bd4deaa73', // cc-wozi
+    'CC-Schlazi',    // Chromecast Schlafzimmer
+    '8e5',          // Platzhalter/Teile von IDs deiner Minis (falls bekannt)
+];
+
+const whitelistNames = [
+    'cc-wozi', 'Mini-draussen', 'Mini-Konfi',
+    'Mini-Schlazi', 'CC-Schlazi', 'Mini-Wozi', 'Home-Kueche',
+    'Mini-Buero'
+];
+
 /**
  * Hilfsfunktion für Verzögerungen
  */
@@ -75,6 +88,10 @@ let isRepairing = false;   // Flag, während die "Tiefenreinigung" läuft
  * Dies verhindert die gefürchteten "TypeError: socket of null" Abstürze.
  */
 async function neutralizeDevice(devicePath, reason) {
+    // WHITELIST-CHECK: Falls das Gerät gesteuert werden soll, hier abbrechen
+    const deviceId = devicePath.split('.').pop();
+    if (whitelistDeviceIds.includes(deviceId)) return;
+
     if (pendingDeletions.has(devicePath)) return; // Dubletten-Schutz
     pendingDeletions.add(devicePath);
 
@@ -126,11 +143,16 @@ function checkAndFilter(val, fullId) {
     // Identifizieren, ob wir gerade eine IP-Adresse (.address) oder einen Namen (.name) prüfen
     const isAddress = fullId.endsWith('.address');
 
-    // Extrahiere den Gerätepfad (z.B. chromecast.0.0005cd77e0a8)
     const parts = fullId.split('.');
     if (parts.length < 3) return;
 
     const deviceId = parts[2];
+
+    // WHITELIST-CHECK: ID oder Name (falls bekannt) prüfen
+    if (whitelistDeviceIds.includes(deviceId)) return;
+    if (val && typeof val === 'string' && whitelistNames.some(n => val.toLowerCase().includes(n.toLowerCase()))) return;
+
+    // Extrahiere den Gerätepfad (z.B. chromecast.0.0005cd77e0a8)
     const devicePath = parts[0] + '.' + parts[1] + '.' + parts[2];
     let shouldNeutralize = false;
     let reason = '';
@@ -150,17 +172,21 @@ function checkAndFilter(val, fullId) {
     // Prüfungen, die einen gültigen Namen erfordern (nur wenn es keine IP-Adresse ist)
     if (!shouldNeutralize && val && typeof val === 'string' && !isAddress) {
         // Prüfung 2: Ist es in der HEOS-Verbotsliste (Name)?
-        // Wir normalisieren Unterstriche zu Leerzeichen, da der Adapter hier variiert
-        const normalizedName = val.trim().replace(/_/g, ' ');
-        if (bannedDeviceNames.includes(normalizedName)) {
+        // Wir normalisieren Unterstriche zu Leerzeichen und machen es case-insensitive
+        const normalizedNameLower = val.trim().replace(/_/g, ' ').toLowerCase();
+        if (bannedDeviceNames.some(bannedName => normalizedNameLower.includes(bannedName.toLowerCase()))) {
             shouldNeutralize = true;
             reason = `Gerät '${val}' steht auf der Verbotsliste (HEOS-Filter)`;
         }
 
-        // Prüfung 3: Ist der Eintrag als unvollständig markiert?
+        // Prüfung 3: Unvollständige Einträge (Google-Geräte beim Start)
+        // Wir neutralisieren 'unvollständig' nur, wenn es NICHT nach einem Google-Gerät aussieht
         if (!shouldNeutralize && val.includes('(unvollständig)')) {
-            shouldNeutralize = true;
-            reason = 'Unvollständiger Eintrag erkannt (Chromecast-Fehler)';
+            const isPotentialGoogle = whitelistNames.some(n => val.toLowerCase().includes(n.toLowerCase()));
+            if (!isPotentialGoogle) {
+                shouldNeutralize = true;
+                reason = 'Unvollständiger Eintrag erkannt (mDNS-Initialisierung)';
+            }
         }
     }
 
@@ -248,15 +274,26 @@ onLog('error', (data) => {
     if (data.from.startsWith(adapterInstance)) {
         const msg = data.message;
 
+        // Prüfen, ob der Fehler von einem Gerät auf der Whitelist kommt (ID oder Name)
+        const isWhitelisted = msg.includes('cc-wozi') ||
+                              whitelistDeviceIds.some(id => msg.includes(id)) ||
+                              msg.includes('Mini-draussen') ||
+                              msg.includes('Mini-Konfi') ||
+                              msg.includes('Mini-Schlazi') ||
+                              msg.includes('Mini-Wozi') ||
+                              msg.includes('Home-Kueche') ||
+                              msg.includes('Mini-Buero');
+        if (isWhitelisted) return;
+
         // KRITISCHE FEHLER-ERKENNUNG:
         // 1. TypeError/socket/unique: Der Adapter-Kern ist abgestürzt (HEOS-Problem).
         // 2. "Cannot get status" bei echten Google-Geräten nach der Startphase (3 Min).
         const isSocketCrash = msg.includes('TypeError') || msg.includes('socket') || msg.includes('unique');
-        const isBlockade = msg.includes('Cannot get status') && !msg.includes('HEOS') && (Date.now() - lastRestart > 180000); // 3 Min Karenz
+        const isBlockade = !isWhitelisted && msg.includes('Cannot get status') && !msg.includes('HEOS') && (Date.now() - lastRestart > 180000); // 3 Min Karenz
         const isCritical = isSocketCrash || isBlockade;
 
         // Sofort-Reaktion bei "not unique" Fehlern
-        if (msg.includes('is not unique')) {
+        if (!isWhitelisted && msg.includes('is not unique')) {
             const idMatch = msg.match(/([a-f0-9]{12})/i);
             if (idMatch) {
                 const extractedId = idMatch[1];
