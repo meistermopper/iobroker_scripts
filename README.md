@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-2.0.5-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.6-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -84,17 +84,10 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
-### [2.0.5] - 2026-05-27
+### [2.0.6] - 2026-05-27
 - Code-Optimierungen und Updates
-
-### [2.0.4] - 2026-05-27
-- Entferne Emoji aus der globalen Benachrichtigung in der Müll-Erinnerung (muellmeldung.js)
-- Update von muellmeldung.js
 
 ### [2.0.3] - 2026-05-27
-- Code-Optimierungen und Updates
-
-### [2.0.2] - 2026-05-27
 - Code-Optimierungen und Updates
 
 ### [2.0.1] - 2026-05-27
