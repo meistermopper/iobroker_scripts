@@ -26,6 +26,6 @@ schedule("0 18 * * 0-5", async () => {
         const muellText = `Morgen wird ${muellSorte} abgeholt.`;
 
         // Globale Benachrichtigung mit Sprachausgabe
-        await sendGlobalNotify(`🚮 ${muellText}`, "Müll", 5, 40);
+        await sendGlobalNotify(`${muellText}`, "Müll", 5, 40);
     }
 });
