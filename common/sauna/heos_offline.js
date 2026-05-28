@@ -12,20 +12,6 @@ let isManuell = false;
 let autoRestartTimer = null;
 
 /**
- * Zentrale Funktion für Benachrichtigungen (Telegram & Gotify)
- */
-function notify(message) {
-  // Telegram
-  sendTo("telegram", "send", { text: message });
-  console.warn(`[Sauna Heos] ${message}`);
-
-  // Gotify via exec (curl)
-  const token = getState(ID_GOTIFY_TOKEN).val;
-  const command = `curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker: \n" -F "message=${message}" -F "priority=1"`;
-  exec(command);
-}
-
-/**
  * Führt den eigentlichen Hardware-Neustart durch (Strom aus -> warten -> Strom an)
  */
 function performHeosRestart(isManualAction) {
@@ -39,7 +25,7 @@ function performHeosRestart(isManualAction) {
   // Nach Pause Strom wieder an
   setTimeout(() => {
     setState(ID_HEOS_POWER, true);
-    notify(msg);
+    sendGlobalNotify(msg, "Sauna Heos", 1, null);
 
     if (isManualAction) {
       isManuell = false; // Flag zurücksetzen

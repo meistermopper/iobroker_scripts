@@ -1,7 +1,7 @@
 /**
  * @file auto_version.js
- * @description Inkrementiert die Version in der package.json und pflegt den Changelog in der README.md.
- * Aktualisiert zudem das Versions-Badge in der README.md.
+ * @description Increments the version in package.json and maintains the changelog in README.md.
+ * Also updates the version badge in README.md.
  * @author Gemini Code Assist
  */
 
@@ -17,8 +17,8 @@ function runGitCommand(command) {
     try {
         return execSync(command).toString().trim();
     } catch (err) {
-        // Keine Satzpunkte am Ende der Logs, um ioBroker-Validierungsfehler zu vermeiden
-        console.error(`❌ Git-Fehler: ${command}`, err.message);
+        // No periods at the end of logs to avoid ioBroker validation errors
+        console.error(`❌ Git Error: ${command}`, err.message);
         process.exit(1);
     }
 }
@@ -26,7 +26,7 @@ function runGitCommand(command) {
 // 1. Prüfung: Wir führen die Versionierung nur auf dem 'main' Branch aus
 const currentBranch = runGitCommand('git rev-parse --abbrev-ref HEAD');
 if (currentBranch !== 'main' && currentBranch !== 'master') {
-    console.log(`ℹ️  Info: Branch ist "${currentBranch}" - Keine automatische Versionierung`);
+    console.log(`ℹ️  Info: Branch is "${currentBranch}" - Skipping automatic versioning`);
     process.exit(0);
 }
 
@@ -61,11 +61,11 @@ function getChangedFilesList() {
                 // Metadaten-Dateien und das Skript selbst aus der Liste für den Changelog filtern
                 return name && !['package.json', 'README.md', 'utils/auto_version.js'].includes(name);
             })
-            .map(f => `- Update von ${path.basename(f)}`);
+            .map(f => `- Update of ${path.basename(f)}`);
 
-        return files.length > 0 ? files.join('\n') : '- Code-Optimierungen und Updates';
+        return files.length > 0 ? files.join('\n') : '- Code optimizations and updates';
     } catch (e) {
-        return '- Dokumentation und Skripte aktualisiert';
+        return '- Documentation and scripts updated';
     }
 }
 
@@ -73,11 +73,11 @@ function getChangedFilesList() {
 console.log('--- Start: Auto Versioning (Single Source of Truth) ---');
 
 if (!fs.existsSync(packagePath)) {
-    console.error('❌ Fehler: Keine package.json gefunden');
+    console.error('❌ Error: package.json not found');
     process.exit(1);
 }
 if (!fs.existsSync(readmePath)) {
-    console.error('❌ Fehler: Keine README.md gefunden');
+    console.error('❌ Error: README.md not found');
     process.exit(1);
 }
 
@@ -90,7 +90,7 @@ try {
     pkg.version = newV;
     fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
     runGitCommand(`git add "${packagePath}"`);
-    console.log(`✅ package.json: ${oldV} -> ${newV}`);
+    console.log(`✅ package.json updated: ${oldV} -> ${newV}`);
 
     // 2. README.md aktualisieren (Badge und Changelog)
     let readmeContent = fs.readFileSync(readmePath, 'utf8');
@@ -99,15 +99,15 @@ try {
     const badgeRegex = /(!\[Version\]\(.*\/Version-)([\d\.]+)(-success\?style=flat-square\))/;
     if (badgeRegex.test(readmeContent)) {
         readmeContent = readmeContent.replace(badgeRegex, `$1${newV}$3`);
-        console.log(`📘 README.md Badge auf v${newV} aktualisiert`);
+        console.log(`📘 README.md badge updated to v${newV}`);
     } else {
-        console.warn('⚠️ Versions-Badge in README.md nicht gefunden. Badge nicht aktualisiert.');
+        console.warn('⚠️ Version badge in README.md not found. Badge not updated.');
     }
 
     // 2b. Changelog-Eintrag erstellen und einfügen
     const date = new Date().toISOString().split('T')[0];
     const fileList = getChangedFilesList();
-    // Wichtig: ### verwenden, damit es zur README-Struktur passt
+    // Important: Using ### to match the README structure
     const newEntry = `### [${newV}] - ${date}\n${fileList}`;
 
     const changelogMarker = '## 📝 Changelog';
@@ -115,11 +115,11 @@ try {
 
     if (markerIndex !== -1) {
         const insertionPoint = markerIndex + changelogMarker.length;
-        // Füge den neuen Eintrag mit korrekten Zeilenumbrüchen nach dem Marker ein
+        // Insert the new entry with correct line breaks after the marker
         readmeContent = readmeContent.slice(0, insertionPoint) + `\n\n${newEntry}` + readmeContent.slice(insertionPoint);
-        console.log(`📝 README.md Changelog für v${newV} aktualisiert`);
+        console.log(`📝 README.md changelog updated for v${newV}`);
     } else {
-        console.warn('⚠️ Changelog-Marker in README.md nicht gefunden. Eintrag wird nicht hinzugefügt.');
+        console.warn('⚠️ Changelog marker in README.md not found. Entry not added.');
     }
 
     // 3. Aktualisierte README.md speichern und zu Git hinzufügen

@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-2.0.12-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.14-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -84,42 +84,46 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
-### [2.0.12] - 2026-05-28
-- Code-Optimierungen und Updates
+### [2.0.14] - 2026-05-28
+- Code optimizations and updates
+
+### [2.0.13] - 2026-05-28
+- Aktualisiere Changelog und übersetze Benachrichtigungen in Skripten ins Englische; entferne veraltete Benachrichtigungsfunktion in heos_offline.js (heos_offline.js, auto_version.js)
+- Update of heos_offline.js
 
 ### [2.0.10] - 2026-05-28
-- Füge neuen Sender 'Jazz Loft' hinzu und entferne veraltete Skripte für die Sauna-Automatik (radio.js, radio_auto.js, radio_manuell.js, radio_master.js)
+- Added new station 'Jazz Loft' and removed obsolete scripts for sauna automation (radio.js, radio_auto.js, radio_manuell.js, radio_master.js)
 
 ### [2.0.7] - 2026-05-28
 - Set default volume for radio senders and remove obsolete google_utils.js (radio.js, google_utils.js)
 
 ### [2.0.1] - 2026-05-27
-- Refactor notification system to use centralized global notify function (heizen_rh.js, heizen_rh.js, radio.js, muellmeldung.js, post_da.js, zustand_r2maeh2.js, Wasserdruckwarnung.js, alarmmelder.js, playerstate.js, vu_reboot_standby.js, energiemaster_und_sauna.js, script_verwaltung.js, ziegenhain.js, ap_management.js, dyndns_fail.js, failover_dyndns_master.js, neue_ip_failover.js, usv_wartung_eaton_buero.js, device_not_available.js, radio_heos.js, video_auto_aus.js, fully_smart_laden.js, smartphones_laden.js, google_utils.js, notify.js)
+- Refactored notification system to use centralized global notify function (heizen_rh.js, radio.js, muellmeldung.js, post_da.js, zustand_r2maeh2.js, Wasserdruckwarnung.js, alarmmelder.js, playerstate.js, vu_reboot_standby.js, energiemaster_und_sauna.js, script_verwaltung.js, ziegenhain.js, ap_management.js, dyndns_fail.js, failover_dyndns_master.js, neue_ip_failover.js, usv_wartung_eaton_buero.js, device_not_available.js, radio_heos.js, video_auto_aus.js, fully_smart_laden.js, smartphones_laden.js, google_utils.js, notify.js)
 
 ### [1.22.7] - 2026-05-27
-- Changelog aktualisiert und Whitelist für Geräte-IDs im Chromecast-Adapter hinzugefügt (muellmeldung.js, post_da.js, zustand_r2maeh2.js, chromecast_ban_heos.js)
+- Updated changelog and added whitelist for device IDs in Chromecast adapter (muellmeldung.js, post_da.js, zustand_r2maeh2.js, chromecast_ban_heos.js)
 
 ### [1.22.1] - 2026-05-26
-- Nach neuer Firmware der UDM Pro v5.1.12 flutet der Chromecast-Adapter das log mit nicht antwortenden Heos-Geräten
-- Aktualisiere HEOS-Filter: Entferne veraltete Gerätenamen, füge Hilfsfunktion für Verzögerungen hinzu und verbessere die Überprüfung von Zuständen. Aktualisiere Versionsnummer auf 1.22.0. (chromecast_ban_heos.js)
+- Following new UDM Pro firmware v5.1.12, the Chromecast adapter flooded the log with non-responding HEOS devices.
+- Updated HEOS filter: Removed outdated device names, added delay helper function, and improved state checks. Updated version to 1.22.0. (chromecast_ban_heos.js)
 
 ### [1.21.53] - 2026-05-26
-- Code-Optimierungen und Updates
+- Code optimizations and updates
 
 ### [1.21.51] - 2026-05-26
-- Aktualisiere HEOS-Filter: Füge zusätzliche verbotene Gerätenamen und IDs hinzu, verbessere Namensprüfung und reduziere Wartezeit vor der Löschung (chromecast_ban_heos.js)
+- Updated HEOS filter: Added additional banned device names and IDs, improved name checks, and reduced wait time before deletion (chromecast_ban_heos.js)
 
 ### [1.21.47] - 2026-05-25
-- Aktualisiere Benachrichtigungstext für volle Stromspeicher in batterie_voll.js (batterie_voll.js)
+- Updated notification text for full battery storage in batterie_voll.js (batterie_voll.js)
 
 ### [1.21.44] - 2026-05-25
-- Aktualisiere Changelog und übersetze Benachrichtigungen in charge_master.js ins Deutsche (charge_master.js)
+- Updated changelog and translated notifications in charge_master.js into English (charge_master.js)
 
 ### [1.21.42] - 2026-05-25
-- Repariere Alias-Ziele in Abendlicht-Skripten und passe Datentypen für Google Home an (abendlicht_TV_Wind_aus.js, switch_abendlicht.js)
+- Repaired alias targets in evening light scripts and adjusted data types for Google Home (abendlicht_TV_Wind_aus.js, switch_abendlicht.js)
 
 ### [1.21.40] - 2026-05-25
-- Füge Konstante für WiFi-Reconnect-Delay hinzu (charge_master.js)
+- Added constant for WiFi reconnect delay (charge_master.js)
 
 ### [1.21.25] - 2026-05-24
 - Added robust charging stop mechanism and improved error handling for "hanging" wallbox status (charge_master.js)
