@@ -13,7 +13,8 @@ const SENDER_CONFIG = {
     'hrinfo':       { volume: DEFAULT_VOLUME, preset: 5, name: 'hr info' },
     'swissjazz':    { volume: DEFAULT_VOLUME, preset: 6, name: 'Swiss Jazz' },
     'mdrkultur':    { volume: DEFAULT_VOLUME, preset: 7, name: 'MDR Kultur' },
-    'ffh':          { volume: DEFAULT_VOLUME, preset: 9, name: 'FFH' }
+    'ffh':          { volume: DEFAULT_VOLUME, preset: 9, name: 'FFH' },
+    'jazzloft':     { volume: DEFAULT_VOLUME, preset: 10, name: 'Jazz Loft' }
 };
 
 const IDS = {
