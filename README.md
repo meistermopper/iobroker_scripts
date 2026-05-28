@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-2.0.6-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.8-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -83,6 +83,14 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 ---
 
 ## 📝 Changelog
+
+### [2.0.8] - 2026-05-28
+- Code-Optimierungen und Updates
+
+### [2.0.7] - 2026-05-28
+- Set default volume for radio senders and remove obsolete google_utils.js (radio.js, google_utils.js)
+- Update von radio.js
+- Update von google_utils.js
 
 ### [2.0.6] - 2026-05-27
 - Code-Optimierungen und Updates

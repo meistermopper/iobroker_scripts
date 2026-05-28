@@ -3,15 +3,17 @@
 // =============================================================================
 
 // --- KONFIGURATION ---
+const DEFAULT_VOLUME = 25; // Zentrale Start-Lautstärke
+
 const SENDER_CONFIG = {
-    'hr1':          { volume: 17, preset: 4, name: 'HR 1' },
-    'jazzgroove':   { volume: 17, preset: 1, name: 'The Jazz Groove' },
-    'jazzradio':    { volume: 17, preset: 2, name: 'Jazz Radio' },
-    'smoothjazz':   { volume: 17, preset: 3, name: 'Smoothjazz' },
-    'hrinfo':       { volume: 17, preset: 5, name: 'hr info' },
-    'swissjazz':    { volume: 17, preset: 6, name: 'Swiss Jazz' },
-    'mdrkultur':    { volume: 17, preset: 7, name: 'MDR Kultur' },
-    'ffh':          { volume: 17, preset: 9, name: 'FFH' }
+    'hr1':          { volume: DEFAULT_VOLUME, preset: 4, name: 'HR 1' },
+    'jazzgroove':   { volume: DEFAULT_VOLUME, preset: 1, name: 'The Jazz Groove' },
+    'jazzradio':    { volume: DEFAULT_VOLUME, preset: 2, name: 'Jazz Radio' },
+    'smoothjazz':   { volume: DEFAULT_VOLUME, preset: 3, name: 'Smoothjazz' },
+    'hrinfo':       { volume: DEFAULT_VOLUME, preset: 5, name: 'hr info' },
+    'swissjazz':    { volume: DEFAULT_VOLUME, preset: 6, name: 'Swiss Jazz' },
+    'mdrkultur':    { volume: DEFAULT_VOLUME, preset: 7, name: 'MDR Kultur' },
+    'ffh':          { volume: DEFAULT_VOLUME, preset: 9, name: 'FFH' }
 };
 
 const IDS = {
