@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-2.0.11-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.12-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -84,18 +84,11 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
-### [2.0.11] - 2026-05-28
+### [2.0.12] - 2026-05-28
 - Code-Optimierungen und Updates
 
 ### [2.0.10] - 2026-05-28
 - Füge neuen Sender 'Jazz Loft' hinzu und entferne veraltete Skripte für die Sauna-Automatik (radio.js, radio_auto.js, radio_manuell.js, radio_master.js)
-- Update von radio.js
-- Update von radio_auto.js
-- Update von radio_manuell.js
-- Update von radio_master.js
-
-### [2.0.9] - 2026-05-28
-- Code-Optimierungen und Updates
 
 ### [2.0.7] - 2026-05-28
 - Set default volume for radio senders and remove obsolete google_utils.js (radio.js, google_utils.js)
