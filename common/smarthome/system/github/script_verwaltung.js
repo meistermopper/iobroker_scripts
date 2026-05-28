@@ -13,6 +13,9 @@ const PATH_SCRIPTS = '/home/iobroker/scripts';
 const GOTIFY_SERVER = 'mygotify.meistermopper.de';
 const STATE_STATUS = '0_userdata.0.git_sync_last_status';
 const STATE_TRIGGER = '0_userdata.0.git_sync_trigger';
+const LOGGING = true;
+
+const exec = require('child_process').exec;
 
 /**
  * EIGENSICHERUNG:
@@ -24,7 +27,6 @@ const SELF_NAME = 'common.smarthome.system.github.script_verwaltung';
 // --- 3. RESTART-LOGIK ---
 
 function restartAffectedScripts() {
-    const exec = require('child_process').exec;
     const checkCmd = "cd " + PATH_SCRIPTS + " && git diff --name-only HEAD@{1} HEAD";
 
     exec(checkCmd, { timeout: 30000 }, (error, stdout) => {
@@ -56,10 +58,9 @@ function restartAffectedScripts() {
 // --- 4. SYNC-LOGIK ---
 
 async function runGitSync() {
-    const exec = require('child_process').exec;
     const jetzt = new Date();
-    // 'hh' sorgt für die korrekte 24h-Anzeige als Ziffern
-    const timestamp = formatDate(jetzt, "YYYY-MM-DD hh:mm");
+    // 'HH' sorgt für die korrekte 24h-Anzeige
+    const timestamp = formatDate(jetzt, "YYYY-MM-DD HH:mm");
 
     log("[Git-Sync] Synchronisation gestartet...", 'info');
 
@@ -92,7 +93,14 @@ async function runGitSync() {
 
         // 2. SCHRITT: PUSH (Eigene Änderungen im Hintergrund hochladen)
         const pushCmd = "cd " + PATH_SCRIPTS + " && git add . && (git commit -m 'Auto-Sync: " + timestamp + "' || true) && git push origin main";
-        exec(pushCmd, { timeout: 60000 });
+        exec(pushCmd, { timeout: 60000 }, (pError, pStdout, pStderr) => {
+            if (pError) {
+                log("[Git-Sync] Fehler beim Push: " + (pStderr || pError.message), 'error');
+            } else {
+                log("[Git-Sync] Push-Vorgang abgeschlossen.", 'info');
+                if (pStdout && LOGGING) log("[Git-Sync] Push-Details: " + pStdout);
+            }
+        });
     });
 }
 

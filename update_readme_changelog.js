@@ -6,6 +6,11 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
 
+// 0. Loop Protection: Prevent recursion if called via git hooks
+if (process.env.SKIP_CHANGELOG_HOOK === '1') {
+    process.exit(0);
+}
+
 const README_PATH = path.join(__dirname, 'README.md');
 const PKG_PATH = path.join(__dirname, 'package.json');
 

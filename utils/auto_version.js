@@ -77,7 +77,7 @@ if (!fs.existsSync(packagePath)) {
     process.exit(1);
 }
 if (!fs.existsSync(readmePath)) {
-    console.error('❌ Error: README.md not found');
+    console.error('❌ Fehler: keine README.md gefunden');
     process.exit(1);
 }
 
@@ -126,9 +126,9 @@ try {
     fs.writeFileSync(readmePath, readmeContent, 'utf8');
     runGitCommand(`git add "${readmePath}"`);
 
-    console.log(`--- Erfolg: Version ${newV} ist bereit für den Commit ---`);
+    console.log(`--- Success: Version ${newV} is ready for commit ---`);
 
 } catch (e) {
-    console.error('❌ Fehler während der Versionierung:', e.message);
+    console.error('❌ Error during versioning:', e.message);
     process.exit(1);
 }
