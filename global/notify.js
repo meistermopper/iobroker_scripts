@@ -1,7 +1,31 @@
 /**
+ * =============================================================================
  * GLOBAL: NOTIFY UTILS
- * Zentralisierte Benachrichtigungen für Telegram, Gotify und SayIt (Chromecast).
- * Inklusive Ausschlussliste für reine Video-Streamer.
+ * =============================================================================
+ * ZWECK: Zentralisierte Benachrichtigungen für Telegram, Gotify und SayIt.
+ *
+ * STEUERUNG DER KANÄLE:
+ * 1. Telegram: Wird standardmäßig bei jedem Aufruf gesendet.
+ * 2. Gotify:   Wird gesendet, wenn der Token-Datenpunkt einen Wert enthält.
+ * 3. Sprachausgabe (SayIt): Wird NUR aktiv, wenn 'voiceVol' ungleich 'null' ist.
+ *    Wird der Parameter weggelassen oder explizit 'null' übergeben, erfolgt
+ *    keine Ansage über die Google-Speaker.
+ *
+ * PARAMETER-LOGIK:
+ * - priority:  Setzt die Gotify-Dringlichkeit (1 = Info, bis 5 = Alarm).
+ * - voiceVol:  Gibt die Lautstärke (0-100) an. Steuert gleichzeitig, OB eine
+ *              Sprachausgabe stattfindet.
+ *
+ * ANWENDUNGSBEISPIELE:
+ * - sendGlobalNotify("Waschmaschine ist fertig");
+ *   -> Standard: Schickt Text via Telegram & Gotify (Prio 1). Keine Sprachausgabe.
+ * - sendGlobalNotify("Einbruchversuch!", "ALARM", 5);
+ *   -> Alarm: Telegram & Gotify mit höchster Priorität (5). Keine Sprachausgabe.
+ * - sendGlobalNotify("Es hat geklingelt", "Haustür", 2, 50);
+ *   -> Info mit Ansage: Telegram, Gotify (Prio 2) und 50% Lautstärke über Google Home.
+ * - sendGlobalNotify("Update verfügbar", "System", 1, null);
+ *   -> Explizit stumm: Nur Messenger, 'null' verhindert die Sprachausgabe garantiert.
+ * =============================================================================
  */
 
 const GOOGLE_EXCLUDE_LIST = ['chromecast.0.CC-Schlazi', 'chromecast.0.b87bd4deaa73'];

@@ -84,6 +84,13 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
+### [2.0.22] - 2026-05-28
+- Code optimizations and updates
+
+### [2.0.21] - 2026-05-28
+- changes (notify.js)
+- Update of notify.js
+
 ### [2.0.20] - 2026-05-28
 - Code optimizations and updates
 
