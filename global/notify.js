@@ -12,7 +12,7 @@
  *    keine Ansage über die Google-Speaker.
  *
  * PARAMETER-LOGIK:
- * - priority:  Setzt die Gotify-Dringlichkeit (1 = Info, bis 5 = Alarm).
+ * - priority:  Setzt die Gotify-Dringlichkeit (1 = Info, 5 = Warnung, 8+ = Kritischer Alarm).
  * - voiceVol:  Gibt die Lautstärke (0-100) an. Steuert gleichzeitig, OB eine
  *              Sprachausgabe stattfindet.
  *

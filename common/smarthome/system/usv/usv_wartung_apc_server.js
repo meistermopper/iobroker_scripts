@@ -20,10 +20,6 @@ const dpPrefix = "0_userdata.0.USV.Wartung.0";
 
 const upsNutPrefix = "nut.0"; // NUT-Pfad für die APC-USV
 const sonoffPower = "sonoff.0.Serverschrank.POWER"; // Zuleitung Serverschrank
-const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker").val;
-
-// Liste der Google-Instanzen für den Haus-weiten Alarm
-const sayitInstances = ["sayit.0", "sayit.2", "sayit.3", "sayit.4", "sayit.5"];
 
 // Verzögerung für die erste Ansage (WLAN-Stabilität)
 const wifiStabilizeDelay = 10000;
@@ -67,45 +63,25 @@ async function initDP() {
   );
 }
 
-// --- 3. KOMMUNIKATION ---
-
-function notify(text, priority = 5) {
-  const header = "🔌🔋 USV Serverschrank\n\n";
-  sendTo("telegram", "send", { text: header + text });
-  console.log(`USV-APC-Log: ${text}`);
-  exec(
-    `curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=USV Serverschrank" -F "message=${text}" -F "priority=${priority}"`,
-  );
-}
-
-/**
- * Verteilt die Ansage an alle Google-Geräte im Haus.
- */
-function speak(text) {
-  if (!getState(`${dpPrefix}.Speak_bei_Wartung`).val) return;
-  const vol = getState(`${dpPrefix}.Google_lautstaerke`).val;
-
-  sayitInstances.forEach((instance) => {
-    sendTo(instance, "say", { text: `${vol}; ${text}`, volume: vol });
-  });
-  console.log(
-    `[USV-APC-Audio] Broadcast an ${sayitInstances.length} Lautsprecher gesendet.`,
-  );
-}
-
 // --- 4. AKTIONEN ---
 
+/**
+ * Startet die Wartung (Strom aus).
+ */
 async function startWartung(isManual = false) {
   setState(`${dpPrefix}.Wartung_eingeleitet`, true);
   lastSpokenSoc = -1; // Reset für sofortigen Start der Ansage-Kette
   setState(sonoffPower, false); // Netzspannung kappen
-  notify(
+  sendGlobalNotify(
     isManual
       ? "Manuelle Wartung Serverschrank gestartet."
-      : "Automatische Wartung Serverschrank gestartet.",
+      : "Automatische Wartung Serverschrank gestartet.", "USV Serverschrank", 1
   );
 }
 
+/**
+ * Beendet die Wartung (Strom an).
+ */
 async function stopWartung(reason = "") {
   setState(sonoffPower, true); // Strom wieder an
   setTimeout(() => {
@@ -113,7 +89,7 @@ async function stopWartung(reason = "") {
     setState(`${dpPrefix}.Jetzt_Warten`, false);
   }, 15000);
   const soc = getState(`${upsNutPrefix}.battery.charge`).val;
-  notify(`Wartung Serverschrank beendet (${reason}). Stand: ${soc}%.`);
+  sendGlobalNotify(`Wartung Serverschrank beendet (${reason}). Stand: ${soc}%.`, "USV Serverschrank", 1);
 }
 
 // --- 5. TRIGGER & EVENT-STEUERUNG ---
@@ -144,6 +120,10 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
       : getState(`${dpPrefix}.Speak_bei_Ausfall`).val;
     if (!canSpeak) return;
 
+    // Nachtruhe nur bei geplanter Wartung, bei echtem Ausfall immer sprechen!
+    const isDay = compareTime('08:00', '20:00', 'between');
+    const voiceVol = (isWartung && !isDay) ? null : getState(`${dpPrefix}.Google_lautstaerke`).val;
+
     // Sprech-Bremse: Nur bei 5%-Schritten oder kurz vor dem Limit
     if (
       lastSpokenSoc === -1 ||
@@ -165,10 +145,10 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
       if (soc >= 98) {
         console.log("[USV-APC-Audio] Warte 10s auf WLAN-Stabilität...");
         speakTimeout = setTimeout(() => {
-          speak(text);
+          sendGlobalNotify(text, "USV Serverschrank", 5, voiceVol);
         }, wifiStabilizeDelay);
       } else {
-        speak(text);
+        sendGlobalNotify(text, "USV Serverschrank", 5, voiceVol);
       }
     }
   }
@@ -181,14 +161,16 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
 on({ id: `${upsNutPrefix}.status.onbattery`, change: "ne" }, async (obj) => {
   const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`).val;
   if (obj.state.val === true && !isWartung) {
-    notify(
-      "⚠️ WARNUNG: Stromversorgung Serverschrank unerwartet unterbrochen!",
-      8,
+    sendGlobalNotify(
+      "⚠️ WARNUNG: Stromversorgung Serverschrank unterbrochen!",
+      "USV Serverschrank",
+      8, // Prio 8 für echte Notfälle
+      50 // Immer sprechen mit 50%
     );
   } else if (obj.state.val === false) {
     if (speakTimeout) clearTimeout(speakTimeout);
     lastSpokenSoc = -1; // Reset für den nächsten Vorfall
-    if (!isWartung) notify("✅ Netzspannung Serverschrank wiederhergestellt.");
+    if (!isWartance) sendGlobalNotify("✅ Netzspannung Serverschrank wiederhergestellt.", "USV Serverschrank", 1);
   }
 });
 

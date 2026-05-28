@@ -84,6 +84,15 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
+### [2.0.24] - 2026-05-28
+- Code optimizations and updates
+
+### [2.0.23] - 2026-05-28
+- change alert prio (batterie_wechseln.js, usv_wartung_apc_server.js, notify.js)
+- Update of batterie_wechseln.js
+- Update of usv_wartung_apc_server.js
+- Update of notify.js
+
 ### [2.0.22] - 2026-05-28
 - Code optimizations and updates
 
