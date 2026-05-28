@@ -90,7 +90,7 @@ on({ id: IDS.batSoc, change: "ne" }, async (obj) => {
     // Speicher ist voll
     if (soc === 100 && oldSoc < 100 && !messageSent) {
 
-        notify("👌 Der Stromspeicher flüstert mir gerade leise ins Ohr: Ich bin sowas von voll!", true, 1);
+        notify("👌 Der Stromspeicher ist voll", true, 1);
         messageSent = true;
 
         // --- SONDERLOGIK WINTER ---
