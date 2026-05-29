@@ -62,7 +62,12 @@ async function sendGlobalNotify(text, title = "ioBroker", priority = 1, voiceVol
 
     // 3. Sprachausgabe (optional)
     if (voiceVol !== null) {
-        await googleWatchdogAnnounce(text, voiceVol);
+        // Emojis und Symbole für die Sprachausgabe entfernen
+        const voiceText = text
+            .replace(/\p{Extended_Pictographic}/gu, '') // Entfernt Emojis/Symbole
+            .replace(/\s\s+/g, ' ')                   // Bereinigt doppelte Leerzeichen
+            .trim();
+        await googleWatchdogAnnounce(voiceText, voiceVol);
     }
 }
 

@@ -84,6 +84,15 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
+### [2.0.26] - 2026-05-29
+- Code optimizations and updates
+
+### [2.0.25] - 2026-05-29
+- fix(notify): Sanitize text for voice announcements (zustand_r2maeh2.js, energiemaster_und_sauna.js, notify.js)
+- Update of zustand_r2maeh2.js
+- Update of energiemaster_und_sauna.js
+- Update of notify.js
+
 ### [2.0.24] - 2026-05-28
 - Code optimizations and updates
 

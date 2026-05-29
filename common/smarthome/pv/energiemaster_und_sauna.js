@@ -42,6 +42,7 @@ const IDS = {
   wbLimit:
     "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.configuration.evb_MaximumStationCurrent",
 };
+const DP_MINSOC_BACKUP = PATH_PV + "Sauna_MinSoc_Backup";
 
 // Interne Speicher für Berechnungen
 let pvP = 0,
@@ -74,27 +75,25 @@ async function initSystem() {
     { id: PATH_PV + "Restladezeit", unit: "h", type: "string" },
     { id: PATH_PV + "Ladung_final_Uhrzeit", unit: "", type: "string" },
     { id: PATH_PV + "Wallbox_Freigabe", unit: "", type: "boolean" },
+    { id: DP_MINSOC_BACKUP, unit: "%", type: "number" },
     { id: PATH_SAUNA_DATA + "sauna_heizt_aktiv", unit: "", type: "boolean" },
   ];
 
   for (let s of states) {
     if (!existsState(s.id)) {
-      let defVal;
-      switch (s.type) {
-        case "string":
-          defVal = "";
-          break;
-        case "boolean":
-          defVal = false;
-          break;
-        default: // number
-          defVal = 0;
-      }
-      await createStateAsync(s.id, defVal, {
-        type: s.type,
-        unit: s.unit,
-        name: s.id.split(".").pop(),
-      });
+        const name = s.id.split(".").pop();
+        const def = s.type === "boolean" ? false : (s.type === "string" ? "" : 0);
+
+        if (s.id.startsWith("0_userdata.0")) {
+            // Sicherstellen, dass der Datenpunkt in 0_userdata existiert
+            await setObjectNotExistsAsync(s.id, {
+                type: "state",
+                common: { name: name, type: s.type, role: "value", unit: s.unit || "", read: true, write: true, def: def },
+                native: {}
+            });
+        } else {
+            await createStateAsync(s.id, def, { type: s.type, unit: s.unit, name: name });
+        }
     }
   }
   // Werte laden, damit Zähler nach Skript-Neustart weiterlaufen
@@ -105,6 +104,11 @@ async function initSystem() {
   netP = getState(IDS.netPower).val || 0;
   batP = getState(IDS.batPower).val || 0;
   soc = getState(IDS.batSoc).val || 0;
+
+  // Sicherer Abruf des Backups (verhindert Warnungen bei Erststart)
+  if (existsState(DP_MINSOC_BACKUP)) {
+      originalMinSoc = getState(DP_MINSOC_BACKUP).val || null;
+  }
 
   tVerbrauchWh = getState(PATH_PV + "Tagesverbrauch").val || 0;
   tLadungWh = getState(PATH_PV + "Tagesladung").val || 0;
@@ -268,6 +272,7 @@ function runUpdate() {
 function startSauna() {
   setState(IDS.saunaLogik, true, true);
   originalMinSoc = getState(IDS.minSocRead).val; // Ursprungswert merken (z.B. 40%)
+  setState(DP_MINSOC_BACKUP, originalMinSoc, true); // Persistent speichern
   setState(IDS.minSocSet, soc); // Batterie sofort auf aktuellem Level sperren
   console.log("Sauna: Priorisierung AKTIV, Min-SoC auf " + soc + "% fixiert");
 }
@@ -277,6 +282,7 @@ function stopSauna() {
   tSaunaReset = setTimeout(function () {
     if (originalMinSoc !== null) {
       setState(IDS.minSocSet, originalMinSoc); // Zurück auf Normalwert
+      setState(DP_MINSOC_BACKUP, 0, true); // Backup leeren
       console.log("Sauna: Nachlauf abgelaufen, Batterie wieder freigegeben");
     }
     setState(IDS.saunaLogik, false, true);

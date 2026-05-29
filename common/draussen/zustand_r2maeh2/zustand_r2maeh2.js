@@ -33,6 +33,7 @@ const IDS = {
     userMittel: '0_userdata.0.Energie.R2Mäh2.Durchschnitt',
     userMittelKosten: '0_userdata.0.Energie.R2Mäh2.Durchschnittskosten',
     price: '0_userdata.0.Energie.Strompreise.akt_Preis',
+};
 
 let stuckTimer; // Globaler Timer-Handle für die Überwachung
 
