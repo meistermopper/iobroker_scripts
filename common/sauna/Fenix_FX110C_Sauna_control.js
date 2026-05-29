@@ -261,6 +261,19 @@ async function updateStatus() {
             //     log(`[Harvia] API Rohdaten bei Heizung AN: ${JSON.stringify(p)}`, 'info');
             // }
 
+            // --> NEUES DEBUG-LOGGING FÜR HEATON <--
+            if (p.online) {
+                const actualHeat  = p.heatState  !== undefined ? p.heatState  : p.heat;
+                const isHeatingExpected = (actualHeat === 1 || actualHeat === true || actualHeat === 'on');
+                const currentHeatOnState = getState(`${BASE_PATH}.heatOn`).val;
+
+                if (isHeatingExpected && !currentHeatOnState) {
+                    log(`[Harvia DEBUG] Erwartet heatOn=true, aber ioBroker-Status ist false. Rohdaten: ${JSON.stringify(p)}`, 'warn');
+                } else if (actualHeat === undefined) {
+                     log(`[Harvia DEBUG] Heat-Status in API-Antwort undefiniert, aber online. Rohdaten: ${JSON.stringify(p)}`, 'warn');
+                }
+            }
+
             // NORMALISIERUNG: Harvia nutzt je nach Modell 'temp' oder 'temperature'.
             const currentTemp = p.temperature !== undefined ? p.temperature : p.temp;
 
