@@ -1,0 +1,43 @@
+# Dieser Workflow aktualisiert die Versionsnummer im README-Badge automatisch bei jedem Push auf den main-Branch.
+name: Update README Version Badge
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'package.json' # Reagiert nur, wenn sich die Version in der package.json tatsächlich ändert
+
+jobs:
+  update-badge:
+    runs-on: ubuntu-latest
+    # Berechtigungen setzen, damit die Action die README.md wieder committen darf
+    permissions:
+      contents: write
+
+    steps:
+      # 1. Repository auschecken
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Version aus der package.json auslesen
+      - name: Read version from package.json
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Ausgelesene Version: $VERSION"
+
+      # 3. Die Version im Shields.io-Link der README.md ersetzen
+      - name: Update README.md
+        run: |
+          # Sucht nach dem Muster 'Version-*-green' oder dem alten Stand und ersetzt es mit der aktuellen Version
+          sed -i -E "s/Version-[0-9.]+-success/Version-${{ env.VERSION }}-success/g" README.md
+          sed -i -E "s/Version-[0-9.]+-green/Version-${{ env.VERSION }}-green/g" README.md
+
+      # 4. Änderungen zurück ins Repository pushen
+      - name: Commit & Push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git diff --quiet && git diff --staged --quiet || (git add README.md && git commit -m "chore: update readme version badge to ${{ env.VERSION }}" && git push)
