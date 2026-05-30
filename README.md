@@ -89,37 +89,16 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ### [2.0.27] - 2026-05-29
 - feat(sauna-radio): Unify radio and light control for sauna and bath (Fenix_FX110C_Sauna_control.js, radio_master.js, session_master.js)
-- Update of Fenix_FX110C_Sauna_control.js
-- Update of radio_master.js
-- Update of session_master.js
-
-### [2.0.26] - 2026-05-29
-- Code optimizations and updates
 
 ### [2.0.25] - 2026-05-29
 - fix(notify): Sanitize text for voice announcements (zustand_r2maeh2.js, energiemaster_und_sauna.js, notify.js)
-- Update of zustand_r2maeh2.js
-- Update of energiemaster_und_sauna.js
-- Update of notify.js
-
-### [2.0.24] - 2026-05-28
-- Code optimizations and updates
 
 ### [2.0.23] - 2026-05-28
 - change alert prio (batterie_wechseln.js, usv_wartung_apc_server.js, notify.js)
-- Update of batterie_wechseln.js
-- Update of usv_wartung_apc_server.js
-- Update of notify.js
-
-### [2.0.22] - 2026-05-28
-- Code optimizations and updates
 
 ### [2.0.21] - 2026-05-28
 - changes (notify.js)
 - Update of notify.js
-
-### [2.0.20] - 2026-05-28
-- Code optimizations and updates
 
 ### [2.0.13] - 2026-05-28
 - Updated changelog and translated notifications in scripts to English; removed obsolete notification function in heos_offline.js (heos_offline.js, auto_version.js)
