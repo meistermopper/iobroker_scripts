@@ -83,24 +83,6 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
-### [2.0.33] - 2026-05-30
-- Code optimizations and updates
-
-### [2.0.32] - 2026-05-30
-- Code optimizations and updates
-
-### [2.0.31] - 2026-05-30
-- Code optimizations and updates
-
-### [2.0.30] - 2026-05-30
-- Code optimizations and updates
-
-### [2.0.29] - 2026-05-30
-- Update of update-version-badge.yml
-
-### [2.0.28] - 2026-05-29
-- Code optimizations and updates
-
 ### [2.0.27] - 2026-05-29
 - feat(sauna-radio): Unify radio and light control for sauna and bath (Fenix_FX110C_Sauna_control.js, radio_master.js, session_master.js)
 
