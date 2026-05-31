@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-2.0.33-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.34-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 ## 📂 Structure
@@ -83,22 +83,7 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
-### [2.0.33] - 2026-05-30
-- Code optimizations and updates
-
-### [2.0.32] - 2026-05-30
-- Code optimizations and updates
-
-### [2.0.31] - 2026-05-30
-- Code optimizations and updates
-
-### [2.0.30] - 2026-05-30
-- Code optimizations and updates
-
-### [2.0.29] - 2026-05-30
-- Update of update-version-badge.yml
-
-### [2.0.28] - 2026-05-29
+### [2.0.34] - 2026-05-31
 - Code optimizations and updates
 
 ### [2.0.27] - 2026-05-29
