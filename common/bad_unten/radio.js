@@ -3,18 +3,19 @@
 // =============================================================================
 
 // --- KONFIGURATION ---
-const DEFAULT_VOLUME = 25; // Zentrale Start-Lautstärke
+const VOL_NORMAL = 25; // Lautstärke bei manuellem Einschalten
+const VOL_SAUNA  = 15; // Lautstärke während des Sauna-Betriebs
 
 const SENDER_CONFIG = {
-    'hr1':          { volume: DEFAULT_VOLUME, preset: 4, name: 'HR 1' },
-    'jazzgroove':   { volume: DEFAULT_VOLUME, preset: 1, name: 'The Jazz Groove' },
-    'jazzradio':    { volume: DEFAULT_VOLUME, preset: 2, name: 'Jazz Radio' },
-    'smoothjazz':   { volume: DEFAULT_VOLUME, preset: 3, name: 'Smoothjazz' },
-    'hrinfo':       { volume: DEFAULT_VOLUME, preset: 5, name: 'hr info' },
-    'swissjazz':    { volume: DEFAULT_VOLUME, preset: 6, name: 'Swiss Jazz' },
-    'mdrkultur':    { volume: DEFAULT_VOLUME, preset: 7, name: 'MDR Kultur' },
-    'ffh':          { volume: DEFAULT_VOLUME, preset: 9, name: 'FFH' },
-    'jazzloft':     { volume: DEFAULT_VOLUME, preset: 10, name: 'Jazz Loft' }
+    'hr1':          { preset: 4,  name: 'HR 1' },
+    'jazzgroove':   { preset: 1,  name: 'The Jazz Groove' },
+    'jazzradio':    { preset: 2,  name: 'Jazz Radio' },
+    'smoothjazz':   { preset: 3,  name: 'Smoothjazz' },
+    'hrinfo':       { preset: 5,  name: 'hr info' },
+    'swissjazz':    { preset: 6,  name: 'Swiss Jazz' },
+    'mdrkultur':    { preset: 7,  name: 'MDR Kultur' },
+    'ffh':          { preset: 9,  name: 'FFH' },
+    'jazzloft':     { preset: 10, name: 'Jazz Loft' }
 };
 
 const IDS = {
@@ -26,8 +27,8 @@ const IDS = {
     bwm:         'alias.0.bad_unten.bwm.occupancy',
     denonVol:   'denon.0.zone2.volume',
     denonPower: 'denon.0.zone2.powerZone',
-    heosState:  'heos.0.players.217493250.state',
-    heosCmd:    'heos.0.players.217493250.command',
+    heosState:  'alias.0.bad_unten.media.heos.state',
+    heosCmd:    'alias.0.bad_unten.media.heos.command',
     userSender: '0_userdata.0.heos.Bad.sender',
     userStatus: '0_userdata.0.heos.Bad.radio_status',
     saunaAktiv: '0_userdata.0.Haushalt.sauna_laeuft' // WICHTIG: Verbindung zum Master
@@ -118,12 +119,15 @@ on({ id: IDS.userStatus, change: 'ne' }, (obj) => {
 on({ id: IDS.userSender, change: 'any' }, (obj) => {
     const sender = SENDER_CONFIG[obj.state.val];
     if (sender) {
+        const saunaLaeuft = getState(IDS.saunaAktiv).val;
+        const targetVol = saunaLaeuft ? VOL_SAUNA : VOL_NORMAL;
+
         const isPowered = getState(IDS.denonPower).val;
         const delay = isPowered ? 0 : 8000;
 
         if (!isPowered) setState(IDS.denonPower, true);
 
-        const cmd = `set_volume&level=${sender.volume}|play_preset&preset=${sender.preset}`;
+        const cmd = `set_volume&level=${targetVol}|play_preset&preset=${sender.preset}`;
         if (delay > 0) {
             setStateDelayed(IDS.heosCmd, cmd, delay, false);
         } else {

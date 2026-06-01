@@ -31,7 +31,7 @@ const IDS = {
     saunaSender: "0_userdata.0.heos.Sauna.sender",             // Auswahl-Datenpunkt Sauna
     saunaStatus: "0_userdata.0.heos.Sauna.radio_status",       // An/Aus Status Sauna
     saunaLight:  "0_userdata.0.Energie.Sauna.lightOn",         // Sauna Licht
-    badPlayer:   "alias.0.bad.media.heos",                     // HEOS Gerät Bad
+    badPlayer:   "alias.0.bad_unten.media.heos",                     // HEOS Gerät Bad
     badSender:   "0_userdata.0.heos.Bad.sender",               // Auswahl-Datenpunkt Bad
     badStatus:   "0_userdata.0.heos.Bad.radio_status"          // An/Aus Status Bad
 };
@@ -142,42 +142,4 @@ on({ id: IDS.saunaSender, change: "any" }, (obj) => {
   } else {
     console.warn(`Sauna: Sender '${senderKey}' ist nicht in der saunaMap konfiguriert.`);
   }
-});
-
-/**
- * 4. BAD LOGIK (Status & Sender)
- */
-
-// Reagiert auf den Status-Button (Play/Stop) für das Bad
-on({ id: IDS.badStatus, change: "ne" }, (obj) => {
-    const isPlaying = !!obj.state.val;
-    const saunaAktiv = getState(ID_SAUNA_AKTIV).val;
-
-    setState(`${IDS.badPlayer}.state`, isPlaying ? "play" : "stop");
-    if (!isPlaying && saunaAktiv) {
-        sendGlobalNotify("+++ 📻 ⏹️ Radio im Bad wurde ausgeschaltet +++", "Radio Bad", 1);
-    }
-});
-
-// Führt die Senderwahl und Lautstärkesetzung für das Bad aus
-on({ id: IDS.badSender, change: "any" }, (obj) => {
-    if (!obj.state.val) return;
-
-    // RACE CONDITION PROTECTION: Automatik-Timer stoppen, wenn manuell gewählt wird
-    if (tAutoBad) { clearTimeout(tAutoBad); tAutoBad = null; }
-
-    const senderKey = obj.state.val;
-    const sender = saunaMap[senderKey];
-
-    if (sender) {
-        // HEOS-Kombibefehl für das Bad
-        const cmd = `set_volume&level=${VOL_BAD}|play_preset&preset=${sender.preset}`;
-        setState(`${IDS.badPlayer}.command`, cmd);
-
-        // Status-Datenpunkt für VIS synchronisieren
-        setStateDelayed(IDS.badStatus, true, 1000, true);
-        sendGlobalNotify(`+++ 📻 ▶️ Radio im Bad läuft (${sender.name}) +++`, "Radio Bad", 1);
-    } else {
-        console.warn(`Bad: Sender '${senderKey}' ist nicht konfiguriert.`);
-    }
 });
