@@ -83,24 +83,11 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
-### [2.0.41] - 2026-06-02
-- Code optimizations and updates
-
 ### [2.0.40] - 2026-06-02
 - refactor(notify): Remove custom titles from global notifications (heizen_rh.js, heizen_rh.js, post_da.js, ziegenhain.js, fully_smart_laden.js, smartphones_laden.js)
-- Update of heizen_rh.js
-- Update of heizen_rh.js
-- Update of post_da.js
-- Update of ziegenhain.js
-- Update of fully_smart_laden.js
-- Update of smartphones_laden.js
-
-### [2.0.39] - 2026-06-02
-- Code optimizations and updates
 
 ### [2.0.38] - 2026-06-02
 - chore(sauna): Update preferred radio sender (session_master.js)
-- Update of session_master.js
 
 ### [2.0.36] - 2026-06-01
 - refactor(bad-radio): Unify control and adjust volume dynamically by sauna state (radio.js, session_master.js)
