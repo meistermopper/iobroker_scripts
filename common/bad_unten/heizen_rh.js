@@ -68,7 +68,7 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
 
     sendGlobalNotify(
       `♨️ Entfeuchtung im Bad unten gestartet (${luftfeuchte}% rL).\nTemperatur auf 24°C gesetzt (vorher ${vorigesTemperaturLevel}°C).`,
-      "Klima Bad Unten",
+      "",
       1
     );
   }
@@ -102,7 +102,7 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
     setState(ID_SET_TEMP, neueTemp);
     sendGlobalNotify(
       `✅ Entfeuchtung im Bad unten beendet (${luftfeuchte}% rL).\nHeizung wieder auf ${neueTemp}°C eingestellt.`,
-      "Klima Bad Unten",
+      "",
       1
     );
   }

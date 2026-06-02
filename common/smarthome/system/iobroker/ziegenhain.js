@@ -39,7 +39,7 @@ on({ id: ID_TRIGGER, val: true, change: 'any' }, (obj) => {
         const message = 'Okay, die Route nach Ziegenhain wird berechnet!';
         const defaultVolume = 50; // Standardlautstärke für die Ansage
 
-        sendGlobalNotify(message, "Navigation", 1, defaultVolume);
+        sendGlobalNotify(message, "", 1, defaultVolume);
 
         /**
          * TRIGGER ZURÜCKSETZEN:

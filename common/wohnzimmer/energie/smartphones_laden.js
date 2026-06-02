@@ -141,7 +141,7 @@ Object.keys(geraete).forEach((name) => {
       } else {
         await sendGlobalNotify(
             "🪫 " + name + " sollte geladen werden.\nStand: " + level + "%",
-            "Akku",
+            "",
             1, // Priorität
             compareTime("08:00", "20:00", "between") ? 50 : null // Sprachausgabe Lautstärke 50
           );
@@ -156,7 +156,7 @@ Object.keys(geraete).forEach((name) => {
       if (config.lowBatId) setState(config.lowBatId, false);
       await sendGlobalNotify(
         "🔋 " + name + " ist geladen.\nStand: " + level + "%",
-        "Akku",
+        "",
         1, // Priorität
         compareTime("08:00", "20:00", "between") ? 50 : null // Sprachausgabe Lautstärke 50
       );
@@ -176,7 +176,7 @@ on({ id: manualTriggers, val: true }, async (obj) => {
   setState("alias.0.wohnzimmer.energie.smartlader.on", true);
 
   // B. Globale Benachrichtigung mit Sprachausgabe (asynchron)
-  await sendGlobalNotify("Bitte links einstöpseln, ich habe eingeschaltet.", "Akku", 1, 50);
+  await sendGlobalNotify("Bitte links einstöpseln, ich habe eingeschaltet.", "", 1, 50);
 
   // C. Den Button in der VIS nach 2 Sekunden wieder auf 'false' setzen
   setTimeout(() => {

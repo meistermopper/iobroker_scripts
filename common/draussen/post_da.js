@@ -34,7 +34,7 @@ on({ id: POSTKASTEN_STATE_ID, change: 'ne' }, async (obj) => {
         Sperre = true;
         console.log('Postkasten: Ereignis erkannt, starte Ansage & VIS-Update');
         setState(POSTKASTEN_VIS_ID, true);
-        await sendGlobalNotify(msgText, "Postkasten", 1, 40); // Sprachausgabe mit Lautstärke 40
+        await sendGlobalNotify(msgText, "", 1, 40); // Sprachausgabe mit Lautstärke 40
 
         setTimeout(() => { Sperre_stumm = false; }, 60000);
     }
@@ -47,7 +47,7 @@ on({ id: POSTKASTEN_STATE_ID, change: 'ne' }, async (obj) => {
 on({ id: POSTKASTEN_VIS_ID, change: 'ne' }, async (obj) => {
     // Wir reagieren nur auf den Wechsel von "Voll" (true) zu "Geleert" (false)
     if (obj.state.val === false) {
-        sendGlobalNotify('📪 Der Briefkasten wurde wieder scharfgeschaltet.', "Postkasten", 1);
+        sendGlobalNotify('📪 Der Briefkasten wurde wieder scharfgeschaltet.', "", 1);
         console.log('Postkasten: System manuell zurückgesetzt');
     }
 });

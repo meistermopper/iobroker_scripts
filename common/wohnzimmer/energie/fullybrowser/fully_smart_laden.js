@@ -74,7 +74,7 @@ on(
       console.error(message);
       await sendGlobalNotify(
         message,
-        "Tablet Alarm",
+        "",
         2,
         compareTime("08:00", "20:00", "between") ? 40 : null, // Sprachausgabe nur tagsüber
       );

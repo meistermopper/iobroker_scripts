@@ -74,7 +74,8 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
       `♨️ Die Entfeuchtung im Bad oben wurde gestartet (${luftfeuchte}% rL).\n` +
       `Die Temperatur wurde auf 24°C eingestellt.\n` +
       `Vorherige Zieltemperatur: ${alteTemperatur}°C.`;
-    await sendGlobalNotify(msg, "Klima Bad Oben", 1, null); // Keine Sprachausgabe, da es nur eine Info ist
+    await sendGlobalNotify(msg, "", 1, null); // Keine Sprachausgabe, da es nur eine Info ist
+    await sendGlobalNotify(msg, "", 1, null); // Keine Sprachausgabe, da es nur eine Info ist
   }
 
   /**
