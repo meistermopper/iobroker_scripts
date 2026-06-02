@@ -18,7 +18,7 @@
 
 // --- KONFIGURATION ---
 const ID_SAUNA_AKTIV  = "0_userdata.0.Haushalt.sauna_laeuft";  // Trigger für Automatik
-const PREFERED_SENDER = "jazzloft";                            // Standard-Sender für Automatik
+const PREFERED_SENDER = "smoothjazz";                            // Standard-Sender für Automatik
 const VOL_SAUNA       = 10;                                    // Start-Lautstärke Sauna
 const VOL_BAD         = 15;                                    // Start-Lautstärke Bad
 
