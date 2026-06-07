@@ -234,6 +234,25 @@ async function setSaunaState(stateName, value, isRetry = false) {
 }
 
 /**
+ * Hilfsfunktion zum Auslesen von Werten aus der API-Antwort mit Fallbacks.
+ * @param {object} p - Das Daten-Objekt von der API
+ * @param {string[]} keys - Liste der möglichen Keys
+ */
+function getApiValue(p, keys) {
+    for (const key of keys) {
+        if (p[key] !== undefined && p[key] !== null) return p[key];
+    }
+    return undefined;
+}
+
+function isHarviaTrue(val) {
+    // Erweitert um weitere mögliche Werte (z.B. 21 für Remote-Ready bei Fenix-Modellen)
+    // 21 ist der spezifische Code für "Remote Ready" bei Fenix-Modellen
+    const trueValues = [1, 21, true, 'true', 'on', 'enabled', 'safe', 'ready', 'active'];
+    return trueValues.includes(val);
+}
+
+/**
  * 5. DATEN-SYNCHRONISATION (updateStatus)
  * Ruft die Live-Daten (Telemetrie) regelmäßig über den Data-Service ab.
  */
@@ -256,23 +275,14 @@ async function updateStatus() {
             // verhindern, dass der Schalter in der VIS kurz zurückspringt.
             if (Date.now() - lastCommandTime < LATENCY_MS) return;
 
-            // DEBUG-LOG: Einmalig aktivieren, um alle verfügbaren API-Felder im Log zu sehen
-            // if (p.heatState === 1 || p.heat === 'on') {
-            //     log(`[Harvia] API Rohdaten bei Heizung AN: ${JSON.stringify(p)}`, 'info');
-            // }
+            const heatKeys   = ['heatOn', 'heatState', 'heat', 'heater']; // 'heatOn' ist der primäre Key
+            const remoteKeys = ['onOffTrigger', 'safetyRelay', 'remoteControlState', 'remoteReady', 'remoteControl', 'remote', 'isRemoteReady', 'remoteStart', 'remoteStartEnabled', 'remoteReadyState']; // 'onOffTrigger' (Wert 21) ist primär für Fenix
+            const doorKeys   = ['doorSafetyState', 'doorSafety', 'door']; // 'doorSafetyState' ist der primäre Key
+            const lightKeys  = ['lightOn', 'lightState', 'light']; // 'lightOn' ist der primäre Key
 
-            // --> NEUES DEBUG-LOGGING FÜR HEATON <--
-            if (p.online) {
-                const actualHeat  = p.heatState  !== undefined ? p.heatState  : p.heat;
-                const isHeatingExpected = (actualHeat === 1 || actualHeat === true || actualHeat === 'on');
-                const currentHeatOnState = getState(`${BASE_PATH}.heatOn`).val;
-
-                if (isHeatingExpected && !currentHeatOnState) {
-                    log(`[Harvia DEBUG] Erwartet heatOn=true, aber ioBroker-Status ist false. Rohdaten: ${JSON.stringify(p)}`, 'warn');
-                } else if (actualHeat === undefined) {
-                     log(`[Harvia DEBUG] Heat-Status in API-Antwort undefiniert, aber online. Rohdaten: ${JSON.stringify(p)}`, 'warn');
-                }
-            }
+            const actualHeat  = getApiValue(p, heatKeys);
+            const actualRem   = getApiValue(p, remoteKeys);
+            const actualDoor  = getApiValue(p, doorKeys);
 
             // NORMALISIERUNG: Harvia nutzt je nach Modell 'temp' oder 'temperature'.
             const currentTemp = p.temperature !== undefined ? p.temperature : p.temp;
@@ -291,32 +301,30 @@ async function updateStatus() {
             const tTemp = p.targetTemperature !== undefined ? p.targetTemperature : p.targetTemp;
             if (tTemp !== undefined) setState(`${BASE_PATH}.targetTemp`, parseFloat(tTemp), true);
 
-            // STATUS-FIX (Licht/Heizung):
-            // Robuste Abfrage durch Prüfung von State-Feldern und Basis-Feldern.
-            // Manche Cloud-Versionen lassen Felder bei 'off' komplett weg oder nutzen alternative Namen.
-            const actualHeat  = p.heatState  !== undefined ? p.heatState  : p.heat;
-            const actualLight = p.lightState !== undefined ? p.lightState : p.light;
-
-            // Umrechnung von 0/1 oder "on"/"off" in echtes Boolean für ioBroker
-            if (actualHeat !== undefined && actualHeat !== null) {
-                setState(`${BASE_PATH}.heatOn`, !!(actualHeat === 1 || actualHeat === true || actualHeat === 'on'), true);
+            // Heizung
+            if (actualHeat !== undefined) {
+                setState(`${BASE_PATH}.heatOn`, isHarviaTrue(actualHeat), true);
             } else if (p.online) {
-                // Wenn das Gerät online ist, aber kein Heat-Feld liefert, ist es meist aus.
                 setState(`${BASE_PATH}.heatOn`, false, true);
             }
 
-            if (actualLight !== undefined && actualLight !== null) {
-                setState(`${BASE_PATH}.lightOn`, !!(actualLight === 1 || actualLight === true || actualLight === 'on'), true);
+            // Licht
+            const actualLight = getApiValue(p, lightKeys);
+            if (actualLight !== undefined) {
+                setState(`${BASE_PATH}.lightOn`, isHarviaTrue(actualLight), true);
             } else if (p.online) {
                 setState(`${BASE_PATH}.lightOn`, false, true);
             }
 
             // Fernstart-Bereitschaft (Wurde die Sicherheitskette am Panel quittiert?)
-            if (p.remoteControlState !== undefined) {
-                setState(`${BASE_PATH}.remoteControl`, p.remoteControlState === 1, true);
+            if (actualRem !== undefined) {
+                setState(`${BASE_PATH}.remoteControl`, isHarviaTrue(actualRem), true);
             }
 
-            setState(`${BASE_PATH}.doorSafety`, p.doorSafetyState === 1, true); // 1 = Sicher/Zu
+            // Tür-Sicherheit
+            if (actualDoor !== undefined) {
+                setState(`${BASE_PATH}.doorSafety`, isHarviaTrue(actualDoor), true);
+            }
             setState(`${BASE_PATH}.online`, true, true);
         }
     } catch (err) {

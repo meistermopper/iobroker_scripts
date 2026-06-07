@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-2.0.41-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.43-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 ## 📂 Structure
@@ -82,6 +82,13 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 ---
 
 ## 📝 Changelog
+
+### [2.0.43] - 2026-06-07
+- Code optimizations and updates
+
+### [2.0.42] - 2026-06-07
+- refactor(sauna): Improve API data parsing and state normalization (Fenix_FX110C_Sauna_control.js)
+- Update of Fenix_FX110C_Sauna_control.js
 
 ### [2.0.40] - 2026-06-02
 - refactor(notify): Remove custom titles from global notifications (heizen_rh.js, heizen_rh.js, post_da.js, ziegenhain.js, fully_smart_laden.js, smartphones_laden.js)
