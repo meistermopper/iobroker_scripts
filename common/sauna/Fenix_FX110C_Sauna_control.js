@@ -239,17 +239,26 @@ async function setSaunaState(stateName, value, isRetry = false) {
  * @param {string[]} keys - Liste der möglichen Keys
  */
 function getApiValue(p, keys) {
+    // 1. Suche auf der obersten Ebene
     for (const key of keys) {
         if (p[key] !== undefined && p[key] !== null) return p[key];
+    }
+    // 2. Suche in einem evtl. vorhandenen 'status'-Objekt (neue Harvia API Struktur)
+    if (p.status && typeof p.status === 'object') {
+        for (const key of keys) {
+            if (p.status[key] !== undefined && p.status[key] !== null) return p.status[key];
+        }
     }
     return undefined;
 }
 
 function isHarviaTrue(val) {
-    // Erweitert um weitere mögliche Werte (z.B. 21 für Remote-Ready bei Fenix-Modellen)
-    // 21 ist der spezifische Code für "Remote Ready" bei Fenix-Modellen
-    const trueValues = [1, 21, true, 'true', 'on', 'enabled', 'safe', 'ready', 'active'];
-    return trueValues.includes(val);
+    // Erweitert um 23 (Fenix Remote Ready Status)
+    const trueValues = [1, 21, 23, '1', '21', '23', true, 'true', 'on', 'enabled', 'safe', 'ready', 'active', 'standby'];
+    let checkVal = val;
+    if (typeof val === 'string') checkVal = val.toLowerCase().trim();
+    if (typeof val === 'number') checkVal = val;
+    return trueValues.includes(checkVal);
 }
 
 /**
@@ -269,36 +278,39 @@ async function updateStatus() {
         const p = response.data?.data;
 
         if (p) {
-            // LATENZ-SCHUTZ:
-            // Die Cloud braucht oft Zeit, um den Status zu aktualisieren. Wenn wir vor weniger
-            // als 5s einen Befehl gesendet haben, ignorieren wir dieses Update, um zu
-            // verhindern, dass der Schalter in der VIS kurz zurückspringt.
             if (Date.now() - lastCommandTime < LATENCY_MS) return;
 
-            const heatKeys   = ['heatOn', 'heatState', 'heat', 'heater']; // 'heatOn' ist der primäre Key
-            const remoteKeys = ['onOffTrigger', 'safetyRelay', 'remoteControlState', 'remoteReady', 'remoteControl', 'remote', 'isRemoteReady', 'remoteStart', 'remoteStartEnabled', 'remoteReadyState']; // 'onOffTrigger' (Wert 21) ist primär für Fenix
-            const doorKeys   = ['doorSafetyState', 'doorSafety', 'door']; // 'doorSafetyState' ist der primäre Key
-            const lightKeys  = ['lightOn', 'lightState', 'light']; // 'lightOn' ist der primäre Key
+            const heatKeys   = ['heatOn', 'heatState', 'heat', 'heater', 'heat_on', 'is_heating'];
+            // onOffTrigger nach vorne, da safetyRelay bei Fenix oft 0 ist trotz Bereitschaft
+            const remoteKeys = ['remoteControl', 'remoteReady', 'onOffTrigger', 'remote_control', 'remote_ready', 'is_remote_ready', 'safetyRelay', 'remoteControlState', 'remote', 'isRemoteReady', 'remoteStart', 'remoteStartEnabled', 'remoteReadyState'];
+            const doorKeys   = ['doorSafetyState', 'doorSafety', 'door', 'door_closed', 'door_safety_state', 'door_safety'];
+            const lightKeys  = ['lightOn', 'lightState', 'light', 'light_on'];
 
             const actualHeat  = getApiValue(p, heatKeys);
             const actualRem   = getApiValue(p, remoteKeys);
             const actualDoor  = getApiValue(p, doorKeys);
 
-            // NORMALISIERUNG: Harvia nutzt je nach Modell 'temp' oder 'temperature'.
-            const currentTemp = p.temperature !== undefined ? p.temperature : p.temp;
-
+            // NORMALISIERUNG: Harvia nutzt je nach Modell 'temp' oder 'temperature' / 'target_temperature'.
+            const currentTemp = getApiValue(p, ['temperature', 'temp', 'current_temperature', 'ambient_temperature']);
             if (currentTemp !== undefined) setState(`${BASE_PATH}.temp`, parseFloat(currentTemp), true);
-            if (p.panelTemp !== undefined) setState(`${BASE_PATH}.panelTemp`, parseFloat(p.panelTemp), true);
+
+            const panelTemp = getApiValue(p, ['panelTemp', 'panel_temperature']);
+            if (panelTemp !== undefined) setState(`${BASE_PATH}.panelTemp`, parseFloat(panelTemp), true);
 
             // Normalisierung der Heizleistung (heaterPower vs power)
-            const currentPower = p.heaterPower !== undefined ? p.heaterPower : p.power;
+            const currentPower = getApiValue(p, ['heaterPower', 'power', 'heater_power']);
             if (currentPower !== undefined) setState(`${BASE_PATH}.heaterPower`, parseFloat(currentPower), true);
 
-            if (p.totalBathingHours !== undefined) setState(`${BASE_PATH}.totalBathingHours`, parseFloat(p.totalBathingHours), true);
-            if (p.totalSessions !== undefined) setState(`${BASE_PATH}.totalSessions`, parseInt(p.totalSessions), true);
-            if (p.totalHours !== undefined) setState(`${BASE_PATH}.totalOperatingHours`, parseFloat(p.totalHours), true);
+            const bathingHours = getApiValue(p, ['totalBathingHours', 'total_bathing_hours', 'bathing_hours']);
+            if (bathingHours !== undefined) setState(`${BASE_PATH}.totalBathingHours`, parseFloat(bathingHours), true);
 
-            const tTemp = p.targetTemperature !== undefined ? p.targetTemperature : p.targetTemp;
+            const sessions = getApiValue(p, ['totalSessions', 'total_sessions', 'sessions']);
+            if (sessions !== undefined) setState(`${BASE_PATH}.totalSessions`, parseInt(sessions), true);
+
+            const operatingHours = getApiValue(p, ['totalOperatingHours', 'totalHours', 'total_hours', 'operating_hours']);
+            if (operatingHours !== undefined) setState(`${BASE_PATH}.totalOperatingHours`, parseFloat(operatingHours), true);
+
+            const tTemp = getApiValue(p, ['targetTemperature', 'targetTemp', 'target_temperature', 'setpoint_temperature']);
             if (tTemp !== undefined) setState(`${BASE_PATH}.targetTemp`, parseFloat(tTemp), true);
 
             // Heizung
