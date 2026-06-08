@@ -131,7 +131,7 @@ schedule("1 18 * * *", async function () {
 // --- 3. STATUS-UEBERWACHUNG (CORE LOGIK) ---
 on({ id: IDS.power, change: 'ne' }, async function (obj) {
     if (!isSaison()) return;
-    if (!obj.state || obj.state.ack) return; // Nur auf echte Hardware-Änderungen reagieren
+    if (!obj.state || !obj.state.ack) return; // Nur auf echte Hardware-Änderungen (ack: true) reagieren
 
     const watt = obj.state.val;
     const oldWatt = obj.oldState ? obj.oldState.val : 0;
