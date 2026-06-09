@@ -131,19 +131,17 @@ schedule("1 18 * * *", async function () {
 // --- 3. STATUS-UEBERWACHUNG (CORE LOGIK) ---
 on({ id: IDS.power, change: 'ne' }, async function (obj) {
     if (!isSaison()) return;
-    if (!obj.state || !obj.state.ack) return; // Nur auf echte Hardware-Änderungen (ack: true) reagieren
+    if (!obj.state) return;
 
     const watt = obj.state.val;
     const oldWatt = obj.oldState ? obj.oldState.val : 0;
-    const zeitFenster = compareTime('10:00', '18:01', 'between');
 
-    // DEBUG: Wir schreiben jeden Watt-Wechsel kurz ins Log, um die Werte zu sehen
-    // (Kannst du später löschen, wenn alles läuft)
-    console.debug(`R2Maeh2 Watt-Check: Aktuell ${watt}W (vorher ${oldWatt}W). Fenster: ${zeitFenster}, Status: ${maeht}`);
+    // Falls du manuell testest (ohne Bestätigt-Haken), entferne das '&& obj.state.ack'
+    if (!obj.state.ack) return;
 
     // FALL 1: MÄHER FÄHRT LOS
     // Die Station geht in den Leerlauf (< 4W), da der Mäher die Kontakte verlassen hat.
-    if (zeitFenster && watt < THRESHOLD_IDLE && oldWatt >= THRESHOLD_IDLE && !maeht) {
+    if (compareTime('10:00', '18:01', 'between') && watt < THRESHOLD_IDLE && oldWatt >= THRESHOLD_IDLE && !maeht) {
         maeht = true;
         setState(IDS.userMaeht, true, true);
         startStuckTimer();
@@ -156,7 +154,8 @@ on({ id: IDS.power, change: 'ne' }, async function (obj) {
     }
     // FALL 2: MÄHER KEHRT ZURÜCK
     // Die Station erkennt den Mäher und startet den Ladevorgang (> 10W).
-    else if (zeitFenster && watt > THRESHOLD_CHARGING && oldWatt <= THRESHOLD_CHARGING && maeht) {
+    // WICHTIG: Kein Zeitfenster bei Rückkehr, um den Status immer sauber zurückzusetzen!
+    else if (watt > THRESHOLD_CHARGING && oldWatt <= THRESHOLD_CHARGING && maeht) {
         maeht = false;
         setState(IDS.userMaeht, false, true);
         stopStuckTimer();
