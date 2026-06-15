@@ -57,7 +57,8 @@ async function ensureStatesExist() {
         { id: 'doorSafety',         type: 'boolean', role: 'indicator.safety',      def: false },
         { id: 'remoteControl',      type: 'boolean', role: 'indicator.state',       def: false },
         { id: 'errorMsg',           type: 'string',  role: 'text',                  def: '' },
-        { id: 'readyNotified',      type: 'boolean', role: 'indicator',             def: false }
+        { id: 'readyNotified',      type: 'boolean', role: 'indicator',             def: false },
+        { id: 'targetReachedNotified', type: 'boolean', role: 'indicator',          def: false }
     ];
     for (const s of states) {
         await createStateAsync(`${BASE_PATH}.${s.id}`, s.def, {
@@ -402,28 +403,40 @@ function setupListeners() {
         await setSaunaState('targetTemp', obj.state.val);
     });
 
-    // 10-Minuten-Benachrichtigung (Fenix-Logik: Zieltemperatur - 13°C)
+    // Benachrichtigungen: 10-Minuten-Vorwarnung und Zieltemperatur erreicht
     on({ id: `${BASE_PATH}.temp`, change: 'ne', ack: true }, (obj) => {
         const currentTemp = obj.state.val;
         const targetTemp = getState(`${BASE_PATH}.targetTemp`).val;
         const heatOn = getState(`${BASE_PATH}.heatOn`).val;
-        const notified = getState(`${BASE_PATH}.readyNotified`).val;
+        const notified10Min = getState(`${BASE_PATH}.readyNotified`).val;
+        const notifiedReady = getState(`${BASE_PATH}.targetReachedNotified`).val;
 
-        // Wenn Heizung an ist, noch nicht benachrichtigt wurde und die Temperatur 13°C vor dem Ziel ist.
-        // Die "currentTemp > 20" Prüfung verhindert Fehlalarme bei extrem niedrigen Test-Zieltemperaturen.
-        if (heatOn && !notified && currentTemp > 20 && currentTemp >= (targetTemp - 13)) {
-            setState(`${BASE_PATH}.readyNotified`, true, true);
+        if (heatOn && currentTemp > 20) {
+            // 1. Vorwarnung: 13°C vor Zieltemperatur (Fenix-Logik)
+            if (!notified10Min && currentTemp >= (targetTemp - 13) && currentTemp < targetTemp) {
+                setState(`${BASE_PATH}.readyNotified`, true, true);
+                const msg = `🧖 Die Sauna erreicht in ca. 10 Minuten ihre Zieltemperatur (${targetTemp}°C).`;
+                log(`[Harvia] ${msg}`, 'info');
+                if (typeof sendGlobalNotify === 'function') sendGlobalNotify(msg, "Sauna", 1);
+            }
 
-            const msg = `🧖 Die Sauna erreicht in ca. 10 Minuten ihre Zieltemperatur (${targetTemp}°C).`;
-            log(`[Harvia] ${msg}`, 'info');
+            // 2. Ziel erreicht: Exakt auf oder über der Zieltemperatur
+            if (!notifiedReady && currentTemp >= targetTemp) {
+                // Falls die 10-Minuten-Nachricht übersprungen wurde, markieren wir sie als erledigt
+                if (!notified10Min) setState(`${BASE_PATH}.readyNotified`, true, true);
 
-            if (typeof sendGlobalNotify === 'function') sendGlobalNotify(msg, "Sauna", 1);
+                setState(`${BASE_PATH}.targetReachedNotified`, true, true);
+                const msg = `♨️ Die Sauna hat ihre Zieltemperatur von ${targetTemp}°C erreicht und ist bereit!`;
+                log(`[Harvia] ${msg}`, 'info');
+                if (typeof sendGlobalNotify === 'function') sendGlobalNotify(msg, "Sauna", 1);
+            }
         }
     });
 
-    // Reset der Benachrichtigungssperre, wenn die Heizung an- oder ausgeschaltet wird
+    // Reset der Benachrichtigungssperren, wenn die Heizung an- oder ausgeschaltet wird
     on({ id: `${BASE_PATH}.heatOn`, change: 'ne' }, () => {
         setState(`${BASE_PATH}.readyNotified`, false, true);
+        setState(`${BASE_PATH}.targetReachedNotified`, false, true);
     });
 }
 
@@ -461,6 +474,7 @@ async function main() {
     setState(`${BASE_PATH}.doorSafety`, false, true);
     setState(`${BASE_PATH}.remoteControl`, false, true);
     setState(`${BASE_PATH}.readyNotified`, false, true);
+    setState(`${BASE_PATH}.targetReachedNotified`, false, true);
 
     setupListeners();          // 3. Auf Klicks in VIS warten
 
