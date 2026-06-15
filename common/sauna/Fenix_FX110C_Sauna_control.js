@@ -56,7 +56,8 @@ async function ensureStatesExist() {
         { id: 'targetTemp',         type: 'number',  role: 'level.temperature',     unit: '°C', def: 90 },
         { id: 'doorSafety',         type: 'boolean', role: 'indicator.safety',      def: false },
         { id: 'remoteControl',      type: 'boolean', role: 'indicator.state',       def: false },
-        { id: 'errorMsg',           type: 'string',  role: 'text',                  def: '' }
+        { id: 'errorMsg',           type: 'string',  role: 'text',                  def: '' },
+        { id: 'readyNotified',      type: 'boolean', role: 'indicator',             def: false }
     ];
     for (const s of states) {
         await createStateAsync(`${BASE_PATH}.${s.id}`, s.def, {
@@ -400,6 +401,30 @@ function setupListeners() {
         if (!shouldProcess(obj.id)) return;
         await setSaunaState('targetTemp', obj.state.val);
     });
+
+    // 10-Minuten-Benachrichtigung (Fenix-Logik: Zieltemperatur - 13°C)
+    on({ id: `${BASE_PATH}.temp`, change: 'ne', ack: true }, (obj) => {
+        const currentTemp = obj.state.val;
+        const targetTemp = getState(`${BASE_PATH}.targetTemp`).val;
+        const heatOn = getState(`${BASE_PATH}.heatOn`).val;
+        const notified = getState(`${BASE_PATH}.readyNotified`).val;
+
+        // Wenn Heizung an ist, noch nicht benachrichtigt wurde und die Temperatur 13°C vor dem Ziel ist.
+        // Die "currentTemp > 20" Prüfung verhindert Fehlalarme bei extrem niedrigen Test-Zieltemperaturen.
+        if (heatOn && !notified && currentTemp > 20 && currentTemp >= (targetTemp - 13)) {
+            setState(`${BASE_PATH}.readyNotified`, true, true);
+
+            const msg = `🧖 Die Sauna erreicht in ca. 10 Minuten ihre Zieltemperatur (${targetTemp}°C).`;
+            log(`[Harvia] ${msg}`, 'info');
+
+            if (typeof sendGlobalNotify === 'function') sendGlobalNotify(msg, "Sauna", 1);
+        }
+    });
+
+    // Reset der Benachrichtigungssperre, wenn die Heizung an- oder ausgeschaltet wird
+    on({ id: `${BASE_PATH}.heatOn`, change: 'ne' }, () => {
+        setState(`${BASE_PATH}.readyNotified`, false, true);
+    });
 }
 
 /**
@@ -435,6 +460,7 @@ async function main() {
     setState(`${BASE_PATH}.lightOn`, false, true);
     setState(`${BASE_PATH}.doorSafety`, false, true);
     setState(`${BASE_PATH}.remoteControl`, false, true);
+    setState(`${BASE_PATH}.readyNotified`, false, true);
 
     setupListeners();          // 3. Auf Klicks in VIS warten
 
