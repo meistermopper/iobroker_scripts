@@ -283,8 +283,8 @@ async function updateStatus() {
             if (Date.now() - lastCommandTime < LATENCY_MS) return;
 
             const heatKeys   = ['heatOn', 'heatState', 'heat', 'heater', 'heat_on', 'is_heating'];
-            // onOffTrigger nach vorne, da safetyRelay bei Fenix oft 0 ist trotz Bereitschaft
-            const remoteKeys = ['remoteControl', 'remoteReady', 'onOffTrigger', 'remote_control', 'remote_ready', 'is_remote_ready', 'safetyRelay', 'remoteControlState', 'remote', 'isRemoteReady', 'remoteStart', 'remoteStartEnabled', 'remoteReadyState'];
+            // Die echten "Ready"-Zustände nach vorne priorisieren, da "remoteControl" in der Harvia API oft nur statisch "true" für die generelle Fähigkeit liefert
+            const remoteKeys = ['remoteReady', 'isRemoteReady', 'remoteReadyState', 'remote_ready', 'is_remote_ready', 'onOffTrigger', 'safetyRelay', 'remoteControlState', 'remoteStart', 'remoteStartEnabled', 'remoteControl', 'remote_control', 'remote'];
             const doorKeys   = ['doorSafetyState', 'doorSafety', 'door', 'door_closed', 'door_safety_state', 'door_safety'];
             const lightKeys  = ['lightOn', 'lightState', 'light', 'light_on'];
 
