@@ -57,12 +57,12 @@ async function ensureStatesExist() {
         { id: 'doorSafety',         type: 'boolean', role: 'indicator.safety',      def: false },
         { id: 'remoteControl',      type: 'boolean', role: 'indicator.state',       def: false },
         { id: 'errorMsg',           type: 'string',  role: 'text',                  def: '' },
-        { id: 'readyNotified',      type: 'boolean', role: 'indicator',             def: false },
-        { id: 'targetReachedNotified', type: 'boolean', role: 'indicator',          def: false }
+        { id: 'readyNotified10Min', type: 'boolean', role: 'indicator',             def: false, name: '10-Minuten-Vorwarnung gesendet' },
+        { id: 'targetReachedNotified', type: 'boolean', role: 'indicator',          def: false, name: 'Zieltemperatur erreicht gesendet' }
     ];
     for (const s of states) {
         await createStateAsync(`${BASE_PATH}.${s.id}`, s.def, {
-            name: s.id, type: s.type, role: s.role, unit: s.unit, read: true, write: true
+            name: s.name || s.id, type: s.type, role: s.role, unit: s.unit, read: true, write: true
         });
     }
 }
@@ -241,15 +241,12 @@ async function setSaunaState(stateName, value, isRetry = false) {
  * @param {string[]} keys - Liste der möglichen Keys
  */
 function getApiValue(p, keys) {
-    // 1. Suche auf der obersten Ebene
+    // Wir prüfen JEDEN Key strikt nach seiner Priorität im Array.
     for (const key of keys) {
+        // 1. Auf oberster Ebene suchen
         if (p[key] !== undefined && p[key] !== null) return p[key];
-    }
-    // 2. Suche in einem evtl. vorhandenen 'status'-Objekt (neue Harvia API Struktur)
-    if (p.status && typeof p.status === 'object') {
-        for (const key of keys) {
-            if (p.status[key] !== undefined && p.status[key] !== null) return p.status[key];
-        }
+        // 2. Im 'status'-Objekt suchen
+        if (p.status && typeof p.status === 'object' && p.status[key] !== undefined && p.status[key] !== null) return p.status[key];
     }
     return undefined;
 }
@@ -330,14 +327,27 @@ async function updateStatus() {
                 setState(`${BASE_PATH}.lightOn`, false, true);
             }
 
-            // Fernstart-Bereitschaft (Wurde die Sicherheitskette am Panel quittiert?)
-            if (actualRem !== undefined) {
-                setState(`${BASE_PATH}.remoteControl`, isHarviaTrue(actualRem), true);
+            // Tür-Sicherheit
+            let isDoorSafe = true; // Interner Fallback
+            if (actualDoor !== undefined) {
+                isDoorSafe = isHarviaTrue(actualDoor);
+                setState(`${BASE_PATH}.doorSafety`, isDoorSafe, true);
+            } else {
+                // Falls die API gerade nichts sendet, aktuellen Status aus ioBroker lesen
+                const dsState = getState(`${BASE_PATH}.doorSafety`);
+                if (dsState) isDoorSafe = dsState.val;
             }
 
-            // Tür-Sicherheit
-            if (actualDoor !== undefined) {
-                setState(`${BASE_PATH}.doorSafety`, isHarviaTrue(actualDoor), true);
+            // Fernstart-Bereitschaft (Kombiniert mit Tür-Sicherheit)
+            if (actualRem !== undefined) {
+                let isRemoteReady = isHarviaTrue(actualRem);
+
+                // MyHarvia App-Logik: Wenn die Tür offen ist, wird der Remotestart zwingend blockiert.
+                if (!isDoorSafe) {
+                    isRemoteReady = false;
+                }
+
+                setState(`${BASE_PATH}.remoteControl`, isRemoteReady, true);
             }
             setState(`${BASE_PATH}.online`, true, true);
         }
@@ -408,13 +418,13 @@ function setupListeners() {
         const currentTemp = obj.state.val;
         const targetTemp = getState(`${BASE_PATH}.targetTemp`).val;
         const heatOn = getState(`${BASE_PATH}.heatOn`).val;
-        const notified10Min = getState(`${BASE_PATH}.readyNotified`).val;
+        const notified10Min = getState(`${BASE_PATH}.readyNotified10Min`).val;
         const notifiedReady = getState(`${BASE_PATH}.targetReachedNotified`).val;
 
         if (heatOn && currentTemp > 20) {
             // 1. Vorwarnung: 13°C vor Zieltemperatur (Fenix-Logik)
             if (!notified10Min && currentTemp >= (targetTemp - 13) && currentTemp < targetTemp) {
-                setState(`${BASE_PATH}.readyNotified`, true, true);
+                setState(`${BASE_PATH}.readyNotified10Min`, true, true);
                 const msg = `🧖 Die Sauna erreicht in ca. 10 Minuten ihre Zieltemperatur (${targetTemp}°C).`;
                 log(`[Harvia] ${msg}`, 'info');
                 if (typeof sendGlobalNotify === 'function') sendGlobalNotify(msg, "Sauna", 1);
@@ -423,7 +433,7 @@ function setupListeners() {
             // 2. Ziel erreicht: Exakt auf oder über der Zieltemperatur
             if (!notifiedReady && currentTemp >= targetTemp) {
                 // Falls die 10-Minuten-Nachricht übersprungen wurde, markieren wir sie als erledigt
-                if (!notified10Min) setState(`${BASE_PATH}.readyNotified`, true, true);
+                if (!notified10Min) setState(`${BASE_PATH}.readyNotified10Min`, true, true);
 
                 setState(`${BASE_PATH}.targetReachedNotified`, true, true);
                 const msg = `♨️ Die Sauna hat ihre Zieltemperatur von ${targetTemp}°C erreicht und ist bereit!`;
@@ -435,7 +445,7 @@ function setupListeners() {
 
     // Reset der Benachrichtigungssperren, wenn die Heizung an- oder ausgeschaltet wird
     on({ id: `${BASE_PATH}.heatOn`, change: 'ne' }, () => {
-        setState(`${BASE_PATH}.readyNotified`, false, true);
+        setState(`${BASE_PATH}.readyNotified10Min`, false, true);
         setState(`${BASE_PATH}.targetReachedNotified`, false, true);
     });
 }
@@ -473,7 +483,7 @@ async function main() {
     setState(`${BASE_PATH}.lightOn`, false, true);
     setState(`${BASE_PATH}.doorSafety`, false, true);
     setState(`${BASE_PATH}.remoteControl`, false, true);
-    setState(`${BASE_PATH}.readyNotified`, false, true);
+    setState(`${BASE_PATH}.readyNotified10Min`, false, true);
     setState(`${BASE_PATH}.targetReachedNotified`, false, true);
 
     setupListeners();          // 3. Auf Klicks in VIS warten
