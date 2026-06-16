@@ -4,6 +4,7 @@ const ID_HELL = "0_userdata.0.Fully.hell";
 const ID_COMMAND = "fullybrowser.0.Fully-Browser.Commands."; // Basis-Pfad für Commands
 
 const BRI_HOCH = 200;
+const BRI_NIEDRIG = 50; // Helligkeit für die Nachtruhe
 
 // Hilfsfunktion: Prüfen ob wir uns in der Nachtruhe befinden
 function isNachtruhe() {
@@ -16,13 +17,23 @@ function isNachtruhe() {
 // --- LOGIK ---
 
 on({ id: ID_MOTION, change: "gt" }, async () => {
-  // 1. Sperre: Wenn Nachtruhe, dann mache gar nichts
-  if (isNachtruhe()) return;
-
   // Alten Timer löschen
   if (timeout_screen) {
     clearTimeout(timeout_screen);
     timeout_screen = null;
+  }
+
+  // 1. Sperre: Wenn Nachtruhe, schalte das Display nicht aktiv hell.
+  // Falls es aber (z.B. durch Antippen) angegangen ist, sorge dafür,
+  // dass es nach einer kurzen Kulanzzeit wieder aus geht.
+  if (isNachtruhe()) {
+    // Helligkeit beim Antippen in der Nacht auf einen niedrigen, aber lesbaren Wert setzen
+    setState(ID_COMMAND + "setStringSetting", `&key=screenBrightness&value=${BRI_NIEDRIG}`);
+
+    timeout_screen = setTimeout(async () => {
+      setState(ID_COMMAND + "screenOff", true);
+    }, 5000); // 5 Sekunden Leuchtdauer in der Nacht
+    return;
   }
 
   // Display einschalten und Helligkeit setzen
