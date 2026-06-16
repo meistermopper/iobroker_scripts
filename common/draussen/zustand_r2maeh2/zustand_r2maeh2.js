@@ -17,7 +17,7 @@
 
 // --- CONFIGURATION & THRESHOLDS ---
 const WARTEZEIT_RESUME_MS = 8000;         // Resume music after 8s
-const MAX_MAEHZEIT_MS     = 120 * 60 * 1000; // 2h until "stuck" alarm
+const MAX_MAEHZEIT_MS     = 150 * 60 * 1000; // 2h until "stuck" alarm
 const THRESHOLD_IDLE      = 4;            // Under 4W: Station is empty (mower is out)
 const THRESHOLD_CHARGING  = 10;           // Over 10W: Mower is actively charging
 const VOL_ANNOUNCEMENT    = 40;           // Default volume for announcements
@@ -146,7 +146,7 @@ on({ id: IDS.power, change: 'ne' }, async function (obj) {
         setState(IDS.userMaeht, true, true);
         startStuckTimer();
         await sendGlobalNotify(
-            '🚜 R2Maeh2 hat mit dem Mähen losgelegt',
+            '🚜 R2Maeh2 ist fleißig',
             "R2Maeh2",
             1,
             compareTime('08:00', '20:00', 'between') ? 40 : null
@@ -160,7 +160,7 @@ on({ id: IDS.power, change: 'ne' }, async function (obj) {
         setState(IDS.userMaeht, false, true);
         stopStuckTimer();
         await sendGlobalNotify(
-            '🔌 R2Maeh2 ist zurück und wird geladen',
+            '🔌 R2Maeh2 wird geladen',
             "R2Maeh2",
             1,
             compareTime('08:00', '20:00', 'between') ? 40 : null
