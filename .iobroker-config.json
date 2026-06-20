@@ -6,5 +6,6 @@
   "allowSelfSignedCertificate": true,
   "username": "thomas",
   "password": "",
-  "autoConnect": true
+  "autoConnect": true,
+  "collectDebugLog": true
 }
