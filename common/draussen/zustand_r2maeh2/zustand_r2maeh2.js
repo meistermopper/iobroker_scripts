@@ -107,7 +107,7 @@ function isSaison() {
 // --- 1. STECKDOSEN-UEBERWACHUNG ---
 on({ id: IDS.socket_state, change: 'ne' }, function (obj) {
     if (obj.state.val === false) {
-        sendGlobalNotify('❌ Die Steckdose von R2Maeh2 wurde ausgeschaltet!', "R2Maeh2", 2);
+        sendGlobalNotify('❌ Die Steckdose von RzwoMaehzwo wurde ausgeschaltet!', "R2Maeh2", 2);
     }
 });
 
@@ -120,7 +120,7 @@ schedule("1 18 * * *", async function () {
     // Wenn der Strom an ist (Mäher draußen), aber Frost droht (< 5°C)
     if (pState && tState && pState.val > 10 && tState.val < 5) {
         await sendGlobalNotify(
-            '❄️ R2Maeh2 muss in den Keller. Es wird zu kalt!',
+            '❄️ RzwoMaehzwo muss in den Keller. Es wird zu kalt!',
             "R2Maeh2",
             2,
             compareTime('08:00', '20:00', 'between') ? 40 : null
@@ -146,7 +146,7 @@ on({ id: IDS.power, change: 'ne' }, async function (obj) {
         setState(IDS.userMaeht, true, true);
         startStuckTimer();
         await sendGlobalNotify(
-            '🚜 R2Maeh2 ist fleißig',
+            '🚜 RzwoMaehzwo ist fleißig',
             "R2Maeh2",
             1,
             compareTime('08:00', '20:00', 'between') ? 40 : null
@@ -160,7 +160,7 @@ on({ id: IDS.power, change: 'ne' }, async function (obj) {
         setState(IDS.userMaeht, false, true);
         stopStuckTimer();
         await sendGlobalNotify(
-            '🔌 R2Maeh2 wird geladen',
+            '🔌 RzwoMaehzwo wird geladen',
             "R2Maeh2",
             1,
             compareTime('08:00', '20:00', 'between') ? 40 : null
