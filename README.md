@@ -110,6 +110,7 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 - feat: implement robust EV3 charging control with OCPP reset sequences, forced stop logic, and improved state management (charge_master.js)
 - Update of charge_master.js
 
+
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
 
 ---
