@@ -122,6 +122,58 @@ try {
         console.warn('⚠️ Changelog marker in README.md not found. Entry not added.');
     }
 
+    // 2c. Automatically limit README changelog to 5 entries and archive older ones
+    const archiveMarker = 'Older entries can be found in the [Changelog Archive]';
+    const changelogStartIndex = readmeContent.indexOf(changelogMarker);
+    const archiveStartIndex = readmeContent.indexOf(archiveMarker);
+
+    if (changelogStartIndex !== -1 && archiveStartIndex !== -1) {
+        const changelogTextStart = changelogStartIndex + changelogMarker.length;
+        const changelogText = readmeContent.substring(changelogTextStart, archiveStartIndex);
+        const parts = changelogText.split('### [');
+
+        if (parts.length > 6) {
+            // Keep the first 5 entries (parts[1] to parts[5])
+            const header = parts[0];
+            const keepBlocks = parts.slice(1, 6).map(p => '### [' + p);
+            const archiveBlocks = parts.slice(6).map(p => '### [' + p);
+
+            // Reconstruct the new changelog text for README
+            const newChangelogText = header + keepBlocks.join('');
+            
+            // Build the archived entries text to move to CHANGELOG_OLD.md
+            const archivedText = archiveBlocks.join('');
+
+            // Update README content
+            readmeContent = readmeContent.substring(0, changelogTextStart) + newChangelogText + readmeContent.substring(archiveStartIndex);
+
+            // Update CHANGELOG_OLD.md
+            const oldChangelogPath = path.join(rootDir, 'CHANGELOG_OLD.md');
+            if (!fs.existsSync(oldChangelogPath)) {
+                fs.writeFileSync(oldChangelogPath, '# Changelog Archive\n\nThis archive contains older changelog entries for the ioBroker Script Collection.\n\n---\n', 'utf8');
+            }
+
+            let archiveContent = fs.readFileSync(oldChangelogPath, 'utf8');
+            const markerIndex = archiveContent.indexOf('---');
+
+            if (markerIndex !== -1) {
+                const insertPos = markerIndex + '---'.length;
+                const before = archiveContent.substring(0, insertPos);
+                const after = archiveContent.substring(insertPos);
+                const formattedArchiveText = '\n\n' + archivedText.trim() + '\n';
+                archiveContent = before + formattedArchiveText + after.replace(/^\s+/, '\n');
+            } else {
+                archiveContent = archivedText + '\n' + archiveContent;
+            }
+
+            fs.writeFileSync(oldChangelogPath, archiveContent, 'utf8');
+            console.log(`[Changelog] Archived ${archiveBlocks.length} older entry/entries to CHANGELOG_OLD.md`);
+            
+            // Stage CHANGELOG_OLD.md as well
+            runGitCommand(`git add "${oldChangelogPath}"`);
+        }
+    }
+
     // 3. Aktualisierte README.md speichern und zu Git hinzufügen
     fs.writeFileSync(readmePath, readmeContent, 'utf8');
     runGitCommand(`git add "${readmePath}"`);

@@ -93,6 +93,58 @@ try {
         console.log(`[Changelog] Created new block for version ${currentVersion}.`);
     }
 
+    // 6b. Automatically limit README changelog to 5 entries and archive older ones
+    const archiveMarker = 'Older entries can be found in the [Changelog Archive]';
+    const changelogStartIndex = content.indexOf(changelogMarker);
+    const archiveStartIndex = content.indexOf(archiveMarker);
+
+    if (changelogStartIndex !== -1 && archiveStartIndex !== -1) {
+        const changelogTextStart = changelogStartIndex + changelogMarker.length;
+        const changelogText = content.substring(changelogTextStart, archiveStartIndex);
+        const parts = changelogText.split('### [');
+
+        if (parts.length > 6) {
+            // Keep the first 5 entries (parts[1] to parts[5])
+            const header = parts[0];
+            const keepBlocks = parts.slice(1, 6).map(p => '### [' + p);
+            const archiveBlocks = parts.slice(6).map(p => '### [' + p);
+
+            // Reconstruct the new changelog text for README
+            const newChangelogText = header + keepBlocks.join('');
+            
+            // Build the archived entries text to move to CHANGELOG_OLD.md
+            const archivedText = archiveBlocks.join('');
+
+            // Update README content
+            content = content.substring(0, changelogTextStart) + newChangelogText + content.substring(archiveStartIndex);
+
+            // Update CHANGELOG_OLD.md
+            const OLD_CHANGELOG_PATH = path.join(__dirname, 'CHANGELOG_OLD.md');
+            if (!fs.existsSync(OLD_CHANGELOG_PATH)) {
+                fs.writeFileSync(OLD_CHANGELOG_PATH, '# Changelog Archive\n\nThis archive contains older changelog entries for the ioBroker Script Collection.\n\n---\n', 'utf8');
+            }
+
+            let archiveContent = fs.readFileSync(OLD_CHANGELOG_PATH, 'utf8');
+            const markerIndex = archiveContent.indexOf('---');
+
+            if (markerIndex !== -1) {
+                const insertPos = markerIndex + '---'.length;
+                const before = archiveContent.substring(0, insertPos);
+                const after = archiveContent.substring(insertPos);
+                const formattedArchiveText = '\n\n' + archivedText.trim() + '\n';
+                archiveContent = before + formattedArchiveText + after.replace(/^\s+/, '\n');
+            } else {
+                archiveContent = archivedText + '\n' + archiveContent;
+            }
+
+            fs.writeFileSync(OLD_CHANGELOG_PATH, archiveContent, 'utf8');
+            console.log(`[Changelog] Archived ${archiveBlocks.length} older entry/entries to CHANGELOG_OLD.md.`);
+            
+            // Stage CHANGELOG_OLD.md as well
+            execSync(`git add "${OLD_CHANGELOG_PATH}"`);
+        }
+    }
+
     fs.writeFileSync(README_PATH, content, 'utf8');
     console.log(`[Changelog] README.md successfully updated to version ${currentVersion}.`);
 
