@@ -50,7 +50,7 @@ function incrementPatch(v) {
 
 /**
  * Ermittelt die Liste der geänderten Dateien für den Changelog.
- * @returns {string} Eine Liste der Dateinamen oder ein Standardtext.
+ * @returns {string|null} Eine Liste der Dateinamen oder null, wenn keine relevanten Änderungen vorliegen.
  */
 function getChangedFilesList() {
     try {
@@ -58,14 +58,14 @@ function getChangedFilesList() {
             .split('\n')
             .filter(f => {
                 const name = f.trim();
-                // Metadaten-Dateien und das Skript selbst aus der Liste für den Changelog filtern
-                return name && !['package.json', 'README.md', 'utils/auto_version.js'].includes(name);
+                // Filter metadata, readmes, and version scripts
+                return name && !['package.json', 'README.md', 'utils/auto_version.js', 'update_readme_changelog.js', 'CHANGELOG_OLD.md'].includes(name) && !name.startsWith('.iobroker');
             })
             .map(f => `- Update of ${path.basename(f)}`);
 
-        return files.length > 0 ? files.join('\n') : '- Code optimizations and updates';
+        return files.length > 0 ? files.join('\n') : null;
     } catch (e) {
-        return '- Documentation and scripts updated';
+        return null;
     }
 }
 
@@ -79,6 +79,12 @@ if (!fs.existsSync(packagePath)) {
 if (!fs.existsSync(readmePath)) {
     console.error('❌ Fehler: keine README.md gefunden');
     process.exit(1);
+}
+
+const fileList = getChangedFilesList();
+if (!fileList) {
+    console.log('ℹ️  No relevant script changes found - Skipping automatic versioning');
+    process.exit(0);
 }
 
 try {

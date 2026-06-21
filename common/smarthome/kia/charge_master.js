@@ -220,7 +220,7 @@ async function forceStopCharging() {
             // Vor dem erneuten Stopp-Versuch warten
             await wait(FORCE_STOP_AVAILABILITY_TOGGLE_DELAY_MS);
             setState(IDS.wbTrans, false);
-            ev3Notify("⚠️ Wallbox Ladestop erzwungen (Availability Reset).", 3);
+            ev3Notify("⚠️ Wallbox Ladestop erzwungen (Availability Reset)", 3);
             console.log("[EV3 Master] Force stop attempt 2 completed.");
         } else {
             console.log("[EV3 Master] Forced charging stop successful on first attempt.");
@@ -244,7 +244,7 @@ async function forceStopCharging() {
         }
         if (originalMinSoc !== null) {
             setState(IDS.minSocSet, Math.max(0, originalMinSoc));
-            ev3Notify(`🔌 Hausbatterie MinSoc auf ${originalMinSoc}% nach erzwungenem Stop eingestellt.`);
+            ev3Notify(`🔌 Hausbatterie MinSoc auf ${originalMinSoc}% nach erzwungenem Stop eingestellt`);
             originalMinSoc = null; setState(IDS.u_origSoc, 0, true);
         }
     }
@@ -316,7 +316,7 @@ function checkPvAutomation() {
 
   // Abbrechen, wenn Wallbox offline ist
   const isConnected = !!getState(IDS.wbConn).val;
-  if (!isConnected && mittel > PV_START_LIMIT) console.warn("[EV3 Master] Start not possible: Wallbox connection missing (OCPP Offline).");
+  if (!isConnected && mittel > PV_START_LIMIT) console.warn("[EV3 Master] Start not possible: Wallbox connection missing (OCPP Offline)");
   if (!isAuto || !isConnected) return;
 
   const isTransActive = !!getState(IDS.wbTrans).val;
@@ -388,7 +388,7 @@ function updateChargeStatistics(sessionDurationMs) {
 
     const h = Math.floor(totalMinToday / 60);
     const m = totalMinToday % 60;
-    const formattedTime = h > 0 ? `${h}:${m < 10 ? "0" + m : m} Std.` : `${m} Min.`;
+    const formattedTime = h > 0 ? `${h}:${m < 10 ? "0" + m : m} Std` : `${m} Min`;
 
     return { totalMinToday, formattedTime, kmToday, spokenTime: h > 0 ? `${h} Stunden, ${m} Minuten` : `${m} Minuten` };
 }
@@ -405,7 +405,7 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
     if (stopTimer) {
       clearTimeout(stopTimer);
       stopTimer = null;
-      console.log("[EV3 Master] Short interruption ended, resuming charge...");
+      console.log("[EV3 Master] Short interruption ended, resuming charge");
       return;
     }
 
@@ -449,7 +449,7 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       // 1. Batterieschutz aufheben: Min-SoC des Hausspeichers wieder auf den ursprünglichen Wert zurückstellen
       if (!isAuto && originalMinSoc !== null) {
         setState(IDS.minSocSet, Math.max(0, originalMinSoc));
-        const msg = `EV3 Manuelles Laden beendet. Hausbatterie MinSoc wieder auf ${originalMinSoc}% gestellt.`;
+        const msg = `EV3 Manuelles Laden beendet. Hausbatterie MinSoc wieder auf ${originalMinSoc}% gestellt`;
         console.log(`[EV3 Master] ${msg}`);
         ev3Notify(`🔌 ${msg}`);
         originalMinSoc = null;
@@ -470,8 +470,8 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
 
       // Wenn das Ladeziel erreicht wurde, ergänzen wir die Benachrichtigungen
       if (evSoc >= targetSoc) {
-        msgText += `. Das Ladeziel von ${targetSoc}% wurde erreicht.`;
-        spokenText += ` Das Ladeziel von ${targetSoc} Prozent wurde erreicht.`;
+        msgText += ` - Das Ladeziel von ${targetSoc}% wurde erreicht`;
+        spokenText += ` Das Ladeziel von ${targetSoc} Prozent wurde erreicht`;
       }
 
       // Benachrichtigung senden (Telegram, Gotify, Alexa/SayIt)

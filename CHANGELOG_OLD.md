@@ -14,85 +14,49 @@ This archive contains older changelog entries for the ioBroker Script Collection
 ### [2.0.66] - 2026-06-20
 - Update of .iobroker-config.json
 
-### [2.0.65] - 2026-06-20
-- Code optimizations and updates
-
 ### [2.0.64] - 2026-06-20
 - refactor(r2maeh2): Correct device name spelling in notifications (zustand_r2maeh2.js)
 - Update of zustand_r2maeh2.js
-
-### [2.0.63] - 2026-06-20
-- Code optimizations and updates
 
 ### [2.0.62] - 2026-06-20
 - refactor(r2maeh2): Update device name in notifications (zustand_r2maeh2.js)
 - Update of zustand_r2maeh2.js
 
-### [2.0.61] - 2026-06-16
-- Code optimizations and updates
-
 ### [2.0.60] - 2026-06-16
 - fix(r2maeh2): Extend max mowing time and refine notifications (zustand_r2maeh2.js)
 - Update of zustand_r2maeh2.js
-
-### [2.0.59] - 2026-06-16
-- Code optimizations and updates
 
 ### [2.0.58] - 2026-06-16
 - feat(fully-browser): Enable dim screen activation on motion in night mode (fully_bewegung.js)
 - Update of fully_bewegung.js
 
-### [2.0.57] - 2026-06-16
-- Code optimizations and updates
-
 ### [2.0.56] - 2026-06-16
 - fix(sauna-control): Enforce door safety for remote start (Fenix_FX110C_Sauna_control.js)
 - Update of Fenix_FX110C_Sauna_control.js
-
-### [2.0.55] - 2026-06-15
-- Code optimizations and updates
 
 ### [2.0.54] - 2026-06-15
 - fix(sauna-control): Prioritize actual remote ready states (Fenix_FX110C_Sauna_control.js)
 - Update of Fenix_FX110C_Sauna_control.js
 
-### [2.0.53] - 2026-06-15
-- Code optimizations and updates
-
 ### [2.0.52] - 2026-06-15
 - feat(sauna): Add target temperature reached notification (Fenix_FX110C_Sauna_control.js)
 - Update of Fenix_FX110C_Sauna_control.js
-
-### [2.0.51] - 2026-06-15
-- Code optimizations and updates
 
 ### [2.0.50] - 2026-06-15
 - feat(sauna): Add 10-minute pre-heating notification (Fenix_FX110C_Sauna_control.js)
 - Update of Fenix_FX110C_Sauna_control.js
 
-### [2.0.49] - 2026-06-09
-- Code optimizations and updates
-
 ### [2.0.48] - 2026-06-09
 - fix(zustand_r2maeh2): Always reset mower return status cleanly (zustand_r2maeh2.js)
 - Update of zustand_r2maeh2.js
-
-### [2.0.47] - 2026-06-08
-- Code optimizations and updates
 
 ### [2.0.46] - 2026-06-08
 - fix(zustand_r2maeh2): Correctly filter power states for hardware changes (zustand_r2maeh2.js)
 - Update of zustand_r2maeh2.js
 
-### [2.0.45] - 2026-06-07
-- Code optimizations and updates
-
 ### [2.0.44] - 2026-06-07
 - refactor(sauna): Extend API parsing and refine boolean state normalization (Fenix_FX110C_Sauna_control.js)
 - Update of Fenix_FX110C_Sauna_control.js
-
-### [2.0.43] - 2026-06-07
-- Code optimizations and updates
 
 ### [2.0.42] - 2026-06-07
 - refactor(sauna): Improve API data parsing and state normalization (Fenix_FX110C_Sauna_control.js)
@@ -138,9 +102,6 @@ This archive contains older changelog entries for the ioBroker Script Collection
 ### [1.22.1] - 2026-05-26
 - Following new UDM Pro firmware v5.1.12, the Chromecast adapter flooded the log with non-responding HEOS devices.
 - Updated HEOS filter: Removed outdated device names, added delay helper function, and improved state checks. Updated version to 1.22.0. (chromecast_ban_heos.js)
-
-### [1.21.53] - 2026-05-26
-- Code optimizations and updates
 
 ### [1.21.51] - 2026-05-26
 - Updated HEOS filter: Added additional banned device names and IDs, improved name checks, and reduced wait time before deletion (chromecast_ban_heos.js)
@@ -361,9 +322,6 @@ This archive contains older changelog entries for the ioBroker Script Collection
 - Updated waschmaschine.js
 - Updated vu_reboot_standby.js
 - Updated auto_version.js
-
-### [1.0.7] - 2026-03-08
-- Documentation and scripts updated
 
 ### [1.0.1] - 2026-03-08
 - Current scripts and automatic versioning initiated
