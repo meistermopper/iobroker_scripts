@@ -187,6 +187,12 @@ async function setSaunaState(stateName, value, isRetry = false) {
                 const reason = response.data ? response.data.failureReason : 'Unbekannt';
                 log(`[Harvia] Cloud lehnt Befehl ab: ${reason}`, 'warn');
                 setState(`${BASE_PATH}.errorMsg`, `Cloud-Fehler: ${reason}`, true);
+
+                // Zurücksetzen, da Befehl abgelehnt wurde
+                if (stateName === 'heatOn') {
+                    setState(`${BASE_PATH}.heatOn`, false, true);
+                    setState(`${BASE_PATH}.remoteControl`, false, true);
+                }
             }
 
         // TYP B: Temperatur-Änderung via PATCH
@@ -228,6 +234,18 @@ async function setSaunaState(stateName, value, isRetry = false) {
             if (await login()) {
                 // Nach erfolgreichem Login Befehl einmal wiederholen
                 await setSaunaState(stateName, value, true);
+            } else {
+                // Re-Login fehlgeschlagen -> Zustand zurücksetzen
+                if (stateName === 'heatOn') {
+                    setState(`${BASE_PATH}.heatOn`, false, true);
+                    setState(`${BASE_PATH}.remoteControl`, false, true);
+                }
+            }
+        } else {
+            // Anderer Fehler bei der Steuerung -> Zustand zurücksetzen
+            if (stateName === 'heatOn') {
+                setState(`${BASE_PATH}.heatOn`, false, true);
+                setState(`${BASE_PATH}.remoteControl`, false, true);
             }
         }
     } finally {
