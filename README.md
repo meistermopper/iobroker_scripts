@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-2.0.74-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.75-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -93,6 +93,10 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 ---
 
 ## 📝 Changelog
+
+### [2.0.75] - 2026-06-21
+- feat: add diagnostic script for Harvia Fenix API monitoring and state change tracking (Fenix_diagnose.js)
+- Update of Fenix_diagnose.js
 
 ### [2.0.74] - 2026-06-21
 
