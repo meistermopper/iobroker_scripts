@@ -4,6 +4,11 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [2.0.74] - 2026-06-21
+
+- feat: introduce EV3 Charge-Master v6.6.0 with robust OCPP stop mechanism, auto-versioning, and enhanced charge management logic (charge_master.js, auto_version.js)
+- Update of charge_master.js
+
 ### [2.0.72] - 2026-06-21
 
 - feat: add auto-versioning script and implement automatic changelog rotation from README.md to CHANGELOG_OLD.md (auto_version.js)

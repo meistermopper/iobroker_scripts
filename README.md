@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-2.0.78-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.79-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -94,6 +94,9 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
+### [2.0.79] - 2026-06-22
+- Update of Fenix_FX110C_Sauna_control.js
+
 ### [2.0.78] - 2026-06-22
 - Update of pre-commit
 - Update of package-lock.json
@@ -109,11 +112,6 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 ### [2.0.75] - 2026-06-21
 - feat: add diagnostic script for Harvia Fenix API monitoring and state change tracking (Fenix_diagnose.js)
 - Update of Fenix_diagnose.js
-
-### [2.0.74] - 2026-06-21
-
-- feat: introduce EV3 Charge-Master v6.6.0 with robust OCPP stop mechanism, auto-versioning, and enhanced charge management logic (charge_master.js, auto_version.js)
-- Update of charge_master.js
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
 

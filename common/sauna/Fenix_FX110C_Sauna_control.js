@@ -32,9 +32,20 @@ let isSendingCommand = false; // Verhindert parallele Befehle an die Cloud
 let lastEventTime   = {};     // Speichert Zeitstempel pro Datenpunkt zur Entprellung
 let lastCommandTime = 0;     // Timestamp der letzten Aktion, um Polling-Überschreiben zu verhindern
 const LATENCY_MS    = 5000;  // Zeit (5s), die wir nach einem Befehl warten, bevor wir Telemetrie wieder trauen
-
+let updateTimerId   = null;  // Speichert ID des aktiven Polling-Timeouts zur Vermeidung paralleler Schleifen
+let targetTempTimer = null;  // Debounce-Timer für Temperatur-Slider
 // Hilfsfunktion für Pausen
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Plant das nächste Polling-Intervall und stellt sicher, dass keine parallelen Schleifen laufen.
+ */
+function scheduleNextUpdate(delayMs) {
+    if (updateTimerId) {
+        clearTimeout(updateTimerId);
+    }
+    updateTimerId = setTimeout(updateStatus, delayMs);
+}
 
 /**
  * 1. INITIALISIERUNG (ensureStatesExist)
@@ -183,6 +194,7 @@ async function setSaunaState(stateName, value, isRetry = false) {
 
                 if (stateName === 'heatOn') setState(`${BASE_PATH}.errorMsg`, '', true);
                 lastCommandTime = Date.now(); // Timestamp für Latenz-Schutz setzen
+                scheduleNextUpdate(LATENCY_MS + 500); // Schnellen Refresh nach Latenzzeit anfordern
             } else {
                 const reason = response.data ? response.data.failureReason : 'Unbekannt';
                 log(`[Harvia] Cloud lehnt Befehl ab: ${reason}`, 'warn');
@@ -213,6 +225,7 @@ async function setSaunaState(stateName, value, isRetry = false) {
             // Sofortige Bestätigung im ioBroker
             setState(`${BASE_PATH}.targetTemp`, parseFloat(value), true);
             lastCommandTime = Date.now();
+            scheduleNextUpdate(LATENCY_MS + 500); // Schnellen Refresh nach Latenzzeit anfordern
         }
     } catch (err) {
         const detail = err.response && err.response.data ? JSON.stringify(err.response.data) : err.message;
@@ -283,6 +296,7 @@ function isHarviaTrue(val) {
  * Ruft die Live-Daten (Telemetrie) regelmäßig über den Data-Service ab.
  */
 async function updateStatus() {
+    let nextDelay = REFRESH_MS;
     try {
         if (!idToken || !dataBaseUrl) {
             return; // Noch nicht bereit, aber finally sorgt für Neustart
@@ -307,28 +321,35 @@ async function updateStatus() {
             const actualRem   = getApiValue(p, remoteKeys);
             const actualDoor  = getApiValue(p, doorKeys);
 
+            // Hilfsfunktion zur sicheren Typ-Konvertierung (vermeidet NaN-Warnungen)
+            function safeSetNumberState(stateId, val, isFloat = true) {
+                if (val === undefined || val === null || val === '') return;
+                const parsed = isFloat ? parseFloat(val) : parseInt(val, 10);
+                if (!isNaN(parsed)) setState(stateId, parsed, true);
+            }
+
             // NORMALISIERUNG: Harvia nutzt je nach Modell 'temp' oder 'temperature' / 'target_temperature'.
             const currentTemp = getApiValue(p, ['temperature', 'temp', 'current_temperature', 'ambient_temperature']);
-            if (currentTemp !== undefined) setState(`${BASE_PATH}.temp`, parseFloat(currentTemp), true);
+            safeSetNumberState(`${BASE_PATH}.temp`, currentTemp);
 
             const panelTemp = getApiValue(p, ['panelTemp', 'panel_temperature']);
-            if (panelTemp !== undefined) setState(`${BASE_PATH}.panelTemp`, parseFloat(panelTemp), true);
+            safeSetNumberState(`${BASE_PATH}.panelTemp`, panelTemp);
 
             // Normalisierung der Heizleistung (heaterPower vs power)
             const currentPower = getApiValue(p, ['heaterPower', 'power', 'heater_power']);
-            if (currentPower !== undefined) setState(`${BASE_PATH}.heaterPower`, parseFloat(currentPower), true);
+            safeSetNumberState(`${BASE_PATH}.heaterPower`, currentPower);
 
             const bathingHours = getApiValue(p, ['totalBathingHours', 'total_bathing_hours', 'bathing_hours']);
-            if (bathingHours !== undefined) setState(`${BASE_PATH}.totalBathingHours`, parseFloat(bathingHours), true);
+            safeSetNumberState(`${BASE_PATH}.totalBathingHours`, bathingHours);
 
             const sessions = getApiValue(p, ['totalSessions', 'total_sessions', 'sessions']);
-            if (sessions !== undefined) setState(`${BASE_PATH}.totalSessions`, parseInt(sessions), true);
+            safeSetNumberState(`${BASE_PATH}.totalSessions`, sessions, false);
 
             const operatingHours = getApiValue(p, ['totalOperatingHours', 'totalHours', 'total_hours', 'operating_hours']);
-            if (operatingHours !== undefined) setState(`${BASE_PATH}.totalOperatingHours`, parseFloat(operatingHours), true);
+            safeSetNumberState(`${BASE_PATH}.totalOperatingHours`, operatingHours);
 
             const tTemp = getApiValue(p, ['targetTemperature', 'targetTemp', 'target_temperature', 'setpoint_temperature']);
-            if (tTemp !== undefined) setState(`${BASE_PATH}.targetTemp`, parseFloat(tTemp), true);
+            safeSetNumberState(`${BASE_PATH}.targetTemp`, tTemp);
 
             // Heizung
             if (actualHeat !== undefined) {
@@ -372,13 +393,15 @@ async function updateStatus() {
     } catch (err) {
         if (err.response && err.response.status === 401) {
             log('[Harvia] Token abgelaufen, versuche Re-Login...', 'warn');
-            await login();
+            if (await login()) {
+                nextDelay = 1000; // Sofortiger Retry nach Re-Login (1s)
+            }
         } else {
             log(`[Harvia] Abruf-Fehler: ${err.message}`, 'error');
             setState(`${BASE_PATH}.online`, false, true);
         }
     } finally {
-        setTimeout(updateStatus, REFRESH_MS);
+        scheduleNextUpdate(nextDelay);
     }
 }
 
@@ -425,10 +448,18 @@ function setupListeners() {
         await setSaunaState('lightOn', val);
     });
 
-    // Event-Trigger für Änderung der Zieltemperatur
-    on({ id: `${BASE_PATH}.targetTemp`, change: 'ne', ack: false }, async (obj) => {
-        if (!shouldProcess(obj.id)) return;
-        await setSaunaState('targetTemp', obj.state.val);
+    // Event-Trigger für Änderung der Zieltemperatur (Debounced für UI-Slider)
+    on({ id: `${BASE_PATH}.targetTemp`, change: 'ne', ack: false }, (obj) => {
+        if (targetTempTimer) clearTimeout(targetTempTimer);
+        
+        // Reset der Benachrichtigungssperren bei neuem Zielwert
+        setState(`${BASE_PATH}.readyNotified10Min`, false, true);
+        setState(`${BASE_PATH}.targetReachedNotified`, false, true);
+
+        targetTempTimer = setTimeout(async () => {
+            await setSaunaState('targetTemp', obj.state.val);
+            targetTempTimer = null;
+        }, 1000); // 1 Sekunde warten, bis der User mit dem Slider fertig ist
     });
 
     // Benachrichtigungen: 10-Minuten-Vorwarnung und Zieltemperatur erreicht
