@@ -4,6 +4,11 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [2.0.70] - 2026-06-21
+
+- feat: implement robust EV3 charging control with OCPP reset sequences, forced stop logic, and improved state management (charge_master.js)
+- Update of charge_master.js
+
 ### [2.0.68] - 2026-06-20
 - feat: implement sensor alarm monitoring script with rate limiting and global notifications (alarmmelder.js)
 - Update of alarmmelder.js
