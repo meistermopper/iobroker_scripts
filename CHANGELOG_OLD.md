@@ -4,6 +4,11 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [2.0.76] - 2026-06-21
+- feat: add Fenix FX110C sauna control script with Harvia cloud integration (Fenix_FX110C_Sauna_control.js, Fenix_diagnose.js)
+- Update of Fenix_FX110C_Sauna_control.js
+- Update of Fenix_diagnose.js
+
 ### [2.0.75] - 2026-06-21
 - feat: add diagnostic script for Harvia Fenix API monitoring and state change tracking (Fenix_diagnose.js)
 - Update of Fenix_diagnose.js

@@ -65,6 +65,7 @@ async function ensureStatesExist() {
         { id: 'totalOperatingHours',type: 'number',  role: 'value.number',          unit: 'h',  def: 0 },
         { id: 'totalSessions',      type: 'number',  role: 'value.number',          def: 0 },
         { id: 'targetTemp',         type: 'number',  role: 'level.temperature',     unit: '°C', def: 90 },
+        { id: 'remoteControl',      type: 'boolean', role: 'indicator.state',       def: false, name: 'Remote-Steuerung aktivierbar' },
         { id: 'errorMsg',           type: 'string',  role: 'text',                  def: '' },
         { id: 'readyNotified10Min', type: 'boolean', role: 'indicator',             def: false, name: '10-Minuten-Vorwarnung gesendet' },
         { id: 'targetReachedNotified', type: 'boolean', role: 'indicator',          def: false, name: 'Zieltemperatur erreicht gesendet' }
@@ -350,6 +351,13 @@ async function updateStatus() {
                 setState(`${BASE_PATH}.heatOn`, isHarviaTrue(actualHeat), true);
             } else if (p.online) {
                 setState(`${BASE_PATH}.heatOn`, false, true);
+            }
+
+            // Remote-Bereitschaft
+            if (actualRem !== undefined) {
+                setState(`${BASE_PATH}.remoteControl`, isHarviaTrue(actualRem), true);
+            } else if (p.online) {
+                setState(`${BASE_PATH}.remoteControl`, false, true);
             }
 
             // Licht
