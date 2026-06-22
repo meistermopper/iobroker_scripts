@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [2.0.75] - 2026-06-21
+- feat: add diagnostic script for Harvia Fenix API monitoring and state change tracking (Fenix_diagnose.js)
+- Update of Fenix_diagnose.js
+
 ### [2.0.74] - 2026-06-21
 
 - feat: introduce EV3 Charge-Master v6.6.0 with robust OCPP stop mechanism, auto-versioning, and enhanced charge management logic (charge_master.js, auto_version.js)

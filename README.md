@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-2.0.79-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.80-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -94,6 +94,9 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
+### [2.0.80] - 2026-06-22
+- Update of Fenix_FX110C_Sauna_control.js
+
 ### [2.0.79] - 2026-06-22
 - Update of Fenix_FX110C_Sauna_control.js
 
@@ -107,10 +110,6 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 ### [2.0.76] - 2026-06-21
 - feat: add Fenix FX110C sauna control script with Harvia cloud integration (Fenix_FX110C_Sauna_control.js, Fenix_diagnose.js)
 - Update of Fenix_FX110C_Sauna_control.js
-- Update of Fenix_diagnose.js
-
-### [2.0.75] - 2026-06-21
-- feat: add diagnostic script for Harvia Fenix API monitoring and state change tracking (Fenix_diagnose.js)
 - Update of Fenix_diagnose.js
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).

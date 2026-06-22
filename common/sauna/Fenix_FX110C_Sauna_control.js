@@ -65,8 +65,6 @@ async function ensureStatesExist() {
         { id: 'totalOperatingHours',type: 'number',  role: 'value.number',          unit: 'h',  def: 0 },
         { id: 'totalSessions',      type: 'number',  role: 'value.number',          def: 0 },
         { id: 'targetTemp',         type: 'number',  role: 'level.temperature',     unit: '°C', def: 90 },
-        { id: 'doorSafety',         type: 'boolean', role: 'indicator.safety',      def: false },
-        { id: 'remoteControl',      type: 'boolean', role: 'indicator.state',       def: false },
         { id: 'errorMsg',           type: 'string',  role: 'text',                  def: '' },
         { id: 'readyNotified10Min', type: 'boolean', role: 'indicator',             def: false, name: '10-Minuten-Vorwarnung gesendet' },
         { id: 'targetReachedNotified', type: 'boolean', role: 'indicator',          def: false, name: 'Zieltemperatur erreicht gesendet' }
@@ -203,7 +201,6 @@ async function setSaunaState(stateName, value, isRetry = false) {
                 // Zurücksetzen, da Befehl abgelehnt wurde
                 if (stateName === 'heatOn') {
                     setState(`${BASE_PATH}.heatOn`, false, true);
-                    setState(`${BASE_PATH}.remoteControl`, false, true);
                 }
             }
 
@@ -251,14 +248,12 @@ async function setSaunaState(stateName, value, isRetry = false) {
                 // Re-Login fehlgeschlagen -> Zustand zurücksetzen
                 if (stateName === 'heatOn') {
                     setState(`${BASE_PATH}.heatOn`, false, true);
-                    setState(`${BASE_PATH}.remoteControl`, false, true);
                 }
             }
         } else {
             // Anderer Fehler bei der Steuerung -> Zustand zurücksetzen
             if (stateName === 'heatOn') {
                 setState(`${BASE_PATH}.heatOn`, false, true);
-                setState(`${BASE_PATH}.remoteControl`, false, true);
             }
         }
     } finally {
@@ -283,8 +278,8 @@ function getApiValue(p, keys) {
 }
 
 function isHarviaTrue(val) {
-    // Erweitert um 23 (Fenix Remote Ready Status)
-    const trueValues = [1, 21, 23, '1', '21', '23', true, 'true', 'on', 'enabled', 'safe', 'ready', 'active', 'standby'];
+    // 21 = OFF / NOT READY, 23 = ON / READY (Fenix Remote Status)
+    const trueValues = [1, 23, '1', '23', true, 'true', 'on', 'enabled', 'safe', 'ready', 'active', 'standby'];
     let checkVal = val;
     if (typeof val === 'string') checkVal = val.toLowerCase().trim();
     if (typeof val === 'number') checkVal = val;
@@ -309,17 +304,16 @@ async function updateStatus() {
         const p = response.data?.data;
 
         if (p) {
+            log(`[Harvia DEBUG] Raw Data: ${JSON.stringify(p)}`, 'info');
             if (Date.now() - lastCommandTime < LATENCY_MS) return;
 
             const heatKeys   = ['heatOn', 'heatState', 'heat', 'heater', 'heat_on', 'is_heating'];
             // Die echten "Ready"-Zustände nach vorne priorisieren, da "remoteControl" in der Harvia API oft nur statisch "true" für die generelle Fähigkeit liefert
             const remoteKeys = ['remoteReady', 'isRemoteReady', 'remoteReadyState', 'remote_ready', 'is_remote_ready', 'onOffTrigger', 'safetyRelay', 'remoteControlState', 'remoteStart', 'remoteStartEnabled', 'remoteControl', 'remote_control', 'remote'];
-            const doorKeys   = ['doorSafetyState', 'doorSafety', 'door', 'door_closed', 'door_safety_state', 'door_safety'];
             const lightKeys  = ['lightOn', 'lightState', 'light', 'light_on'];
 
             const actualHeat  = getApiValue(p, heatKeys);
             const actualRem   = getApiValue(p, remoteKeys);
-            const actualDoor  = getApiValue(p, doorKeys);
 
             // Hilfsfunktion zur sicheren Typ-Konvertierung (vermeidet NaN-Warnungen)
             function safeSetNumberState(stateId, val, isFloat = true) {
@@ -366,28 +360,6 @@ async function updateStatus() {
                 setState(`${BASE_PATH}.lightOn`, false, true);
             }
 
-            // Tür-Sicherheit
-            let isDoorSafe = true; // Interner Fallback
-            if (actualDoor !== undefined) {
-                isDoorSafe = isHarviaTrue(actualDoor);
-                setState(`${BASE_PATH}.doorSafety`, isDoorSafe, true);
-            } else {
-                // Falls die API gerade nichts sendet, aktuellen Status aus ioBroker lesen
-                const dsState = getState(`${BASE_PATH}.doorSafety`);
-                if (dsState) isDoorSafe = dsState.val;
-            }
-
-            // Fernstart-Bereitschaft (Kombiniert mit Tür-Sicherheit)
-            if (actualRem !== undefined) {
-                let isRemoteReady = isHarviaTrue(actualRem);
-
-                // MyHarvia App-Logik: Wenn die Tür offen ist, wird der Remotestart zwingend blockiert.
-                if (!isDoorSafe) {
-                    isRemoteReady = false;
-                }
-
-                setState(`${BASE_PATH}.remoteControl`, isRemoteReady, true);
-            }
             setState(`${BASE_PATH}.online`, true, true);
         }
     } catch (err) {
@@ -426,19 +398,8 @@ function setupListeners() {
         // Konvertierung sicherstellen (VIS sendet oft Strings)
         const val = obj.state.val === true || obj.state.val === 'true' || obj.state.val === 1;
 
-        // PRÜFUNG: Fernstart-Bereitschaft
-        const isRemoteReady = getState(`${BASE_PATH}.remoteControl`).val;
-
-        if (val && !isRemoteReady) {
-            const msg = 'Fernstart am Panel nicht bereit!';
-            log(`[Harvia] ${msg}`, 'warn');
-            setState(`${BASE_PATH}.errorMsg`, msg, true);
-            // Schalter in VIS sofort wieder auf aus setzen (ack:true)
-            setState(`${BASE_PATH}.heatOn`, false, true);
-        } else {
-            setState(`${BASE_PATH}.errorMsg`, '', true); // Bestehende Fehler löschen
-            await setSaunaState('heatOn', val);
-        }
+        setState(`${BASE_PATH}.errorMsg`, '', true); // Bestehende Fehler löschen
+        await setSaunaState('heatOn', val);
     });
 
     // Event-Trigger für Licht an/aus
@@ -530,7 +491,6 @@ async function main() {
     setState(`${BASE_PATH}.online`, false, true);
     setState(`${BASE_PATH}.heatOn`, false, true);
     setState(`${BASE_PATH}.lightOn`, false, true);
-    setState(`${BASE_PATH}.doorSafety`, false, true);
     setState(`${BASE_PATH}.remoteControl`, false, true);
     setState(`${BASE_PATH}.readyNotified10Min`, false, true);
     setState(`${BASE_PATH}.targetReachedNotified`, false, true);
