@@ -4,6 +4,12 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [2.0.72] - 2026-06-21
+
+- feat: add auto-versioning script and implement automatic changelog rotation from README.md to CHANGELOG_OLD.md (auto_version.js)
+- Update of CHANGELOG_OLD.md
+- Update of update_readme_changelog.js
+
 ### [2.0.70] - 2026-06-21
 
 - feat: implement robust EV3 charging control with OCPP reset sequences, forced stop logic, and improved state management (charge_master.js)
