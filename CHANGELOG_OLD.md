@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [2.0.78] - 2026-06-22
+- Update of pre-commit
+- Update of package-lock.json
+
 ### [2.0.77] - 2026-06-22
 - Update of jsconfig.json
 

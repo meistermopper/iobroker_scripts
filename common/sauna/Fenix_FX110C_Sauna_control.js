@@ -1,5 +1,5 @@
 /**
- * ioBroker Script: Harvia Fenix FX 110C (inkl. Remote-Steuerung)
+ * ioBroker Script: Harvia Fenix FX 110C (inkl. Remote-Steuerung) - Auto-Synced
  * -----------------------------------------------------------------------------
  * LOGIK-ÜBERSICHT: Das Skript überwacht nicht nur die Live-Daten der Sauna,
  * sondern ermöglicht auch die vollständige Steuerung (Heizung, Licht, Temperatur)
@@ -65,6 +65,7 @@ async function ensureStatesExist() {
         { id: 'totalOperatingHours',type: 'number',  role: 'value.number',          unit: 'h',  def: 0 },
         { id: 'totalSessions',      type: 'number',  role: 'value.number',          def: 0 },
         { id: 'targetTemp',         type: 'number',  role: 'level.temperature',     unit: '°C', def: 90 },
+        { id: 'doorSafety',         type: 'boolean', role: 'indicator.safety',      def: false, name: 'Tür-Sicherheit (geschlossen)' },
         { id: 'remoteControl',      type: 'boolean', role: 'indicator.state',       def: false, name: 'Remote-Steuerung aktivierbar' },
         { id: 'errorMsg',           type: 'string',  role: 'text',                  def: '' },
         { id: 'readyNotified10Min', type: 'boolean', role: 'indicator',             def: false, name: '10-Minuten-Vorwarnung gesendet' },
@@ -279,8 +280,8 @@ function getApiValue(p, keys) {
 }
 
 function isHarviaTrue(val) {
-    // 21 = OFF / NOT READY, 23 = ON / READY (Fenix Remote Status)
-    const trueValues = [1, 23, '1', '23', true, 'true', 'on', 'enabled', 'safe', 'ready', 'active', 'standby'];
+    // 21 & 23 = Fenix Remote Status (bereit / aktiv)
+    const trueValues = [1, 21, 23, '1', '21', '23', true, 'true', 'on', 'enabled', 'safe', 'ready', 'active', 'standby'];
     let checkVal = val;
     if (typeof val === 'string') checkVal = val.toLowerCase().trim();
     if (typeof val === 'number') checkVal = val;
@@ -294,27 +295,48 @@ function isHarviaTrue(val) {
 async function updateStatus() {
     let nextDelay = REFRESH_MS;
     try {
-        if (!idToken || !dataBaseUrl) {
+        if (!idToken || !dataBaseUrl || !deviceBaseUrl) {
             return; // Noch nicht bereit, aber finally sorgt für Neustart
         }
 
-        const response = await client.get(`${dataBaseUrl}/data/latest-data?deviceId=${FIXED_ID}`, {
-            headers: { 'Authorization': `Bearer ${idToken}`, 'x-harvia-partner-id': PARTNER_ID }
-        });
+        let p = null;
+        let s = null;
 
-        const p = response.data?.data;
+        // Wir rufen beide Endpunkte ab
+        try {
+            const response = await client.get(`${dataBaseUrl}/data/latest-data?deviceId=${FIXED_ID}`, {
+                headers: { 'Authorization': `Bearer ${idToken}`, 'x-harvia-partner-id': PARTNER_ID }
+            });
+            p = response.data?.data;
+        } catch (err) {
+            if (err.response && err.response.status === 401) throw err; // An catch block weitergeben für Re-Login
+            log(`[Harvia] Fehler beim Abruf der Telemetriedaten: ${err.message}`, 'warn');
+        }
 
-        if (p) {
-            log(`[Harvia DEBUG] Raw Data: ${JSON.stringify(p)}`, 'info');
+        try {
+            const responseState = await client.get(`${deviceBaseUrl}/devices/state?deviceId=${FIXED_ID}`, {
+                headers: { 'Authorization': `Bearer ${idToken}`, 'x-harvia-partner-id': PARTNER_ID }
+            });
+            s = responseState.data;
+        } catch (err) {
+            if (err.response && err.response.status === 401) throw err; // An catch block weitergeben für Re-Login
+            log(`[Harvia] Fehler beim Abruf des Gerätestatus: ${err.message}`, 'warn');
+        }
+
+        if (p || s) {
+            if (p) log(`[Harvia DEBUG] Raw Data: ${JSON.stringify(p)}`, 'debug');
+            if (s) log(`[Harvia DEBUG] Device State: ${JSON.stringify(s)}`, 'debug');
+
             if (Date.now() - lastCommandTime < LATENCY_MS) return;
 
             const heatKeys   = ['heatOn', 'heatState', 'heat', 'heater', 'heat_on', 'is_heating'];
-            // Die echten "Ready"-Zustände nach vorne priorisieren, da "remoteControl" in der Harvia API oft nur statisch "true" für die generelle Fähigkeit liefert
             const remoteKeys = ['remoteReady', 'isRemoteReady', 'remoteReadyState', 'remote_ready', 'is_remote_ready', 'onOffTrigger', 'safetyRelay', 'remoteControlState', 'remoteStart', 'remoteStartEnabled', 'remoteControl', 'remote_control', 'remote'];
+            const doorKeys   = ['doorSafetyState', 'doorSafety', 'door', 'door_closed', 'door_safety_state', 'door_safety'];
             const lightKeys  = ['lightOn', 'lightState', 'light', 'light_on'];
 
-            const actualHeat  = getApiValue(p, heatKeys);
-            const actualRem   = getApiValue(p, remoteKeys);
+            const actualHeat  = p ? getApiValue(p, heatKeys) : undefined;
+            const actualRem   = p ? getApiValue(p, remoteKeys) : undefined;
+            const actualDoor  = p ? getApiValue(p, doorKeys) : undefined;
 
             // Hilfsfunktion zur sicheren Typ-Konvertierung (vermeidet NaN-Warnungen)
             function safeSetNumberState(stateId, val, isFloat = true) {
@@ -323,52 +345,88 @@ async function updateStatus() {
                 if (!isNaN(parsed)) setState(stateId, parsed, true);
             }
 
-            // NORMALISIERUNG: Harvia nutzt je nach Modell 'temp' oder 'temperature' / 'target_temperature'.
-            const currentTemp = getApiValue(p, ['temperature', 'temp', 'current_temperature', 'ambient_temperature']);
-            safeSetNumberState(`${BASE_PATH}.temp`, currentTemp);
+            if (p) {
+                // NORMALISIERUNG: Harvia nutzt je nach Modell 'temp' oder 'temperature' / 'target_temperature'.
+                const currentTemp = getApiValue(p, ['temperature', 'temp', 'current_temperature', 'ambient_temperature']);
+                safeSetNumberState(`${BASE_PATH}.temp`, currentTemp);
 
-            const panelTemp = getApiValue(p, ['panelTemp', 'panel_temperature']);
-            safeSetNumberState(`${BASE_PATH}.panelTemp`, panelTemp);
+                const panelTemp = getApiValue(p, ['panelTemp', 'panel_temperature']);
+                safeSetNumberState(`${BASE_PATH}.panelTemp`, panelTemp);
 
-            // Normalisierung der Heizleistung (heaterPower vs power)
-            const currentPower = getApiValue(p, ['heaterPower', 'power', 'heater_power']);
-            safeSetNumberState(`${BASE_PATH}.heaterPower`, currentPower);
+                // Normalisierung der Heizleistung (heaterPower vs power)
+                const currentPower = getApiValue(p, ['heaterPower', 'power', 'heater_power']);
+                safeSetNumberState(`${BASE_PATH}.heaterPower`, currentPower);
 
-            const bathingHours = getApiValue(p, ['totalBathingHours', 'total_bathing_hours', 'bathing_hours']);
-            safeSetNumberState(`${BASE_PATH}.totalBathingHours`, bathingHours);
+                const bathingHours = getApiValue(p, ['totalBathingHours', 'total_bathing_hours', 'bathing_hours']);
+                safeSetNumberState(`${BASE_PATH}.totalBathingHours`, bathingHours);
 
-            const sessions = getApiValue(p, ['totalSessions', 'total_sessions', 'sessions']);
-            safeSetNumberState(`${BASE_PATH}.totalSessions`, sessions, false);
+                const sessions = getApiValue(p, ['totalSessions', 'total_sessions', 'sessions']);
+                safeSetNumberState(`${BASE_PATH}.totalSessions`, sessions, false);
 
-            const operatingHours = getApiValue(p, ['totalOperatingHours', 'totalHours', 'total_hours', 'operating_hours']);
-            safeSetNumberState(`${BASE_PATH}.totalOperatingHours`, operatingHours);
+                const operatingHours = getApiValue(p, ['totalOperatingHours', 'totalHours', 'total_hours', 'operating_hours']);
+                safeSetNumberState(`${BASE_PATH}.totalOperatingHours`, operatingHours);
 
-            const tTemp = getApiValue(p, ['targetTemperature', 'targetTemp', 'target_temperature', 'setpoint_temperature']);
-            safeSetNumberState(`${BASE_PATH}.targetTemp`, tTemp);
+                const tTemp = getApiValue(p, ['targetTemperature', 'targetTemp', 'target_temperature', 'setpoint_temperature']);
+                safeSetNumberState(`${BASE_PATH}.targetTemp`, tTemp);
+            }
 
             // Heizung
             if (actualHeat !== undefined) {
                 setState(`${BASE_PATH}.heatOn`, isHarviaTrue(actualHeat), true);
-            } else if (p.online) {
+            } else if (s && s.state && s.state.heater && s.state.heater.on !== undefined) {
+                setState(`${BASE_PATH}.heatOn`, s.state.heater.on === 1 || s.state.heater.on === true, true);
+            } else if (p && p.online) {
                 setState(`${BASE_PATH}.heatOn`, false, true);
             }
 
-            // Remote-Bereitschaft
-            if (actualRem !== undefined) {
-                setState(`${BASE_PATH}.remoteControl`, isHarviaTrue(actualRem), true);
-            } else if (p.online) {
-                setState(`${BASE_PATH}.remoteControl`, false, true);
+            // Tür-Sicherheit
+            let isDoorSafe = true; // Interner Fallback
+            if (actualDoor !== undefined) {
+                isDoorSafe = isHarviaTrue(actualDoor);
+                setState(`${BASE_PATH}.doorSafety`, isDoorSafe, true);
+            } else {
+                const dsState = getState(`${BASE_PATH}.doorSafety`);
+                if (dsState) isDoorSafe = dsState.val;
             }
 
+            // Remote-Bereitschaft
+            let isRemoteReady = false;
+            if (s && s.state && s.state.remoteAllowed !== undefined) {
+                isRemoteReady = s.state.remoteAllowed === 1 || s.state.remoteAllowed === true;
+            } else if (actualRem !== undefined) {
+                isRemoteReady = isHarviaTrue(actualRem);
+            } else {
+                const rcState = getState(`${BASE_PATH}.remoteControl`);
+                if (rcState) isRemoteReady = rcState.val;
+            }
+
+            // MyHarvia App-Logik: Wenn die Tür offen ist, wird der Remotestart zwingend blockiert.
+            if (!isDoorSafe) {
+                isRemoteReady = false;
+            }
+
+            setState(`${BASE_PATH}.remoteControl`, isRemoteReady, true);
+
             // Licht
-            const actualLight = getApiValue(p, lightKeys);
+            const actualLight = p ? getApiValue(p, lightKeys) : undefined;
             if (actualLight !== undefined) {
                 setState(`${BASE_PATH}.lightOn`, isHarviaTrue(actualLight), true);
-            } else if (p.online) {
+            } else if (s && s.state && s.state.light && s.state.light.on !== undefined) {
+                setState(`${BASE_PATH}.lightOn`, s.state.light.on === 1 || s.state.light.on === true, true);
+            } else if (p && p.online) {
                 setState(`${BASE_PATH}.lightOn`, false, true);
             }
 
-            setState(`${BASE_PATH}.online`, true, true);
+            // Online-Status
+            let isOnline = false;
+            if (s && s.connectionState && s.connectionState.connected !== undefined) {
+                isOnline = !!s.connectionState.connected;
+            } else if (p && p.online !== undefined) {
+                isOnline = isHarviaTrue(p.online);
+            } else {
+                isOnline = true; // Fallback
+            }
+            setState(`${BASE_PATH}.online`, isOnline, true);
         }
     } catch (err) {
         if (err.response && err.response.status === 401) {
