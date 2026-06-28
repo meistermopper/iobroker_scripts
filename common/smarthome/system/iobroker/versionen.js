@@ -1,18 +1,17 @@
 // =============================================================================
-// ZIGBEE-HOST VERSION-CHECKER v3.0 (AUTO-DP & ASYNC)
+// IOBROKER-MASTER VERSION-CHECKER v3.1 (LOCAL EXECUTION)
 // =============================================================================
 
-// Konfigurationseinstellungen für die SSH-Verbindung und den Speicherpfad der Datenpunkte.
-const ID_REMOTE_IP = "192.168.178.80"; // Die IP-Adresse des entfernten Raspberry Pi (Zigbee-Host)
-const BASE_PATH = "0_userdata.0.ioBroker.RPI_Zigbee."; // Der Stammordner, unter dem die Datenpunkte in ioBroker angelegt werden
+// Konfigurationseinstellungen für den Speicherpfad der Datenpunkte.
+const BASE_PATH = "0_userdata.0.ioBroker.versionen."; // Der Stammordner für diese Versionen in ioBroker
 
 // Definition aller Datenpunkte, die automatisch erstellt und aktualisiert werden sollen.
-// Jedes Objekt beschreibt ID, Standardwert (val), Anzeigename (name), Datentyp (type) und ioBroker-Rolle (role).
+// Entspricht den IDs aus dem ioBroker-Objektbaum. Fehlende Datenpunkte werden automatisch angelegt.
 const STATES_TO_CREATE = [
-  { id: "js_contr_ver", val: "", name: "JS-Controller Version", type: "string", role: "info.version" },
-  { id: "node_ver", val: "", name: "Node.js Version", type: "string", role: "info.version" },
-  { id: "nodejs_ver", val: "", name: "NodeJS Version", type: "string", role: "info.version" },
-  { id: "npm_ver", val: "", name: "NPM Version", type: "string", role: "info.version" },
+  { id: "JS_Controller", val: "", name: "JS-Controller Version", type: "string", role: "info.version" },
+  { id: "node", val: "", name: "Node.js Version", type: "string", role: "info.version" },
+  { id: "nodejs", val: "", name: "NodeJS Version", type: "string", role: "info.version" },
+  { id: "NPM", val: "", name: "NPM Version", type: "string", role: "info.version" },
   { id: "last_update", val: "", name: "Letztes Update", type: "string", role: "date" },
   { id: "online", val: false, name: "Online Status", type: "boolean", role: "indicator.connected" }
 ];
@@ -62,31 +61,24 @@ function runShell(cmd) {
 }
 
 /**
- * Hauptfunktion zum Abrufen der Versionen vom entfernten Host per SSH.
+ * Hauptfunktion zum Abrufen der Versionen auf dem lokalen Master-Host.
+ * Da das Skript direkt auf dem Master-Server ausgeführt wird, ist kein SSH nötig.
  * Führt nacheinander folgende Schritte durch:
  * 1. Stellt sicher, dass alle Datenpunkte existieren (initDP)
- * 2. Baut den SSH-Befehl zusammen und führt ihn aus
+ * 2. Führt die Versions-Abfragen lokal aus
  * 3. Splittet die Rückgabe zeilenweise auf und schreibt die Werte in die Datenpunkte
  * 4. Aktualisiert Online-Status und Zeitstempel
  */
-async function updateZigbeeVersions() {
+async function updateMasterVersions() {
   // Zuerst sicherstellen, dass die Datenpunkt-Struktur vorhanden ist
   await initDP();
 
-  // SSH-Parameter:
-  // -o StrictHostKeyChecking=no: Akzeptiert den SSH-Key des Remote-Hosts automatisch (verhindert interaktiven Prompt)
-  // -o UserKnownHostsFile=/dev/null: Speichert den Key nicht dauerhaft in der known_hosts Datei (hält das System sauber)
-  const sshFlags = "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null";
-  
-  // Der Befehl, der auf dem entfernten Raspberry Pi ausgeführt werden soll.
+  // Da das Skript auf dem Master-Server läuft, können wir die Befehle direkt lokal ausführen.
   // Führt nacheinander ioBroker-, Node- und NPM-Versionstests aus, getrennt durch ein Semikolon.
-  const remoteCmd = '"iobroker -v; node -v; nodejs -v; npm -v"';
-  
-  // Zusammengebauter SSH-Aufruf für den Benutzer "thomas"
-  const command = `ssh ${sshFlags} thomas@${ID_REMOTE_IP} ${remoteCmd}`;
+  const command = "iobroker -v; node -v; nodejs -v; npm -v";
 
   try {
-    // Führt den SSH-Befehl asynchron aus
+    // Führt den Befehl asynchron aus
     const stdout = await runShell(command);
     
     // Splittet den Output anhand von Zeilenumbrüchen auf
@@ -95,10 +87,10 @@ async function updateZigbeeVersions() {
     // Wir erwarten mindestens 4 Zeilen Output (je eine Version für iobroker, node, nodejs, npm)
     if (lines.length >= 4) {
       // Werte bereinigen und in die jeweiligen Datenpunkte schreiben (ack=true für Bestätigung)
-      setState(BASE_PATH + "js_contr_ver", lines[0].trim(), true);
-      setState(BASE_PATH + "node_ver", lines[1].trim(), true);
-      setState(BASE_PATH + "nodejs_ver", lines[2].trim(), true);
-      setState(BASE_PATH + "npm_ver", lines[3].trim(), true);
+      setState(BASE_PATH + "JS_Controller", lines[0].trim(), true);
+      setState(BASE_PATH + "node", lines[1].trim(), true);
+      setState(BASE_PATH + "nodejs", lines[2].trim(), true);
+      setState(BASE_PATH + "NPM", lines[3].trim(), true);
       
       // Aktuelles Datum und Uhrzeit im deutschen Format generieren und wegschreiben
       const now = new Date().toLocaleString("de-DE");
@@ -108,18 +100,18 @@ async function updateZigbeeVersions() {
       setState(BASE_PATH + "online", true, true);
     } else {
       // Warnung protokollieren, falls die Ausgabe unvollständig war
-      console.warn(`[Version-Check] Unerwarteter Output (zu kurz). Zeilen: ${lines.length}.`);
+      console.warn(`[Version-Check-Master] Unerwarteter Output (zu kurz). Zeilen: ${lines.length}.`);
       setState(BASE_PATH + "online", false, true);
     }
   } catch (error) {
-    // Fehlerbehandlung: Loggt den genauen SSH-Fehler und setzt den Online-Status auf false
-    console.error(`[Version-Check] SSH-Fehler bei ${ID_REMOTE_IP}: ${error.message}`);
+    // Fehlerbehandlung: Loggt den Fehler und setzt den Online-Status auf false
+    console.error(`[Version-Check-Master] Fehler bei lokaler Ausführung: ${error.message}`);
     setState(BASE_PATH + "online", false, true);
   }
 }
 
 // Zeitplan (Cron-Job): Führt das Skript stündlich zur Minute 5 aus (z.B. um 12:05 Uhr, 13:05 Uhr, etc.)
-schedule("5 * * * *", updateZigbeeVersions);
+schedule("5 * * * *", updateMasterVersions);
 
 // Sofortiger Aufruf beim Skriptstart / Speichern des Skripts, damit die Daten sofort geladen werden
-updateZigbeeVersions();
+updateMasterVersions();
