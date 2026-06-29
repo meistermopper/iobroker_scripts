@@ -29,30 +29,30 @@ async function initDPs() {
   const days = ["heute", "morgen"]; // 'uebermorgen' entfernt
 
   // Basis-JSON für die Rohdaten
-  await createStateAsync(baseRef + ".Json", "", {
+  await createStateAsync(`${baseRef}.Json`, "", {
     name: "Rohdaten JSON",
     type: "string",
     role: "json",
   });
 
   for (const day of days) {
-    const path = baseRef + "." + day + ".";
+    const path = `${baseRef}.${day}.`;
 
-    await createStateAsync(path + "Json", [], {
+    await createStateAsync(`${path}Json`, [], {
       name: `JSON ${day}`,
       type: "array",
       role: "json",
     });
-    await createStateAsync(path + "gesamt", 0, {
+    await createStateAsync(`${path}gesamt`, 0, {
       name: `Ertrag ${day}`,
       type: "number",
       unit: "Wh",
     });
-    await createStateAsync(path + "uhrzeit", "", {
+    await createStateAsync(`${path}uhrzeit`, "", {
       name: `Peak Zeit ${day}`,
       type: "string",
     });
-    await createStateAsync(path + "leistung", 0, {
+    await createStateAsync(`${path}leistung`, 0, {
       name: `Peak Watt ${day}`,
       type: "number",
       unit: "W",
@@ -80,19 +80,19 @@ function fetchSolarData() {
 
   httpGet(url, { timeout: 15000 }, (error, response) => {
     if (error) {
-      console.warn("Solar-Prognose: API-Fehler - " + error);
+      console.warn(`Solar-Prognose: API-Fehler - ${error}`);
       return;
     }
 
     try {
       const obj = JSON.parse(response.data);
-      if (!obj || !obj.data || (obj.status && obj.status !== 0)) {
+      if (!obj?.data || (obj.status && obj.status !== 0)) {
         console.warn("Solar-Prognose: API liefert keine gültigen Daten");
         return;
       }
 
       // Gesamte Rohdaten speichern
-      setState(baseRef + ".Json", JSON.stringify(obj.data), true);
+      setState(`${baseRef}.Json`, JSON.stringify(obj.data), true);
 
       const splitData = formatAndSplitData(obj.data);
 
@@ -100,7 +100,7 @@ function fetchSolarData() {
       processDayData("heute", splitData.heute);
       processDayData("morgen", splitData.morgen);
     } catch (e) {
-      console.error("Solar-Prognose: Fehler beim Parsen - " + e);
+      console.error(`Solar-Prognose: Fehler beim Parsen - ${e}`);
     }
   });
 }
@@ -114,7 +114,7 @@ function processDayData(dayName, dataArray) {
     return;
   }
 
-  const path = baseRef + "." + dayName + ".";
+  const path = `${baseRef}.${dayName}.`;
 
   let maxWatt = 0;
   let peakTime = "--:--";
@@ -134,10 +134,10 @@ function processDayData(dayName, dataArray) {
   const gesamtWh = lastEntry && lastEntry.length >= 3 ? lastEntry[2] : 0;
 
   // Werte in ioBroker schreiben
-  if (existsState(path + "Json")) setState(path + "Json", dataArray, true);
-  if (existsState(path + "gesamt")) setState(path + "gesamt", gesamtWh, true);
-  if (existsState(path + "uhrzeit")) setState(path + "uhrzeit", peakTime, true);
-  if (existsState(path + "leistung")) setState(path + "leistung", maxWatt, true);
+  if (existsState(`${path}Json`)) setState(`${path}Json`, dataArray, true);
+  if (existsState(`${path}gesamt`)) setState(`${path}gesamt`, gesamtWh, true);
+  if (existsState(`${path}uhrzeit`)) setState(`${path}uhrzeit`, peakTime, true);
+  if (existsState(`${path}leistung`)) setState(`${path}leistung`, maxWatt, true);
 
   //console.log(`[Solar-Prognose] ${dayName.toUpperCase()}: Peak ${maxWatt}W um ${peakTime} Uhr`);
 }

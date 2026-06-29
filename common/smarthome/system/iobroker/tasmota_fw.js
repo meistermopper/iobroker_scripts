@@ -51,7 +51,7 @@ async function checkTasmotaVersion(retryCount = 0) {
       try {
         // --- DATENVERARBEITUNG ---
         const data = JSON.parse(response.data);
-        const latestFullVersion = data.tag_name.replace(/v/i, "").trim() + "(release-tasmota)";
+        const latestFullVersion = `${data.tag_name.replace(/v/i, "").trim()}(release-tasmota)`;
 
         const stateLastKnown = await getStateAsync(idVersionInternet);
         const lastKnownVersion = stateLastKnown ? stateLastKnown.val : "";
@@ -67,8 +67,8 @@ async function checkTasmotaVersion(retryCount = 0) {
           const installed = stateVal.replace(/\((sonoff|tasmota)\)/gi, "").trim();
           const deviceRoot = id.substring(0, id.lastIndexOf("."));
 
-          const hostState = getState(deviceRoot + ".Info2_Hostname");
-          const hostName = hostState && hostState.val ? hostState.val : "Unbekannt";
+          const hostState = getState(`${deviceRoot}.Info2_Hostname`);
+          const hostName = hostState?.val ? hostState.val : "Unbekannt";
 
           // Vergleich (Version ohne Suffix)
           if (installed !== latestFullVersion.replace("(release-tasmota)", "").trim()) {
@@ -89,7 +89,7 @@ async function checkTasmotaVersion(retryCount = 0) {
 
           // Gotify
           const tokenState = await getStateAsync(idGotifyToken);
-          if (tokenState && tokenState.val) {
+          if (tokenState?.val) {
             httpPost(
               `https://mygotify.meistermopper.de/message?token=${tokenState.val}`,
               {

@@ -16,11 +16,11 @@
  */
 
 // --- CONFIGURATION & THRESHOLDS ---
-const WARTEZEIT_RESUME_MS = 8000; // Resume music after 8s
+const _WARTEZEIT_RESUME_MS = 8000; // Resume music after 8s
 const MAX_MAEHZEIT_MS = 150 * 60 * 1000; // 2h until "stuck" alarm
 const THRESHOLD_IDLE = 4; // Under 4W: Station is empty (mower is out)
 const THRESHOLD_CHARGING = 10; // Over 10W: Mower is actively charging
-const VOL_ANNOUNCEMENT = 40; // Default volume for announcements
+const _VOL_ANNOUNCEMENT = 40; // Default volume for announcements
 
 // --- DATA POINTS ---
 const IDS = {
@@ -72,7 +72,7 @@ initDP();
 
 // Start-Synchronisation: Status aus dem Datenpunkt lesen
 const maehtState = getState(IDS.userMaeht);
-let maeht = !!(maehtState && maehtState.val);
+let maeht = !!maehtState?.val;
 
 console.log(`R2Maeh2: Skript gestartet. Aktueller Maeh-Status: ${maeht ? "MAEHT" : "BEREIT"}`);
 

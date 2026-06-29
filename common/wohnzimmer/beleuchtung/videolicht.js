@@ -29,7 +29,7 @@ function videoAktiv() {
   // Prüft auf 2 (Number/String) oder true, falls der Adapter-Typ schwankt
   return HARMONY_VIDEO.some((id) => {
     const val = getState(id)?.val;
-    return val == 2 || val === true || val === "2";
+    return val === 2 || val === true || val === "2";
   });
 }
 

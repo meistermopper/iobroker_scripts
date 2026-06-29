@@ -1,3 +1,8 @@
+/**
+ * Name:   Neue IP Failover
+ * Zweck:  Erkennt IP-Wechsel am WAN-Interface, aktualisiert DDNS und benachrichtigt bei Failover.
+ */
+
 // --- KONFIGURATION ---
 const ID_WAN_IP = "unifi-network.0.devices.78:45:58:c7:61:75.ip";
 const ID_AKTUELL_IP = "0_userdata.0.System.aktuelle_IP";
@@ -13,7 +18,7 @@ let startZeit = 0;
 
 on({ id: ID_WAN_IP, change: "ne" }, async (obj) => {
   const neueIP = obj.state.val;
-  const alteIP = obj.oldState.val;
+  const _alteIP = obj.oldState.val;
   const gespeicherteIP = getState(ID_AKTUELL_IP)?.val;
 
   if (!neueIP || neueIP === "0.0.0.0" || neueIP === IP_INTERNAL_GATEWAY) return;
@@ -32,8 +37,10 @@ on({ id: ID_WAN_IP, change: "ne" }, async (obj) => {
     const ddnssKey = getState(ID_DDNSS_KEY)?.val;
     const ddnssUrl = `https://www.ddnss.de/upd.php?key=${ddnssKey}&host=all`;
 
-    exec(`curl -s "${ddnssUrl}"`);
-    console.warn(`DDNS Update gesendet für IP: ${neueIP}`);
+    httpGet(ddnssUrl, (error) => {
+      if (error) console.error(`[Neue IP Failover] DDNS Update fehlgeschlagen: ${error}`);
+    });
+    console.warn(`[Neue IP Failover] DDNS Update gesendet für IP: ${neueIP}`);
 
     let message = `🌐 Neue IP zugeteilt: ${neueIP}\nDDNS wurde aktualisiert.`;
 

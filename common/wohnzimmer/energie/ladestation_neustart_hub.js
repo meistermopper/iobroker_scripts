@@ -24,7 +24,7 @@ let isRecovering = false;
 function ensureHarmonyStates() {
   Object.keys(activityMapping).forEach((key) => {
     createState(PATH_STORAGE + key, false, {
-      name: "Gespeicherter Status vor Reset: " + activityMapping[key],
+      name: `Gespeicherter Status vor Reset: ${activityMapping[key]}`,
       type: "boolean",
       role: "state",
     });

@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [2.1.1] - 2026-06-29
+
+- feat: add UniFi presence monitoring script with configurable debouncing and notifications (anwesenheit_unifi.js)
+
 ### [2.0.87] - 2026-06-29
 
 - Update of playerstate.js

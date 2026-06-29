@@ -7,7 +7,7 @@ let neustartTimer = null;
 
 // --- LOGIK ---
 
-on({ id: ID_TRIGGER, change: "gt" }, (obj) => {
+on({ id: ID_TRIGGER, change: "gt" }, (_obj) => {
   console.log("KVM-Switch Neustart ausgelöst: Schalte aus...");
 
   // Bestehende Timer löschen, falls jemand doppelt klickt

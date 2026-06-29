@@ -3219,11 +3219,11 @@ declare global {
   function registerNotification(msg: string): void;
   function registerNotification(msg: string, isAlert: boolean): void;
 
-  function setTimeout(callback: (args: void) => void, ms?: number): NodeJS.Timeout;
+  function setTimeout(callback: (args: undefined) => void, ms?: number): NodeJS.Timeout;
   function clearTimeout(timeoutId: NodeJS.Timeout | string | number | undefined): void;
-  function setInterval(callback: (args: void) => void, ms?: number): NodeJS.Timeout;
+  function setInterval(callback: (args: undefined) => void, ms?: number): NodeJS.Timeout;
   function clearInterval(intervalId: NodeJS.Timeout | string | number | undefined): void;
-  function setImmediate(callback: (args: void) => void): NodeJS.Immediate;
+  function setImmediate(callback: (args: undefined) => void): NodeJS.Immediate;
 
   type CompareTimeOperations = "between" | "not between" | ">" | ">=" | "<" | "<=" | "==" | "<>";
 

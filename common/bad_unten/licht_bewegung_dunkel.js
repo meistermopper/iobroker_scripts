@@ -57,7 +57,7 @@ function istArbeitstag() {
 }
 
 async function lichtAn() {
-  const jetzt = new Date();
+  const _jetzt = new Date();
   let bri = 30;
   let ct = 2700;
   let sonoffAn = false;

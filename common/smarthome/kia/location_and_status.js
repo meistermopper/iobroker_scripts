@@ -176,7 +176,7 @@ async function processLocationUpdate() {
         console.log(`[Kia] Neuer Standort erkannt: ${address}`);
       }
     } catch (e) {
-      console.error("[Kia] Fehler beim Geocoding: " + e);
+      console.error(`[Kia] Fehler beim Geocoding: ${e}`);
     }
   });
 }

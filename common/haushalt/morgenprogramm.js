@@ -6,7 +6,9 @@ let timerMorgen = [];
 let programmLaeuft = false;
 
 function stopAllTimers() {
-  timerMorgen.forEach((t) => clearTimeout(t));
+  timerMorgen.forEach((t) => {
+    clearTimeout(t);
+  });
   timerMorgen = [];
   if (typeof dimmInterval !== "undefined") {
     clearInterval(dimmInterval);
@@ -17,13 +19,13 @@ function stopAllTimers() {
 
 async function Morgenprogramm(typ) {
   if (programmLaeuft) {
-    log("Morgenprogramm: Start ignoriert, bereits aktiv (" + typ + ")", "warn");
+    console.warn(`Morgenprogramm: Start ignoriert, bereits aktiv (${typ})`);
     return;
   }
 
   stopAllTimers();
   programmLaeuft = true;
-  log("Morgenprogramm gestartet für: " + typ);
+  console.log(`Morgenprogramm gestartet für: ${typ}`);
 
   // Initialisierung Geräte
   setState("chromecast.0.Mini-Schlazi.player.volume", 20);

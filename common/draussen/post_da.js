@@ -8,13 +8,13 @@
  */
 
 // --- 1. KONFIGURATION ---
-const WARTEZEIT_RESUME_MS = 8000; // Zeit bis Musik nach Ansage weiterläuft
+const _WARTEZEIT_RESUME_MS = 8000; // Zeit bis Musik nach Ansage weiterläuft
 const POSTKASTEN_STATE_ID = "alias.0.draussen.postkasten.STATE";
 const POSTKASTEN_VIS_ID = "0_userdata.0.Haushalt.Briefkasten";
 
 // Sperren zur Vermeidung von Mehrfach-Meldungen innerhalb einer Minute
 let Sperre = false;
-let Sperre_stumm = false;
+let _Sperre_stumm = false;
 
 /**
  * --- 3. TRIGGER: POST IST DA ---
@@ -22,7 +22,7 @@ let Sperre_stumm = false;
  */
 on({ id: POSTKASTEN_STATE_ID, change: "ne" }, async (obj) => {
   // Sicherheits-Check: Nur reagieren, wenn Sensor "wahr" meldet
-  if (!obj.state || !obj.state.val) return;
+  if (!obj.state?.val) return;
 
   // Wenn in der VIS der Kasten noch als "voll" (true) markiert ist, nichts tun
   if (getState(POSTKASTEN_VIS_ID)?.val === true) return;
@@ -37,7 +37,7 @@ on({ id: POSTKASTEN_STATE_ID, change: "ne" }, async (obj) => {
     await sendGlobalNotify(msgText, "", 1, 40); // Sprachausgabe mit Lautstärke 40
 
     setTimeout(() => {
-      Sperre_stumm = false;
+      _Sperre_stumm = false;
     }, 60000);
   }
 });

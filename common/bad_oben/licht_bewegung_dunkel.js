@@ -83,7 +83,7 @@ on({ id: ID_BWM, change: "any" }, (obj) => {
 });
 
 on({ id: ID_TUER, change: "ne" }, (obj) => {
-  if (!obj.state || !obj.state.val) return; // Nur reagieren, wenn Tür offen (true)
+  if (!obj.state?.val) return; // Nur reagieren, wenn Tür offen (true)
 
   const lichtWarAn = getState(ID_LICHT)?.val;
 

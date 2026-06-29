@@ -85,7 +85,7 @@ async function processPowerRestore() {
       );
     }
   } catch (e) {
-    console.error("USV-Restore: Fehler beim Wiederherstellen: " + e);
+    console.error(`USV-Restore: Fehler beim Wiederherstellen: ${e}`);
   }
 }
 
@@ -122,7 +122,7 @@ function createSnapshot() {
  */
 function sendNotification(msg) {
   // Hier kannst du deine Telegram/Gotify-Befehle einfügen
-  console.log("Meldung: " + msg);
+  console.log(`Meldung: ${msg}`);
   // sendTo('telegram', { text: msg });
 }
 

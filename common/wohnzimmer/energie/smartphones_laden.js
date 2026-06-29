@@ -138,7 +138,7 @@ Object.keys(geraete).forEach((name) => {
         );
       } else {
         await sendGlobalNotify(
-          "🪫 " + name + " sollte geladen werden.\nStand: " + level + "%",
+          `🪫 ${name} sollte geladen werden.\nStand: ${level}%`,
           "",
           1, // Priorität
           compareTime("08:00", "20:00", "between") ? 50 : null, // Sprachausgabe Lautstärke 50
@@ -153,7 +153,7 @@ Object.keys(geraete).forEach((name) => {
       setState(config.powerId, false); // Dose ausschalten
       if (config.lowBatId) setState(config.lowBatId, false);
       await sendGlobalNotify(
-        "🔋 " + name + " ist geladen.\nStand: " + level + "%",
+        `🔋 ${name} ist geladen.\nStand: ${level}%`,
         "",
         1, // Priorität
         compareTime("08:00", "20:00", "between") ? 50 : null, // Sprachausgabe Lautstärke 50

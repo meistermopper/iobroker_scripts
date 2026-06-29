@@ -20,7 +20,7 @@ async function repariereDatenpunkt() {
     });
   } else {
     const obj = getObject(LOG_DP);
-    if (!obj.common || obj.common.type !== "string") {
+    if (obj.common?.type !== "string") {
       obj.common = obj.common || {};
       obj.common.type = "string";
       obj.common.role = "html";
@@ -32,7 +32,7 @@ async function repariereDatenpunkt() {
 
 // --- LOG-VERARBEITUNG ---
 function updateLog() {
-  const fs = require("fs");
+  const fs = require("node:fs");
   const heute = formatDate(new Date(), "YYYY-MM-DD");
   const logPath = `/opt/iobroker/log/iobroker.${heute}.log`;
 
@@ -59,7 +59,7 @@ function updateLog() {
 
       setState(LOG_DP, htmlLog, true);
     } catch (e) {
-      console.error("[Log-Monitor] Fehler beim Lesen: " + e);
+      console.error(`[Log-Monitor] Fehler beim Lesen: ${e}`);
     }
   }
 }

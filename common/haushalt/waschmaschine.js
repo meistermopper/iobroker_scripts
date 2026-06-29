@@ -183,7 +183,7 @@ async function processFinish() {
   const durationMs = Date.now() - startTime - END_DELAY;
   const hours = Math.floor(durationMs / 3600000);
   const minutes = Math.floor((durationMs % 3600000) / 60000);
-  const timeStr = `${hours}:${minutes < 10 ? "0" + minutes : minutes} Std.`;
+  const timeStr = `${hours}:${minutes < 10 ? `0${minutes}` : minutes} Std.`;
 
   // Tagesstatistik aktualisieren
   const stateTotal = getState(ID_TOTAL);

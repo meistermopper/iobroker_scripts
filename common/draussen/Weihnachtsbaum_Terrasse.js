@@ -2,7 +2,7 @@
 function notifyThomas(msg) {
   const token = getState("0_userdata.0.gotifytoken.iobroker")?.val;
   sendTo("telegram", "send", { text: msg, user: "Thomas" });
-  console.log("Thomas: " + msg);
+  console.log(`Thomas: ${msg}`);
   if (token) {
     httpPost(
       `https://mygotify.meistermopper.de/message?token=${token}`,

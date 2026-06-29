@@ -3,7 +3,7 @@
 // =============================================================================
 
 const axios = require("axios");
-const https = require("https");
+const https = require("node:https");
 
 // --- KONFIGURATION ---
 const udmIp = "192.168.1.1";
@@ -11,8 +11,8 @@ const user = "meistermopper";
 const pass = "DBtRkL###123";
 
 const DP_PATH = "0_userdata.0.Unifi.";
-const dpNetworkVersion = DP_PATH + "network_version";
-const dpNetworkUpdate = DP_PATH + "network_update_available";
+const dpNetworkVersion = `${DP_PATH}network_version`;
+const dpNetworkUpdate = `${DP_PATH}network_update_available`;
 
 const agent = new https.Agent({ rejectUnauthorized: false });
 
@@ -44,7 +44,7 @@ async function getUnifiData() {
       timeout: 15000,
     });
 
-    if (sysRes.data && sysRes.data.data && sysRes.data.data[0]) {
+    if (sysRes.data?.data?.[0]) {
       const sys = sysRes.data.data[0];
       const version = sys.version || "---";
       const updateAvailable = !!sys.updatable;
@@ -62,7 +62,7 @@ async function getUnifiData() {
         `[Unifi] Timeout erreicht: Die UDM unter ${udmIp} hat nicht schnell genug geantwortet.`,
       );
     } else {
-      console.error("[Unifi] Fehler im Skript: " + err.message);
+      console.error(`[Unifi] Fehler im Skript: ${err.message}`);
     }
   }
 }

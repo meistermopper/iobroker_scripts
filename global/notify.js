@@ -44,7 +44,7 @@ const NOTIFY_CONFIG = {
  * @param {number} priority - Gotify Priorität (1-5)
  * @param {number} [voiceVol] - Wenn gesetzt, wird die Sprachausgabe mit dieser Lautstärke getriggert.
  */
-async function sendGlobalNotify(text, title = "ioBroker", priority = 1, voiceVol = null) {
+async function _sendGlobalNotify(text, title = "ioBroker", priority = 1, voiceVol = null) {
   // 1. Telegram
   sendTo(NOTIFY_CONFIG.telegramInstanz, "send", { text: `[${title}] ${text}` });
 
@@ -91,12 +91,12 @@ async function googleWatchdogAnnounce(text, vol) {
 
     // Musik nach der Wartezeit fortsetzen (Resume)
     if (isPlaying) {
-      const oldVol = getState(base + ".player.volume")?.val;
-      const oldUrl = getState(base + ".player.url2play")?.val;
+      const oldVol = getState(`${base}.player.volume`)?.val;
+      const oldUrl = getState(`${base}.player.url2play`)?.val;
 
       if (oldUrl) {
-        setStateDelayed(base + ".player.url2play", oldUrl, DEFAULT_RESUME_MS, false);
-        setStateDelayed(base + ".player.volume", oldVol, DEFAULT_RESUME_MS + 500, false);
+        setStateDelayed(`${base}.player.url2play`, oldUrl, DEFAULT_RESUME_MS, false);
+        setStateDelayed(`${base}.player.volume`, oldVol, DEFAULT_RESUME_MS + 500, false);
       }
     }
   });

@@ -116,7 +116,7 @@ function updateDateInfo() {
   const formatted = `${daysLong[now.getDay()]}, ${day}. ${monthLong[now.getMonth()]} ${year}`;
   setState(`${path}.Datum.tagmonattext`, formatted, true);
 
-  if (logging) log(`Kalender-Info aktualisiert: ${formatted}`);
+  if (logging) console.log(`Kalender-Info aktualisiert: ${formatted}`);
 }
 
 // Initialisierung

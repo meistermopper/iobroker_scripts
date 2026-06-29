@@ -41,7 +41,7 @@ function updatePiHoleData() {
     // HINWEIS: Dies ist die robusteste Form der Verschachtelung, die die innere einfache Anführungszeichenkette
     // an die SQLite-Engine weitergibt, indem die äußeren Doppel-Anführungszeichen escaped werden.
 
-    require("child_process").exec(command, (error, stdout, stderr) => {
+    require("node:child_process").exec(command, (error, stdout, stderr) => {
       if (error) {
         console.error(`Fehler bei SSH-Verbindung zu ${server.host}: ${error.message}`);
         console.error(`[${server.host}] Fehlerdetails: ${stderr}`);
@@ -53,7 +53,7 @@ function updatePiHoleData() {
 
       const domainCount = parseInt(stdout.trim(), 10);
 
-      if (!isNaN(domainCount)) {
+      if (!Number.isNaN(domainCount)) {
         setState(server.datapoint, domainCount, true);
         //console.log(`[${server.host}] Domainanzahl erfolgreich aktualisiert: ${domainCount}`);
       } else {

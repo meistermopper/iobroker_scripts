@@ -28,17 +28,17 @@ on({ id: ID_MOTION, change: "gt" }, async () => {
   // dass es nach einer kurzen Kulanzzeit wieder aus geht.
   if (isNachtruhe()) {
     // Helligkeit beim Antippen in der Nacht auf einen niedrigen, aber lesbaren Wert setzen
-    setState(ID_COMMAND + "setStringSetting", `&key=screenBrightness&value=${BRI_NIEDRIG}`);
+    setState(`${ID_COMMAND}setStringSetting`, `&key=screenBrightness&value=${BRI_NIEDRIG}`);
 
     timeout_screen = setTimeout(async () => {
-      setState(ID_COMMAND + "screenOff", true);
+      setState(`${ID_COMMAND}screenOff`, true);
     }, 5000); // 5 Sekunden Leuchtdauer in der Nacht
     return;
   }
 
   // Display einschalten und Helligkeit setzen
-  setState(ID_COMMAND + "screenOn", true);
-  setState(ID_COMMAND + "setStringSetting", `&key=screenBrightness&value=${BRI_HOCH}`);
+  setState(`${ID_COMMAND}screenOn`, true);
+  setState(`${ID_COMMAND}setStringSetting`, `&key=screenBrightness&value=${BRI_HOCH}`);
 
   // Timer für das Ausschalten starten
   timeout_screen = setTimeout(async () => {
@@ -47,7 +47,7 @@ on({ id: ID_MOTION, change: "gt" }, async () => {
     // Nur ausschalten, wenn der manuelle "hell"-Schalter nicht aktiv ist
     const stateHell = await getStateAsync(ID_HELL);
     if (stateHell && !stateHell.val) {
-      setState(ID_COMMAND + "screenOff", true);
+      setState(`${ID_COMMAND}screenOff`, true);
       //console.log("[Fully] Display per Timeout ausgeschaltet.");
     }
   }, 30000); // 30 Sekunden
@@ -56,9 +56,9 @@ on({ id: ID_MOTION, change: "gt" }, async () => {
 // Manueller Schalter (bleibt aktiv, egal wie spät es ist)
 on({ id: ID_HELL, change: "ne" }, (obj) => {
   if (obj.state.val) {
-    setState(ID_COMMAND + "screenOn", true);
-    setState(ID_COMMAND + "setStringSetting", `&key=screenBrightness&value=${BRI_HOCH}`);
+    setState(`${ID_COMMAND}screenOn`, true);
+    setState(`${ID_COMMAND}setStringSetting`, `&key=screenBrightness&value=${BRI_HOCH}`);
   } else {
-    setState(ID_COMMAND + "screenOff", true);
+    setState(`${ID_COMMAND}screenOff`, true);
   }
 });

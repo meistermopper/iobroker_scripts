@@ -20,7 +20,7 @@
 const ID_SAUNA_AKTIV = "0_userdata.0.Haushalt.sauna_laeuft"; // Trigger für Automatik
 const PREFERED_SENDER = "smoothjazz"; // Standard-Sender für Automatik
 const VOL_SAUNA = 10; // Start-Lautstärke Sauna
-const VOL_BAD = 15; // Start-Lautstärke Bad
+const _VOL_BAD = 15; // Start-Lautstärke Bad
 
 const DELAY_BAD = 5 * 60 * 1000; // Einschaltverzögerung Bad
 const DELAY_SAUNA = 20 * 60 * 1000; // Einschaltverzögerung Sauna

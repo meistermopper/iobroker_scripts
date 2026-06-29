@@ -30,7 +30,7 @@ const IDS = {
 
   // Konfiguration & Steuerung
   speicherMax: "0_userdata.0.Energie.PV.Speichergroesse", // Kapazität in kWh (z.B. 9.6)
-  saunaLogik: PATH_SAUNA + "sauna_laeuft", // Status-Flag für die Priorisierung
+  saunaLogik: `${PATH_SAUNA}sauna_laeuft`, // Status-Flag für die Priorisierung
   saunaTuer: "alias.0.sauna.tuer.opened", // Türkontakt
   minSocSet: "modbus.0.holdingRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)", // Schreiben
   minSocRead: "modbus.0.inputRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)", // Lesen
@@ -40,7 +40,7 @@ const IDS = {
   wbLimit:
     "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.configuration.evb_MaximumStationCurrent",
 };
-const DP_MINSOC_BACKUP = PATH_PV + "Sauna_MinSoc_Backup";
+const DP_MINSOC_BACKUP = `${PATH_PV}Sauna_MinSoc_Backup`;
 
 // Interne Speicher für Berechnungen
 let pvP = 0,
@@ -61,20 +61,20 @@ let tSaunaSafety = null;
 async function initSystem() {
   // Erzeugt alle nötigen Datenpunkte für die Visualisierung (VIS)
   const states = [
-    { id: PATH_PV + "Hausverbrauch", unit: "W", type: "number" },
-    { id: PATH_PV + "Netzbezug", unit: "W", type: "number" },
-    { id: PATH_PV + "Einspeisung", unit: "W", type: "number" },
-    { id: PATH_PV + "Autarkie", unit: "%", type: "number" },
-    { id: PATH_PV + "Tagesverbrauch", unit: "Wh", type: "number" },
-    { id: PATH_PV + "Tageserzeugung", unit: "Wh", type: "number" },
-    { id: PATH_PV + "Tagesladung", unit: "Wh", type: "number" },
-    { id: PATH_PV + "TagesNetzbezug", unit: "Wh", type: "number" },
-    { id: PATH_PV + "lade_kwh", unit: "kWh", type: "number" },
-    { id: PATH_PV + "Restladezeit", unit: "h", type: "string" },
-    { id: PATH_PV + "Ladung_final_Uhrzeit", unit: "", type: "string" },
-    { id: PATH_PV + "Wallbox_Freigabe", unit: "", type: "boolean" },
+    { id: `${PATH_PV}Hausverbrauch`, unit: "W", type: "number" },
+    { id: `${PATH_PV}Netzbezug`, unit: "W", type: "number" },
+    { id: `${PATH_PV}Einspeisung`, unit: "W", type: "number" },
+    { id: `${PATH_PV}Autarkie`, unit: "%", type: "number" },
+    { id: `${PATH_PV}Tagesverbrauch`, unit: "Wh", type: "number" },
+    { id: `${PATH_PV}Tageserzeugung`, unit: "Wh", type: "number" },
+    { id: `${PATH_PV}Tagesladung`, unit: "Wh", type: "number" },
+    { id: `${PATH_PV}TagesNetzbezug`, unit: "Wh", type: "number" },
+    { id: `${PATH_PV}lade_kwh`, unit: "kWh", type: "number" },
+    { id: `${PATH_PV}Restladezeit`, unit: "h", type: "string" },
+    { id: `${PATH_PV}Ladung_final_Uhrzeit`, unit: "", type: "string" },
+    { id: `${PATH_PV}Wallbox_Freigabe`, unit: "", type: "boolean" },
     { id: DP_MINSOC_BACKUP, unit: "%", type: "number" },
-    { id: PATH_SAUNA_DATA + "sauna_heizt_aktiv", unit: "", type: "boolean" },
+    { id: `${PATH_SAUNA_DATA}sauna_heizt_aktiv`, unit: "", type: "boolean" },
   ];
 
   for (const s of states) {
@@ -116,9 +116,9 @@ async function initSystem() {
     originalMinSoc = getState(DP_MINSOC_BACKUP)?.val || null;
   }
 
-  tVerbrauchWh = getState(PATH_PV + "Tagesverbrauch")?.val || 0;
-  tLadungWh = getState(PATH_PV + "Tagesladung")?.val || 0;
-  tNetzWh = getState(PATH_PV + "TagesNetzbezug")?.val || 0;
+  tVerbrauchWh = getState(`${PATH_PV}Tagesverbrauch`)?.val || 0;
+  tLadungWh = getState(`${PATH_PV}Tagesladung`)?.val || 0;
+  tNetzWh = getState(`${PATH_PV}TagesNetzbezug`)?.val || 0;
 
   console.log(`Master v3.0 gestartet. Speicher: ${sMax} kWh, SoC: ${soc}%, BatPower: ${batP}W`);
   runUpdate(); // Sofortiger Update-Lauf
@@ -134,7 +134,7 @@ initSystem();
  * 'on'-Trigger zu verwenden, anstatt 'getState' wiederholt aufzurufen.
  */
 function getBereinigteLast() {
-  const hausV = Number(getState(PATH_PV + "Hausverbrauch")?.val) || 0;
+  const hausV = Number(getState(`${PATH_PV}Hausverbrauch`)?.val) || 0;
   let abzug = 0;
   const gP = [
     "alias.0.kueche.boiler.ENERGY_Power",
@@ -194,8 +194,7 @@ function runUpdate() {
 
       const stunden = Math.floor(restStunden);
       const minuten = Math.floor((restStunden * 60) % 60);
-      ladeDauerAnzeige =
-        (stunden < 10 ? "0" + stunden : stunden) + ":" + (minuten < 10 ? "0" + minuten : minuten);
+      ladeDauerAnzeige = `${stunden < 10 ? `0${stunden}` : stunden}:${minuten < 10 ? `0${minuten}` : minuten}`;
 
       const endeDatum = new Date();
       endeDatum.setSeconds(endeDatum.getSeconds() + restSekunden);
@@ -208,18 +207,18 @@ function runUpdate() {
     curHausV > 0 ? Math.round(Math.min(100, (1 - Math.max(0, netP) / curHausV) * 100)) : 0;
 
   // Datenpunkte für Dashboard schreiben
-  setState(PATH_PV + "Hausverbrauch", Math.round(curHausV), true);
-  setState(PATH_PV + "Netzbezug", Math.max(0, Math.round(netP)), true);
-  setState(PATH_PV + "Einspeisung", Math.abs(Math.min(0, Math.round(netP))), true);
-  setState(PATH_PV + "Autarkie", aut, true);
-  setState(PATH_PV + "lade_kwh", parseFloat(curKwh.toFixed(1)), true);
-  setState(PATH_PV + "Restladezeit", ladeDauerAnzeige, true);
-  setState(PATH_PV + "Ladung_final_Uhrzeit", ladeEndeUhrzeit, true);
+  setState(`${PATH_PV}Hausverbrauch`, Math.round(curHausV), true);
+  setState(`${PATH_PV}Netzbezug`, Math.max(0, Math.round(netP)), true);
+  setState(`${PATH_PV}Einspeisung`, Math.abs(Math.min(0, Math.round(netP))), true);
+  setState(`${PATH_PV}Autarkie`, aut, true);
+  setState(`${PATH_PV}lade_kwh`, parseFloat(curKwh.toFixed(1)), true);
+  setState(`${PATH_PV}Restladezeit`, ladeDauerAnzeige, true);
+  setState(`${PATH_PV}Ladung_final_Uhrzeit`, ladeEndeUhrzeit, true);
 
   // Sommer-Strategie (Flag für VIS)
   const d = new Date();
   const sommer = d.getMonth() >= 3 && d.getMonth() <= 8 && d.getHours() >= 14 && soc >= 85;
-  setState(PATH_PV + "Wallbox_Freigabe", sommer, true);
+  setState(`${PATH_PV}Wallbox_Freigabe`, sommer, true);
 
   // --- SAUNA-LOGIK MIT ANTI-ZAPPEL-SYSTEM ---
   const bLast = getBereinigteLast();
@@ -229,7 +228,7 @@ function runUpdate() {
 
   // ECHTZEIT-STATUS: Zieht der Ofen gerade physikalisch Strom?
   // (Unabhängig von der 35-Minuten-Logik für die Batterie)
-  setState(PATH_SAUNA_DATA + "sauna_heizt_aktiv", bLast > 7500, true);
+  setState(`${PATH_SAUNA_DATA}sauna_heizt_aktiv`, bLast > 7500, true);
 
   const sL = getState(IDS.saunaLogik)?.val;
 
@@ -274,7 +273,7 @@ function startSauna() {
   originalMinSoc = getState(IDS.minSocRead)?.val; // Ursprungswert merken (z.B. 40%)
   setState(DP_MINSOC_BACKUP, originalMinSoc, true); // Persistent speichern
   setState(IDS.minSocSet, soc); // Batterie sofort auf aktuellem Level sperren
-  console.log("Sauna: Priorisierung AKTIV, Min-SoC auf " + soc + "% fixiert");
+  console.log(`Sauna: Priorisierung AKTIV, Min-SoC auf ${soc}% fixiert`);
 }
 
 function stopSauna() {
@@ -336,10 +335,10 @@ on({ id: IDS.minSocRead, change: "ne" }, (obj) => {
 // Intervall für Tages-Statistiken (alle 10 Sek.)
 setInterval(() => {
   const yieldWh = (getState(IDS.pvYield)?.val || 0) * 1000;
-  setState(PATH_PV + "Tageserzeugung", Math.round(yieldWh), true);
-  setState(PATH_PV + "Tagesverbrauch", Math.round(tVerbrauchWh), true);
-  setState(PATH_PV + "Tagesladung", Math.round(tLadungWh), true);
-  setState(PATH_PV + "TagesNetzbezug", Math.round(tNetzWh), true);
+  setState(`${PATH_PV}Tageserzeugung`, Math.round(yieldWh), true);
+  setState(`${PATH_PV}Tagesverbrauch`, Math.round(tVerbrauchWh), true);
+  setState(`${PATH_PV}Tagesladung`, Math.round(tLadungWh), true);
+  setState(`${PATH_PV}TagesNetzbezug`, Math.round(tNetzWh), true);
 }, 10000);
 
 // Mitternachts-Reset

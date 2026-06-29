@@ -69,7 +69,7 @@ function getSmartName(id) {
   if (parts.length >= 3) {
     const deviceId = `${parts[0]}.${parts[1]}.${parts[2]}`;
     const deviceObj = getObject(deviceId);
-    if (deviceObj && deviceObj.common && deviceObj.common.name) {
+    if (deviceObj?.common?.name) {
       name = deviceObj.common.name;
     }
   }
@@ -278,7 +278,7 @@ async function sendNotifications(criticalDevices) {
 
   if (CONFIG.useGotify) {
     const tokenState = await getStateAsync(CONFIG.idGotifyToken);
-    if (tokenState && tokenState.val) {
+    if (tokenState?.val) {
       const prio = isQuietTime ? 0 : 1;
       httpPost(
         `https://mygotify.meistermopper.de/message?token=${tokenState.val}`,

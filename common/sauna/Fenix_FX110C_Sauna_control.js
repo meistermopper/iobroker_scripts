@@ -23,7 +23,7 @@ const client = axios.create({ timeout: 20000 }); // Axios-Instanz mit 20s Timeou
 let idToken = ""; // Das JWT-Ticket für die API-Authentifizierung
 let dataBaseUrl = ""; // Server-Adresse für Live-Daten (Data Service)
 let deviceBaseUrl = ""; // Server-Adresse für Steuerbefehle (Device Service) -> NEU!
-let controlBaseUrl = ""; // Basis-Adresse für Generics (Auth)
+let _controlBaseUrl = ""; // Basis-Adresse für Generics (Auth)
 let authUrl = ""; // Endpunkt für die Anmeldung
 
 // Logik-Flags
@@ -118,13 +118,12 @@ async function fetchConfig() {
 
     dataBaseUrl = ep.data.https;
     deviceBaseUrl = ep.device.https;
-    controlBaseUrl = ep.generics.https;
+    _controlBaseUrl = ep.generics.https;
     authUrl = `${ep.generics.https}/auth/token`;
     return true;
   } catch (err) {
-    log(
+    console.warn(
       `[Harvia] Fehler beim Laden der API-Konfiguration: ${err.message} - Nutze Fallback-URLs`,
-      "warn",
     );
     return false;
   }
@@ -152,14 +151,14 @@ async function login() {
   const pass = getState(`${BASE_PATH}.password`)?.val;
 
   if (!user || !pass) {
-    log("[Harvia] Login-Fehler: Benutzerdaten in 0_userdata fehlen!", "warn");
+    console.warn("[Harvia] Login-Fehler: Benutzerdaten in 0_userdata fehlen!");
     isLoggingIn = false;
     return false;
   }
 
   try {
     if (!(await fetchConfig())) {
-      log("[Harvia] Login abgebrochen: Konfiguration konnte nicht geladen werden", "warn");
+      console.warn("[Harvia] Login abgebrochen: Konfiguration konnte nicht geladen werden");
       return false;
     }
 
@@ -171,7 +170,7 @@ async function login() {
     idToken = response.data.idToken;
     return true;
   } catch (err) {
-    log(`[Harvia] Login fehlgeschlagen: ${err.message}`, "error");
+    console.error(`[Harvia] Login fehlgeschlagen: ${err.message}`);
     return false;
   } finally {
     isLoggingIn = false; // Sperre in jedem Fall wieder aufheben
@@ -185,13 +184,13 @@ async function login() {
  */
 async function setSaunaState(stateName, value, isRetry = false) {
   if (!idToken || !deviceBaseUrl) {
-    log(`[Harvia] Abbruch: Noch nicht eingeloggt oder Endpunkte unbekannt.`, "warn");
+    console.warn(`[Harvia] Abbruch: Noch nicht eingeloggt oder Endpunkte unbekannt.`);
     return;
   }
 
   // Lock-Check: Nur blockieren, wenn es kein interner Retry ist
   if (isSendingCommand && !isRetry) {
-    log(`[Harvia] Befehl '${stateName}' blockiert: Eine Cloud-Anfrage ist bereits aktiv.`, "debug");
+    console.log(`[Harvia] Befehl '${stateName}' blockiert: Eine Cloud-Anfrage ist bereits aktiv.`);
     return;
   }
 
@@ -220,8 +219,8 @@ async function setSaunaState(stateName, value, isRetry = false) {
         },
       });
 
-      if (response.data && response.data.handled) {
-        log(`[Harvia] ${commandType === "SAUNA" ? "Heizung" : "Licht"} -> ${stateStr}`, "info");
+      if (response.data?.handled) {
+        console.log(`[Harvia] ${commandType === "SAUNA" ? "Heizung" : "Licht"} -> ${stateStr}`);
 
         // BESTÄTIGUNG: Wir setzen ack: true sofort, damit die UI nicht "springt"
         setState(`${BASE_PATH}.${stateName}`, boolValue, true);
@@ -231,7 +230,7 @@ async function setSaunaState(stateName, value, isRetry = false) {
         scheduleNextUpdate(LATENCY_MS + 500); // Schnellen Refresh nach Latenzzeit anfordern
       } else {
         const reason = response.data ? response.data.failureReason : "Unbekannt";
-        log(`[Harvia] Cloud lehnt Befehl ab: ${reason}`, "warn");
+        console.warn(`[Harvia] Cloud lehnt Befehl ab: ${reason}`);
         setState(`${BASE_PATH}.errorMsg`, `Cloud-Fehler: ${reason}`, true);
 
         // Zurücksetzen, da Befehl abgelehnt wurde
@@ -254,29 +253,28 @@ async function setSaunaState(stateName, value, isRetry = false) {
           "Content-Type": "application/json",
         },
       });
-      log(`[Harvia] Temp-Soll -> ${value}°C`, "info");
+      console.log(`[Harvia] Temp-Soll -> ${value}°C`);
       // Sofortige Bestätigung im ioBroker
       setState(`${BASE_PATH}.targetTemp`, parseFloat(value), true);
       lastCommandTime = Date.now();
       scheduleNextUpdate(LATENCY_MS + 500); // Schnellen Refresh nach Latenzzeit anfordern
     }
   } catch (err) {
-    const detail =
-      err.response && err.response.data ? JSON.stringify(err.response.data) : err.message;
+    const detail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
 
     // "Device unavailable" ist ein Cloud-Sperr-Effekt bei schnellen Klicks.
     // Wir loggen das nur noch als Debug, um das Info-Log sauber zu halten.
     if (detail.includes("Device unavailable")) {
-      log(`[Harvia] Cloud-Sperre: Gerät belegt, Befehl wird verworfen.`, "debug");
+      console.log(`[Harvia] Cloud-Sperre: Gerät belegt, Befehl wird verworfen.`);
     } else {
-      log(`[Harvia] Fehler bei der Steuerung: ${detail}`, "error");
+      console.error(`[Harvia] Fehler bei der Steuerung: ${detail}`);
       setState(`${BASE_PATH}.errorMsg`, `Fehler: ${err.message}`, true);
     }
 
     // RE-LOGIN LOGIK: Falls der Token während der Laufzeit ungültig wurde
     // Automatischer Re-Login bei abgelaufenem Token (HTTP 401)
     if (err.response && err.response.status === 401) {
-      log("[Harvia] Token abgelaufen bei Steuerung, löse Re-Login aus...", "warn");
+      console.warn("[Harvia] Token abgelaufen bei Steuerung, löse Re-Login aus...");
       isSendingCommand = false; // Lock kurz lösen für den Login
       if (await login()) {
         // Nach erfolgreichem Login Befehl einmal wiederholen
@@ -366,7 +364,7 @@ async function updateStatus() {
       p = response.data?.data;
     } catch (err) {
       if (err.response && err.response.status === 401) throw err; // An catch block weitergeben für Re-Login
-      log(`[Harvia] Fehler beim Abruf der Telemetriedaten: ${err.message}`, "warn");
+      console.warn(`[Harvia] Fehler beim Abruf der Telemetriedaten: ${err.message}`);
     }
 
     try {
@@ -379,12 +377,12 @@ async function updateStatus() {
       s = responseState.data;
     } catch (err) {
       if (err.response && err.response.status === 401) throw err; // An catch block weitergeben für Re-Login
-      log(`[Harvia] Fehler beim Abruf des Gerätestatus: ${err.message}`, "warn");
+      console.warn(`[Harvia] Fehler beim Abruf des Gerätestatus: ${err.message}`);
     }
 
     if (p || s) {
-      if (p) log(`[Harvia DEBUG] Raw Data: ${JSON.stringify(p)}`, "debug");
-      if (s) log(`[Harvia DEBUG] Device State: ${JSON.stringify(s)}`, "debug");
+      if (p) console.log(`[Harvia DEBUG] Raw Data: ${JSON.stringify(p)}`);
+      if (s) console.log(`[Harvia DEBUG] Device State: ${JSON.stringify(s)}`);
 
       if (Date.now() - lastCommandTime < LATENCY_MS) return;
 
@@ -422,7 +420,7 @@ async function updateStatus() {
       function safeSetNumberState(stateId, val, isFloat = true) {
         if (val === undefined || val === null || val === "") return;
         const parsed = isFloat ? parseFloat(val) : parseInt(val, 10);
-        if (!isNaN(parsed)) setState(stateId, parsed, true);
+        if (!Number.isNaN(parsed)) setState(stateId, parsed, true);
       }
 
       if (p) {
@@ -478,7 +476,7 @@ async function updateStatus() {
           s.state.heater.on === 1 || s.state.heater.on === true,
           true,
         );
-      } else if (p && p.online) {
+      } else if (p?.online) {
         setState(`${BASE_PATH}.heatOn`, false, true);
       }
 
@@ -516,7 +514,7 @@ async function updateStatus() {
         setState(`${BASE_PATH}.lightOn`, isHarviaTrue(actualLight), true);
       } else if (s && s.state && s.state.light && s.state.light.on !== undefined) {
         setState(`${BASE_PATH}.lightOn`, s.state.light.on === 1 || s.state.light.on === true, true);
-      } else if (p && p.online) {
+      } else if (p?.online) {
         setState(`${BASE_PATH}.lightOn`, false, true);
       }
 
@@ -533,12 +531,12 @@ async function updateStatus() {
     }
   } catch (err) {
     if (err.response && err.response.status === 401) {
-      log("[Harvia] Token abgelaufen, versuche Re-Login...", "warn");
+      console.warn("[Harvia] Token abgelaufen, versuche Re-Login...");
       if (await login()) {
         nextDelay = 1000; // Sofortiger Retry nach Re-Login (1s)
       }
     } else {
-      log(`[Harvia] Abruf-Fehler: ${err.message}`, "error");
+      console.error(`[Harvia] Abruf-Fehler: ${err.message}`);
       setState(`${BASE_PATH}.online`, false, true);
     }
   } finally {
@@ -605,7 +603,7 @@ function setupListeners() {
       if (!notified10Min && currentTemp >= targetTemp - 13 && currentTemp < targetTemp) {
         setState(`${BASE_PATH}.readyNotified10Min`, true, true);
         const msg = `🧖 Die Sauna erreicht in ca. 10 Minuten ihre Zieltemperatur (${targetTemp}°C).`;
-        log(`[Harvia] ${msg}`, "info");
+        console.log(`[Harvia] ${msg}`);
         if (typeof sendGlobalNotify === "function") sendGlobalNotify(msg, "Sauna", 1);
       }
 
@@ -616,7 +614,7 @@ function setupListeners() {
 
         setState(`${BASE_PATH}.targetReachedNotified`, true, true);
         const msg = `♨️ Die Sauna hat ihre Zieltemperatur von ${targetTemp}°C erreicht und ist bereit!`;
-        log(`[Harvia] ${msg}`, "info");
+        console.log(`[Harvia] ${msg}`);
         if (typeof sendGlobalNotify === "function") sendGlobalNotify(msg, "Sauna", 1);
       }
     }
@@ -641,7 +639,7 @@ async function startCloudConnection() {
       await login();
     }, LOGIN_REFRESH);
   } else {
-    log("[Harvia] Login fehlgeschlagen. Versuche es in 5 Minuten erneut...", "warn");
+    console.warn("[Harvia] Login fehlgeschlagen. Versuche es in 5 Minuten erneut...");
     setTimeout(startCloudConnection, 5 * 60 * 1000);
   }
 }
@@ -651,7 +649,7 @@ async function startCloudConnection() {
  * Startet die Initialisierung und Abläufe.
  */
 async function main() {
-  log("[Harvia] Skript-Start: Initialisierung läuft...", "info");
+  console.log("[Harvia] Skript-Start: Initialisierung läuft...");
 
   await ensureStatesExist(); // 1. Datenpunkte anlegen
 

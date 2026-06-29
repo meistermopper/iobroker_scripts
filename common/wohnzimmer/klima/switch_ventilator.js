@@ -1,4 +1,4 @@
-const ventilator_timeout = null;
+const _ventilator_timeout = null;
 
 on({ id: "0_userdata.0.Entprellen.Kühlung.Ventilator", change: "ne" }, async (obj) => {
   const targetState = obj.state ? obj.state.val : false;

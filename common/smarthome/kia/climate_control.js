@@ -17,7 +17,7 @@ const IDS = {
   klimaStatus: "0_userdata.0.Energie.Kia_e_niro.klima_status",
 };
 
-var timeoutDefrost;
+let _timeoutDefrost;
 
 // Hilfsfunktion: Prüft ob die aktuelle Kalenderwoche gerade ist
 function istGeradeWoche() {
@@ -33,7 +33,7 @@ function istGeradeWoche() {
 
 // 1. ÜBERWACHUNG DER ZIELTEMPERATUR
 on({ id: IDS.airTemp, change: "ne" }, async (obj) => {
-  if (obj.state.val != TARGET_TEMP) {
+  if (obj.state.val !== TARGET_TEMP) {
     setState(IDS.airTemp, TARGET_TEMP);
   }
 });
@@ -45,7 +45,7 @@ on(
     change: "ne",
   },
   async (obj) => {
-    setState(IDS.klimaStatus, obj.state.val == 1, true);
+    setState(IDS.klimaStatus, obj.state.val === 1, true);
   },
 );
 

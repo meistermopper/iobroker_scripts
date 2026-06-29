@@ -5,7 +5,7 @@
 
 // --- KONFIGURATION ---
 const ID_DRUCK = "vaillant.0.44c040a5-2e4f-4933-b508-22584e0854c2.state.system.systemWaterPressure";
-const ID_STATUS_DP = "0_userdata.0.Heizen.Status.Wasserdruck";
+const _ID_STATUS_DP = "0_userdata.0.Heizen.Status.Wasserdruck";
 const SCHWELLE = 1.3; // Druck-Schwelle für Alarm
 
 // --- LOGIK ---

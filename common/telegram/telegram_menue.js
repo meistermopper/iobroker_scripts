@@ -185,7 +185,7 @@ on({ id: "telegram.0.communicate.request", change: "any" }, async (obj) => {
       break;
     case "termine": {
       const tState = getState("ical.1.data.table");
-      if (!tState || !tState.val) {
+      if (!tState?.val) {
         smartNotify(user, "Keine Termine.");
       } else {
         const heute = new Date().setHours(0, 0, 0, 0);

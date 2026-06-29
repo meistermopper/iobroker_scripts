@@ -53,7 +53,7 @@ const viewStates = {};
   // 1. Datenpunkte anlegen (asynchron und sicher)
   for (const view of PIN_VIEWS) {
     const viewPath = STATE_PATH + view.name;
-    await createStateAsync(viewPath + ".CurrentKey", {
+    await createStateAsync(`${viewPath}.CurrentKey`, {
       name: "Mit Tasten aus VIS setzen",
       type: "string",
       read: true,
@@ -61,7 +61,7 @@ const viewStates = {};
       role: "info",
       def: "",
     });
-    await createStateAsync(viewPath + ".WrongPinEntered", {
+    await createStateAsync(`${viewPath}.WrongPinEntered`, {
       name: "Pin-Fehler",
       type: "boolean",
       read: true,
@@ -69,7 +69,7 @@ const viewStates = {};
       role: "info",
       def: false,
     });
-    await createStateAsync(viewPath + ".PinWildcards", {
+    await createStateAsync(`${viewPath}.PinWildcards`, {
       name: "Sterne (*) für VIS-Anzeige",
       type: "string",
       read: true,
@@ -80,7 +80,7 @@ const viewStates = {};
 
     // NEU: Datenpunkt für den PIN anlegen, falls er nicht existiert
     // Der PIN wird jetzt auch unter dem View-Pfad gespeichert
-    const pinId = viewPath + ".PIN";
+    const pinId = `${viewPath}.PIN`;
     view.pinId = pinId; // pinId zur Laufzeit hinzufügen für die spätere Verwendung
 
     if (!(await existsObjectAsync(pinId))) {
@@ -91,7 +91,7 @@ const viewStates = {};
         read: true,
         write: true,
       });
-      log(`PIN-Datenpunkt ${pinId} wurde mit dem Fallback-PIN angelegt.`, "info");
+      console.log(`PIN-Datenpunkt ${pinId} wurde mit dem Fallback-PIN angelegt.`);
     }
 
     // Status initialisieren
@@ -103,7 +103,7 @@ const viewStates = {};
 
   // 2. Trigger starten (Regex für alle Views)
   // Baut einen Regex, der auf alle CurrentKey-Pfade passt
-  const triggerPath = new RegExp("^" + STATE_PATH.replace(/\./g, "\\.") + ".*\\.CurrentKey$");
+  const triggerPath = new RegExp(`^${STATE_PATH.replace(/\./g, "\\.")}.*\\.CurrentKey$`);
 
   on({ id: triggerPath, change: "any" }, (obj) => {
     const currView = obj.id.substring(STATE_PATH.length, obj.id.lastIndexOf("."));
@@ -112,7 +112,7 @@ const viewStates = {};
     const val = obj.state.val;
     if (val === "") return; // Leere Änderungen ignorieren
 
-    if (LOGGING) log("Eingabe erkannt, View: " + currView);
+    if (LOGGING) console.log(`Eingabe erkannt, View: ${currView}`);
 
     switch (
       String(val) // String-Cast zur Sicherheit
@@ -136,7 +136,7 @@ const viewStates = {};
         resetPin(currView);
         break;
       default:
-        if (LOGGING) log("Unbekannte Eingabe: " + val);
+        if (LOGGING) console.log(`Unbekannte Eingabe: ${val}`);
     }
   });
 })();
@@ -149,7 +149,7 @@ const viewStates = {};
 function userEnteredNumber(viewName, key) {
   viewStates[viewName].buffer += key;
   viewStates[viewName].wildcards += " *";
-  setState(STATE_PATH + viewName + ".PinWildcards", viewStates[viewName].wildcards, true);
+  setState(`${STATE_PATH + viewName}.PinWildcards`, viewStates[viewName].wildcards, true);
 }
 
 /********************************
@@ -160,7 +160,7 @@ function checkEnteredPin(viewName) {
   // Konfiguration für diese View suchen
   const viewConfig = PIN_VIEWS.find((v) => v.name === viewName);
   if (!viewConfig) {
-    log("Konfiguration für View " + viewName + " nicht gefunden!", "error");
+    console.error(`Konfiguration für View ${viewName} nicht gefunden!`);
     return;
   }
 
@@ -171,31 +171,29 @@ function checkEnteredPin(viewName) {
   // Wenn eine pinId konfiguriert ist, überschreibe den Wert aus der Konfiguration
   if (pinId && existsState(pinId)) {
     targetPin = getState(pinId)?.val;
-    if (LOGGING) log("PIN wird aus Datenpunkt gelesen: " + pinId);
+    if (LOGGING) console.log(`PIN wird aus Datenpunkt gelesen: ${pinId}`);
   } else if (pinId) {
-    log(
+    console.warn(
       `PIN für View '${viewName}' konnte nicht geprüft werden. Datenpunkt '${pinId}' nicht gefunden oder hat keinen Wert.`,
-      "warn",
     );
     return; // Abbruch, da kein PIN zum Vergleich vorhanden ist.
   } else {
-    log(
+    console.warn(
       `PIN für View '${viewName}' konnte nicht geprüft werden. Kein 'pinId' in der Konfiguration gesetzt.`,
-      "warn",
     );
     return; // Abbruch
   }
 
-  if (LOGGING) log("Prüfe PIN für View [" + viewName + "]");
+  if (LOGGING) console.log(`Prüfe PIN für View [${viewName}]`);
 
   // Vergleich (als String, um Typenprobleme zu vermeiden)
   if ((viewStates[viewName].buffer || "").toString() === (targetPin || "").toString()) {
-    if (LOGGING) log("Pin-Eingabe erfolgreich, View [" + viewName + "]");
+    if (LOGGING) console.log(`Pin-Eingabe erfolgreich, View [${viewName}]`);
     onSuccess(viewConfig);
     setTimeout(() => resetPin(viewName), 3000); // Reset nach 3 Sekunden
   } else {
-    if (LOGGING) log("Falschen Pin eingegeben, View [" + viewName + "]");
-    setState(STATE_PATH + viewName + ".WrongPinEntered", true, true); // ack: true setzen
+    if (LOGGING) console.log(`Falschen Pin eingegeben, View [${viewName}]`);
+    setState(`${STATE_PATH + viewName}.WrongPinEntered`, true, true); // ack: true setzen
     resetPin(viewName);
   }
 }
@@ -211,9 +209,9 @@ async function resetPin(viewName) {
   viewStates[viewName].buffer = "";
   viewStates[viewName].wildcards = "";
 
-  await setStateAsync(STATE_PATH + viewName + ".CurrentKey", "", true);
-  await setStateAsync(STATE_PATH + viewName + ".PinWildcards", "", true);
-  setStateDelayed(STATE_PATH + viewName + ".WrongPinEntered", false, true, 3000); // Erst nach 3 Sekunden, für VIS-Anzeige
+  await setStateAsync(`${STATE_PATH + viewName}.CurrentKey`, "", true);
+  await setStateAsync(`${STATE_PATH + viewName}.PinWildcards`, "", true);
+  setStateDelayed(`${STATE_PATH + viewName}.WrongPinEntered`, false, true, 3000); // Erst nach 3 Sekunden, für VIS-Anzeige
 }
 
 /********************************
@@ -223,6 +221,6 @@ async function resetPin(viewName) {
 function onSuccess(viewConfig) {
   // Change View
   setState("vis.0.control.instance", viewConfig.instance);
-  setState("vis.0.control.data", viewConfig.project + "/" + viewConfig.name);
+  setState("vis.0.control.data", `${viewConfig.project}/${viewConfig.name}`);
   setState("vis.0.control.command", "changeView");
 }

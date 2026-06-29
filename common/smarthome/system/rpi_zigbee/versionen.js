@@ -101,26 +101,26 @@ async function updateZigbeeVersions() {
     // Wir erwarten mindestens 4 Zeilen Output (je eine Version für iobroker, node, nodejs, npm)
     if (lines.length >= 4) {
       // Werte bereinigen und in die jeweiligen Datenpunkte schreiben (ack=true für Bestätigung)
-      setState(BASE_PATH + "js_contr_ver", lines[0].trim(), true);
-      setState(BASE_PATH + "node_ver", lines[1].trim(), true);
-      setState(BASE_PATH + "nodejs_ver", lines[2].trim(), true);
-      setState(BASE_PATH + "npm_ver", lines[3].trim(), true);
+      setState(`${BASE_PATH}js_contr_ver`, lines[0].trim(), true);
+      setState(`${BASE_PATH}node_ver`, lines[1].trim(), true);
+      setState(`${BASE_PATH}nodejs_ver`, lines[2].trim(), true);
+      setState(`${BASE_PATH}npm_ver`, lines[3].trim(), true);
 
       // Aktuelles Datum und Uhrzeit im deutschen Format generieren und wegschreiben
       const now = new Date().toLocaleString("de-DE");
-      setState(BASE_PATH + "last_update", now, true);
+      setState(`${BASE_PATH}last_update`, now, true);
 
       // Da die Abfrage erfolgreich war, setzen wir den Online-Status auf true
-      setState(BASE_PATH + "online", true, true);
+      setState(`${BASE_PATH}online`, true, true);
     } else {
       // Warnung protokollieren, falls die Ausgabe unvollständig war
       console.warn(`[Version-Check] Unerwarteter Output (zu kurz). Zeilen: ${lines.length}.`);
-      setState(BASE_PATH + "online", false, true);
+      setState(`${BASE_PATH}online`, false, true);
     }
   } catch (error) {
     // Fehlerbehandlung: Loggt den genauen SSH-Fehler und setzt den Online-Status auf false
     console.error(`[Version-Check] SSH-Fehler bei ${ID_REMOTE_IP}: ${error.message}`);
-    setState(BASE_PATH + "online", false, true);
+    setState(`${BASE_PATH}online`, false, true);
   }
 }
 

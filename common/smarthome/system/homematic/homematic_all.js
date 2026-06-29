@@ -45,7 +45,7 @@ function checkHomematicService() {
     selector.each((id) => {
       if (existsState(id) && getState(id)?.val === true) {
         const obj = getObject(id);
-        const deviceName = obj && obj.common && obj.common.name ? obj.common.name : id;
+        const deviceName = obj?.common?.name ? obj.common.name : id;
         const type = id.split(".").pop();
         textList.push(`⚠️ <b>${deviceName}</b>: ${type}`);
         anzahl++;

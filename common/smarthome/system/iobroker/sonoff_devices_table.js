@@ -31,7 +31,7 @@ const CONFIG = {
  */
 function findStateDeep(devicePath, searchKeys, fallback) {
   for (const key of searchKeys) {
-    const fullPath = devicePath + "." + key;
+    const fullPath = `${devicePath}.${key}`;
     if (existsState(fullPath)) {
       const val = getState(fullPath)?.val;
       // Falls wir eine Zahl oder einen Text finden, der nicht leer ist, nehmen wir ihn.
@@ -51,7 +51,7 @@ function getRSSIColor(val) {
   if (val === null || val === undefined) return "#ffffff";
   const num = parseInt(val.toString().replace(/[^\d]/g, ""), 10);
 
-  if (isNaN(num) || num <= 0) return "#ffffff"; // Weiß, wenn kein echter Empfang da ist.
+  if (Number.isNaN(num) || num <= 0) return "#ffffff"; // Weiß, wenn kein echter Empfang da ist.
   if (num >= CONFIG.design.rssiOk) return "#4caf50"; // Grün.
   if (num >= CONFIG.design.rssiWarn) return "#ff9800"; // Orange/Gelb.
   return "#f44336"; // Rot.

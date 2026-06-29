@@ -21,7 +21,7 @@ let ziegenhainTimer = null; // Speicher für den Timer, um Mehrfach-Trigger abzu
  * TRIGGER-LOGIK
  * Reagiert, wenn der Datenpunkt auf 'true' gesetzt wird.
  */
-on({ id: ID_TRIGGER, val: true, change: "any" }, (obj) => {
+on({ id: ID_TRIGGER, val: true, change: "any" }, (_obj) => {
   /**
    * SCHUTZ VOR DOPPEL-TRIGGER (Entprellen):
    * Falls der Befehl von Google doppelt gesendet wird oder der Datenpunkt

@@ -8,7 +8,7 @@ const INSTANCE = "vaillant.0";
 
 let vaillantTimeout = null;
 
-on({ id: ID_TRIGGER, change: "any" }, async (obj) => {
+on({ id: ID_TRIGGER, change: "any" }, async (_obj) => {
   // 1. Echten Neustart der Instanz auslösen
   try {
     console.warn(`Vaillant-Watchdog: Neustart der Instanz ${INSTANCE} eingeleitet`);

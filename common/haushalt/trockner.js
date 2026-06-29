@@ -161,7 +161,7 @@ function processFinishT() {
   const durationMs = Date.now() - startTimeT - END_DELAY_T;
   const hours = Math.floor(durationMs / 3600000);
   const minutes = Math.floor((durationMs % 3600000) / 60000);
-  const timeStr = hours + ":" + (minutes < 10 ? "0" + minutes : minutes) + " Std.";
+  const timeStr = `${hours}:${minutes < 10 ? `0${minutes}` : minutes} Std.`;
 
   const currentTotalT = getState(ID_TOTAL_T)?.val || 0;
   const newTotalT = currentTotalT + diffEnergy;

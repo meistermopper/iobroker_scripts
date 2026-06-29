@@ -104,9 +104,8 @@ async function neutralizeDevice(devicePath, reason) {
   try {
     // SCHRITT 1: Den Adapter-internen 'enabled' Schalter hart auf false setzen und sperren
     if (existsObject(enabledId)) {
-      log(
+      console.warn(
         `Schutzmaßnahme: ${enabledId} wird deaktiviert und für den Adapter schreibgeschützt (write: false).`,
-        "warn",
       );
       await setStateAsync(enabledId, false, true);
       // Wir entziehen dem Adapter das Schreibrecht für diesen Datenpunkt
@@ -115,9 +114,8 @@ async function neutralizeDevice(devicePath, reason) {
 
     // Nur neutralisieren, wenn die IP nicht schon 0.0.0.0 ist
     if (existsState(addrId) && getState(addrId)?.val !== "0.0.0.0") {
-      log(
+      console.warn(
         `Neutralisierung: ${devicePath} wird stillgelegt (IP/Port -> 0). Grund: ${reason}`,
-        "warn",
       );
 
       // SCHRITT 2: IP und Port auf ungültig setzen
@@ -126,14 +124,14 @@ async function neutralizeDevice(devicePath, reason) {
 
       // SCHRITT 3: Name zur visuellen Kontrolle markieren
       if (existsState(nameId)) {
-        await setStateAsync(nameId, "BANNED - " + (getState(nameId)?.val || "Unknown"), true);
+        await setStateAsync(nameId, `BANNED - ${getState(nameId)?.val || "Unknown"}`, true);
       }
 
       // Nach 10 Sekunden wieder für Trigger freigeben
       setTimeout(() => pendingDeletions.delete(devicePath), 10000);
     }
   } catch (e) {
-    log(`Fehler bei Neutralisierung von ${devicePath}: ${e}`, "error");
+    console.error(`Fehler bei Neutralisierung von ${devicePath}: ${e}`);
     pendingDeletions.delete(devicePath);
   }
 }
@@ -165,7 +163,7 @@ function checkAndFilter(val, fullId) {
     return;
 
   // Extrahiere den Gerätepfad (z.B. chromecast.0.0005cd77e0a8)
-  const devicePath = parts[0] + "." + parts[1] + "." + parts[2];
+  const devicePath = `${parts[0]}.${parts[1]}.${parts[2]}`;
   let shouldNeutralize = false;
   let reason = "";
 
@@ -224,9 +222,8 @@ async function performDeepClean() {
   if (isRepairing) return;
   isRepairing = true;
 
-  log(
+  console.warn(
     `[Watchdog] Kritischer Zustand! Starte Tiefenreinigung für ${adapterInstance} (Offline-Bereinigung)...`,
-    "warn",
   );
 
   try {
@@ -244,14 +241,14 @@ async function performDeepClean() {
     }
 
     // Suche über IPs in den verbliebenen Objekten
-    $(adapterInstance + ".*.address").each((id) => {
+    $(`${adapterInstance}.*.address`).each((id) => {
       if (bannedIPs.includes(getState(id)?.val)) {
         pathsToFix.add(id.split(".").slice(0, 3).join("."));
       }
     });
 
     // Suche über Namen (Normalisiert)
-    $(adapterInstance + ".*.name").each((id) => {
+    $(`${adapterInstance}.*.name`).each((id) => {
       const name = getState(id)?.val;
       if (name && bannedDeviceNames.includes(String(name).trim().replace(/_/g, " "))) {
         pathsToFix.add(id.split(".").slice(0, 3).join("."));
@@ -260,7 +257,7 @@ async function performDeepClean() {
 
     // Problemfälle offline neutralisieren (IP 0.0.0.0 und Enabled False)
     for (const path of pathsToFix) {
-      log(`[Watchdog] Offline-Bereinigung: Neutralisiere Pfad ${path}`, "info");
+      console.log(`[Watchdog] Offline-Bereinigung: Neutralisiere Pfad ${path}`);
 
       // Offline-Neutralisierung (sicherer als Löschen)
       const enabledId = `${path}.enabled`;
@@ -275,12 +272,11 @@ async function performDeepClean() {
     // 3. Adapter wieder hochfahren
     await wait(1000);
     await startInstanceAsync(adapterInstance);
-    log(
+    console.log(
       `[Watchdog] Tiefenreinigung abgeschlossen. ${adapterInstance} wurde neu gestartet.`,
-      "info",
     );
   } catch (e) {
-    log(`[Watchdog] Fehler bei Tiefenreinigung: ${e}`, "error");
+    console.error(`[Watchdog] Fehler bei Tiefenreinigung: ${e}`);
   } finally {
     isRepairing = false;
     adapterErrorCount = 0;
@@ -359,7 +355,7 @@ setInterval(() => {
  */
 on(
   {
-    id: new RegExp("^" + adapterInstance.replace(".", "\\.") + "\\..*\\.(name|address)$"),
+    id: new RegExp(`^${adapterInstance.replace(".", "\\.")}\\..*\\.(name|address)$`),
     change: "any",
   },
   (obj) => {
@@ -372,16 +368,16 @@ on(
  * Wird beim Speichern des Skripts oder Start des JS-Adapters ausgeführt.
  * Scannt den kompletten Objektbaum nach bereits vorhandenen Leichen.
  */
-log("Chromecast-Cleaner & HEOS-Schutzschild aktiv", "info");
+console.log("Chromecast-Cleaner & HEOS-Schutzschild aktiv");
 
 // Alle ".name" Zustände prüfen
-$(adapterInstance + ".*.name").each((id) => {
+$(`${adapterInstance}.*.name`).each((id) => {
   const val = getState(id)?.val;
   if (val !== null && val !== undefined) checkAndFilter(val, id);
 });
 
 // Alle ".address" Zustände prüfen
-$(adapterInstance + ".*.address").each((id) => {
+$(`${adapterInstance}.*.address`).each((id) => {
   const val = getState(id)?.val;
   if (val !== null && val !== undefined) checkAndFilter(val, id);
 });

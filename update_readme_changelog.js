@@ -2,9 +2,9 @@
  * README Changelog Updater
  * Automates the addition of commit comments to README.md
  */
-const fs = require("fs");
-const { execSync } = require("child_process");
-const path = require("path");
+const fs = require("node:fs");
+const { execSync } = require("node:child_process");
+const path = require("node:path");
 
 // 0. Loop Protection: Prevent recursion if called via git hooks
 if (process.env.SKIP_CHANGELOG_HOOK === "1") {
@@ -135,8 +135,8 @@ try {
     if (parts.length > 6) {
       // Keep the first 5 entries (parts[1] to parts[5])
       const header = parts[0];
-      const keepBlocks = parts.slice(1, 6).map((p) => "### [" + p);
-      const archiveBlocks = parts.slice(6).map((p) => "### [" + p);
+      const keepBlocks = parts.slice(1, 6).map((p) => `### [${p}`);
+      const archiveBlocks = parts.slice(6).map((p) => `### [${p}`);
 
       // Reconstruct the new changelog text for README
       const newChangelogText = header + keepBlocks.join("");
@@ -167,10 +167,10 @@ try {
         const insertPos = markerIndex + "---".length;
         const before = archiveContent.substring(0, insertPos);
         const after = archiveContent.substring(insertPos);
-        const formattedArchiveText = "\n\n" + archivedText.trim() + "\n";
+        const formattedArchiveText = `\n\n${archivedText.trim()}\n`;
         archiveContent = before + formattedArchiveText + after.replace(/^\s+/, "\n");
       } else {
-        archiveContent = archivedText + "\n" + archiveContent;
+        archiveContent = `${archivedText}\n${archiveContent}`;
       }
 
       fs.writeFileSync(OLD_CHANGELOG_PATH, archiveContent, "utf8");
@@ -185,7 +185,7 @@ try {
 
   // Write updated package.json and README.md
   pkg.version = currentVersion;
-  fs.writeFileSync(PKG_PATH, JSON.stringify(pkg, null, 2) + "\n", "utf8");
+  fs.writeFileSync(PKG_PATH, `${JSON.stringify(pkg, null, 2)}\n`, "utf8");
   console.log(`[Changelog] package.json updated: ${oldVersion} -> ${currentVersion}`);
 
   fs.writeFileSync(README_PATH, content, "utf8");

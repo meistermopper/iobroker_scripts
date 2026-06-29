@@ -331,7 +331,7 @@ function checkPvAutomation() {
   if (!isAuto || !isConnected) return;
 
   const isTransActive = !!getState(IDS.wbTrans)?.val;
-  const wbStatus = getState(IDS.wbStat)?.val;
+  const _wbStatus = getState(IDS.wbStat)?.val;
   const limitCar = getState(IDS.targetSocSrv)?.val || 100;
 
   // Diagnose-Log für ausreichenden Überschuss, falls nicht geladen wird
@@ -406,7 +406,7 @@ function updateChargeStatistics(sessionDurationMs) {
 
   const h = Math.floor(totalMinToday / 60);
   const m = totalMinToday % 60;
-  const formattedTime = h > 0 ? `${h}:${m < 10 ? "0" + m : m} Std` : `${m} Min`;
+  const formattedTime = h > 0 ? `${h}:${m < 10 ? `0${m}` : m} Std` : `${m} Min`;
 
   return {
     totalMinToday,
@@ -557,7 +557,7 @@ on({ id: IDS.remTime, change: "any" }, (obj) => {
   if (m > 0) {
     const hh = Math.floor(m / 60);
     const mm = m % 60;
-    t = `${hh}:${mm < 10 ? "0" + mm : mm}`;
+    t = `${hh}:${mm < 10 ? `0${mm}` : mm}`;
   }
   setState(IDS.u_rest, t, true);
 });

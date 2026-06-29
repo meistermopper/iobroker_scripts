@@ -9,7 +9,7 @@
  * =============================================================================
  */
 
-const { exec } = require("child_process");
+const { exec } = require("node:child_process");
 
 // --- KONFIGURATION ---
 // Der Ort, an dem die MP3-Dateien permanent liegen (sicher vor Updates)
@@ -23,7 +23,7 @@ const REL_CACHE_PATH = "../../cache/";
  * Kernfunktion: Prüft das System und führt bei Bedarf Reparaturen aus.
  * @param {string} reason - Grund des Aufrufs (für das Log)
  */
-async function repairSayItSystem(reason = "Routine") {
+async function repairSayItSystem(_reason = "Routine") {
   //log(`--- SayIt-Check (${reason}): Starte Überprüfung ---`, 'info');
 
   try {
@@ -44,14 +44,14 @@ async function repairSayItSystem(reason = "Routine") {
     // SCHRITT 3: Reparatur bei Abweichung
     // Falls der Link fehlt oder auf das falsche Ziel zeigt:
     if (currentLink !== SAFE_CACHE_DIR) {
-      log(`Abweichung erkannt! Ziel: ${SAFE_CACHE_DIR}, Ist-Zustand: ${currentLink}`, "warn");
+      console.warn(`Abweichung erkannt! Ziel: ${SAFE_CACHE_DIR}, Ist-Zustand: ${currentLink}`);
 
       // Alten (toten) Link oder falschen Ordner löschen
       await runShell(`rm -rf ${LINK_PATH}`);
       // Neuen Symlink erstellen: verknüpfe SAFE_CACHE_DIR mit LINK_PATH
       await runShell(`ln -s ${SAFE_CACHE_DIR} ${LINK_PATH}`);
 
-      log("Symlink und Berechtigungen wurden erfolgreich wiederhergestellt", "info");
+      console.log("Symlink und Berechtigungen wurden erfolgreich wiederhergestellt");
     } else {
       //log('Infrastruktur ist intakt. Kein Eingreifen erforderlich.', 'info');
     }
@@ -67,7 +67,7 @@ async function repairSayItSystem(reason = "Routine") {
 
         // Prüfen, ob Cache aktiviert ist UND der Pfad stimmt
         if (!obj.native.cache || obj.native.cacheDir !== REL_CACHE_PATH) {
-          log(`Konfiguration für ${id} war unvollständig. Korrigiere`, "info");
+          console.log(`Konfiguration für ${id} war unvollständig. Korrigiere`);
           await extendObjectAsync(id, {
             native: {
               cache: true,
@@ -78,7 +78,7 @@ async function repairSayItSystem(reason = "Routine") {
       }
     }
   } catch (err) {
-    log(`Fehler bei der Reparatur-Ausführung: ${err}`, "error");
+    console.error(`Fehler bei der Reparatur-Ausführung: ${err}`);
   }
 }
 

@@ -71,7 +71,7 @@ on({ id: [PROG.GAST_OBEN, PROG.GAST_UNTEN, PROG.TAGUNG], change: "ne" }, (obj) =
 });
 
 // --- 5. LOGIK: HAUPT-MODI (AUSSERHAUS / ZUHAUSE) ---
-on({ id: [PROG.AUSSERHAUS, PROG.ZUHAUSE], change: "ne" }, (obj) => {
+on({ id: [PROG.AUSSERHAUS, PROG.ZUHAUSE], change: "ne" }, (_obj) => {
   const weg = getState(PROG.AUSSERHAUS)?.val;
   const hier = getState(PROG.ZUHAUSE)?.val;
 
