@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-2.0.87-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.1.1-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -94,6 +94,9 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
+### [2.1.1] - 2026-06-29
+- feat: add UniFi presence monitoring script with configurable debouncing and notifications (anwesenheit_unifi.js)
+
 ### [2.0.87] - 2026-06-29
 - Update of playerstate.js
 - Update of jsconfig.json
@@ -108,9 +111,6 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ### [2.0.84] - 2026-06-23
 - Update of Fenix_diagnose_v2.js
-
-### [2.0.83] - 2026-06-23
-- Update of Fenix_FX110C_Sauna_control.js
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
 
