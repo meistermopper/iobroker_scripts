@@ -40,7 +40,15 @@ on({ id: 'mielecloudservice.0.000106831213.Status', change: 'ne' }, async (obj) 
             
             if (compareTime('08:00', '20:00', 'between')) sendTo("sayit", "say", { text: vorhersage });
             sendTo('telegram', 'send', { text: vorhersage, parse_mode: 'HTML' });
-            exec(`curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=ioBroker" -F "message=${vorhersage}" -F "priority=1"`);
+            if (gotifyToken) {
+                httpPost(`https://mygotify.meistermopper.de/message?token=${gotifyToken}`, {
+                    title: "ioBroker",
+                    message: vorhersage,
+                    priority: 1
+                }, (error) => {
+                    if (error) console.error(`[Geschirr] Gotify Fehler: ${error}`);
+                });
+            }
         }, 10000);
     } 
 
@@ -77,6 +85,14 @@ on({ id: 'mielecloudservice.0.000106831213.Status', change: 'ne' }, async (obj) 
         
         // Gotify Nachricht ohne HTML-Tags für bessere Lesbarkeit
         const gotifyMsg = meldetext.replace(/<[^>]*>/g, '');
-        exec(`curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=ioBroker" -F "message=${gotifyMsg}" -F "priority=1"`);
+        if (gotifyToken) {
+            httpPost(`https://mygotify.meistermopper.de/message?token=${gotifyToken}`, {
+                title: "ioBroker",
+                message: gotifyMsg,
+                priority: 1
+            }, (error) => {
+                if (error) console.error(`[Geschirr] Gotify Fehler: ${error}`);
+            });
+        }
     }
 });

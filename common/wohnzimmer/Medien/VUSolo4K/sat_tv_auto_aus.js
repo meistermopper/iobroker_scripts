@@ -32,8 +32,13 @@ schedule("2 3 * * *", async () => {
         
         const token = getState(GOTIFY_TOKEN_ID)?.val;
         if (token) {
-            const curlCmd = `curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker Wartung" -F "message=${msg}" -F "priority=1"`;
-            exec(curlCmd);
+            httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
+                title: 'ioBroker Wartung',
+                message: msg,
+                priority: 1
+            }, (error) => {
+                if (error) console.error(`[sat_tv_auto_aus] Gotify Fehler: ${error}`);
+            });
         }
 
         // Nach 3 Minuten (Bootzeit) zurück in den Schlaf schicken

@@ -42,8 +42,14 @@ schedule("30 23 * * *", async () => {
 
   // Gotify Notification
   const tokenState = getState(GOTIFY_TOKEN_ID);
-  if (tokenState) {
-    const curlCmd = `curl "https://mygotify.meistermopper.de/message?token=${tokenState.val}" -F "title=ioBroker" -F "message=${msg}" -F "priority=1"`;
-    exec(curlCmd);
+  const token = tokenState ? tokenState.val : null;
+  if (token) {
+    httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
+      title: "ioBroker",
+      message: msg,
+      priority: 1
+    }, (error) => {
+      if (error) console.error(`[Abendlicht TV Wind Aus] Gotify Fehler: ${error}`);
+    });
   }
 });

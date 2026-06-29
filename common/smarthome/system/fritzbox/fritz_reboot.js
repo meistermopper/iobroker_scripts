@@ -9,7 +9,15 @@ let fritzTimeout = null;
 function fritzNotify(msg) {
     sendTo('telegram', 'send', { text: msg });
     console.error(`FritzBox-Status: ${msg}`);
-    exec(`curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=ioBroker: Netzwerk" -F "message=${msg}" -F "priority=5"`);
+    if (gotifyToken) {
+        httpPost(`https://mygotify.meistermopper.de/message?token=${gotifyToken}`, {
+            title: "ioBroker: Netzwerk",
+            message: msg,
+            priority: 5
+        }, (error) => {
+            if (error) console.error(`[Fritz Reboot] Gotify Fehler: ${error}`);
+        });
+    }
 }
 
 // --- LOGIK ---

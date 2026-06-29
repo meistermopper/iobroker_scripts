@@ -13,7 +13,13 @@ on({ id: dpSoH, change: "lt" }, (obj) => {
   sendTo("telegram", "send", { text: msg });
   console.log(`Batterie-SoH: ${msg}`);
 
-  exec(
-    `curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=ioBroker: Batterie" -F "message=${msg}" -F "priority=1"`,
-  );
+  if (gotifyToken) {
+    httpPost(`https://mygotify.meistermopper.de/message?token=${gotifyToken}`, {
+      title: "ioBroker: Batterie",
+      message: msg,
+      priority: 1
+    }, (error) => {
+      if (error) console.error(`[Soh Change] Gotify Fehler: ${error}`);
+    });
+  }
 });

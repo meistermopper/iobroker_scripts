@@ -35,7 +35,13 @@ function smartNotify(user, text, priority = 1) {
     const token = getState(ID_GOTIFY_TOKEN)?.val;
     if (token) {
         const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
-        exec(`curl -s "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker" -F "message=${cleanText}" -F "priority=${priority}"`);
+        httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
+            title: "ioBroker",
+            message: cleanText,
+            priority: priority
+        }, (error) => {
+            if (error) console.error(`[Telegram Menü] Gotify Fehler: ${error}`);
+        });
     }
 }
 

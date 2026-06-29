@@ -13,7 +13,13 @@ on({ id: $(selector), change: "lt" }, (obj) => {
   console.warn(`NUT-Client Alarm: ${msg}`);
 
   // 2. Gotify
-  exec(
-    `curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=ioBroker: System" -F "message=${msg}" -F "priority=5"`,
-  );
+  if (gotifyToken) {
+    httpPost(`https://mygotify.meistermopper.de/message?token=${gotifyToken}`, {
+      title: "ioBroker: System",
+      message: msg,
+      priority: 5
+    }, (error) => {
+      if (error) console.error(`[Nut Client Inactive] Gotify Fehler: ${error}`);
+    });
+  }
 });

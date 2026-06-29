@@ -2,7 +2,6 @@
 const ID_PING = "ping.0.iobroker.192_168_178_222";
 const ID_RESTART_BUTTON = "0_userdata.0.heos.Sauna.restart";
 const ID_HEOS_POWER = "alias.0.sauna.amp_plug.state";
-const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";
 
 const PING_TIMEOUT_SEC = 240; // 4 Minuten warten, bevor Auto-Restart
 const RESTART_PAUSE_MS = 10000; // 10 Sekunden Strom aus

@@ -105,8 +105,13 @@ async function checkTasmotaVersion(retryCount = 0) {
           // Gotify
           const tokenState = await getStateAsync(idGotifyToken);
           if (tokenState && tokenState.val) {
-            const command = `curl "https://mygotify.meistermopper.de/message?token=${tokenState.val}" -F "title=Tasmota Update" -F "message=${message}" -F "priority=1"`;
-            exec(command);
+            httpPost(`https://mygotify.meistermopper.de/message?token=${tokenState.val}`, {
+              title: "Tasmota Update",
+              message: message,
+              priority: 1
+            }, (error) => {
+              if (error) console.error(`[Tasmota FW] Gotify Fehler: ${error}`);
+            });
           }
 
           if (logging)

@@ -32,8 +32,13 @@ function notify(msg, speak = false, prio = 5) {
     // 2. Gotify
     const token = getState(IDS.gotifyToken)?.val;
     if (token) {
-        // Umlaute/Sonderzeichen URL-konform machen oder curl-Parameter sauber halten
-        exec(`curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker: PV" -F "message=${msg}" -F "priority=${prio}"`);
+        httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
+            title: "ioBroker: PV",
+            message: msg,
+            priority: prio
+        }, (error) => {
+            if (error) console.error(`[Batterie Voll] Gotify Fehler: ${error}`);
+        });
     }
 
     // 3. Sprachausgabe (SayIt) - nur tagsüber

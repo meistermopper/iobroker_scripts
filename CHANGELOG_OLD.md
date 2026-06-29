@@ -4,6 +4,12 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [2.0.85] - 2026-06-28
+
+- Update of iobroker_restart.js
+- Update of versionen.js
+- Update of versionen.js
+
 ### [2.0.84] - 2026-06-23
 
 - Update of Fenix_diagnose_v2.js

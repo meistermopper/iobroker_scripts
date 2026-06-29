@@ -7,7 +7,15 @@ const TEMP_LIMIT    = 350; // Entspricht 35,0 °C
 function tempNotify(msg) {
     sendTo("telegram", "send", { text: msg });
     console.log(`Batterie-Warnung: ${msg}`);
-    exec(`curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=ioBroker: Batterie" -F "message=${msg}" -F "priority=8"`);
+    if (gotifyToken) {
+        httpPost(`https://mygotify.meistermopper.de/message?token=${gotifyToken}`, {
+            title: "ioBroker: Batterie",
+            message: msg,
+            priority: 8
+        }, (error) => {
+            if (error) console.error(`[Batteriehitzewarnung] Gotify Fehler: ${error}`);
+        });
+    }
 }
 
 // --- LOGIK ---

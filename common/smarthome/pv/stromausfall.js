@@ -35,9 +35,15 @@ function gridNotify(msg, priority = 5) {
     text: `<pre>🌐 NETZ-MONITOR\n\n${msg}</pre>`,
     parse_mode: "HTML",
   });
-  exec(
-    `curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=Netzstatus Haus" -F "message=${msg}" -F "priority=${priority}"`,
-  );
+  if (gotifyToken) {
+    httpPost(`https://mygotify.meistermopper.de/message?token=${gotifyToken}`, {
+      title: "Netzstatus Haus",
+      message: msg,
+      priority: priority
+    }, (error) => {
+      if (error) console.error(`[Stromausfall] Gotify Fehler: ${error}`);
+    });
+  }
 }
 
 /**

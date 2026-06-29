@@ -293,9 +293,13 @@ async function sendNotifications(criticalDevices) {
     const tokenState = await getStateAsync(CONFIG.idGotifyToken);
     if (tokenState && tokenState.val) {
       const prio = isQuietTime ? 0 : 1;
-      exec(
-        `curl "https://mygotify.meistermopper.de/message?token=${tokenState.val}" -F "title=Batterie Alarm" -F "message=${message}" -F "priority=${prio}"`,
-      );
+      httpPost(`https://mygotify.meistermopper.de/message?token=${tokenState.val}`, {
+        title: "Batterie Alarm",
+        message: message,
+        priority: prio
+      }, (error) => {
+        if (error) console.error(`[Battery States] Gotify Fehler: ${error}`);
+      });
     }
   }
 }

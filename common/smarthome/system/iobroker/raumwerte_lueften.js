@@ -139,9 +139,13 @@ function internalNotify(text, priority = 1) {
   if (token) {
     // HTML für Gotify entfernen (Reintext-Formatierung)
     const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
-    exec(
-      `curl -s "https://mygotify.meistermopper.de/message?token=${token}" -F "title=Haus-Klima" -F "message=${cleanText}" -F "priority=${priority}"`,
-    );
+    httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
+      title: "Haus-Klima",
+      message: cleanText,
+      priority: priority
+    }, (error) => {
+      if (error) console.error(`[Raumwerte Lüften] Gotify Fehler: ${error}`);
+    });
   }
 }
 

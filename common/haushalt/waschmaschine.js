@@ -54,7 +54,13 @@ function washNotify(text) {
     const stateGotify = getState(ID_GOTIFY);
     const token = stateGotify ? stateGotify.val : null;
     if (token) {
-        exec(`curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=Haushalt" -F "message=${text}" -F "priority=5"`);
+        httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
+            title: "Haushalt",
+            message: text,
+            priority: 5
+        }, (error) => {
+            if (error) console.error(`[Waschmaschine] Gotify Fehler: ${error}`);
+        });
     }
 
     if (compareTime('08:00', '20:00', 'between')) {

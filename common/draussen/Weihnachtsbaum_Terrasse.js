@@ -3,7 +3,15 @@ function notifyThomas(msg) {
     const token = getState('0_userdata.0.gotifytoken.iobroker')?.val;
     sendTo('telegram', 'send', { text: msg, user: 'Thomas' });
     console.log('Thomas: ' + msg);
-    exec(`curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker: 🎄" -F "message=${msg}" -F "priority=1"`);
+    if (token) {
+        httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
+            title: "ioBroker: 🎄",
+            message: msg,
+            priority: 1
+        }, (error) => {
+            if (error) console.error(`[Weihnachtsbaum Terrasse] Gotify Fehler: ${error}`);
+        });
+    }
 }
 
 // 1. Einschalten zur Goldenen Stunde + 30 Min

@@ -57,7 +57,13 @@ function dryNotify(text) {
     // 2. Gotify
     const token = getState(ID_GOTIFY_T)?.val;
     if (token) {
-        exec(`curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=Haushalt" -F "message=${text}" -F "priority=5"`);
+        httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
+            title: "Haushalt",
+            message: text,
+            priority: 5
+        }, (error) => {
+            if (error) console.error(`[Trockner] Gotify Fehler: ${error}`);
+        });
     }
 
     // 3. SayIt (Gekürzte Sprachausgabe)

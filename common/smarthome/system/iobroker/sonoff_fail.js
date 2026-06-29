@@ -20,9 +20,13 @@ on({ id: $(ID_SELECTOR), change: "ne" }, (obj) => {
     // Gotify-Benachrichtigung (als Ergänzung für deine Infrastruktur)
     const token = getState("0_userdata.0.gotifytoken.iobroker")?.val;
     if (token) {
-      exec(
-        `curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=Verbindungsabbruch" -F "message=MQTT offline: ${deviceName}" -F "priority=2"`,
-      );
+      httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
+        title: "Verbindungsabbruch",
+        message: `MQTT offline: ${deviceName}`,
+        priority: 2
+      }, (error) => {
+        if (error) console.error(`[Sonoff Fail] Gotify Fehler: ${error}`);
+      });
     }
 
     console.warn(`Watchdog: ${deviceName} ist offline`);

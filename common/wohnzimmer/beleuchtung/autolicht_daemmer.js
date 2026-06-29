@@ -9,8 +9,15 @@ function notify(text) {
   //console.log(`[Abendlicht] ${text}`);
 
   const token = getState(ID_GOTIFY_TOKEN)?.val;
-  const command = `curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker:" -F "message=${text}" -F "priority=1"`;
-  exec(command);
+  if (token) {
+    httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
+      title: "ioBroker:",
+      message: text,
+      priority: 1
+    }, (error) => {
+      if (error) console.error(`[Autolicht Dämmer] Gotify Fehler: ${error}`);
+    });
+  }
 }
 
 // Zeitplan: Sonnenuntergang
