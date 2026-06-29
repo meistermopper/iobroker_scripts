@@ -18,13 +18,13 @@ function Melden(Meldetext) {
 // Beschreibe diese Funktion …
 function checkFertig(parameter) {
   // Timer stoppen
-  wartezeit = getState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.Wartezeit").val * 60000;
+  wartezeit = getState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.Wartezeit")?.val * 60000;
   (function () {if (Einschaltverzoegerung) {clearTimeout(Einschaltverzoegerung); Einschaltverzoegerung = null;}})();
   if (parameter == true) {
     // Timer starten
     timeout = setTimeout(function () {
       setState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.WaschmaschineAN", false);
-      Melden(getState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.Ansage_Aus").val);
+      Melden(getState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.Ansage_Aus")?.val);
     }, wartezeit);
   }
 }
@@ -36,7 +36,7 @@ createState("Eigene_Datenpunkte.HWR.Waschmaschine.WaschmaschineAN", function () 
 // VerzögerungAktiv NICHT ändern
 VerzoegerungAktiv = false;
 // Entscheidungswert festlegen
-GrenzWertInWatt = getState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.Schwellwert").val;
+GrenzWertInWatt = getState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.Schwellwert")?.val;
 // Steckdose überwachen
 on({id: 'hm-rpc.1.0001D8A9933EFD.6.CURRENT', change: "ne"}, function (obj) {
   var value = obj.state.val;
@@ -54,13 +54,13 @@ on({id: 'hm-rpc.1.0001D8A9933EFD.6.CURRENT', change: "ne"}, function (obj) {
     }, 20000);
   }
   // Ab hier wird gewaschen
-  if ((obj.state ? obj.state.val : "") > GrenzWertInWatt && getState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.WaschmaschineAN").val == false && VerzoegerungAktiv == false) {
+  if ((obj.state ? obj.state.val : "") > GrenzWertInWatt && getState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.WaschmaschineAN")?.val == false && VerzoegerungAktiv == false) {
     setState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.WaschmaschineAN", true);
-    Melden(getState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.Ansage").val);
+    Melden(getState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.Ansage")?.val);
   } else if ((obj.state ? obj.state.val : "") > GrenzWertInWatt) {
     // Timer stoppen
     checkFertig(false);
-  } else if ((obj.state ? obj.state.val : "") < GrenzWertInWatt && getState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.WaschmaschineAN").val == true) {
+  } else if ((obj.state ? obj.state.val : "") < GrenzWertInWatt && getState("javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.WaschmaschineAN")?.val == true) {
     // Timer starten
     checkFertig(true);
   }
@@ -74,10 +74,10 @@ on({id: 'javascript.0.Eigene_Datenpunkte.HWR.Waschmaschine.WaschmaschineAN', cha
   var oldValue = obj.oldState.val;
   if ((obj.state ? obj.state.val : "")) {
     Waschdauer = (new Date().getHours() * 3600 + new Date().getMinutes() * 60 + new Date().getSeconds());
-    EnergieVerbrauch = parseFloat(getState("hm-rpc.1.0001D8A9933EFD.6.ENERGY_COUNTER").val);
+    EnergieVerbrauch = parseFloat(getState("hm-rpc.1.0001D8A9933EFD.6.ENERGY_COUNTER")?.val);
   } else {
     Waschdauer = (new Date().getHours() * 3600 + new Date().getMinutes() * 60 + new Date().getSeconds()) - Waschdauer;
-    EnergieVerbrauch = parseFloat(getState("hm-rpc.1.0001D8A9933EFD.6.ENERGY_COUNTER").val) - EnergieVerbrauch;
+    EnergieVerbrauch = parseFloat(getState("hm-rpc.1.0001D8A9933EFD.6.ENERGY_COUNTER")?.val) - EnergieVerbrauch;
     EnergieVerbrauchEuro = (EnergieVerbrauch / 1000) * Strompreis_proKWh;
     sendTo("telegram.0", "send", {
         text: (['Der Waschvorgang dauerte ',Math.round(Waschdauer / 60),' Minuten und hat ',Math.round((EnergieVerbrauch / 1000)*100)/100,' kWh Energie (',Math.round(EnergieVerbrauchEuro*100)/100,' €) beim Waschen verbraucht.'].join('')),

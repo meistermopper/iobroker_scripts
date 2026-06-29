@@ -104,11 +104,11 @@ Object.keys(geraete).forEach((name) => {
   // Wir "abonnieren" den Akkustand (levelId)
   on({ id: config.levelId, change: "ne" }, async (obj) => {
     const level = obj.state.val; // Neuer Prozentwert
-    const istAn = getState(config.powerId).val; // Ist der Strom an?
-    const alreadyNotified = getState(config.notifiedFullId).val; // Wurde heute schon gemeldet?
+    const istAn = getState(config.powerId)?.val; // Ist der Strom an?
+    const alreadyNotified = getState(config.notifiedFullId)?.val; // Wurde heute schon gemeldet?
 
     // NEU: Prüfen, ob das Gerät eingesteckt ist (falls pluggedId in config vorhanden)
-    const isPlugged = config.pluggedId ? getState(config.pluggedId).val : undefined;
+    const isPlugged = config.pluggedId ? getState(config.pluggedId)?.val : undefined;
 
     // 1. VIS LADESTATUS AKTUALISIEREN
     let targetLaedtId = config.levelId.replace("_level", "_laedt");
@@ -187,9 +187,9 @@ on({ id: manualTriggers, val: true }, async (obj) => {
 // --- 6. KIKI MORGEN-CHECK (05:00 Uhr) ---
 schedule("0 5 * * *", () => {
   const kiki = geraete["Das Smartphone von Kiki"];
-  const level = getState(kiki.levelId).val;
+  const level = getState(kiki.levelId)?.val;
   // Falls das Handy morgens unter 70% ist, vorsichtshalber laden
-  if (level < 70 && !getState(kiki.powerId).val) {
+  if (level < 70 && !getState(kiki.powerId)?.val) {
     setState(kiki.powerId, true);
   }
 });

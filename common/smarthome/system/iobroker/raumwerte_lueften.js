@@ -135,7 +135,7 @@ function internalNotify(text, priority = 1) {
   });
 
   // Gotify-Versand
-  const token = getState(ID_GOTIFY_TOKEN).val;
+  const token = getState(ID_GOTIFY_TOKEN)?.val;
   if (token) {
     // HTML für Gotify entfernen (Reintext-Formatierung)
     const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
@@ -161,13 +161,13 @@ function runMorningReport() {
     const humID = `alias.0.${conf.aliasName}.${hSuffix}`;
 
     if (existsState(humID)) {
-      const hum = getState(humID).val;
+      const hum = getState(humID)?.val;
       if (hum > 60) kritischKlima.push(`${raum} (${Math.round(hum)}%)`);
     }
 
     // Offene Fenster prüfen
     const fID = `alias.0.${conf.aliasName}.fenster.STATE`;
-    if (existsState(fID) && getState(fID).val > 0) {
+    if (existsState(fID) && getState(fID)?.val > 0) {
       offeneFenster.push(raum === "Wohnzimmer" ? "Terrassentür" : raum);
     }
   }
@@ -196,8 +196,8 @@ function calc(raum) {
   const config = RAEUME[raum];
   if (!config?.Sensor_TEMP) return;
 
-  const t = getState(config.Sensor_TEMP).val;
-  const rh = getState(config.Sensor_HUM).val;
+  const t = getState(config.Sensor_TEMP)?.val;
+  const rh = getState(config.Sensor_HUM)?.val;
   const y = xdp.Calc(t, rh);
 
   setState(
@@ -210,10 +210,10 @@ function calc(raum) {
   if (config.Aussensensor) {
     const ta = getState(
       `${PFAD}${RAUM_PFAD}${config.Aussensensor}.Temperatur`,
-    ).val;
+    )?.val;
     const xa = getState(
       `${PFAD}${RAUM_PFAD}${config.Aussensensor}.Feuchtegehalt_Absolut`,
-    ).val;
+    )?.val;
     if (xa === 0) return;
 
     // Lüftungsempfehlung: Physikalischer Vergleich (Innen vs Außen)
@@ -235,9 +235,9 @@ function checkNotification(raum) {
   const aDP = `0_userdata.0.Heizen.Lueften.${raum}_Ansage`;
   if (!existsState(fID)) return;
 
-  const empf = getState(`${PFAD}${RAUM_PFAD}${raum}.Lüftungsempfehlung`).val;
-  const offen = getState(fID).val > 0;
-  const gemeldet = existsState(aDP) ? getState(aDP).val : false;
+  const empf = getState(`${PFAD}${RAUM_PFAD}${raum}.Lüftungsempfehlung`)?.val;
+  const offen = getState(fID)?.val > 0;
+  const gemeldet = existsState(aDP) ? getState(aDP)?.val : false;
 
   if (empf && !offen && !gemeldet) {
     notify(aDP, `Im ${raum} sollte gelüftet werden.`);
@@ -245,8 +245,8 @@ function checkNotification(raum) {
     if (!doorCheckTimeouts[raum]) {
       doorCheckTimeouts[raum] = setTimeout(() => {
         if (
-          getState(fID).val > 0 &&
-          !getState(`${PFAD}${RAUM_PFAD}${raum}.Lüftungsempfehlung`).val
+          getState(fID)?.val > 0 &&
+          !getState(`${PFAD}${RAUM_PFAD}${raum}.Lüftungsempfehlung`)?.val
         ) {
           let txt = `Im ${raum} sollte das Fenster geschlossen werden.`;
           if (raum === "Wohnzimmer")

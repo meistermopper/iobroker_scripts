@@ -25,7 +25,7 @@ on({ id: POSTKASTEN_STATE_ID, change: 'ne' }, async (obj) => {
     if (!obj.state || !obj.state.val) return;
 
     // Wenn in der VIS der Kasten noch als "voll" (true) markiert ist, nichts tun
-    if (getState(POSTKASTEN_VIS_ID).val === true) return;
+    if (getState(POSTKASTEN_VIS_ID)?.val === true) return;
 
     const msgText = '📫 Es war gerade jemand am Postkasten.';
 

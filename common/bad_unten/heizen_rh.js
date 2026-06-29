@@ -30,15 +30,15 @@ const ID_ENTFEUCHTEN_VOTUM =
 
 // Initialisierung mit Sicherheitscheck
 // Falls das Skript startet, während das Fenster offen ist (10°C), setzen wir 21°C als Default-Rückkehrwert.
-let vorigesTemperaturLevel = getState(ID_SET_TEMP).val > 12 ? getState(ID_SET_TEMP).val : 21;
+let vorigesTemperaturLevel = getState(ID_SET_TEMP)?.val > 12 ? getState(ID_SET_TEMP)?.val : 21;
 let istAmEntfeuchten = false; // Status-Variable: Befinden wir uns gerade im Entfeuchtungs-Modus?
 
 // --- HAUPTLOGIK: REAKTION AUF FEUCHTIGKEITSÄNDERUNG ---
 on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
   const luftfeuchte = obj.state.val;
-  const fensterZu = getState(ID_WINDOW_STATE).val === 0;
-  const istTempNiedrig = getState(ID_ACTUAL_TEMP).val < 24;
-  const heizungAn = getState(ID_HEATING_MODE).val !== "OFF";
+  const fensterZu = getState(ID_WINDOW_STATE)?.val === 0;
+  const istTempNiedrig = getState(ID_ACTUAL_TEMP)?.val < 24;
+  const heizungAn = getState(ID_HEATING_MODE)?.val !== "OFF";
 
   /**
    * START-BEDINGUNG:
@@ -58,7 +58,7 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
     // SCHUTZ VOR DER 10°C-FALLE:
     // Wir lesen die aktuelle Soll-Temperatur. Wenn sie <= 12°C ist, ignorieren wir sie
     // beim Speichern, da es sich wahrscheinlich um die Absenktemperatur des Fensters handelt.
-    const aktuelleSollTemp = getState(ID_SET_TEMP).val;
+    const aktuelleSollTemp = getState(ID_SET_TEMP)?.val;
     if (aktuelleSollTemp > 12) vorigesTemperaturLevel = aktuelleSollTemp;
 
     istAmEntfeuchten = true; // Status sperren
@@ -88,7 +88,7 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
     const istTag = compareTime("05:00", "22:00", "between");
     const programmZuhause = getState(
       "0_userdata.0.Heizen.Programme.Zuhause",
-    ).val;
+    )?.val;
 
     if (istTag && programmZuhause) {
       // Falls wir zu Hause sind und es Tag ist, erzwingen wir 21°C Komforttemperatur
@@ -123,7 +123,7 @@ on({ id: ID_WINDOW_STATE, change: "ne" }, (obj) => {
 // Verhindert, dass jemand am Thermostat dreht, während die Entfeuchtung läuft.
 on({ id: ID_SET_TEMP, change: "ne", ack: false }, (obj) => {
   // Nur wenn Fenster zu ist (sonst darf das Thermostat auf 10°C regeln)
-  if (istAmEntfeuchten && getState(ID_WINDOW_STATE).val === 0) {
+  if (istAmEntfeuchten && getState(ID_WINDOW_STATE)?.val === 0) {
     // Wenn jemand eine andere Temperatur als 24°C einstellt:
     if (obj.state.val !== 24) {
       setState(ID_SET_TEMP, 24); // Zurück auf 24 erzwingen

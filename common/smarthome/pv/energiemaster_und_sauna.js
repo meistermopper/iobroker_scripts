@@ -97,22 +97,22 @@ async function initSystem() {
     }
   }
   // Werte laden, damit Zähler nach Skript-Neustart weiterlaufen
-  sMax = parseFloat(getState(IDS.speicherMax).val) || 9.6;
+  sMax = parseFloat(getState(IDS.speicherMax)?.val) || 9.6;
 
   // LIVE-WERTE INITIALISIEREN (Fix für falsche Berechnung nach Neustart)
-  pvP = getState(IDS.pvPower).val || 0;
-  netP = getState(IDS.netPower).val || 0;
-  batP = getState(IDS.batPower).val || 0;
-  soc = getState(IDS.batSoc).val || 0;
+  pvP = getState(IDS.pvPower)?.val || 0;
+  netP = getState(IDS.netPower)?.val || 0;
+  batP = getState(IDS.batPower)?.val || 0;
+  soc = getState(IDS.batSoc)?.val || 0;
 
   // Sicherer Abruf des Backups (verhindert Warnungen bei Erststart)
   if (existsState(DP_MINSOC_BACKUP)) {
-      originalMinSoc = getState(DP_MINSOC_BACKUP).val || null;
+      originalMinSoc = getState(DP_MINSOC_BACKUP)?.val || null;
   }
 
-  tVerbrauchWh = getState(PATH_PV + "Tagesverbrauch").val || 0;
-  tLadungWh = getState(PATH_PV + "Tagesladung").val || 0;
-  tNetzWh = getState(PATH_PV + "TagesNetzbezug").val || 0;
+  tVerbrauchWh = getState(PATH_PV + "Tagesverbrauch")?.val || 0;
+  tLadungWh = getState(PATH_PV + "Tagesladung")?.val || 0;
+  tNetzWh = getState(PATH_PV + "TagesNetzbezug")?.val || 0;
 
   console.log(`Master v3.0 gestartet. Speicher: ${sMax} kWh, SoC: ${soc}%, BatPower: ${batP}W`);
   runUpdate(); // Sofortiger Update-Lauf
@@ -128,7 +128,7 @@ initSystem();
  * 'on'-Trigger zu verwenden, anstatt 'getState' wiederholt aufzurufen.
  */
 function getBereinigteLast() {
-  let hausV = Number(getState(PATH_PV + "Hausverbrauch").val) || 0;
+  let hausV = Number(getState(PATH_PV + "Hausverbrauch")?.val) || 0;
   let abzug = 0;
   let gP = [
     "alias.0.kueche.boiler.ENERGY_Power",
@@ -140,13 +140,13 @@ function getBereinigteLast() {
 
   // Summiere alle eingeschalteten Zwischenstecker
   gP.forEach((id) => {
-    let val = getState(id).val;
+    let val = getState(id)?.val;
     if (val) abzug += Number(val);
   });
 
   // Wallbox-Anteil berechnen: (Limit / 10) * 230V * 3 Phasen
-  if (getState(IDS.wbStatus).val === "Charging") {
-    let lim = Number(getState(IDS.wbLimit).val) || 60;
+  if (getState(IDS.wbStatus)?.val === "Charging") {
+    let lim = Number(getState(IDS.wbLimit)?.val) || 60;
     abzug += (lim / 10) * 230 * 3;
   }
   return hausV - abzug;
@@ -231,7 +231,7 @@ function runUpdate() {
   // (Unabhängig von der 35-Minuten-Logik für die Batterie)
   setState(PATH_SAUNA_DATA + "sauna_heizt_aktiv", bLast > 7500, true);
 
-  let sL = getState(IDS.saunaLogik).val;
+  let sL = getState(IDS.saunaLogik)?.val;
 
   if (bLast > 7500) {
     // Ofen heizt (oder taktet gerade wieder ein)
@@ -252,7 +252,7 @@ function runUpdate() {
         }
         tSaunaStart = null;
       }, 30000);
-    } else if (sL && soc > getState(IDS.minSocRead).val) {
+    } else if (sL && soc > getState(IDS.minSocRead)?.val) {
       // Während der Sauna: Min-SoC kontinuierlich dem SoC folgen lassen
       setState(IDS.minSocSet, soc);
     }
@@ -271,7 +271,7 @@ function runUpdate() {
 
 function startSauna() {
   setState(IDS.saunaLogik, true, true);
-  originalMinSoc = getState(IDS.minSocRead).val; // Ursprungswert merken (z.B. 40%)
+  originalMinSoc = getState(IDS.minSocRead)?.val; // Ursprungswert merken (z.B. 40%)
   setState(DP_MINSOC_BACKUP, originalMinSoc, true); // Persistent speichern
   setState(IDS.minSocSet, soc); // Batterie sofort auf aktuellem Level sperren
   console.log("Sauna: Priorisierung AKTIV, Min-SoC auf " + soc + "% fixiert");
@@ -325,7 +325,7 @@ on({ id: IDS.minSocRead, change: "ne" }, function (obj) {
   const text = `Min-SoC Update: Die Hausbatterie wurde auf ${newVal}% geregelt`;
 
   // SPAM-SCHUTZ: Während der Sauna nur loggen, kein Telegram senden
-  if (getState(IDS.saunaLogik).val === true) {
+  if (getState(IDS.saunaLogik)?.val === true) {
     console.log(
       `Min-SoC Watchdog: Sauna-Modus aktiv, Änderung auf ${newVal}% wird ignoriert`,
     );
@@ -337,7 +337,7 @@ on({ id: IDS.minSocRead, change: "ne" }, function (obj) {
 
 // Intervall für Tages-Statistiken (alle 10 Sek.)
 setInterval(function () {
-  let yieldWh = (getState(IDS.pvYield).val || 0) * 1000;
+  let yieldWh = (getState(IDS.pvYield)?.val || 0) * 1000;
   setState(PATH_PV + "Tageserzeugung", Math.round(yieldWh), true);
   setState(PATH_PV + "Tagesverbrauch", Math.round(tVerbrauchWh), true);
   setState(PATH_PV + "Tagesladung", Math.round(tLadungWh), true);
@@ -359,7 +359,7 @@ schedule("0 0 * * *", function () {
  * @param {number} load - Die aktuelle bereinigte Hauslast in Watt.
  */
 function checkSaunaSafety(load) {
-  const doorOpen = getState(IDS.saunaTuer).val;
+  const doorOpen = getState(IDS.saunaTuer)?.val;
   // Wir nehmen > 7500W an, um Fehlalarme durch andere Verbraucher zu vermeiden.
   // Dies verhindert Fehlalarme durch andere Verbraucher (Föhn, Wasserkocher).
   const isHeating = load > 7500;
@@ -371,7 +371,7 @@ function checkSaunaSafety(load) {
       //);
       tSaunaSafety = setTimeout(() => {
         // Erneute Prüfung nach Ablauf der Zeit
-        if (getState(IDS.saunaTuer).val && getBereinigteLast() > 7500) {
+        if (getState(IDS.saunaTuer)?.val && getBereinigteLast() > 7500) {
           sendGlobalNotify("Achtung: Die Sauna heizt bei offener Tür, bitte überprüfen", "Energiemaster", 8, 70);
         }
         tSaunaSafety = null;

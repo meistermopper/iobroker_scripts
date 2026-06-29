@@ -36,7 +36,7 @@ let GUARD = {
  */
 on({ id: CONFIG.dpWanIp, change: "ne" }, async (obj) => {
   const neueIp = obj.state.val;
-  const gespeicherteIp = getState(CONFIG.dpAktuelleIp).val;
+  const gespeicherteIp = getState(CONFIG.dpAktuelleIp)?.val;
 
   // Sicherheits-Filter: Ignoriere ungültige oder rein interne Gateway-IPs
   if (!neueIp || neueIp === "0.0.0.0" || neueIp === CONFIG.ipInternal) return;
@@ -56,7 +56,7 @@ on({ id: CONFIG.dpWanIp, change: "ne" }, async (obj) => {
   // FALL 2: IP-Wechsel (DSL/Glasfaser) oder Rückkehr aus Failover
   if (neueIp !== gespeicherteIp && neueIp !== CONFIG.ipFailover) {
     // DDNS Update ausführen (native httpGet)
-    const ddnssKey = getState(CONFIG.dpDdnssKey).val;
+    const ddnssKey = getState(CONFIG.dpDdnssKey)?.val;
     if (ddnssKey) {
       httpGet(
         `https://www.ddnss.de/upd.php?key=${ddnssKey}&host=all`,
@@ -97,7 +97,7 @@ schedule(CONFIG.checkInterval, async () => {
     if (error || !response || response.statusCode !== 200) return;
 
     const echteIp = response.data.trim();
-    const unifiIp = getState(CONFIG.dpWanIp).val;
+    const unifiIp = getState(CONFIG.dpWanIp)?.val;
 
     // Alarm auslösen bei Diskrepanz (außer während absichtlichem Failover)
     if (echteIp !== unifiIp && unifiIp !== CONFIG.ipFailover) {

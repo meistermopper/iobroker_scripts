@@ -9,10 +9,10 @@ on({ id: [].concat(['hm-rpc.1.000C20C9AF5D1A.1.PRESENCE_DETECTION_STATE']), chan
   let value = obj.state.val;
   let oldValue = obj.oldState.val;
   // Das Garderobenlicht wird Mo-Fr in Abhängigkeit von der Eigenschaft Homeoffice oder Dienststelle morgens zu verschiedenen Zeiten und verschiednen Zeiträumen eingeschaltet. In dieser Zeit wird nach Aktivieren des BWM nicht automatisch abgeschaltet, sondern nach Auslösen des BWM erst nach 42 Minuten.
-  if ((obj.state ? obj.state.val : '') && !Morgenlicht_Arbeit && getState('0_userdata.0.Heizen.Programme.standard').val && getState('0_userdata.0.Licht.Garderobe.BWM').val && (() => { const d = new Date().getDay(); return d === 0 ? 7 : d; })() >= '1' && (() => { const d = new Date().getDay(); return d === 0 ? 7 : d; })() <= '5' && compareTime('05:18', '06:00', 'between', null)) {
+  if ((obj.state ? obj.state.val : '') && !Morgenlicht_Arbeit && getState('0_userdata.0.Heizen.Programme.standard')?.val && getState('0_userdata.0.Licht.Garderobe.BWM')?.val && (() => { const d = new Date().getDay(); return d === 0 ? 7 : d; })() >= '1' && (() => { const d = new Date().getDay(); return d === 0 ? 7 : d; })() <= '5' && compareTime('05:18', '06:00', 'between', null)) {
     // Dienststelle (die Zustände Homeoffice und Außerhaus und Urlaub sind nicht wahr)
     setState('sonoff.0.Garderobenlicht.POWER' /* Garderobenlicht POWER */, true);
-    if (!getState('sonoff.0.Garderobenlicht.POWER').val) {
+    if (!getState('sonoff.0.Garderobenlicht.POWER')?.val) {
       console.warn('Garderobenlicht wurde trotz Bewegung nicht eingeschaltet');
     }
     Morgenlicht_Arbeit = true;
@@ -22,10 +22,10 @@ on({ id: [].concat(['hm-rpc.1.000C20C9AF5D1A.1.PRESENCE_DETECTION_STATE']), chan
       setState('sonoff.0.Garderobenlicht.POWER' /* Garderobenlicht POWER */, false);
       Morgenlicht_Arbeit = false;
     }, 3000000);
-  } else if ((obj.state ? obj.state.val : '') && (!Morgenlicht_HO && getState('0_userdata.0.Heizen.Programme.Homeoffice').val && !getState('0_userdata.0.Heizen.Programme.Zuhause').val && getState('0_userdata.0.Licht.Garderobe.BWM').val && (() => { const d = new Date().getDay(); return d === 0 ? 7 : d; })() >= '1' && (() => { const d = new Date().getDay(); return d === 0 ? 7 : d; })() <= '5' && compareTime('05:48', '06:30', 'between', null))) {
+  } else if ((obj.state ? obj.state.val : '') && (!Morgenlicht_HO && getState('0_userdata.0.Heizen.Programme.Homeoffice')?.val && !getState('0_userdata.0.Heizen.Programme.Zuhause')?.val && getState('0_userdata.0.Licht.Garderobe.BWM')?.val && (() => { const d = new Date().getDay(); return d === 0 ? 7 : d; })() >= '1' && (() => { const d = new Date().getDay(); return d === 0 ? 7 : d; })() <= '5' && compareTime('05:48', '06:30', 'between', null))) {
     // Homeoffice (die Zustände Standard, Außerhaus und Urlaub sind nicht wahr)
     setState('sonoff.0.Garderobenlicht.POWER' /* Garderobenlicht POWER */, true);
-    if (!getState('sonoff.0.Garderobenlicht.POWER').val) {
+    if (!getState('sonoff.0.Garderobenlicht.POWER')?.val) {
       console.warn('Garderobenlich wurde trotz Bewegung nicht eingeschaltet');
     }
     Morgenlicht_HO = true;
@@ -35,13 +35,13 @@ on({ id: [].concat(['hm-rpc.1.000C20C9AF5D1A.1.PRESENCE_DETECTION_STATE']), chan
       setState('sonoff.0.Garderobenlicht.POWER' /* Garderobenlicht POWER */, false);
       Morgenlicht_HO = false;
     }, 3000000);
-  } else if ((obj.state ? obj.state.val : '') && (!Morgenlicht_HO && !Morgenlicht_Arbeit && getState('0_userdata.0.Licht.Garderobe.BWM').val)) {
+  } else if ((obj.state ? obj.state.val : '') && (!Morgenlicht_HO && !Morgenlicht_Arbeit && getState('0_userdata.0.Licht.Garderobe.BWM')?.val)) {
     // BWM löst aus und schaltet bei keiner erneuten Änderung nach 120 Sekunden das Licht aus.
     setState('sonoff.0.Garderobenlicht.POWER' /* Garderobenlicht POWER */, true);
     (() => { if (timeout2) { clearTimeout(timeout2); timeout2 = null; }})();
     timeout2 = setTimeout(async () => {
       timeout2 = null;
-      if (!getState('sonoff.0.Garderobenlicht.POWER').val) {
+      if (!getState('sonoff.0.Garderobenlicht.POWER')?.val) {
         console.warn('Garderobenlicht wurde nicht eingeschaltet');
       }
     }, 200);

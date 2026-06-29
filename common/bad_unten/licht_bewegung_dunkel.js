@@ -89,8 +89,8 @@ async function lichtAn() {
 
     // VORWARNUNG: Nach 25 Minuten kurz auf 10% dimmen
     timeoutVorwarnung = setTimeout(() => {
-        if (getState(HUE_ON).val) { // Nur wenn das Licht noch an ist
-            const alterBri = getState(HUE_BRI).val;
+        if (getState(HUE_ON)?.val) { // Nur wenn das Licht noch an ist
+            const alterBri = getState(HUE_BRI)?.val;
             setState(HUE_BRI, 10); // Kurz dunkel machen
             //console.log("[Bad Unten] Vorwarnung: Dimme auf 10%");
             
@@ -122,8 +122,8 @@ on({ id: ID_BWM, change: 'any' }, (obj) => {
 
     timeoutGedenkpause = setTimeout(() => {
         const occupancy = !!obj.state.val;
-        const istDunkel = getState(ID_LUX).val <= 15;
-        const bwmAktiv = getState(ID_BWM_ENABLE).val;
+        const istDunkel = getState(ID_LUX)?.val <= 15;
+        const bwmAktiv = getState(ID_BWM_ENABLE)?.val;
 
         // Wenn Bewegung erkannt wird, Licht an oder Timer verlängern
         if (occupancy && istDunkel && bwmAktiv) {

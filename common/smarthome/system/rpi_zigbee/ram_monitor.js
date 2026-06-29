@@ -7,7 +7,7 @@ const ID_MEM_TOTAL = "rpi2.0.memory.memory_total";
 const ID_RAM_USAGE = "0_userdata.0.ioBroker.RPI_Zigbee.rpi_ram_usage";
 
 on({ id: ID_MEM_AVAIL, change: "ne" }, (obj) => {
-  const total = getState(ID_MEM_TOTAL).val;
+  const total = getState(ID_MEM_TOTAL)?.val;
   const avail = obj.state.val;
 
   if (total > 0) {

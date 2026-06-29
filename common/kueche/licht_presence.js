@@ -35,8 +35,8 @@ on({ id: IDS.präsenz, change: "ne" }, (obj) => {
   debounceTimer = setTimeout(async () => {
     // --- WERTE ERFASSEN ---
     const istPräsent = !!obj.state.val; // Echter Boolean (true/false)
-    const lux = getState(IDS.helligkeit).val;
-    const spotsSindAn = getState(IDS.spots_sonoff).val;
+    const lux = getState(IDS.helligkeit)?.val;
+    const spotsSindAn = getState(IDS.spots_sonoff)?.val;
 
     // Zeitprüfung: 22:00 bis 05:00 Uhr (ioBroker interne Funktion)
     const istNacht = compareTime("22:00", "05:00", "between");
@@ -55,7 +55,7 @@ on({ id: IDS.präsenz, change: "ne" }, (obj) => {
         });
 
         // Nur senden, wenn sich der Befehl vom aktuellen Status unterscheidet
-        if (getState(IDS.hue_command).val !== cmdNacht) {
+        if (getState(IDS.hue_command)?.val !== cmdNacht) {
           setState(IDS.hue_command, cmdNacht);
         }
       } else {
@@ -73,7 +73,7 @@ on({ id: IDS.präsenz, change: "ne" }, (obj) => {
             bri: BRI_TAG,
             transitiontime: 10,
           });
-          if (getState(IDS.hue_command).val !== cmdTag) {
+          if (getState(IDS.hue_command)?.val !== cmdTag) {
             setState(IDS.hue_command, cmdTag);
           }
         }, 300);

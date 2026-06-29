@@ -2,8 +2,8 @@ var Kueche_an, Bad_unten, Kueche, Flur, timeout2, timeout3, timeout, timeout1, t
 
 // Beschreibe diese Funktion …
 function Steuerung_Bad_unten() {
-  Bad_unten = getState("0_userdata.0.Bewegungsmelder.Zeit_Bad_unten").val * 60000;
-  if (getState("zigbee.0.00158d00045f3d70.illuminance").val <= getState("0_userdata.0.Bewegungsmelder.Helligkeit_Bad_unten").val && getState("zigbee.0.00158d00045f3d70.occupancy").val == true && Bad_unten_an == false && getState("0_userdata.0.Bewegungsmelder.Auto_an_Bad_unten").val == true) {
+  Bad_unten = getState("0_userdata.0.Bewegungsmelder.Zeit_Bad_unten")?.val * 60000;
+  if (getState("zigbee.0.00158d00045f3d70.illuminance")?.val <= getState("0_userdata.0.Bewegungsmelder.Helligkeit_Bad_unten")?.val && getState("zigbee.0.00158d00045f3d70.occupancy")?.val == true && Bad_unten_an == false && getState("0_userdata.0.Bewegungsmelder.Auto_an_Bad_unten")?.val == true) {
     timeout2 = setTimeout(function () {
       Bad_unten_an = true;
       if (compareTime('21:00', '05:00', "between", null)) {
@@ -12,12 +12,12 @@ function Steuerung_Bad_unten() {
         setState("hue.0.Bad_unten.command"/*Bad unten.command*/, '{"level":100,"bri":0,"ct":6500}');
       }
     }, 1000);
-  } else if (getState("zigbee.0.00158d00045f3d70.occupancy").val == false && getState("0_userdata.0.Bewegungsmelder.Auto_aus_Bad_unten").val == true && Bad_unten_an == true) {
+  } else if (getState("zigbee.0.00158d00045f3d70.occupancy")?.val == false && getState("0_userdata.0.Bewegungsmelder.Auto_aus_Bad_unten")?.val == true && Bad_unten_an == true) {
     timeout3 = setTimeout(function () {
       setState("hue.0.Bad_unten.on"/*Bad unten.on*/, false);
       Bad_unten_an = false;
     }, 180000);
-  } else if (getState("zigbee.0.00158d00045f3d70.occupancy").val == true && Bad_unten_an == true) {
+  } else if (getState("zigbee.0.00158d00045f3d70.occupancy")?.val == true && Bad_unten_an == true) {
     (function () {if (timeout3) {clearTimeout(timeout3); timeout3 = null;}})();
   }
 }

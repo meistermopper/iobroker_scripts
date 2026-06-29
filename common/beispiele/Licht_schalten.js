@@ -5,9 +5,9 @@ on({id: 'default', change: "ne"}, function (obj) {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
   if ((obj.state ? obj.state.val : "")) {
-    lampe1 = getState("ID auswählen").val;
-    lampe2 = getState("ID auswählen").val;
-    lampe3 = getState("ID auswählen").val;
+    lampe1 = getState("ID auswählen")?.val;
+    lampe2 = getState("ID auswählen")?.val;
+    lampe3 = getState("ID auswählen")?.val;
   }
   if (!lampe1) {
     setState("Object ID", (obj.state ? obj.state.val : ""));

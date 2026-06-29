@@ -19,7 +19,7 @@ const HARMONY_VIDEO = [
 // --- 2. HILFSFUNKTIONEN ---
 
 function istDunkel() {
-  const lux = parseFloat(getState(ID_ILLU).val) || 0;
+  const lux = parseFloat(getState(ID_ILLU)?.val) || 0;
   const istNacht = compareTime(
     getAstroDate("sunrise"),
     getAstroDate("sunset"),
@@ -32,7 +32,7 @@ function istDunkel() {
 function videoAktiv() {
   // Prüft auf 2 (Number/String) oder true, falls der Adapter-Typ schwankt
   return HARMONY_VIDEO.some((id) => {
-    const val = getState(id).val;
+    const val = getState(id)?.val;
     return val == 2 || val === true || val === "2";
   });
 }
@@ -42,7 +42,7 @@ function videoAktiv() {
 on({ id: [...HARMONY_VIDEO, ID_ILLU], change: "ne" }, async (obj) => {
   const luxState = getState(ID_ILLU);
   const lux = (luxState && luxState.val !== null) ? parseFloat(luxState.val) : 0;
-  const tvLichtAn = !!(getState(ID_FERNSEHLICHT).val);
+  const tvLichtAn = !!(getState(ID_FERNSEHLICHT)?.val);
   const amSchauen = videoAktiv();
 
   // Feststellen, ob der Trigger der Lux-Sensor war
@@ -58,7 +58,7 @@ on({ id: [...HARMONY_VIDEO, ID_ILLU], change: "ne" }, async (obj) => {
     if (!istLuxAenderung || !tvLichtAn) {
       //console.log(`[Videolicht] Kino-Modus wird aktiviert (Lux: ${lux})`);
       // Galaxie nur an, wenn der Weihnachtsbaum aus ist
-      if (!getState(ID_WEIHNACHTEN).val) {
+      if (!getState(ID_WEIHNACHTEN)?.val) {
         setState(ID_GALAXIE, true);
       }
 

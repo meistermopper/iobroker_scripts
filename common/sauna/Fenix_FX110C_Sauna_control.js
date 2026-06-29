@@ -116,8 +116,8 @@ async function login() {
 
     isLoggingIn = true;
 
-    const user = getState(`${BASE_PATH}.user`).val;
-    const pass = getState(`${BASE_PATH}.password`).val;
+    const user = getState(`${BASE_PATH}.user`)?.val;
+    const pass = getState(`${BASE_PATH}.password`)?.val;
 
     if (!user || !pass) {
         log('[Harvia] Login-Fehler: Benutzerdaten in 0_userdata fehlen!', 'warn');
@@ -492,10 +492,10 @@ function setupListeners() {
     // Benachrichtigungen: 10-Minuten-Vorwarnung und Zieltemperatur erreicht
     on({ id: `${BASE_PATH}.temp`, change: 'ne', ack: true }, (obj) => {
         const currentTemp = obj.state.val;
-        const targetTemp = getState(`${BASE_PATH}.targetTemp`).val;
-        const heatOn = getState(`${BASE_PATH}.heatOn`).val;
-        const notified10Min = getState(`${BASE_PATH}.readyNotified10Min`).val;
-        const notifiedReady = getState(`${BASE_PATH}.targetReachedNotified`).val;
+        const targetTemp = getState(`${BASE_PATH}.targetTemp`)?.val;
+        const heatOn = getState(`${BASE_PATH}.heatOn`)?.val;
+        const notified10Min = getState(`${BASE_PATH}.readyNotified10Min`)?.val;
+        const notifiedReady = getState(`${BASE_PATH}.targetReachedNotified`)?.val;
 
         if (heatOn && currentTemp > 20) {
             // 1. Vorwarnung: 13°C vor Zieltemperatur (Fenix-Logik)

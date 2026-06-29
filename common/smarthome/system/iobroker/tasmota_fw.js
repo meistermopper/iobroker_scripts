@@ -67,7 +67,7 @@ async function checkTasmotaVersion(retryCount = 0) {
         const tasmotaStates = $("channel[state.id=sonoff.0.*.Info1_Version]");
 
         tasmotaStates.each((id) => {
-          const stateVal = getState(id).val;
+          const stateVal = getState(id)?.val;
           if (!stateVal) return; // Überspringen, falls leer
 
           const installed = stateVal

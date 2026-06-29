@@ -32,7 +32,7 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
 
     // 2. LOGIK BEI ÖFFNUNG
     if (status === true || status === 1) {
-        const aktuelleTemp = getState(AUSSENTEMPERATUR_ID).val;
+        const aktuelleTemp = getState(AUSSENTEMPERATUR_ID)?.val;
 
         // Prüfung: Ist es draußen kalt genug für eine Warnung?
         if (aktuelleTemp < TEMP_LIMIT) {
@@ -45,7 +45,7 @@ on({ id: /^hm-rpc\.1\..*\.1\.STATE$/, change: 'ne' }, async (obj) => {
                 // --- PRÜFUNG SONDERFALL KÜCHE ---
                 // Falls das Küchenfenster triggert, prüfen wir den Dunstabzug
                 if (id.includes(KUECHE_FENSTER_ID)) {
-                    const essePower = getState(DUNSTABZUG_POWER_ID).val;
+                    const essePower = getState(DUNSTABZUG_POWER_ID)?.val;
 
                     if (essePower > DUNSTABZUG_THRESHOLD) {
                         console.log(`Fenster: Küche offen, aber Dunstabzug läuft (${essePower}W), Warnung unterdrückt`);

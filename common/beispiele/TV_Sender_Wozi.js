@@ -1,9 +1,9 @@
 on({id: new RegExp('0_userdata\\.0\\.tv\\.wozi\\.01ard' + "|" + '0_userdata\\.0\\.tv\\.wozi\\.02zdf'), change: "gt"}, function (obj) {
-    if (getState("0_userdata.0.tv.wozi.01ard").val) {
+    if (getState("0_userdata.0.tv.wozi.01ard")?.val) {
     // ARD
     setState("enigma2.0.command.ZAP"/*Zap with Servicereference*/, '1:0:19:283D:3FB:1:C00000:0:0:0');
     setStateDelayed("0_userdata.0.tv.wozi.01ard"/*tv.wozi.01ard*/, false, 1000, false);
-  } else if (getState("0_userdata.0.tv.wozi.02zdf").val) {
+  } else if (getState("0_userdata.0.tv.wozi.02zdf")?.val) {
     // ZDF
     setState("enigma2.0.command.ZAP"/*Zap with Servicereference*/, '1:0:19:2B66:3F3:1:C00000:0:0:0');
     setStateDelayed("0_userdata.0.tv.wozi.02zdf"/*02zdf*/, false, 1000, false);

@@ -19,7 +19,7 @@ on({ id: ID_ONLINE, change: "ne" }, async (obj) => {
       timeout_ventilator = null;
 
       // Nochmal prüfen, ob er immer noch offline ist
-      if (!getState(ID_ONLINE).val) {
+      if (!getState(ID_ONLINE)?.val) {
         const msg = "🛞 Der Deckenventilator ist offline.";
         sendTo("telegram", "send", { text: msg });
         console.warn(msg);

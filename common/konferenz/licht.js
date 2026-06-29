@@ -45,7 +45,7 @@ on({ id: ID_VITRINE_TRIGGER, change: 'ne' }, (obj) => {
 on({ id: ID_LUX, change: 'ne' }, (obj) => {
     const lux = obj.state.val;
     const luxAlt = obj.oldState.val;
-    if (getState(ID_TAGUNG_AKTIV).val) {
+    if (getState(ID_TAGUNG_AKTIV)?.val) {
         if (lux < 1000 && luxAlt >= 1000) schalteKonfiBeleuchtung(true);
         else if (lux > 1500 && luxAlt <= 1500) schalteKonfiBeleuchtung(false);
     }
@@ -53,7 +53,7 @@ on({ id: ID_LUX, change: 'ne' }, (obj) => {
 
 // 3. Sonnenuntergang
 schedule({ astro: 'sunset', shift: -30 }, () => {
-    if (getState(ID_TAGUNG_AKTIV).val) schalteKonfiBeleuchtung(true);
+    if (getState(ID_TAGUNG_AKTIV)?.val) schalteKonfiBeleuchtung(true);
 });
 
 // 4. Nachtabschaltung (23:30 Uhr)
@@ -63,4 +63,4 @@ schedule("30 23 * * *", () => {
 });
 
 // INITIALISIERUNG: Zustand beim Start einmal prüfen
-setLichtshow(getState(ID_VITRINE_TRIGGER).val);
+setLichtshow(getState(ID_VITRINE_TRIGGER)?.val);

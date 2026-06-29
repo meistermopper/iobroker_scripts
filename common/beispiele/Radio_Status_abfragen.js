@@ -6,10 +6,10 @@ Sperre_stumm = false;
 on({id: "hm-rpc.1.0000DA499F3C4A.1.STATE"/*HMIP-SWDO 0000DA499F3C4A:1.STATE*/, change: "ne"}, async function (obj) {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  if (!Sperre && compareTime('08:00', '20:00', "between", null) && (obj.state ? obj.state.val : "") && !getState("0_userdata.0.Haushalt.Briefkasten").val) {
-    if (getState("chromecast.0.Küche.player.playerState").val == 'playing') {
-      Sender = getState("chromecast.0.Küche.player.url2play").val;
-      volume = getState("chromecast.0.Küche.status.volume").val;
+  if (!Sperre && compareTime('08:00', '20:00', "between", null) && (obj.state ? obj.state.val : "") && !getState("0_userdata.0.Haushalt.Briefkasten")?.val) {
+    if (getState("chromecast.0.Küche.player.playerState")?.val == 'playing') {
+      Sender = getState("chromecast.0.Küche.player.url2play")?.val;
+      volume = getState("chromecast.0.Küche.status.volume")?.val;
       Sperre = true;
       setState("sayit.4.tts.text", "de-DE_CLOUD_Female;" + 50 + ";" + 'Es war gerade jemand am Postkasten');
       sendTo("telegram.0", "send", {
@@ -36,7 +36,7 @@ on({id: "hm-rpc.1.0000DA499F3C4A.1.STATE"/*HMIP-SWDO 0000DA499F3C4A:1.STATE*/, c
         Sperre = false;
       }, 60000);
     }
-  } else if (!Sperre_stumm && (obj.state ? obj.state.val : "") && !getState("0_userdata.0.Haushalt.Briefkasten").val) {
+  } else if (!Sperre_stumm && (obj.state ? obj.state.val : "") && !getState("0_userdata.0.Haushalt.Briefkasten")?.val) {
     Sperre_stumm = true;
     sendTo("telegram.0", "send", {
         text: '+++📫 Wahrscheinlich ist etwas im Briefkasten. +++'

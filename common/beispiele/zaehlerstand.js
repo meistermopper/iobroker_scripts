@@ -1,7 +1,7 @@
 var kWh;
 
 
-kWh = getState('0_userdata.0.zaehlerstand').val;
+kWh = getState('0_userdata.0.zaehlerstand')?.val;
 on({ id: 'sonoff.0.AVR-Steckdose.ENERGY_Total' /* AVR-Steckdose ENERGY  Total */, change: 'gt' }, async (obj) => {
   let value = obj.state.val;
   let oldValue = obj.oldState.val;

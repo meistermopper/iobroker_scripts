@@ -4,8 +4,8 @@ var GoogleMapsURL, ParkAdresse;
 on({id: "0_userdata.0.EigeneDatenpunkte.Auto.ParkPositionSchicken", val: true}, async function (obj) {
   let value = obj.state.val;
   let oldValue = obj.oldState.val;
-  GoogleMapsURL = ('' + ('https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + String(getState("vw-connect.0.WVGZZZE2ZNP025704.position.address.displayName").val)));
-  ParkAdresse = ['Das Auto steht an folgender Adresse: ',getState("vw-connect.0.WVGZZZE2ZNP025704.position.address.displayName").val,'\n','Google Maps Link: ',GoogleMapsURL].join('');
+  GoogleMapsURL = ('' + ('https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + String(getState("vw-connect.0.WVGZZZE2ZNP025704.position.address.displayName")?.val)));
+  ParkAdresse = ['Das Auto steht an folgender Adresse: ',getState("vw-connect.0.WVGZZZE2ZNP025704.position.address.displayName")?.val,'\n','Google Maps Link: ',GoogleMapsURL].join('');
   sendTo("telegram", "send", {
       text: ParkAdresse,
       parse_mode: "HTML"

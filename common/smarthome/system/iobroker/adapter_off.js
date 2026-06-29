@@ -33,7 +33,7 @@ on({id: Buffer.from(selector), change: 'ne'}, async (obj) => {
                 sendTo('telegram', 'send', { text: msg });
 
                 // 3. Gotify via curl (Token wird aus 0_userdata geholt)
-                const gotifyToken = getState('0_userdata.0.gotifytoken.iobroker').val;
+                const gotifyToken = getState('0_userdata.0.gotifytoken.iobroker')?.val;
                 if (gotifyToken) {
                     const command = `curl "https://mygotify.meistermopper.de/message?token=${gotifyToken}" -F "title=ioBroker:" -F "message=${msg}" -F "priority=1"`;
                     exec(command, (error) => {

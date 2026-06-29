@@ -11,7 +11,7 @@ on({ id: IDS_POWER, change: "ne" }, () => {
 
   // Wir gehen alle IDs durch und addieren die Werte
   IDS_POWER.forEach((id) => {
-    summe += getState(id).val || 0;
+    summe += getState(id)?.val || 0;
   });
 
   // Auf eine Nachkommastelle runden und schreiben

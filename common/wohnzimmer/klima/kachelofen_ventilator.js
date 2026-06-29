@@ -15,7 +15,7 @@ function notify(msg) {
   sendTo("telegram", "send", { text: msg, user: "Thomas" });
 
   // Gotify
-  const token = getState(ID_GOTIFY_TOKEN).val;
+  const token = getState(ID_GOTIFY_TOKEN)?.val;
   const gotifyCmd = `curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker Fan" -F "message=${msg}" -F "priority=1"`;
   exec(gotifyCmd);
 
@@ -24,7 +24,7 @@ function notify(msg) {
 
 // Hilfsfunktion zum Einschalten
 function turnFanOn(reason) {
-  if (getState(ID_FAN_ONLINE).val) {
+  if (getState(ID_FAN_ONLINE)?.val) {
     setState(ID_FAN_SWITCH, true);
     setStateDelayed(ID_FAN_SPEED, 0, 1000, false);
     einschaltenAktiv = true;
@@ -47,7 +47,7 @@ on({ id: ID_TEMP_KACHELOFEN, change: "ne" }, (obj) => {
     isHeizmonat &&
     temp >= 23 &&
     oldTemp < 23 &&
-    !getState(ID_FAN_SWITCH).val &&
+    !getState(ID_FAN_SWITCH)?.val &&
     !einschaltenAktiv
   ) {
     turnFanOn(`Temperatur am Kachelofen: ${temp}°C.`);
@@ -58,17 +58,17 @@ on({ id: ID_TEMP_KACHELOFEN, change: "ne" }, (obj) => {
     !isHeizmonat &&
     temp >= 25 &&
     oldTemp < 25 &&
-    !getState(ID_FAN_SWITCH).val &&
+    !getState(ID_FAN_SWITCH)?.val &&
     !einschaltenAktiv
   ) {
-    const tempWZ = getState(ID_TEMP_WOHNZIMMER).val;
+    const tempWZ = getState(ID_TEMP_WOHNZIMMER)?.val;
     turnFanOn(`Temperatur im Wohnzimmer: ${tempWZ}°C.`);
   }
 });
 
 // --- Trigger: Wieder Online kommen ---
 on({ id: ID_FAN_ONLINE, change: "gt" }, (obj) => {
-  if (obj.state.val && einschaltenAktiv && !getState(ID_FAN_SWITCH).val) {
+  if (obj.state.val && einschaltenAktiv && !getState(ID_FAN_SWITCH)?.val) {
     turnFanOn("nachdem er wieder online war.");
   }
 });

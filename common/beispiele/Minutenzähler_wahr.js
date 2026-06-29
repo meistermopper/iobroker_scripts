@@ -6,7 +6,7 @@ Dauer = 0;
 on({id: "0_userdata.0.Schalter"/*Schalter*/, change: "ne"}, async function (obj) {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  if (getState("0_userdata.0.Schalter").val) {
+  if (getState("0_userdata.0.Schalter")?.val) {
     start = (new Date().getTime());
   } else {
     Dauer = parseFloat((new Date().getTime())) - start;

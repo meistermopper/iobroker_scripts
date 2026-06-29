@@ -89,7 +89,7 @@ async function stopWartung(reason = "") {
     setState(`${dpPrefix}.Wartung_eingeleitet`, false);
     setState(`${dpPrefix}.Jetzt_Warten`, false);
   }, 15000);
-  const soc = getState(`${upsNutPrefix}.battery.charge`).val;
+  const soc = getState(`${upsNutPrefix}.battery.charge`)?.val;
   sendGlobalNotify(`Wartung beendet (${reason}), Stand: ${soc}%`, "USV Büro", 1);
 }
 
@@ -101,9 +101,9 @@ async function stopWartung(reason = "") {
  */
 on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
   const soc = obj.state.val;
-  const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`).val;
-  const onBattery = getState(`${upsNutPrefix}.status.onbattery`).val === true;
-  const minSoc = getState(`${dpPrefix}.Minimum_Rest_Prozent`).val;
+  const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`)?.val;
+  const onBattery = getState(`${upsNutPrefix}.status.onbattery`)?.val === true;
+  const minSoc = getState(`${dpPrefix}.Minimum_Rest_Prozent`)?.val;
 
   // A: Automatischer Stopp bei Erreichen des Limits
   if (isWartung && soc <= minSoc) {
@@ -115,13 +115,13 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
   if (onBattery) {
     // Prüfung: Soll bei diesem Ereignis überhaupt gesprochen werden?
     const canSpeak = isWartung
-      ? getState(`${dpPrefix}.Speak_bei_Wartung`).val
-      : getState(`${dpPrefix}.Speak_bei_Ausfall`).val;
+      ? getState(`${dpPrefix}.Speak_bei_Wartung`)?.val
+      : getState(`${dpPrefix}.Speak_bei_Ausfall`)?.val;
     if (!canSpeak) return;
 
     // Nachtruhe nur bei geplanter Wartung, bei echtem Ausfall immer sprechen!
     const isDay = compareTime('08:00', '20:00', 'between');
-    const voiceVol = (isWartung && !isDay) ? null : getState(`${dpPrefix}.Google_lautstaerke`).val;
+    const voiceVol = (isWartung && !isDay) ? null : getState(`${dpPrefix}.Google_lautstaerke`)?.val;
 
     // Modulo-Check: Sprechen bei Start, alle 5% oder kurz vor dem Ende
     if (
@@ -131,7 +131,7 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
     ) {
       lastSpokenSoc = soc;
       const runtime = Math.floor(
-        getState(`${dpPrefix}.Restlaufzeit_in_Minuten`).val,
+        getState(`${dpPrefix}.Restlaufzeit_in_Minuten`)?.val,
       );
 
       // Textbaustein nach deinen VIS-Einstellungen (Minuten vs Prozent)
@@ -139,8 +139,8 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
         ? "Wartung im Büro läuft, "
         : "Warnung, Stromausfall im Büro, ";
 
-      const speakMin = getState(`${dpPrefix}.Speak_Minuten`).val;
-      const speakPct = getState(`${dpPrefix}.Speak_Prozent`).val;
+      const speakMin = getState(`${dpPrefix}.Speak_Minuten`)?.val;
+      const speakPct = getState(`${dpPrefix}.Speak_Prozent`)?.val;
 
       if (speakMin) text += `Restlaufzeit ${runtime} Minuten, `;
       if (speakPct) text += `Akkustand ${soc} Prozent`;
@@ -171,7 +171,7 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
  * Erkennt den Wechsel zwischen Netz und Batterie.
  */
 on({ id: `${upsNutPrefix}.status.onbattery`, change: "ne" }, async (obj) => {
-  const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`).val;
+  const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`)?.val;
   if (obj.state.val === true && !isWartung) {
     sendGlobalNotify("WARNUNG: Stromversorgung unterbrochen", "USV Büro", 8, 50); // Immer sprechen!
   } else if (obj.state.val === false) {
@@ -185,8 +185,8 @@ on({ id: `${upsNutPrefix}.status.onbattery`, change: "ne" }, async (obj) => {
 schedule("0 11 1-7 */2 *", async () => {
   if (new Date().getDay() === 1) {
     // Prüfen ob es wirklich Montag ist
-    const autoAktiv = getState(`${dpPrefix}.Automatische_Wartung_Aktiv`).val;
-    const soc = getState(`${upsNutPrefix}.battery.charge`).val;
+    const autoAktiv = getState(`${dpPrefix}.Automatische_Wartung_Aktiv`)?.val;
+    const soc = getState(`${upsNutPrefix}.battery.charge`)?.val;
 
     if (autoAktiv && soc > 89) {
       await startWartung(false);

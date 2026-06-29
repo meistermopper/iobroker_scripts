@@ -38,15 +38,15 @@ Speicher_Backup = true;
 on({ id: '0_userdata.0.Notification.Proxmox.notifications', change: 'any' }, async (obj) => {
   let value = obj.state.val;
   let oldValue = obj.oldState.val;
-  Meldung = getState(DP_Verlauf).val;
-  Meldung.unshift(getState(DP_Meldung_Proxmox).val.split('***'));
+  Meldung = getState(DP_Verlauf)?.val;
+  Meldung.unshift(getState(DP_Meldung_Proxmox)?.val.split('***'));
   setStateDelayed(DP_Verlauf, { val: Meldung, ack: true }, parseInt(((0) || '').toString(), 10), false);
 });
 
 on({ id: [].concat(DP_Verlauf), change: 'ne' }, async (obj) => {
   let value = obj.state.val;
   let oldValue = obj.oldState.val;
-  Meldung_Verlauf = getState(DP_Verlauf).val;
+  Meldung_Verlauf = getState(DP_Verlauf)?.val;
   HTML = '';
   Meldung_Verlauf = Meldung_Verlauf.slice(0, Max_Benachrichtigungen);
   var j_end = Meldung_Verlauf.length;

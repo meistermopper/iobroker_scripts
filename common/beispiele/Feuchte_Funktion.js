@@ -37,7 +37,7 @@ function Telegram_senden(Telegram_Text, Telegram_Empfaenger) {
 }
 
 
-on({id: getState("ID auswählen").val, change: "ne"}, function (obj) {
+on({id: getState("ID auswählen")?.val, change: "ne"}, function (obj) {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
   Letzter_Text_klein = subsequenceFromStartLast((obj.state ? obj.state.val : ""), (((obj.state ? obj.state.val : "").indexOf(']') + 1 + 1) - 1)).toLowerCase();

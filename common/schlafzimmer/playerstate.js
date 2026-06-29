@@ -19,7 +19,7 @@ on({ id: ID_DEVICE_CONNECTED, change: "ne" }, (obj) => {
         miniTimeout = null;
 
         // Nach 2 Minuten prüfen: Ist es immer noch offline?
-        if (!getState(ID_DEVICE_CONNECTED).val) {
+        if (!getState(ID_DEVICE_CONNECTED)?.val) {
           const notifyText =
             "⚠️ Der Google Mini im Schlafzimmer hat seit zwei Minuten keine WLAN-Verbindung.";
 

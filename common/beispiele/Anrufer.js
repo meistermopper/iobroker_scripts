@@ -6,9 +6,9 @@ on({id: "tr-064.0.states.ring"/*ring*/, change: "any"}, async function (obj) {
   let oldValue = obj.oldState.val;
   (function () {if (timeout) {clearTimeout(timeout); timeout = null;}})();
   timeout = setTimeout(async function () {
-    console.warn((String(getState("tr-064.0.callmonitor.inbound.callerName").val) + ' ruft an.'));
+    console.warn((String(getState("tr-064.0.callmonitor.inbound.callerName")?.val) + ' ruft an.'));
     sendTo("telegram", "send", {
-        text: (['🕭 ',getState("tr-064.0.callmonitor.inbound.callerName").val,' ruft an.'].join(''))
+        text: (['🕭 ',getState("tr-064.0.callmonitor.inbound.callerName")?.val,' ruft an.'].join(''))
     });
   }, parseInt(100));
 });

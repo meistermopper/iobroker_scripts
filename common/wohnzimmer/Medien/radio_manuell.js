@@ -44,25 +44,25 @@ function setExclusiveSource(activeSource) {
 
 // A: Harmony Aktivitäten
 on({ id: [HARMONY_PREFIX + 'SAT_TV', HARMONY_PREFIX + 'Online_Music', HARMONY_PREFIX + 'Chromecast_Musik', HARMONY_PREFIX + 'Chromecast_Video', ID_H_STATUS], change: 'ne' }, () => {
-    const hStatus = getState(ID_H_STATUS).val;
+    const hStatus = getState(ID_H_STATUS)?.val;
 
     if (hStatus === 0) {
         setExclusiveSource(null); // Alles aus
         setState(ID_PLAY_STATUS, false);
     } else {
         setState(ID_PLAY_STATUS, true);
-        if (getState(HARMONY_PREFIX + 'SAT_TV').val === 2)           setExclusiveSource('sat_tv');
-        else if (getState(HARMONY_PREFIX + 'Online_Music').val === 2)   setExclusiveSource('online_musik');
-        else if (getState(HARMONY_PREFIX + 'Chromecast_Musik').val === 2) setExclusiveSource('spotify');
-        else if (getState(HARMONY_PREFIX + 'Chromecast_Video').val === 2) setExclusiveSource('netflix');
+        if (getState(HARMONY_PREFIX + 'SAT_TV')?.val === 2)           setExclusiveSource('sat_tv');
+        else if (getState(HARMONY_PREFIX + 'Online_Music')?.val === 2)   setExclusiveSource('online_musik');
+        else if (getState(HARMONY_PREFIX + 'Chromecast_Musik')?.val === 2) setExclusiveSource('spotify');
+        else if (getState(HARMONY_PREFIX + 'Chromecast_Video')?.val === 2) setExclusiveSource('netflix');
     }
 });
 
 // B: Chromecast Metadata Erkennung
 on({ id: ID_CC_DISPLAY, change: 'ne' }, (obj) => {
     const display = obj.state.val;
-    const hMusic = getState(HARMONY_PREFIX + 'Online_Music').val;
-    const heosPlay = getState('heos.0.players.217493250.state').val;
+    const hMusic = getState(HARMONY_PREFIX + 'Online_Music')?.val;
+    const heosPlay = getState('heos.0.players.217493250.state')?.val;
 
     switch (display) {
         case 'TuneIn Free': setExclusiveSource('tunein'); break;
@@ -76,8 +76,8 @@ on({ id: ID_CC_DISPLAY, change: 'ne' }, (obj) => {
 
 // C: Play-Status Ermittlung (Chromecast & Harmony Kombi)
 on({ id: [ID_CC_STATE, HARMONY_PREFIX + 'Online_Music'], change: 'ne' }, () => {
-    const ccState = getState(ID_CC_STATE).val;
-    const hMusic = getState(HARMONY_PREFIX + 'Online_Music').val;
+    const ccState = getState(ID_CC_STATE)?.val;
+    const hMusic = getState(HARMONY_PREFIX + 'Online_Music')?.val;
 
     if (hMusic === 0) {
         const isPlaying = (ccState === 'playing');

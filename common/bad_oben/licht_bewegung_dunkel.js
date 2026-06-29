@@ -25,7 +25,7 @@ let sperreNachTuer     = false;
 function lichtAn() {
     if (sperreNachTuer) return;
 
-    if (getState(ID_LICHT).val === false) {
+    if (getState(ID_LICHT)?.val === false) {
         setState(ID_LICHT, true);
         // console.log("[Bad Oben] Licht AN (BWM-Trigger)");
     }
@@ -36,7 +36,7 @@ function lichtAn() {
 
     // VORWARNUNG: Nach 55 Minuten (3.300.000 ms) kurzes Flackern
     timeoutVorwarnung = setTimeout(() => {
-        if (getState(ID_LICHT).val) {
+        if (getState(ID_LICHT)?.val) {
             setState(ID_LICHT, false);
             setTimeout(() => {
                 if (timeoutAusschalten) setState(ID_LICHT, true);
@@ -66,9 +66,9 @@ on({ id: ID_BWM, change: 'any' }, (obj) => {
 
     timeoutGedenkpause = setTimeout(() => {
         const occupancy = !!obj.state.val;
-        const lux       = getState(ID_LUX).val;
+        const lux       = getState(ID_LUX)?.val;
         const istDunkel = lux <= 15;
-        const bwmAktiv  = getState(ID_BWM_ENABLE).val;
+        const bwmAktiv  = getState(ID_BWM_ENABLE)?.val;
 
         if (occupancy && istDunkel && bwmAktiv) {
             lichtAn();
@@ -79,7 +79,7 @@ on({ id: ID_BWM, change: 'any' }, (obj) => {
 on({ id: ID_TUER, change: 'ne' }, (obj) => {
     if (!obj.state || !obj.state.val) return; // Nur reagieren, wenn Tür offen (true)
 
-    const lichtWarAn = getState(ID_LICHT).val;
+    const lichtWarAn = getState(ID_LICHT)?.val;
 
     if (lichtWarAn) {
         lichtAus();

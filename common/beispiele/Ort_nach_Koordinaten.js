@@ -25,8 +25,8 @@ async function OSM(lat, lon) {
 on({id: [].concat(['0_userdata.0.Schalter']), val: true}, async function (obj) {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  lat = getState("bluelink.0.KNACC81GFN5121414.vehicleLocation.lat").val;
-  lon = getState("bluelink.0.KNACC81GFN5121414.vehicleLocation.lon").val;
+  lat = getState("bluelink.0.KNACC81GFN5121414.vehicleLocation.lat")?.val;
+  lon = getState("bluelink.0.KNACC81GFN5121414.vehicleLocation.lon")?.val;
   result = await OSM(lat, lon);
   hausnummer = '';
   strasse = '';

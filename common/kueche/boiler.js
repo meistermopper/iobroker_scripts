@@ -8,7 +8,7 @@ let reaktivierungsTimer = null;
 
 // Einschalten morgens (falls jemand zu Hause ist)
 schedule("0 5 * * *", () => {
-  if (!getState(ID_AUSSERHAUS).val) {
+  if (!getState(ID_AUSSERHAUS)?.val) {
     setState(ID_BOILER, true);
     //console.log("Boiler: Regelmäßiges Einschalten um 05:00 Uhr.");
   }
@@ -24,7 +24,7 @@ schedule("0 21 * * *", () => {
 
 on({ id: ID_BOILER, change: "ne" }, (obj) => {
   const boilerSollteAnSein = compareTime("05:00", "21:00", "between");
-  const istAusserhaus = getState(ID_AUSSERHAUS).val;
+  const istAusserhaus = getState(ID_AUSSERHAUS)?.val;
   const wurdeAusgeschaltet = obj.state.val === false;
 
   // Nur reagieren, wenn er zwischen 5 und 21 Uhr AUS geht, obwohl jemand zu Hause ist

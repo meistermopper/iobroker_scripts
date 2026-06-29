@@ -48,7 +48,7 @@ on({ id: HUB_CONNECTED, change: "ne", ack: true }, (obj) => {
   // Fall B: Hub geht offline -> Recovery nach 30s "Gedenkzeit" starten
   if (obj.state.val === false && !isRecovering) {
     setTimeout(() => {
-      if (getState(HUB_CONNECTED).val === false) {
+      if (getState(HUB_CONNECTED)?.val === false) {
         startHardReset();
       }
     }, 30000);

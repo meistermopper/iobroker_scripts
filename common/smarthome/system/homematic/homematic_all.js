@@ -43,7 +43,7 @@ function checkHomematicService() {
     // --- TEIL 1: Hardware-Meldungen scannen ---
     function processSelector(selector) {
         selector.each(id => {
-            if (existsState(id) && getState(id).val === true) {
+            if (existsState(id) && getState(id)?.val === true) {
                 const obj = getObject(id);
                 const deviceName = (obj && obj.common && obj.common.name) ? obj.common.name : id;
                 const type = id.split('.').pop();
@@ -95,7 +95,7 @@ setTimeout(checkHomematicService, 1000); // 1 Sekunde Verzögerung nach Start
 
 // --- TELEGRAM BENACHRICHTIGUNG ---
 on({ id: `${PATH}.Anzahl`, change: 'gt' }, (obj) => {
-    const text = getState(`${PATH}.Text`).val;
+    const text = getState(`${PATH}.Text`)?.val;
     const anzahl = obj.state.val;
 
     const msg = `⚠️ <b>Homematic Servicemeldung</b>\n\nAktuelle Meldungen (${anzahl}):\n${text.replace(/<br>/g, '\n')}`;
@@ -106,7 +106,7 @@ on({ id: `${PATH}.Anzahl`, change: 'gt' }, (obj) => {
     });
 
     // Optional: Auch an Gotify senden
-    const token = getState('0_userdata.0.gotifytoken.iobroker').val;
+    const token = getState('0_userdata.0.gotifytoken.iobroker')?.val;
     if (token) {
         const url = `https://mygotify.meistermopper.de/message?token=${token}`;
         const payload = {

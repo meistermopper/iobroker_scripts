@@ -28,7 +28,7 @@ schedule("0 4 * * *", async () => {
   });
 
   // 5. Versand an Gotify via cURL
-  const token = getState("0_userdata.0.gotifytoken.iobroker").val;
+  const token = getState("0_userdata.0.gotifytoken.iobroker")?.val;
   if (token) {
     const command = `curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker: Astro" -F "message=${msgPlain}" -F "priority=1"`;
     exec(command, (error) => {

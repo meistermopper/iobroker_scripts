@@ -87,13 +87,13 @@ function hochdimmen() {
 
 // Zeitpläne
 schedule("0 5 * * 1-5", () => {
-    if (getState('0_userdata.0.Heizen.Programme.standard').val && !getState('feiertage.0.heute.boolean').val) {
+    if (getState('0_userdata.0.Heizen.Programme.standard')?.val && !getState('feiertage.0.heute.boolean')?.val) {
         Morgenprogramm("Standard");
     }
 });
 
 schedule("30 5 * * 1-5", () => {
-    if (getState('0_userdata.0.Heizen.Programme.Homeoffice').val && !getState('feiertage.0.heute.boolean').val) {
+    if (getState('0_userdata.0.Heizen.Programme.Homeoffice')?.val && !getState('feiertage.0.heute.boolean')?.val) {
         Morgenprogramm("Homeoffice");
     }
 });

@@ -28,7 +28,7 @@ on({ id: ID_SENDER_TRIGGER, change: 'any' }, async (obj) => {
 
     if (!config) return; // Falls der Sender nicht in der Liste ist, nichts tun
 
-    const denonAn = getState(ID_DENON_POWER).val;
+    const denonAn = getState(ID_DENON_POWER)?.val;
     let volume = config.vol;
     let delay = 0;
 

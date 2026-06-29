@@ -16,7 +16,7 @@ const piholeInstances = [
 piholeInstances.forEach((inst) => {
   on({ id: inst.blocked, change: "gt" }, (obj) => {
     const blocked = obj.state.val;
-    const total = getState(inst.total).val;
+    const total = getState(inst.total)?.val;
 
     if (total > 0) {
       const percentage = Math.round((blocked * 100) / total);

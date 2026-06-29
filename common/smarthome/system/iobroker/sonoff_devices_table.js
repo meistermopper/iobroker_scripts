@@ -34,7 +34,7 @@ function findStateDeep(devicePath, searchKeys, fallback) {
   for (let key of searchKeys) {
     let fullPath = devicePath + "." + key;
     if (existsState(fullPath)) {
-      let val = getState(fullPath).val;
+      let val = getState(fullPath)?.val;
       // Falls wir eine Zahl oder einen Text finden, der nicht leer ist, nehmen wir ihn.
       if (val !== null && val !== undefined && val !== "") return val;
     }
@@ -89,7 +89,7 @@ async function collectData() {
       if (existsState(pId)) {
         powerStates.push({
           id: pId,
-          val: getState(pId).val,
+          val: getState(pId)?.val,
           label: pId.split(".").pop(),
         });
       }
@@ -104,7 +104,7 @@ async function collectData() {
       rssi: rssi,
       rssiColor: getRSSIColor(rssi),
       uptime: uptime,
-      version: getState(id).val.split("(")[0],
+      version: getState(id)?.val.split("(")[0],
       power: powerStates,
     });
   });
@@ -202,7 +202,7 @@ async function run() {
   // Refresh-Trigger zurücksetzen.
   if (
     existsState(CONFIG.dpTrigger) &&
-    getState(CONFIG.dpTrigger).val === true
+    getState(CONFIG.dpTrigger)?.val === true
   ) {
     setState(CONFIG.dpTrigger, false, true);
   }

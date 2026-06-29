@@ -33,18 +33,18 @@ schedule({astro: "sunrise", shift: 0}, async function () {
       text: '+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++'
   });
   console.log("telegram: " + '+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++');
-  exec((['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker").val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++','" -F "priority=5"'].join('')));
-  console.log("exec: " + (['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker").val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++','" -F "priority=5"'].join('')));
+  exec((['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker")?.val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++','" -F "priority=5"'].join('')));
+  console.log("exec: " + (['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker")?.val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++','" -F "priority=5"'].join('')));
 });
 schedule({astro: "sunset", shift: 0}, async function () {
-  if (!getState("0_userdata.0.Unifi.Anwesenheit.Kiki_IsOnline").val && !getState("0_userdata.0.Unifi.Anwesenheit.Thomas_IsOnline").val) {
+  if (!getState("0_userdata.0.Unifi.Anwesenheit.Kiki_IsOnline")?.val && !getState("0_userdata.0.Unifi.Anwesenheit.Thomas_IsOnline")?.val) {
     await ZufallLicht();
     sendTo("telegram", "send", {
         text: '+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++'
     });
     console.log("telegram: " + '+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++');
-    exec((['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker").val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++','" -F "priority=5"'].join('')));
-    console.log("exec: " + (['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker").val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++','" -F "priority=5"'].join('')));
+    exec((['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker")?.val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++','" -F "priority=5"'].join('')));
+    console.log("exec: " + (['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker")?.val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++','" -F "priority=5"'].join('')));
   }
 });
 on({id: new RegExp('0_userdata\\.0\\.Unifi\\.Anwesenheit\\.Kiki_IsOnline' + "$|" + '0_userdata\\.0\\.Unifi\\.Anwesenheit\\.Thomas_IsOnline' + "$"), change: "ne"}, async function (obj) {
@@ -54,16 +54,16 @@ on({id: new RegExp('0_userdata\\.0\\.Unifi\\.Anwesenheit\\.Kiki_IsOnline' + "$|"
         text: '+++ 💡 Das Programm zur Zufallsbeleuchtung wurde beendet +++'
     });
     console.log("telegram: " + '+++ 💡 Das Programm zur Zufallsbeleuchtung wurde beendet +++');
-    exec((['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker").val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde beendet +++','" -F "priority=5"'].join('')));
-    console.log("exec: " + (['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker").val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde beendet +++','" -F "priority=5"'].join('')));
+    exec((['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker")?.val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde beendet +++','" -F "priority=5"'].join('')));
+    console.log("exec: " + (['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker")?.val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde beendet +++','" -F "priority=5"'].join('')));
   } else if (compareTime(getAstroDate("sunrise", undefined, 0), getAstroDate("sunset", undefined, 0), "not between", null)) {
     await ZufallLicht();
     sendTo("telegram", "send", {
         text: '+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++'
     });
     console.log("telegram: " + '+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++');
-    exec((['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker").val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++','" -F "priority=5"'].join('')));
-    console.log("exec: " + (['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker").val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++','" -F "priority=5"'].join('')));
+    exec((['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker")?.val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++','" -F "priority=5"'].join('')));
+    console.log("exec: " + (['curl "https://mygotify.meistermopper.de/message?token=',getState("0_userdata.0.gotifytoken.iobroker")?.val,'" -F "title=','ioBroker:','\n','" -F "message=','+++ 💡 Das Programm zur Zufallsbeleuchtung wurde gestartet +++','" -F "priority=5"'].join('')));
   }
 });
 

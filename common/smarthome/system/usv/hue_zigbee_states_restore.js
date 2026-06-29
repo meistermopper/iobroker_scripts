@@ -36,7 +36,7 @@ const CONFIG = {
  */
 async function processPowerRestore() {
   try {
-    const storeVal = getState(CONFIG.idStore).val;
+    const storeVal = getState(CONFIG.idStore)?.val;
 
     // Prüfung: Gibt es überhaupt einen gesicherten Zustand?
     if (!storeVal || storeVal === "{}" || storeVal === "[]") {
@@ -55,7 +55,7 @@ async function processPowerRestore() {
 
       // Falls das Gerät im ioBroker existiert...
       if (existsState(id)) {
-        const currentVal = getState(id).val;
+        const currentVal = getState(id)?.val;
 
         // Nur schalten, wenn der aktuelle Zustand vom gesicherten abweicht.
         // Das schont die Funk-Bandbreite enorm!

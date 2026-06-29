@@ -5,8 +5,8 @@ const ID_RESULT    = '0_userdata.0.heos.Wohnzimmer.Marantz_läuft';
 
 // --- LOGIK ---
 on({ id: [ID_ZONE_MAIN, ID_ZONE_2], change: 'ne' }, () => {
-    const mainAn = getState(ID_ZONE_MAIN).val;
-    const zone2An = getState(ID_ZONE_2).val;
+    const mainAn = getState(ID_ZONE_MAIN)?.val;
+    const zone2An = getState(ID_ZONE_2)?.val;
 
     // Wenn Main ODER Zone 2 an ist, setze den Status auf true
     const laeuft = (mainAn || zone2An);

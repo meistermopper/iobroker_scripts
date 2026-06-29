@@ -145,24 +145,24 @@ $('unifi.0.default.vouchers.*.code').each(function(id, i) {           // hier ei
       
           counter++; 
           let val2help;                                      // SEHR WICHTIG - MUSS IN JEDER SCHLEIFE INTEGRIERT SEIN
-          val0=getState(id).val;
-          val1=getState(id.replace("code","create_time")).val;
-          val2help=getState(id.replace("code","duration")).val*60;
-          val3=getState(id.replace("code","qos_overwrite")).val;
-          val4=getState(id.replace("code","quota")).val;
-          val5=getState(id.replace("code","note")).val;
-          val6=getState(id.replace("code","used")).val;
+          val0=getState(id)?.val;
+          val1=getState(id.replace("code","create_time"))?.val;
+          val2help=getState(id.replace("code","duration"))?.val*60;
+          val3=getState(id.replace("code","qos_overwrite"))?.val;
+          val4=getState(id.replace("code","quota"))?.val;
+          val5=getState(id.replace("code","note"))?.val;
+          val6=getState(id.replace("code","used"))?.val;
  
  
          val2=Math.floor( ((val2help)/60/60/24) )+"d "+ Math.floor(((val2help)/60/60) % 24) +"h "+ Math.floor( ((val2help)/60) % 60 )+" m" ;
  
-        //  if (getState(id).val==null) {val4="never used"}; //log(id)}; 
+        //  if (getState(id)?.val==null) {val4="never used"}; //log(id)}; 
      
           if (val6==0) {val6="❌"} else{val6="🔵"} 
  
           val7=""; val8=""; 
-          if (existsState(id.replace("code","qos_rate_max_down"))) { val7=getState(id.replace("code","qos_rate_max_down")).val + " kbps";} 
-          if (existsState(id.replace("code","qos_rate_max_up"))) {  val8=getState(id.replace("code","qos_rate_max_up")).val  + " kbps";}
+          if (existsState(id.replace("code","qos_rate_max_down"))) { val7=getState(id.replace("code","qos_rate_max_down"))?.val + " kbps";} 
+          if (existsState(id.replace("code","qos_rate_max_up"))) {  val8=getState(id.replace("code","qos_rate_max_up"))?.val  + " kbps";}
            
  
      tabelleBind(); //HIER NICHTS ÄNDERN : HIER WERDEN DIE DATEN DER SCHLEIFE ZUSAMMENGESETZT  - diese function muss als letztes in der eigenen schleife aufgerufen werden

@@ -30,7 +30,7 @@ function notify(msg, speak = false, prio = 5) {
     sendTo("telegram", "send", { text: msg });
 
     // 2. Gotify
-    const token = getState(IDS.gotifyToken).val;
+    const token = getState(IDS.gotifyToken)?.val;
     if (token) {
         // Umlaute/Sonderzeichen URL-konform machen oder curl-Parameter sauber halten
         exec(`curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker: PV" -F "message=${msg}" -F "priority=${prio}"`);
@@ -49,8 +49,8 @@ schedule({ astro: "goldenHour", shift: 0 }, async () => {
     // Abbrechen, wenn bereits eine "Voll"-Meldung heute kam
     if (messageSent) return;
 
-    const soc = getState(IDS.batSoc).val;
-    const minSoc = getState(IDS.minSocRead).val;
+    const soc = getState(IDS.batSoc)?.val;
+    const minSoc = getState(IDS.minSocRead)?.val;
     const month = new Date().getMonth() + 1;
 
     // Kriterium: Akku wurde nicht voll (< 84%)
@@ -95,7 +95,7 @@ on({ id: IDS.batSoc, change: "ne" }, async (obj) => {
 
         // --- SONDERLOGIK WINTER ---
         // Wenn Winter UND MinSoC > 20%
-        const minSoc = getState(IDS.minSocRead).val;
+        const minSoc = getState(IDS.minSocRead)?.val;
 
         if (minSoc > 20 && isWinter()) {
             // Wenn MinSoC noch nicht 30 ist -> Setze auf 30%

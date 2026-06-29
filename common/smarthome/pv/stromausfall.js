@@ -10,7 +10,7 @@
 
 const dpGridAlarm = "modbus.0.inputRegisters.227.64_Grid_lost_alarm";
 const dpPersistPath = "0_userdata.0.System.Netzausfall_Start";
-const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker").val;
+const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
 const sayitInstances = [
   "sayit.0",
   "sayit.1",
@@ -55,7 +55,7 @@ function speakRecovery(text) {
 
 on({ id: dpGridAlarm, change: "ne" }, async (obj) => {
   const status = obj.state.val;
-  const startTimePersist = getState(dpPersistPath).val;
+  const startTimePersist = getState(dpPersistPath)?.val;
 
   if (status === 2) {
     // --- NETZAUSFALL ---

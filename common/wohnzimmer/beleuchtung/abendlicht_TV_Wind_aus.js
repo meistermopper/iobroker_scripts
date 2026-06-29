@@ -26,7 +26,7 @@ schedule("30 23 * * *", async () => {
   ];
 
   schalter.forEach((id) => {
-    if (existsState(id) && getState(id).val) {
+    if (existsState(id) && getState(id)?.val) {
       setState(id, false);
     }
   });

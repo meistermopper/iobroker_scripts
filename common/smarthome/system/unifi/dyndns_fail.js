@@ -30,11 +30,11 @@ schedule("*/30 * * * *", async () => {
       return;
     }
 
-    const unifiIP = getState(ID_UNIFI_IP).val; // Die IP, die der UniFi-Adapter aktuell meldet
+    const unifiIP = getState(ID_UNIFI_IP)?.val; // Die IP, die der UniFi-Adapter aktuell meldet
 
     // WAN-IP für die Nachricht auslesen
     let dyndnsIP = existsState(ID_WAN_IP)
-      ? getState(ID_WAN_IP).val
+      ? getState(ID_WAN_IP)?.val
       : "unbekannt";
 
     // --- 4. VERGLEICHS-LOGIK ---

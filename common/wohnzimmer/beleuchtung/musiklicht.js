@@ -21,7 +21,7 @@ let autoModusMusik = false; // Merker für Automatik-Schaltung
 // --- 2. HILFSFUNKTIONEN ---
 
 function istDunkelMusik() {
-  const lux = getState(ID_ILLU).val || 0;
+  const lux = getState(ID_ILLU)?.val || 0;
   const istNacht = compareTime(
     getAstroDate("sunrise"),
     getAstroDate("goldenHour"),
@@ -31,15 +31,15 @@ function istDunkelMusik() {
 }
 
 function musikAktiv() {
-  return HARMONY_MUSIK.some((id) => getState(id).val === 2);
+  return HARMONY_MUSIK.some((id) => getState(id)?.val === 2);
 }
 
 // --- 3. HAUPTLOGIK ---
 
 on({ id: [...HARMONY_MUSIK, ID_ILLU], change: "ne" }, async (obj) => {
-  const lux = getState(ID_ILLU).val || 0;
+  const lux = getState(ID_ILLU)?.val || 0;
   const amHoeren = musikAktiv();
-  const quaderAn = getState(ID_QUADER).val;
+  const quaderAn = getState(ID_QUADER)?.val;
   const istLuxAenderung = obj.id === ID_ILLU;
 
   // FALL A: MUSIK-MODUS STARTEN

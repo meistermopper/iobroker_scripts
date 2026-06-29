@@ -1,6 +1,6 @@
 // --- KONFIGURATION ---
 const dpFritzActive = 'tr-064.0.devices.Fritzbox.active';
-const gotifyToken   = getState('0_userdata.0.gotifytoken.iobroker').val;
+const gotifyToken   = getState('0_userdata.0.gotifytoken.iobroker')?.val;
 const CHECK_DELAY   = 420000; // 7 Minuten Verzögerung
 
 let fritzTimeout = null;
@@ -22,7 +22,7 @@ on({ id: dpFritzActive, change: 'ne' }, (obj) => {
         
         fritzTimeout = setTimeout(() => {
             // Nach Ablauf der Zeit prüfen: Immer noch offline?
-            if (!getState(dpFritzActive).val) {
+            if (!getState(dpFritzActive)?.val) {
                 fritzNotify('❌ Die Fritzbox ist offline.');
             }
             fritzTimeout = null;

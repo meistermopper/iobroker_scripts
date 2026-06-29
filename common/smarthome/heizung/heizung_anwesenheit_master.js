@@ -36,11 +36,11 @@ const KALENDER_IDS = [
 // --- 3. LOGIK: KALENDER -> AUTOMATISCHER STATUS ---
 on({ id: KALENDER_IDS, change: "ne" }, () => {
   const istFrei =
-    getState("ical.1.events.0.today.Urlaub").val ||
-    getState("ical.1.events.0.today.dienstfrei").val ||
-    getState("feiertage.0.heute.boolean").val;
+    getState("ical.1.events.0.today.Urlaub")?.val ||
+    getState("ical.1.events.0.today.dienstfrei")?.val ||
+    getState("feiertage.0.heute.boolean")?.val;
 
-  if (!getState(PROG.AUSSERHAUS).val) {
+  if (!getState(PROG.AUSSERHAUS)?.val) {
     setState(PROG.ZUHAUSE, istFrei, true);
     console.log(`[Heizung] Kalender-Update: Zuhause-Modus ist nun ${istFrei}`);
   }
@@ -75,8 +75,8 @@ on(
 
 // --- 5. LOGIK: HAUPT-MODI (AUSSERHAUS / ZUHAUSE) ---
 on({ id: [PROG.AUSSERHAUS, PROG.ZUHAUSE], change: "ne" }, (obj) => {
-  const weg = getState(PROG.AUSSERHAUS).val;
-  const hier = getState(PROG.ZUHAUSE).val;
+  const weg = getState(PROG.AUSSERHAUS)?.val;
+  const hier = getState(PROG.ZUHAUSE)?.val;
 
   if (weg) {
     setState(PROG.ZUHAUSE, false, true);
@@ -110,14 +110,14 @@ function setMainProfiles(profil, msg) {
   setStateDelayed(HEIZUNGEN.buero, profil, 8000, false);
 
   // Sonder-Räume mit "Sperr-Abfrage"
-  if (!getState(PROG.TAGUNG).val) {
+  if (!getState(PROG.TAGUNG)?.val) {
     setStateDelayed(HEIZUNGEN.konferenz, profil, 10000, false);
   }
-  if (!getState(PROG.GAST_UNTEN).val) {
+  if (!getState(PROG.GAST_UNTEN)?.val) {
     setStateDelayed(HEIZUNGEN.gast_unten, profil, 12000, false);
   }
   // Bad Oben wird nur geschaltet, wenn weder Gast Oben noch Tagung aktiv sind
-  if (!getState(PROG.GAST_OBEN).val && !getState(PROG.TAGUNG).val) {
+  if (!getState(PROG.GAST_OBEN)?.val && !getState(PROG.TAGUNG)?.val) {
     setStateDelayed(HEIZUNGEN.gast_oben, profil, 14000, false);
     setStateDelayed(HEIZUNGEN.bad_oben, profil, 16000, false); // Master-DP
   }

@@ -39,7 +39,7 @@ Licht_wurde_angemacht = false;
 on({id: 'hue.0.Bewegung_Küche.presence', change: "gt"}, function (obj) {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  if (getState("hue.0.Hue_ambient_light_sensor_1.lightlevel").val < 4000) {
+  if (getState("hue.0.Hue_ambient_light_sensor_1.lightlevel")?.val < 4000) {
     (function () {if (Licht_wurde_angemacht) {clearTimeout(Licht_wurde_angemacht); Licht_wurde_angemacht = null;}})();
     (function () {if (timeout3) {clearTimeout(timeout3); timeout3 = null;}})();
     (function () {if (timeout4) {clearTimeout(timeout4); timeout4 = null;}})();

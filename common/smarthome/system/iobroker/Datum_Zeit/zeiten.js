@@ -42,7 +42,7 @@ schedule("5 0 * * *", async () => {
   const min = (tageslaengeMin % 60).toString().padStart(2, "0");
 
   // Werte speichern
-  const gesternMin = getState(`${BASE_PATH}tageslaenge_in_minuten`).val;
+  const gesternMin = getState(`${BASE_PATH}tageslaenge_in_minuten`)?.val;
   setState(
     `${BASE_PATH}tageslaenge_in_minuten_gestern`,
     String(gesternMin),
@@ -76,7 +76,7 @@ schedule("* * * * *", () => {
   const now = new Date();
   const sunset = getAstroDate("sunset");
   const sunrise = getAstroDate("sunrise");
-  const tageslaengeMin = getState(`${BASE_PATH}tageslaenge_in_minuten`).val;
+  const tageslaengeMin = getState(`${BASE_PATH}tageslaenge_in_minuten`)?.val;
 
   // Minuten bis Sonnenuntergang
   let restLichtMin = Math.floor((sunset - now) / 60000);
@@ -110,7 +110,7 @@ schedule("* * * * *", () => {
       restNachtMin = Math.floor((sunrise - now) / 60000);
     }
 
-    const nTotal = getState(`${BASE_PATH}nachtlaenge_in_minuten`).val;
+    const nTotal = getState(`${BASE_PATH}nachtlaenge_in_minuten`)?.val;
     const nProzent = Math.round((restNachtMin * 100) / nTotal);
     setState(`${BASE_PATH}nachtlaenge_fortschritt`, nProzent.toString(), true);
 
@@ -124,13 +124,13 @@ schedule("* * * * *", () => {
 
 // --- 4. MOND & SOLAR NOON (Einmal nachts) ---
 schedule("3 0 * * *", () => {
-  const mAuf = getState("pirate-weather.0.weather.daily.00.moonrise").val;
-  const mUnter = getState("pirate-weather.0.weather.daily.00.moonset").val;
+  const mAuf = getState("pirate-weather.0.weather.daily.00.moonrise")?.val;
+  const mUnter = getState("pirate-weather.0.weather.daily.00.moonset")?.val;
   setState(`${BASE_PATH}mondaufgang`, formatTime(new Date(mAuf)), true);
   setState(`${BASE_PATH}monduntergang`, formatTime(new Date(mUnter)), true);
 });
 
 schedule("2 0 * * *", () => {
-  const sNoon = getState("pirate-weather.0.weather.daily.00.solarNoon").val;
+  const sNoon = getState("pirate-weather.0.weather.daily.00.solarNoon")?.val;
   setState(`${USER_DATA_PATH}SolarNoon`, formatTime(new Date(sNoon)), true);
 });

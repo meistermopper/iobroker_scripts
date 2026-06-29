@@ -79,7 +79,7 @@ const FIXED_CHARGE_W = 3960; // Fixe Leistung bei 6A (220V * 3 Phasen * 6A)
 const CAR_CAPACITY_KWH = 81.4;
 const RANGE_SUMMER = 550;
 const RANGE_WINTER = 450;
-const GOTIFY_TOKEN = getState("0_userdata.0.gotifytoken.iobroker").val;
+const GOTIFY_TOKEN = getState("0_userdata.0.gotifytoken.iobroker")?.val;
 
 // --- TIMING KONSTANTEN ---
 const DEBOUNCE_STOP_MS = 45000;  // 45 Sek. Wartezeit vor endgültigem Stopp
@@ -131,9 +131,9 @@ async function initLadeSystem() {
     await createStateAsync(IDS.u_origSoc, 0, { type: "number", name: "Original MinSoc Backup" });
 
   // Laufende Prozesse nach Skript-Neustart wiederherstellen
-  if (getState(IDS.wbStat).val === "Charging") {
-      startZeitLaden = getState(IDS.u_startTs).val || Date.now();
-      const savedSoc = getState(IDS.u_origSoc).val;
+  if (getState(IDS.wbStat)?.val === "Charging") {
+      startZeitLaden = getState(IDS.u_startTs)?.val || Date.now();
+      const savedSoc = getState(IDS.u_origSoc)?.val;
       originalMinSoc = (savedSoc !== null && savedSoc !== 0) ? savedSoc : null;
       setState(IDS.u_power, FIXED_CHARGE_W, true);
   }
@@ -147,10 +147,10 @@ initLadeSystem();
  */
 function getPowerMetrics() {
     return {
-        pvPower: Math.max(0, Number(getState(IDS.pvPower).val) || 0),
-        pvAverage: Number(getState(IDS.pvAverage).val) || 0,
-        batSoc: Number(getState(IDS.batSocPV).val) || 0,
-        evSoc: Number(getState(IDS.soc).val) || 0,
+        pvPower: Math.max(0, Number(getState(IDS.pvPower)?.val) || 0),
+        pvAverage: Number(getState(IDS.pvAverage)?.val) || 0,
+        batSoc: Number(getState(IDS.batSocPV)?.val) || 0,
+        evSoc: Number(getState(IDS.soc)?.val) || 0,
     };
 }
 
@@ -162,7 +162,7 @@ function getPowerMetrics() {
 async function triggerStartSequence(reason = "PV-Surplus") {
   if (isStartingSequenceActive) return;
 
-  const wbStatus = getState(IDS.wbStat).val;
+  const wbStatus = getState(IDS.wbStat)?.val;
   const readyToStart = ["Preparing", "Finishing", "SuspendedEVSE", "SuspendedEV"].includes(wbStatus);
 
   if (!readyToStart) {
@@ -209,7 +209,7 @@ async function forceStopCharging() {
         // Warten, damit die Wallbox Zeit zur Verarbeitung hat.
         await wait(FORCE_STOP_RETRY_DELAY_MS);
 
-        if (getState(IDS.wbStat).val === "Charging") {
+        if (getState(IDS.wbStat)?.val === "Charging") {
             console.warn("[EV3 Master] Force stop attempt 1 failed. Proceeding with Availability Toggle.");
             // Versuch 2: Verfügbarkeitswechsel (Availability-Toggle)
             console.log("[EV3 Master] Force stop attempt 2: Toggling wbAvail (false -> true).");
@@ -286,7 +286,7 @@ function ev3Notify(text, prio = 1, spoken = null) {
  */
 schedule("* * * * *", async () => {
   const { pvPower: current, pvAverage: oldAvg, batSoc } = getPowerMetrics();
-  const inertia = Number(getState(IDS.u_smooth).val) || 10;
+  const inertia = Number(getState(IDS.u_smooth)?.val) || 10;
 
   let alpha;
   if (current < oldAvg) {
@@ -311,17 +311,17 @@ schedule("* * * * *", async () => {
  * vorausgesetzt der Automatik-Schalter in VIS ist aktiv.
  */
 function checkPvAutomation() {
-  const isAuto = !!getState(IDS.u_auto).val; // Automatik-Schalter
+  const isAuto = !!getState(IDS.u_auto)?.val; // Automatik-Schalter
   const { pvAverage: mittel, batSoc, evSoc } = getPowerMetrics(); // Aktuelle Leistungswerte
 
   // Abbrechen, wenn Wallbox offline ist
-  const isConnected = !!getState(IDS.wbConn).val;
+  const isConnected = !!getState(IDS.wbConn)?.val;
   if (!isConnected && mittel > PV_START_LIMIT) console.warn("[EV3 Master] Start not possible: Wallbox connection missing (OCPP Offline)");
   if (!isAuto || !isConnected) return;
 
-  const isTransActive = !!getState(IDS.wbTrans).val;
-  const wbStatus = getState(IDS.wbStat).val;
-  const limitCar = getState(IDS.targetSocSrv).val || 100;
+  const isTransActive = !!getState(IDS.wbTrans)?.val;
+  const wbStatus = getState(IDS.wbStat)?.val;
+  const limitCar = getState(IDS.targetSocSrv)?.val || 100;
 
   // Diagnose-Log für ausreichenden Überschuss, falls nicht geladen wird
   //if (!isTransActive && (mittel > (PV_START_LIMIT - 500))) {
@@ -363,7 +363,7 @@ on({ id: IDS.wbConn, val: true, change: "ne" }, checkPvAutomation);
 on({ id: IDS.wbTrans, change: "ne" }, async (obj) => {
     // Wenn wbTrans auf false geht, aber wbStat immer noch "Charging" ist,
     // bedeutet dies, dass der Stopp-Befehl möglicherweise nicht korrekt verarbeitet wurde.
-    if (obj.state.val === false && getState(IDS.wbStat).val === "Charging") {
+    if (obj.state.val === false && getState(IDS.wbStat)?.val === "Charging") {
         await forceStopCharging();
     }
 });
@@ -377,7 +377,7 @@ on({ id: IDS.wbTrans, change: "ne" }, async (obj) => {
  */
 function updateChargeStatistics(sessionDurationMs) {
     const dauerMin = Math.max(1, Math.round(sessionDurationMs / 60000)); // Mindestens 1 Minute zählen
-    const currentTotalMin = (getState(IDS.u_timeDay).val || 0);
+    const currentTotalMin = (getState(IDS.u_timeDay)?.val || 0);
     const totalMinToday = currentTotalMin + dauerMin;
 
     // Energie und Reichweite
@@ -396,7 +396,7 @@ function updateChargeStatistics(sessionDurationMs) {
 // Haupt-Überwacher für den Wallbox-Status (z. B. Charging, Preparing, SuspendedEV...)
 on({ id: IDS.wbStat, change: "ne" }, (obj) => {
   const status = String(obj.state.val);
-  const isAuto = !!getState(IDS.u_auto).val;
+  const isAuto = !!getState(IDS.u_auto)?.val;
 
   // FALL 1: Das Fahrzeug lädt aktiv
   if (status === "Charging") {
@@ -422,9 +422,9 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
     // Verhindert, dass der Hausspeicher entleert wird, indem der Min-SoC der Hausbatterie temporär
     // auf den aktuellen SoC-Wert gesetzt wird.
     if (!isAuto && originalMinSoc === null) {
-      originalMinSoc = getState(IDS.minSocRead).val;
+      originalMinSoc = getState(IDS.minSocRead)?.val;
       setState(IDS.u_origSoc, originalMinSoc, true);
-      const currentBatSoc = getState(IDS.batSocPV).val;
+      const currentBatSoc = getState(IDS.batSocPV)?.val;
       // MinSoc sicherheitshalber nicht unter 0 setzen
       setState(IDS.minSocSet, Math.max(0, currentBatSoc));
       const msg = `Manuelles Laden gestartet. MinSoc auf ${currentBatSoc}% (vorher: ${originalMinSoc}%)`;
@@ -462,8 +462,8 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
 
       // 3. Prüfen, ob das Auto das Ladeziel erreicht hat:
       // Vergleicht den aktuellen SoC des Kia mit dem eingestellten Ladeziel der Wallbox/des Fahrzeugs
-      const evSoc = Number(getState(IDS.soc).val) || 0;
-      const targetSoc = Number(getState(IDS.targetSocSrv).val) || 100;
+      const evSoc = Number(getState(IDS.soc)?.val) || 0;
+      const targetSoc = Number(getState(IDS.targetSocSrv)?.val) || 100;
 
       let msgText = `❌ EV3 Ladung beendet. Heute geladen: ${stats.formattedTime} (+approx. ${stats.kmToday} km)`;
       let spokenText = `Ladung beendet. Heute geladen: ${stats.spokenTime}. Reichweite approx. ${stats.kmToday} Kilometer.`;

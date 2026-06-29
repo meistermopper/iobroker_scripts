@@ -18,8 +18,8 @@ const ID_LICHT   = 'alias.0.garderobe.licht.POWER';
  * Wir sorgen dafür, dass das Licht beim Start des Skripts sofort 
  * den korrekten Zustand einnimmt, basierend auf dem Melder.
  */
-const aktuellerStatus = !!getState(ID_PRASENZ).val; // Aktuellen Sensorwert holen
-const lichtStatus     = !!getState(ID_LICHT).val;   // Aktuellen Lichtwert holen
+const aktuellerStatus = !!getState(ID_PRASENZ)?.val; // Aktuellen Sensorwert holen
+const lichtStatus     = !!getState(ID_LICHT)?.val;   // Aktuellen Lichtwert holen
 
 // Nur schalten, wenn der Ist-Zustand des Lichts nicht zum Melder passt
 if (lichtStatus !== aktuellerStatus) {
@@ -40,7 +40,7 @@ on({ id: ID_PRASENZ, change: 'ne' }, (obj) => {
     // Performance-Check: Wir prüfen erst den aktuellen Zustand der Lampe.
     // Warum? Wenn die Lampe schon AN ist und wir nochmal "AN" senden, 
     // erzeugt das unnötigen Funkverkehr auf deinem Netzwerk.
-    const lichtIstAn = !!getState(ID_LICHT).val;
+    const lichtIstAn = !!getState(ID_LICHT)?.val;
 
     if (istAnwesend && !lichtIstAn) {
         // Fall 1: Bewegung erkannt, aber Licht ist noch aus -> Einschalten

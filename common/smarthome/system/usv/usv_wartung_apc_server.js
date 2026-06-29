@@ -88,7 +88,7 @@ async function stopWartung(reason = "") {
     setState(`${dpPrefix}.Wartung_eingeleitet`, false);
     setState(`${dpPrefix}.Jetzt_Warten`, false);
   }, 15000);
-  const soc = getState(`${upsNutPrefix}.battery.charge`).val;
+  const soc = getState(`${upsNutPrefix}.battery.charge`)?.val;
   sendGlobalNotify(`Wartung Serverschrank beendet (${reason}). Stand: ${soc}%.`, "USV Serverschrank", 1);
 }
 
@@ -100,11 +100,11 @@ async function stopWartung(reason = "") {
  */
 on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
   const soc = obj.state.val;
-  const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`).val;
-  const onBattery = getState(`${upsNutPrefix}.status.onbattery`).val === true;
-  const minSoc = getState(`${dpPrefix}.Minimum_Rest_Prozent`).val;
-  const minMin = getState(`${dpPrefix}.Minimum_Rest_Minuten`).val;
-  const runtime = getState(`${dpPrefix}.Restlaufzeit_in_Minuten`).val;
+  const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`)?.val;
+  const onBattery = getState(`${upsNutPrefix}.status.onbattery`)?.val === true;
+  const minSoc = getState(`${dpPrefix}.Minimum_Rest_Prozent`)?.val;
+  const minMin = getState(`${dpPrefix}.Minimum_Rest_Minuten`)?.val;
+  const runtime = getState(`${dpPrefix}.Restlaufzeit_in_Minuten`)?.val;
 
   // A: Automatisches Ende bei Erreichen der Sicherheitslimits
   if (isWartung && (soc <= minSoc || runtime <= minMin)) {
@@ -116,13 +116,13 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
   if (onBattery) {
     // Prüfung: Soll laut VIS überhaupt gesprochen werden?
     const canSpeak = isWartung
-      ? getState(`${dpPrefix}.Speak_bei_Wartung`).val
-      : getState(`${dpPrefix}.Speak_bei_Ausfall`).val;
+      ? getState(`${dpPrefix}.Speak_bei_Wartung`)?.val
+      : getState(`${dpPrefix}.Speak_bei_Ausfall`)?.val;
     if (!canSpeak) return;
 
     // Nachtruhe nur bei geplanter Wartung, bei echtem Ausfall immer sprechen!
     const isDay = compareTime('08:00', '20:00', 'between');
-    const voiceVol = (isWartung && !isDay) ? null : getState(`${dpPrefix}.Google_lautstaerke`).val;
+    const voiceVol = (isWartung && !isDay) ? null : getState(`${dpPrefix}.Google_lautstaerke`)?.val;
 
     // Sprech-Bremse: Nur bei 5%-Schritten oder kurz vor dem Limit
     if (
@@ -135,9 +135,9 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
       let text = isWartung
         ? "U S V Wartung Serverschrank läuft. "
         : "Warnung. Stromversorgung Serverschrank unterbrochen. ";
-      if (getState(`${dpPrefix}.Speak_Minuten`).val)
+      if (getState(`${dpPrefix}.Speak_Minuten`)?.val)
         text += `Restlaufzeit ${Math.floor(runtime)} Minuten. `;
-      if (getState(`${dpPrefix}.Speak_Prozent`).val)
+      if (getState(`${dpPrefix}.Speak_Prozent`)?.val)
         text += `Akkustand ${soc} Prozent.`;
 
       // WIFI-STABILISATOR: Bei der ersten Ansage (nahe 100%) verzögern
@@ -159,7 +159,7 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
  * Erkennt den Wechsel zwischen Netz und Batterie.
  */
 on({ id: `${upsNutPrefix}.status.onbattery`, change: "ne" }, async (obj) => {
-  const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`).val;
+  const isWartung = getState(`${dpPrefix}.Wartung_eingeleitet`)?.val;
   if (obj.state.val === true && !isWartung) {
     sendGlobalNotify(
       "⚠️ WARNUNG: Stromversorgung Serverschrank unterbrochen!",
@@ -180,7 +180,7 @@ on({ id: `${upsNutPrefix}.status.onbattery`, change: "ne" }, async (obj) => {
  */
 on({ id: `${upsNutPrefix}.battery.runtime`, change: "ne" }, (obj) => {
   const runtimeSec = obj.state.val;
-  const runtimeLow = getState(`${upsNutPrefix}.battery.runtime-low`).val || 0;
+  const runtimeLow = getState(`${upsNutPrefix}.battery.runtime-low`)?.val || 0;
 
   // Formel: (Sekunden - Puffer) / 60
   const realMinutes = (runtimeSec - runtimeLow) / 60;
@@ -191,8 +191,8 @@ on({ id: `${upsNutPrefix}.battery.runtime`, change: "ne" }, (obj) => {
 // ZEITPLAN: Automatische Wartung (jeden 1. Montag alle 2 Monate)
 schedule("0 11 1-7 */2 *", async () => {
   if (new Date().getDay() === 1) {
-    const autoAktiv = getState(`${dpPrefix}.Automatische_Wartung_Aktiv`).val;
-    const soc = getState(`${upsNutPrefix}.battery.charge`).val;
+    const autoAktiv = getState(`${dpPrefix}.Automatische_Wartung_Aktiv`)?.val;
+    const soc = getState(`${upsNutPrefix}.battery.charge`)?.val;
     if (autoAktiv && soc > 89) await startWartung(false);
   }
 });

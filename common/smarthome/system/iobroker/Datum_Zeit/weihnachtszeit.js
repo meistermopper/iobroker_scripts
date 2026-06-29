@@ -16,7 +16,7 @@ schedule("1 0 * * *", () => {
   const monat = jetzt.getMonth() + 1; // 1 = Januar, 12 = Dezember
   const datumString = `${tag}.${monat}.${jetzt.getFullYear()}`;
 
-  const istAktiv = getState(ID_MODUS).val;
+  const istAktiv = getState(ID_MODUS)?.val;
 
   // --- LOGIK: START (Dezember, nach dem 7.12.) ---
   if (monat === 12 && tag > 7 && !istAktiv) {

@@ -110,7 +110,7 @@ async function neutralizeDevice(devicePath, reason) {
         }
 
         // Nur neutralisieren, wenn die IP nicht schon 0.0.0.0 ist
-        if (existsState(addrId) && getState(addrId).val !== '0.0.0.0') {
+        if (existsState(addrId) && getState(addrId)?.val !== '0.0.0.0') {
             log(`Neutralisierung: ${devicePath} wird stillgelegt (IP/Port -> 0). Grund: ${reason}`, 'warn');
 
             // SCHRITT 2: IP und Port auf ungültig setzen
@@ -119,7 +119,7 @@ async function neutralizeDevice(devicePath, reason) {
 
             // SCHRITT 3: Name zur visuellen Kontrolle markieren
             if (existsState(nameId)) {
-                await setStateAsync(nameId, 'BANNED - ' + (getState(nameId).val || 'Unknown'), true);
+                await setStateAsync(nameId, 'BANNED - ' + (getState(nameId)?.val || 'Unknown'), true);
             }
 
             // Nach 10 Sekunden wieder für Trigger freigeben
@@ -226,14 +226,14 @@ async function performDeepClean() {
 
         // Suche über IPs in den verbliebenen Objekten
         $(adapterInstance + '.*.address').each(id => {
-            if (bannedIPs.includes(getState(id).val)) {
+            if (bannedIPs.includes(getState(id)?.val)) {
                 pathsToFix.add(id.split('.').slice(0, 3).join('.'));
             }
         });
 
         // Suche über Namen (Normalisiert)
         $(adapterInstance + '.*.name').each(id => {
-            const name = getState(id).val;
+            const name = getState(id)?.val;
             if (name && bannedDeviceNames.includes(String(name).trim().replace(/_/g, ' '))) {
                 pathsToFix.add(id.split('.').slice(0, 3).join('.'));
             }
@@ -338,12 +338,12 @@ log('Chromecast-Cleaner & HEOS-Schutzschild aktiv', 'info');
 
 // Alle ".name" Zustände prüfen
 $(adapterInstance + '.*.name').each(function(id) {
-    const val = getState(id).val;
+    const val = getState(id)?.val;
     if (val !== null && val !== undefined) checkAndFilter(val, id);
 });
 
 // Alle ".address" Zustände prüfen
 $(adapterInstance + '.*.address').each(function(id) {
-    const val = getState(id).val;
+    const val = getState(id)?.val;
     if (val !== null && val !== undefined) checkAndFilter(val, id);
 });

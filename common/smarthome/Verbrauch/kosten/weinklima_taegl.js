@@ -8,7 +8,7 @@ const dpKostenZiel = "0_userdata.0.Energie.Kosten.weinklima";
 // 1. Trigger: Update bei neuem Tageswert (nach Mitternacht)
 on({ id: dpVerbrauchGestern, change: "ne" }, (obj) => {
   const verbrauch = obj.state.val;
-  const preis = getState(dpStrompreis).val;
+  const preis = getState(dpStrompreis)?.val;
 
   if (typeof verbrauch === "number" && typeof preis === "number") {
     const kosten = Math.round(verbrauch * preis * 100) / 100;
@@ -19,7 +19,7 @@ on({ id: dpVerbrauchGestern, change: "ne" }, (obj) => {
 
 // 2. Trigger: Sofortige Neuberechnung bei Preisänderung
 on({ id: dpStrompreis, change: "ne" }, (obj) => {
-  const verbrauch = getState(dpVerbrauchGestern).val;
+  const verbrauch = getState(dpVerbrauchGestern)?.val;
   const preis = obj.state.val;
 
   if (typeof verbrauch === "number" && typeof preis === "number") {

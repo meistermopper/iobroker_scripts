@@ -109,7 +109,7 @@ function SNR2IDP(SNR) {
 }
 
 
-IPAddresse = getState("alexa2.0.History.serialNumber").val;
+IPAddresse = getState("alexa2.0.History.serialNumber")?.val;
 on({id: "alexa2.0.History.serialNumber", change: "any"}, function (obj) {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;

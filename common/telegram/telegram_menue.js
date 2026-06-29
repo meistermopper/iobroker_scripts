@@ -32,7 +32,7 @@ const RAEUME = {
 
 function smartNotify(user, text, priority = 1) {
     sendTo('telegram.0', { user: user, text: text, parse_mode: 'HTML' });
-    const token = getState(ID_GOTIFY_TOKEN).val;
+    const token = getState(ID_GOTIFY_TOKEN)?.val;
     if (token) {
         const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
         exec(`curl -s "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker" -F "message=${cleanText}" -F "priority=${priority}"`);
@@ -61,8 +61,8 @@ function getKlimaStatus(user) {
 
         if (!existsState(`alias.0.${conf.aliasName}.${tS}`)) continue;
 
-        const t = getState(`alias.0.${conf.aliasName}.${tS}`).val;
-        const h = getState(`alias.0.${conf.aliasName}.${hS}`).val;
+        const t = getState(`alias.0.${conf.aliasName}.${tS}`)?.val;
+        const h = getState(`alias.0.${conf.aliasName}.${hS}`)?.val;
 
         if (h > 60) {
             hasCritical = true;
@@ -81,7 +81,7 @@ function getFensterStatus(user) {
     let offene = [];
     for (const raum in RAEUME) {
         const fID = `alias.0.${RAEUME[raum].aliasName}.fenster.STATE`;
-        if (existsState(fID) && getState(fID).val > 0) {
+        if (existsState(fID) && getState(fID)?.val > 0) {
             offene.push(raum === "Wohnzimmer" ? "Terrassentür" : raum);
         }
     }
@@ -92,15 +92,15 @@ function getFensterStatus(user) {
 }
 
 function getKia(user) {
-    const lat = getState(ID_KIA_LOC.lat).val;
-    const lon = getState(ID_KIA_LOC.lon).val;
-    const key = getState(ID_GOOGLE_KEY).val;
+    const lat = getState(ID_KIA_LOC.lat)?.val;
+    const lon = getState(ID_KIA_LOC.lon)?.val;
+    const key = getState(ID_GOOGLE_KEY)?.val;
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${key}`;
     httpGet(url, (err, res) => {
         if (!err && res.statusCode === 200) {
             const addr = JSON.parse(res.data).results[0].formatted_address;
             setState(ID_KIA_LOC.save, addr, true);
-            smartNotify(user, `📍 <b>Kia Standort:</b>\n${addr}\n\n<a href="${getState(ID_KIA_LOC.url).val}">Auf Karte zeigen</a>`);
+            smartNotify(user, `📍 <b>Kia Standort:</b>\n${addr}\n\n<a href="${getState(ID_KIA_LOC.url)?.val}">Auf Karte zeigen</a>`);
         }
     });
 }

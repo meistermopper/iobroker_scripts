@@ -10,7 +10,7 @@ let msgTimeout = null;
 // --- SCHEDULE: Täglich um 23:30 Uhr ---
 schedule("30 23 * * *", async () => {
   // Prüfen, ob die Steckdose überhaupt an ist (sonst ist niemand da/TV schon aus)
-  if (getState(ID_STECKDOSE_SCHLAZI).val) {
+  if (getState(ID_STECKDOSE_SCHLAZI)?.val) {
     console.log("Schlafzimmer-Standby: Fahre Systeme herunter...");
 
     // 1. Geräte ausschalten

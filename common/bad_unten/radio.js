@@ -43,7 +43,7 @@ function stopAllTimers() {
 }
 
 function changeVolume(step) {
-    let currentVol = getState(IDS.denonVol).val;
+    let currentVol = getState(IDS.denonVol)?.val;
     let newVol = Math.min(100, Math.max(0, currentVol + step));
     setState(IDS.denonVol, newVol);
 }
@@ -52,17 +52,17 @@ function changeVolume(step) {
 
 // 1. NACHTRUHE (Nur wenn Sauna NICHT läuft)
 schedule("0 21 * * *", () => {
-    const saunaLaeuft = getState(IDS.saunaAktiv).val;
+    const saunaLaeuft = getState(IDS.saunaAktiv)?.val;
     if (saunaLaeuft) return; // Sauna hat Vorrang!
 
-    if (getState(IDS.userStatus).val) {
-        if (!getState(IDS.bwm).val) {
+    if (getState(IDS.userStatus)?.val) {
+        if (!getState(IDS.bwm)?.val) {
             setState(IDS.userStatus, false); // Radio ausschalten
             sendGlobalNotify('🌙 Nachtruhe: Bad leer, Radio aus.', "Radio Bad", 1);
         } else {
             // Warten bis Bad verlassen wird
             const stopSub = on({ id: IDS.bwm, val: false }, () => {
-                if (!getState(IDS.saunaAktiv).val) {
+                if (!getState(IDS.saunaAktiv)?.val) {
                     setState(IDS.userStatus, false); // Radio ausschalten
                     sendGlobalNotify('🌙 Nachtruhe: Bad jetzt leer, Radio aus.', "Radio Bad", 1);
                 }
@@ -79,7 +79,7 @@ on({ id: IDS.hueOn, change: 'gt' }, () => {
 
     // Auto-Off Timer (Nur wenn Sauna NICHT läuft)
     timeoutAusschalten = setTimeout(() => {
-        if (getState(IDS.userStatus).val && !getState(IDS.saunaAktiv).val) {
+        if (getState(IDS.userStatus)?.val && !getState(IDS.saunaAktiv)?.val) {
             setState(IDS.userStatus, false); // Radio ausschalten
             sendGlobalNotify('📻 Auto-Off (30 Min)', "Radio Bad", 1);
         }
@@ -119,10 +119,10 @@ on({ id: IDS.userStatus, change: 'ne' }, (obj) => {
 on({ id: IDS.userSender, change: 'any' }, (obj) => {
     const sender = SENDER_CONFIG[obj.state.val];
     if (sender) {
-        const saunaLaeuft = getState(IDS.saunaAktiv).val;
+        const saunaLaeuft = getState(IDS.saunaAktiv)?.val;
         const targetVol = saunaLaeuft ? VOL_SAUNA : VOL_NORMAL;
 
-        const isPowered = getState(IDS.denonPower).val;
+        const isPowered = getState(IDS.denonPower)?.val;
         const delay = isPowered ? 0 : 8000;
 
         if (!isPowered) setState(IDS.denonPower, true);

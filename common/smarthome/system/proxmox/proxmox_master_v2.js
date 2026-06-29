@@ -42,7 +42,7 @@ let states = {
  * @param {number} priority - Gotify Priorität (0-10)
  */
 function notify(title, msg, priority = 5) {
-  const token = getState(GOTIFY_TOKEN_DP).val;
+  const token = getState(GOTIFY_TOKEN_DP)?.val;
 
   // 1. Telegram Broadcast
   // Durch Weglassen von 'user' wird die Nachricht an alle User gesendet.
@@ -132,7 +132,7 @@ on({ id: NODE_STATUS_IDS, change: "ne" }, (obj) => {
   if (obj.state.val === "offline" && !s.timer) {
     // Puffer, falls der Proxmox-Adapter nur kurz neu startet
     s.timer = setTimeout(() => {
-      if (getState(id).val === "offline") {
+      if (getState(id)?.val === "offline") {
         notify(
           "❌ Node Offline",
           `${name} ist seit 1 Minute nicht erreichbar!`,

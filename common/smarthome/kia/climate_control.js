@@ -56,13 +56,13 @@ on(
 
 // 3. ZENTRALE FUNKTION FÜR DEN START
 async function starteHeizung() {
-  const aktuellTemp = getState(IDS.outerTemp).val;
-  const amStandort = getState(IDS.location).val === HOME_ADDRESS;
-  const heizenAktiv = getState(IDS.isHome).val;
+  const aktuellTemp = getState(IDS.outerTemp)?.val;
+  const amStandort = getState(IDS.location)?.val === HOME_ADDRESS;
+  const heizenAktiv = getState(IDS.isHome)?.val;
   const keineArbeit =
-    getState(IDS.holiday).val ||
-    getState(IDS.vacation1).val ||
-    getState(IDS.vacation2).val;
+    getState(IDS.holiday)?.val ||
+    getState(IDS.vacation1)?.val ||
+    getState(IDS.vacation2)?.val;
 
   if (heizenAktiv && amStandort && !keineArbeit) {
     // Logik: Entfrosten oder nur Heizen?

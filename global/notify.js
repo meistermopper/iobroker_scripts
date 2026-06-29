@@ -49,7 +49,7 @@ async function sendGlobalNotify(text, title = "ioBroker", priority = 1, voiceVol
     sendTo(NOTIFY_CONFIG.telegramInstanz, "send", { text: `[${title}] ${text}` });
 
     // 2. Gotify
-    const token = getState(NOTIFY_CONFIG.gotifyTokenId).val;
+    const token = getState(NOTIFY_CONFIG.gotifyTokenId)?.val;
     if (token) {
         const cleanText = text.replace(/<\/?[^>]+(>|$)/g, ""); // HTML-Tags entfernen
         const url = `${NOTIFY_CONFIG.gotifyUrl}?token=${token}`;
@@ -87,12 +87,12 @@ async function googleWatchdogAnnounce(text, vol) {
         // Filter: Streamer auf der Blacklist ignorieren (Schlazi/Wozi)
         if (GOOGLE_EXCLUDE_LIST.includes(base)) return;
 
-        const isPlaying = (getState(id).val === 'playing');
+        const isPlaying = (getState(id)?.val === 'playing');
 
         // Musik nach der Wartezeit fortsetzen (Resume)
         if (isPlaying) {
-            const oldVol = getState(base + '.player.volume').val;
-            const oldUrl = getState(base + '.player.url2play').val;
+            const oldVol = getState(base + '.player.volume')?.val;
+            const oldUrl = getState(base + '.player.url2play')?.val;
 
             if (oldUrl) {
                 setStateDelayed(base + '.player.url2play', oldUrl, DEFAULT_RESUME_MS, false);

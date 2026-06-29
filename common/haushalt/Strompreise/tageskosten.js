@@ -22,10 +22,10 @@ const PATH_PRICE = '0_userdata.0.Energie.Strompreise.akt_Preis';
 
 // 2. TÄGLICHE EINZELABRECHNUNG (23:59 Uhr)
 schedule("59 23 * * *", () => {
-    const preis = getState(PATH_PRICE).val || 0.30;
+    const preis = getState(PATH_PRICE)?.val || 0.30;
     
     GERAETE_CONFIG.forEach((geraet, index) => {
-        const kwhHeute = getState(`sonoff.0.${geraet.sonoff}.ENERGY_Today`).val || 0;
+        const kwhHeute = getState(`sonoff.0.${geraet.sonoff}.ENERGY_Today`)?.val || 0;
         const kosten = parseFloat((kwhHeute * preis).toFixed(2));
         
         // Versetztes Schreiben, um die Last zu verteilen (wie in deinem Original)
@@ -41,7 +41,7 @@ schedule("5 0 * * *", () => {
 
     GERAETE_CONFIG.forEach(geraet => {
         // Wir nehmen die Werte, die wir um 23:59 Uhr geschrieben haben
-        const wert = getState(`${PATH_COSTS}${geraet.name}_heute`).val || 0;
+        const wert = getState(`${PATH_COSTS}${geraet.name}_heute`)?.val || 0;
         gesamtSumme += wert;
     });
 

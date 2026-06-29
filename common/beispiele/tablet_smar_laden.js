@@ -13,13 +13,13 @@ async function screen_aus() {
 on({ id: 'fullybrowser.0.192_168_178_234.Info.batteryLevel' /* batteryLevel */, change: 'ne' }, async (obj) => {
   let value = obj.state.val;
   let oldValue = obj.oldState.val;
-  if ((obj.state ? obj.state.val : "") < 30 && !getState('sonoff.0.Ladestation_Fully.POWER').val) {
+  if ((obj.state ? obj.state.val : "") < 30 && !getState('sonoff.0.Ladestation_Fully.POWER')?.val) {
     setState('sonoff.0.Ladestation_Fully.POWER' /* Ladestation_Fully POWER */, true);
     await screen_aus();
-  } else if ((obj.state ? obj.state.val : "") > 70 && getState('sonoff.0.Ladestation_Fully.POWER').val) {
+  } else if ((obj.state ? obj.state.val : "") > 70 && getState('sonoff.0.Ladestation_Fully.POWER')?.val) {
     setState('sonoff.0.Ladestation_Fully.POWER' /* Ladestation_Fully POWER */, false);
     await screen_aus();
-  } else if ((obj.state ? obj.state.val : "") == 100 && getState('sonoff.0.Ladestation_Fully.POWER').val) {
+  } else if ((obj.state ? obj.state.val : "") == 100 && getState('sonoff.0.Ladestation_Fully.POWER')?.val) {
     setState('sonoff.0.Ladestation_Fully.POWER' /* Ladestation_Fully POWER */, false);
     await screen_aus();
   }

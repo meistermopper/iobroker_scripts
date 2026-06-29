@@ -1,9 +1,9 @@
 on({id: 'iot.0.services.ifttt', change: "any"}, function (obj) {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  if (getState("iot.0.services.ifttt").val == 'licht links ein') {
+  if (getState("iot.0.services.ifttt")?.val == 'licht links ein') {
     setState("sonoff.0.LichtLinks.POWER", true);
-  } else if (getState("iot.0.services.ifttt").val == 'licht links aus') {
+  } else if (getState("iot.0.services.ifttt")?.val == 'licht links aus') {
     setState("sonoff.0.LichtLinks.POWER", false);
   }
 });

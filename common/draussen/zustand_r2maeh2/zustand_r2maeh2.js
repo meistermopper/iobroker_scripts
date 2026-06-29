@@ -172,8 +172,8 @@ on({ id: IDS.power, change: 'ne' }, async function (obj) {
 schedule("59 23 * * *", function () {
     if (!isSaison()) return;
 
-    const liste = (getState(IDS.userListe).val || [0, 0, 0, 0, 0, 0, 0]);
-    const heute = (getState(IDS.today).val || 0);
+    const liste = (getState(IDS.userListe)?.val || [0, 0, 0, 0, 0, 0, 0]);
+    const heute = (getState(IDS.today)?.val || 0);
 
     liste.unshift(heute);
     if (liste.length > 7) liste.pop();
@@ -183,12 +183,12 @@ schedule("59 23 * * *", function () {
     const mittel = parseFloat((summe / (liste.length || 1)).toFixed(2));
     setState(IDS.userMittel, mittel, true);
 
-    updateCosts(mittel, getState(IDS.price).val);
+    updateCosts(mittel, getState(IDS.price)?.val);
 });
 
 // NEU: Sofortige Aktualisierung der Kosten bei Preisänderung
 on({ id: IDS.price, change: 'ne' }, (obj) => {
-    updateCosts(getState(IDS.userMittel).val, obj.state.val);
+    updateCosts(getState(IDS.userMittel)?.val, obj.state.val);
 });
 
 function updateCosts(verbrauch, preis) {

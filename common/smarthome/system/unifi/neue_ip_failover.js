@@ -14,7 +14,7 @@ let startZeit = 0;
 on({ id: ID_WAN_IP, change: "ne" }, async (obj) => {
   const neueIP = obj.state.val;
   const alteIP = obj.oldState.val;
-  const gespeicherteIP = getState(ID_AKTUELL_IP).val;
+  const gespeicherteIP = getState(ID_AKTUELL_IP)?.val;
 
   if (!neueIP || neueIP === "0.0.0.0" || neueIP === IP_INTERNAL_GATEWAY) return;
 
@@ -29,7 +29,7 @@ on({ id: ID_WAN_IP, change: "ne" }, async (obj) => {
   // --- FALL 2: Rückkehr aus Failover oder normaler Wechsel ---
   if (neueIP !== gespeicherteIP && neueIP !== IP_FAILOVER) {
     // DDNS Update ausführen
-    const ddnssKey = getState(ID_DDNSS_KEY).val;
+    const ddnssKey = getState(ID_DDNSS_KEY)?.val;
     const ddnssUrl = `https://www.ddnss.de/upd.php?key=${ddnssKey}&host=all`;
 
     exec(`curl -s "${ddnssUrl}"`);

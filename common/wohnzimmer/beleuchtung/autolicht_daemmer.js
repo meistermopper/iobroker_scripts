@@ -8,14 +8,14 @@ function notify(text) {
   sendTo("telegram", "send", { text: text });
   //console.log(`[Abendlicht] ${text}`);
 
-  const token = getState(ID_GOTIFY_TOKEN).val;
+  const token = getState(ID_GOTIFY_TOKEN)?.val;
   const command = `curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=ioBroker:" -F "message=${text}" -F "priority=1"`;
   exec(command);
 }
 
 // Zeitplan: Sonnenuntergang
 schedule({ astro: "sunset", shift: 0 }, () => {
-  if (!getState(ID_REINIGUNG).val) {
+  if (!getState(ID_REINIGUNG)?.val) {
     notify("+++ 💡 Sonnenuntergang, Abendlicht wurde eingeschaltet. +++");
     // WICHTIG: ack: false (steuere), damit das Switch-Skript triggert
     setState(ID_ABENDLICHT, true, false);

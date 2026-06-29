@@ -9,7 +9,7 @@ let bueroTimer = null;
 
 on({ id: ID_PC_POWER, change: 'ne' }, (obj) => {
     const aktuelleLeistung = obj.state.val;
-    const lichtIstAn = getState(ID_LICHT).val;
+    const lichtIstAn = getState(ID_LICHT)?.val;
 
     // BEDINGUNG: PC verbraucht wenig Strom (< 5W) UND das Licht brennt
     if (aktuelleLeistung < 5 && lichtIstAn) {
@@ -20,7 +20,7 @@ on({ id: ID_PC_POWER, change: 'ne' }, (obj) => {
             
             bueroTimer = setTimeout(() => {
                 // Sicherheitshalber nochmal prüfen, ob das Licht noch an ist
-                if (getState(ID_LICHT).val) {
+                if (getState(ID_LICHT)?.val) {
                     setState(ID_LICHT, false);
                     
                     const msg = '💡 Das Licht im Büro wurde automatisch ausgeschaltet.';

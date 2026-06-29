@@ -1,8 +1,8 @@
 on({id: "hm-rpc.0.MEQ0701793.1.MOTION"/*MOTION*/, change: "gt"}, async function (obj) {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  if (!getState("0_userdata.0.Ansagen.chromecast.Kueche.frueh").val) {
-    setState("sayit.3.tts.text", "" + 30 + ";" + (['Guten Morgen. Es ist ',(new Date().getHours()),' Uhr  ',(new Date().getMinutes()),'\n','Draußen sind es ',getState("hm-rpc.1.000EDA4995B277.1.ACTUAL_TEMPERATURE").val,' Grad Celsius','Die günstigste Tankstelle ist momentan die ',getState("tankerkoenig.0.stations.cheapest.diesel.name").val].join('')));
+  if (!getState("0_userdata.0.Ansagen.chromecast.Kueche.frueh")?.val) {
+    setState("sayit.3.tts.text", "" + 30 + ";" + (['Guten Morgen. Es ist ',(new Date().getHours()),' Uhr  ',(new Date().getMinutes()),'\n','Draußen sind es ',getState("hm-rpc.1.000EDA4995B277.1.ACTUAL_TEMPERATURE")?.val,' Grad Celsius','Die günstigste Tankstelle ist momentan die ',getState("tankerkoenig.0.stations.cheapest.diesel.name")?.val].join('')));
     setState("0_userdata.0.Ansagen.chromecast.Kueche.frueh"/*Ansagen.chromecast.Kueche.frueh*/, true);
   }
 });

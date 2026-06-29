@@ -2,7 +2,7 @@ var result;
 
 
 try {
-  require("request")((['https://maps.googleapis.com/maps/api/geocode/json?latlng=',getState("bluelink.0.KNACC81GFN5121414.vehicleLocation.lat").val,',',getState("bluelink.0.KNACC81GFN5121414.vehicleLocation.lon").val,'&key=',getState("0_userdata.0.google.mapsAPItoken").val].join('')), async function (error, response, result) {
+  require("request")((['https://maps.googleapis.com/maps/api/geocode/json?latlng=',getState("bluelink.0.KNACC81GFN5121414.vehicleLocation.lat")?.val,',',getState("bluelink.0.KNACC81GFN5121414.vehicleLocation.lon")?.val,'&key=',getState("0_userdata.0.google.mapsAPItoken")?.val].join('')), async function (error, response, result) {
     console.warn(getAttr((function () { try {return JSON.parse(result);} catch(e) {return {};}})(), 'results.0.formatted_address'));
   }).on("error", function (e) {console.error(e);});
 } catch (e) { console.error(e); }

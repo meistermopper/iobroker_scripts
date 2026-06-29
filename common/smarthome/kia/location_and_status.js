@@ -114,7 +114,7 @@ on({ id: [IDS.refreshCar, IDS.refreshSrv, `${VIN}.control.force_refresh`], chang
     if (obj.state.val !== true) return;
 
     // Zeitstempel und Zähler aktualisieren
-    setState(IDS.u_counter, (getState(IDS.u_counter).val || 0) + 1, true);
+    setState(IDS.u_counter, (getState(IDS.u_counter)?.val || 0) + 1, true);
     setState(IDS.u_updateTime, formatDate(new Date(), "hh:mm"), true);
 
     processLocationUpdate();
@@ -124,9 +124,9 @@ async function processLocationUpdate() {
     if (isLocked) return; // Verhindert doppelte Ausführung
     activateLock(30000);   // 30 Sekunden Sperre für diesen Prozess
 
-    const lat = getState(IDS.lat).val;
-    const lon = getState(IDS.lon).val;
-    const apiKey = getState(IDS.googleToken).val;
+    const lat = getState(IDS.lat)?.val;
+    const lon = getState(IDS.lon)?.val;
+    const apiKey = getState(IDS.googleToken)?.val;
 
     if (!lat || !lon || !apiKey) {
         console.error("[Kia] Abbruch: Koordinaten oder Google-Key fehlen.");

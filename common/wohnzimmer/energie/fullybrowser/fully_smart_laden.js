@@ -39,7 +39,7 @@ on(
     const oldBatt = obj.oldState ? obj.oldState.val : currentBatt;
 
     // Status der Ladesteckdose abrufen (true = Tablet wird geladen)
-    const isCharging = getState("alias.0.wohnzimmer.energie.fully.POWER").val;
+    const isCharging = getState("alias.0.wohnzimmer.energie.fully.POWER")?.val;
 
     /**
      * LOGIK 1: LADEN STARTEN

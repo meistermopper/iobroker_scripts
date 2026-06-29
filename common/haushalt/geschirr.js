@@ -7,7 +7,7 @@ const PROGRAMME = {
     214: 'Gerätepflege', 215: 'Salz spülen', 0: 'aus'
 };
 
-let Strompreis_proKWh = getState('0_userdata.0.Energie.Strompreise.akt_Preis').val;
+let Strompreis_proKWh = getState('0_userdata.0.Energie.Strompreise.akt_Preis')?.val;
 let start, EnergieStart;
 
 // Preis-Update
@@ -24,18 +24,18 @@ on({ id: 'alias.0.kueche.geschirr.Programmbezeichnung_raw', change: 'any' }, obj
 // Hauptlogik Spülen
 on({ id: 'mielecloudservice.0.000106831213.Status', change: 'ne' }, async (obj) => {
     const status = obj.state.val;
-    const isSpuelenAktiv = getState('0_userdata.0.Haushalt.spuelen').val;
-    const gotifyToken = getState('0_userdata.0.gotifytoken.iobroker').val;
+    const isSpuelenAktiv = getState('0_userdata.0.Haushalt.spuelen')?.val;
+    const gotifyToken = getState('0_userdata.0.gotifytoken.iobroker')?.val;
 
     // --- START ---
     if (!isSpuelenAktiv && status === 'In Betrieb') {
         start = Date.now();
         // Wir merken uns den Zählerstand beim Start
-        EnergieStart = getState('alias.0.kueche.geschirr.ENERGY_Total').val;
+        EnergieStart = getState('alias.0.kueche.geschirr.ENERGY_Total')?.val;
         setState('0_userdata.0.Haushalt.spuelen', true, true);
 
         setTimeout(() => {
-            const endTime = getState('mielecloudservice.0.000106831213.estimatedEndTime').val;
+            const endTime = getState('mielecloudservice.0.000106831213.estimatedEndTime')?.val;
             const vorhersage = `Der Geschirrspüler spült und ist voraussichtlich um ${endTime} Uhr fertig.`;
             
             if (compareTime('08:00', '20:00', 'between')) sendTo("sayit", "say", { text: vorhersage });
@@ -49,20 +49,20 @@ on({ id: 'mielecloudservice.0.000106831213.Status', change: 'ne' }, async (obj) 
         const spueldauerMin = Math.round((Date.now() - start) / 60000);
         
         // Berechnung des Verbrauchs für DIESEN Durchgang
-        const energieKwh = getState('alias.0.kueche.geschirr.ENERGY_Total').val - EnergieStart;
+        const energieKwh = getState('alias.0.kueche.geschirr.ENERGY_Total')?.val - EnergieStart;
         const euro = (energieKwh * Strompreis_proKWh).toFixed(2);
         
         const dauerStd = Math.floor(spueldauerMin / 60);
         const dauerMin = (spueldauerMin % 60).toString().padStart(2, '0');
         
-        const wasser = getState('mielecloudservice.0.000106831213.EcoFeedback.currentWaterConsumption').val;
+        const wasser = getState('mielecloudservice.0.000106831213.EcoFeedback.currentWaterConsumption')?.val;
         
         // Fix für "Heute": Wir nutzen den ENERGY_Today Punkt vom Gerät, 
         // falls dieser wieder spinnt, müssten wir einen eigenen Zähler in userdata anlegen.
-        const energieHeute = getState('alias.0.kueche.geschirr.ENERGY_Today').val;
+        const energieHeute = getState('alias.0.kueche.geschirr.ENERGY_Today')?.val;
         const euroHeute = (energieHeute * Strompreis_proKWh).toFixed(2);
 
-        const programm = getState('alias.0.kueche.geschirr.Programmbezeichnung').val;
+        const programm = getState('alias.0.kueche.geschirr.Programmbezeichnung')?.val;
         setState('0_userdata.0.Haushalt.spuelen', false, true);
         
         const meldetext = `<pre>💦 Der Geschirrspüler kann ausgeräumt werden.\n\n` +

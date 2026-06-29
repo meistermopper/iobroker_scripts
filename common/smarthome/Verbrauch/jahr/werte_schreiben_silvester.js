@@ -33,7 +33,7 @@ schedule("59 59 23 31 12 *", async () => {
 
   for (let name in geraeteListe) {
     const quellPfad = `${geraeteListe[name]}.ENERGY_Total`;
-    const wert = Math.round(getState(quellPfad).val);
+    const wert = Math.round(getState(quellPfad)?.val);
     const speicherPfad = `${zielPfad}.${name.replace("-", "_")}`; // Ersetzt Bindestriche für DP-Kompatibilität
 
     // 1. Wert in die Jahresstatistik schreiben

@@ -42,7 +42,7 @@ on({ id: ID_PING, change: "ne" }, (obj) => {
       //console.log(`[Sauna Heos] Ping verloren. Auto-Restart in ${PING_TIMEOUT_SEC}s geplant.`);
       autoRestartTimer = setTimeout(() => {
         // Nochmal prüfen, ob Ping immer noch weg ist
-        if (!getState(ID_PING).val && !isManuell) {
+        if (!getState(ID_PING)?.val && !isManuell) {
           performHeosRestart(false);
         }
         autoRestartTimer = null;

@@ -143,7 +143,7 @@ function checkEnteredPin(viewName) {
 
     // Wenn eine pinId konfiguriert ist, überschreibe den Wert aus der Konfiguration
     if (pinId && existsState(pinId)) {
-        targetPin = getState(pinId).val;
+        targetPin = getState(pinId)?.val;
         if (LOGGING) log('PIN wird aus Datenpunkt gelesen: ' + pinId);
     } else if (pinId) {
         log(`PIN für View '${viewName}' konnte nicht geprüft werden. Datenpunkt '${pinId}' nicht gefunden oder hat keinen Wert.`, 'warn');

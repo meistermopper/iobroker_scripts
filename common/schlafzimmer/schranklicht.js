@@ -15,7 +15,7 @@ let offTimer = null;
 
 on({ id: ID_OCCUPANCY, change: "ne" }, (obj) => {
   const isMotion = !!obj.state.val;
-  const lightAlreadyOn = getState(ID_SWITCH).val === true;
+  const lightAlreadyOn = getState(ID_SWITCH)?.val === true;
 
   // Bestehenden Timer stoppen, wenn der Sensor reagiert
   if (offTimer) {
@@ -25,7 +25,7 @@ on({ id: ID_OCCUPANCY, change: "ne" }, (obj) => {
 
   if (isMotion) {
     // Einschalten wenn es dunkel ist ODER wenn es bereits an ist (Bewegung verlängern)
-    const currentLux = getState(ID_ILLUMINANCE).val;
+    const currentLux = getState(ID_ILLUMINANCE)?.val;
 
     if (lightAlreadyOn || currentLux <= LUX_THRESHOLD) {
       if (!lightAlreadyOn) {

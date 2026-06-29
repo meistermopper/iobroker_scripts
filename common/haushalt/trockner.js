@@ -55,7 +55,7 @@ function dryNotify(text) {
     sendTo('telegram', { text: text });
 
     // 2. Gotify
-    const token = getState(ID_GOTIFY_T).val;
+    const token = getState(ID_GOTIFY_T)?.val;
     if (token) {
         exec(`curl "https://mygotify.meistermopper.de/message?token=${token}" -F "title=Haushalt" -F "message=${text}" -F "priority=5"`);
     }
@@ -132,7 +132,7 @@ function processFinishT() {
         return;
     }
     const endEnergy = parseFloat(stateEnergy.val);
-    const priceKwh = getState(ID_PRICE_T).val || 0.30;
+    const priceKwh = getState(ID_PRICE_T)?.val || 0.30;
 
     const diffEnergy = Math.max(0, endEnergy - startEnergyT);
     const totalCost = diffEnergy * priceKwh;
@@ -144,7 +144,7 @@ function processFinishT() {
     const minutes = Math.floor((durationMs % 3600000) / 60000);
     const timeStr = hours + ":" + (minutes < 10 ? '0' + minutes : minutes) + " Std.";
 
-    const currentTotalT = getState(ID_TOTAL_T).val || 0;
+    const currentTotalT = getState(ID_TOTAL_T)?.val || 0;
     const newTotalT = currentTotalT + diffEnergy;
     setState(ID_TOTAL_T, newTotalT, true);
 

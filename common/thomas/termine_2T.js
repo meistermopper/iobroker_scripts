@@ -9,7 +9,7 @@ const CONFIG = {
 };
 
 async function termineSenden() {
-  const table = getState(CONFIG.idTable).val;
+  const table = getState(CONFIG.idTable)?.val;
   if (!table || !Array.isArray(table)) {
     console.warn("iCal Tabelle ist leer oder nicht verfügbar.");
     return;

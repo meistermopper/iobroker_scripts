@@ -1,6 +1,6 @@
 // --- KONFIGURATION ---
 const dpSoH = "modbus.0.inputRegisters.225.304_State_of_health";
-const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker").val;
+const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
 
 // --- LOGIK ---
 on({ id: dpSoH, change: "lt" }, (obj) => {

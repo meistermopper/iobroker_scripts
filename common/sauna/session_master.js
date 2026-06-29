@@ -103,7 +103,7 @@ on({ id: ID_SAUNA_AKTIV, change: "ne" }, (obj) => {
  */
 on({ id: IDS.saunaStatus, change: "ne" }, (obj) => {
   const isPlaying = !!obj.state.val;
-  const saunaAktiv = getState(ID_SAUNA_AKTIV).val;
+  const saunaAktiv = getState(ID_SAUNA_AKTIV)?.val;
 
   setState(`${IDS.saunaPlayer}.state`, isPlaying ? "play" : "stop");
   setState(IDS.saunaLight, isPlaying); // Licht folgt dem Radio-Status
