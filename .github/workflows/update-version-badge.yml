@@ -18,7 +18,7 @@ jobs:
     steps:
       # 1. Repository auschecken
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # 2. Version aus der package.json auslesen
       - name: Read version from package.json
