@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [2.0.81] - 2026-06-22
+- Update of Fenix_FX110C_Sauna_control.js
+
 ### [2.0.80] - 2026-06-22
 - Update of Fenix_FX110C_Sauna_control.js
 

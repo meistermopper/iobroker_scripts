@@ -62,9 +62,11 @@ on({ id: 'mielecloudservice.0.000106831213.Status', change: 'ne' }, async (obj) 
         const energieHeute = getState('alias.0.kueche.geschirr.ENERGY_Today').val;
         const euroHeute = (energieHeute * Strompreis_proKWh).toFixed(2);
 
+        const programm = getState('alias.0.kueche.geschirr.Programmbezeichnung').val;
         setState('0_userdata.0.Haushalt.spuelen', false, true);
         
         const meldetext = `<pre>💦 Der Geschirrspüler kann ausgeräumt werden.\n\n` +
+                          `Programm: ${programm}\n` +
                           `Dauer: ${dauerStd}:${dauerMin} Std.\n` +
                           `Verbrauch: ${energieKwh.toFixed(2)} kWh (${euro} €)\n` +
                           `Heute gesamt: ${energieHeute.toFixed(2)} kWh (${euroHeute} €) & ${wasser}L Wasser\n` +
