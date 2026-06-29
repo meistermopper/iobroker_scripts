@@ -11,11 +11,25 @@ if (process.env.SKIP_CHANGELOG_HOOK === '1') {
     process.exit(0);
 }
 
+// 0b. Branch Protection: Only run on main or master
+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
+if (currentBranch !== 'main' && currentBranch !== 'master') {
+    console.log(`ℹ️ Info: Branch is "${currentBranch}" - Skipping automatic changelog updates`);
+    process.exit(0);
+}
+
 const README_PATH = path.join(__dirname, 'README.md');
 const PKG_PATH = path.join(__dirname, 'package.json');
 
 // Files that should never appear in the changelog
-const EXCLUDE_LIST = [path.basename(__filename), 'package.json', 'package-lock.json', 'README.md'];
+const EXCLUDE_LIST = [
+    path.basename(__filename),
+    'package.json',
+    'package-lock.json',
+    'README.md',
+    'CHANGELOG_OLD.md',
+    'auto_version.js'
+];
 
 try {
     // 1. Get the latest commit hash and message
@@ -30,11 +44,7 @@ try {
         process.exit(0);
     }
 
-    // 2. Read version from package.json
-    const pkg = JSON.parse(fs.readFileSync(PKG_PATH, 'utf8'));
-    const currentVersion = pkg.version;
-
-    // 3. Retrieve changed files (JS scripts in subfolders only)
+    // 2. Retrieve changed files in the latest commit (JS scripts in subfolders only)
     const changedFiles = execSync('git diff-tree --no-commit-id --name-only -r HEAD')
         .toString()
         .trim()
@@ -57,6 +67,19 @@ try {
         process.exit(0);
     }
 
+    // 3. Read and increment version in package.json
+    const pkg = JSON.parse(fs.readFileSync(PKG_PATH, 'utf8'));
+    const oldVersion = pkg.version;
+
+    function incrementPatch(v) {
+        const parts = v.split('.');
+        if (parts.length === 3) {
+            parts[2] = parseInt(parts[2], 10) + 1;
+        }
+        return parts.join('.');
+    }
+    const currentVersion = incrementPatch(oldVersion);
+
     // 4. Prepare entries: One line per commit, grouping files
     const fileList = changedFiles.map(f => path.basename(f)).join(', ');
     const newEntry = `- ${commitMsg} (${fileList})`;
@@ -65,7 +88,7 @@ try {
     const today = new Date().toISOString().split('T')[0];
     const versionHeader = `### [${currentVersion}] - ${today}`;
 
-    // 5. Update Version Badge
+    // 5. Update Version Badge in README
     content = content.replace(/(Version-)(\d+\.\d+\.\d+)(-success)/, `$1${currentVersion}$3`);
 
     const changelogMarker = '## 📝 Changelog';
@@ -145,18 +168,23 @@ try {
         }
     }
 
+    // Write updated package.json and README.md
+    pkg.version = currentVersion;
+    fs.writeFileSync(PKG_PATH, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+    console.log(`[Changelog] package.json updated: ${oldVersion} -> ${currentVersion}`);
+
     fs.writeFileSync(README_PATH, content, 'utf8');
     console.log(`[Changelog] README.md successfully updated to version ${currentVersion}.`);
 
-    // 7. ATOMIC UPDATE: Amend the commit to include the README changes
-    execSync(`git add "${README_PATH}"`);
+    // 7. ATOMIC UPDATE: Amend the commit to include the package.json and README changes
+    execSync(`git add "${PKG_PATH}" "${README_PATH}"`);
 
     execSync('git commit --amend --no-edit', {
         env: { ...process.env, SKIP_CHANGELOG_HOOK: '1' },
         stdio: 'inherit'
     });
 
-    console.log(`[Changelog] Commit amended with README update. Ready to sync.`);
+    console.log(`[Changelog] Commit amended with README and package.json updates. Ready to sync.`);
 
 } catch (error) {
     console.error('[Changelog] Error updating README:', error.message);
