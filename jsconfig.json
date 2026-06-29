@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "commonjs",
+    "moduleDetection": "force",
     "checkJs": true
   },
   "include": [
