@@ -5,6 +5,7 @@
 // --- KONFIGURATION ---
 const ID_DEVICE_CONNECTED = "chromecast.0.Mini-Schlazi.status.connected"; // Beispiel: Mini-Schlazi
 
+/** @type {any} */
 let miniTimeout = null;
 
 // --- MONITOR LOGIK ---
