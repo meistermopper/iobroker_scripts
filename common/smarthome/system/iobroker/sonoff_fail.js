@@ -5,6 +5,7 @@
 
 const ID_SELECTOR = "sonoff.0.*.alive";
 
+// @ts-ignore
 on({ id: $(ID_SELECTOR), change: "ne" }, (obj) => {
   // Wenn 'alive' auf false geht, ist das Gerät offline
   if (obj.state.val === false) {

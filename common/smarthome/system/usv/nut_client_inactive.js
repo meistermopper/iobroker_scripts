@@ -3,9 +3,10 @@ const selector = "linux-control.0.*.nut-client";
 const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
 
 // --- LOGIK ---
+// @ts-ignore
 on({ id: $(selector), change: "lt" }, (obj) => {
   // Da Trigger 'lt' ist: Wechsel von true (1) auf false (0)
-  const clientName = obj.channelName || obj.deviceNm;
+  const clientName = obj.channelName || obj.deviceName;
   const msg = `🌰 Der nut-client von ${clientName} ist offline!`;
 
   // 1. Telegram & Log

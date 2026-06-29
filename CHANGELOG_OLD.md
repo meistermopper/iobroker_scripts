@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [2.0.86] - 2026-06-29
+
+- Update of geschirr.js
+
 ### [2.0.85] - 2026-06-28
 
 - Update of iobroker_restart.js
