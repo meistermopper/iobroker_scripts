@@ -3,7 +3,7 @@
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.0.1-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.0.2-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -94,6 +94,9 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ## 📝 Changelog
 
+### [3.0.2] - 2026-06-29
+- feat: add Harvia Fenix FX 110C sauna control script with cloud integration (Fenix_FX110C_Sauna_control.js)
+
 ### [3.0.1] - 2026-06-29
 - feat: add multiple automation scripts and configurations for ioBroker management (licht_bewegung_dunkel.js, licht_bewegung_dunkel.js, switch_neu_starten.js, Weihnachtsbaum_Terrasse.js, post_da.js, zustand_r2maeh2.js, Wasserdruckwarnung.js, morgenprogramm.js, trockner.js, waschmaschine.js, Fenix_FX110C_Sauna_control.js, session_master.js, heizung_anwesenheit_master.js, charge_master.js, climate_control.js, location_and_status.js, energiemaster_und_sauna.js, solarprognose_master.js, homematic_all.js, kalender.js, weihnachtszeit.js, battery_states.js, chromecast_ban_heos.js, sayit_autofix.js, sonoff_devices_table.js, syslog_monitor.js, tasmota_fw.js, vaillant_Neustart.js, versionen.js, vis_PIN.js, ziegenhain.js, domains_blocked.js, versionen.js, network_version.js, neue_ip_failover.js, hue_zigbee_states_restore.js, telegram_menue.js, termine_2T.js, radio_manuell.js, baum_Zeitschalt.js, switch_alle_lampen.js, videolicht.js, fully_bewegung.js, ladestation_neustart_hub.js, smartphones_laden.js, switch_ventilator.js, notify.js)
 
@@ -105,10 +108,6 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 ### [2.2.2] - 2026-06-29
 - feat: add set of smarthome automation, monitoring, and utility scripts for ioBroker (Weihnachtsbaum_Terrasse.js, geschirr.js, trockner.js, waschmaschine.js, heos_offline.js, batterie_voll.js, batteriehitzewarnung.js, soh_change.js, stromausfall.js, fritz_reboot.js, astrozeiten.js, adapter_off.js, battery_states.js, raumwerte_lueften.js, sonoff_fail.js, tasmota_fw.js, nut_client_inactive.js, telegram_menue.js, sat_tv_auto_aus.js, abendlicht_TV_Wind_aus.js, autolicht_daemmer.js, kachelofen_ventilator.js)
-
-### [2.2.1] - 2026-06-29
-
-- feat: add comprehensive library of iobroker automation scripts across home and system domains (heizen_rh.js, licht_bewegung_dunkel.js, heizen_rh.js, licht_bewegung_dunkel.js, radio.js, Anrufer.js, BWM_test.js, Bewegungsmelder_Test.js, Feuchte_Funktion.js, Fruehansage_kueche.js, Garderobenlicht_Schalter.js, Garderobenlicht_nonpresence.js, IFTTT.js, Licht_schalten.js, Ort_nach_Koordinaten.js, Radio_Status_abfragen.js, Standort_Kfz_telegram.js, TV_Sender_Wozi.js, VU_Sender_GH.js, Waschmaschine_Kosten.js, Zufallslicht_Funktionen.js, function_einbinden.js, geo_api.js, gotify_exec.js, ip_ddnss_ipv4.js, prox_telegram.js, tablet_smar_laden.js, test2.js, unify_voucher.js, zaehlerstand.js, deckenlampe_auto_aus.js, Weihnachtsbaum_Terrasse.js, muellmeldung.js, post_da.js, zustand_r2maeh2.js, tageskosten.js, fenster_offen.js, garderobenlicht.js, geschirr.js, morgenprogramm.js, trockner.js, licht.js, boiler.js, licht_presence.js, Fenix_FX110C_Sauna_control.js, heos_offline.js, session_master.js, playerstate.js, schranklicht.js, vu_reboot_standby.js, werte_schreiben_silvester.js, serverschrank_taegl.js, weinklima_taegl.js, heizung_anwesenheit_master.js, charge_master.js, climate_control.js, location_and_status.js, batterie_voll.js, batteriehitzewarnung.js, energiemaster_und_sauna.js, march_minsoc.js, soh_change.js, stromausfall.js, fritz_reboot.js, homematic_all.js, astrozeiten.js, weihnachtszeit.js, zeiten.js, adapter_off.js, chromecast_ban_heos.js, raumwerte_lueften.js, sonoff_devices_table.js, sonoff_fail.js, tasmota_fw.js, vis_PIN.js, percent_blocking_both.js, proxmox_master_v2.js, ram_monitor.js, dyndns_fail.js, failover_dyndns_master.js, neue_ip_failover.js, hue_zigbee_states_restore.js, nut_client_inactive.js, usv_wartung_apc_server.js, usv_wartung_eaton_buero.js, telegram_menue.js, termine_2T.js, sat_tv_auto_aus.js, marantz_laeuft.js, radio_heos.js, radio_manuell.js, video_auto_aus.js, abendlicht_TV_Wind_aus.js, autolicht_daemmer.js, baum_Zeitschalt.js, musiklicht.js, ventilator_false.js, videolicht.js, fully_smart_laden.js, ladestation_neustart_hub.js, smartphones_laden.js, verbrauch_media.js, kachelofen_ventilator.js, notify.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
 

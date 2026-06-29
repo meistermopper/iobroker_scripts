@@ -381,8 +381,7 @@ async function updateStatus() {
     }
 
     if (p || s) {
-      if (p) console.log(`[Harvia DEBUG] Raw Data: ${JSON.stringify(p)}`);
-      if (s) console.log(`[Harvia DEBUG] Device State: ${JSON.stringify(s)}`);
+
 
       if (Date.now() - lastCommandTime < LATENCY_MS) return;
 
