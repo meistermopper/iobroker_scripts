@@ -30,54 +30,49 @@ function scheduleScreenOff() {
 }
 
 // Trigger: Reagiert auf jede Änderung des Batteriestands
-on(
-  { id: "fullybrowser.0.Fully-Browser.Info.batteryLevel", change: "ne" },
-  async (obj) => {
-    // Aktueller Batteriewert aus dem Trigger-Objekt
-    const currentBatt = obj.state.val;
-    // Vorheriger Batteriewert (für Sinkflug-Prüfung)
-    const oldBatt = obj.oldState ? obj.oldState.val : currentBatt;
+on({ id: "fullybrowser.0.Fully-Browser.Info.batteryLevel", change: "ne" }, async (obj) => {
+  // Aktueller Batteriewert aus dem Trigger-Objekt
+  const currentBatt = obj.state.val;
+  // Vorheriger Batteriewert (für Sinkflug-Prüfung)
+  const oldBatt = obj.oldState ? obj.oldState.val : currentBatt;
 
-    // Status der Ladesteckdose abrufen (true = Tablet wird geladen)
-    const isCharging = getState("alias.0.wohnzimmer.energie.fully.POWER")?.val;
+  // Status der Ladesteckdose abrufen (true = Tablet wird geladen)
+  const isCharging = getState("alias.0.wohnzimmer.energie.fully.POWER")?.val;
 
-    /**
-     * LOGIK 1: LADEN STARTEN
-     * Wenn der Akku unter 30% fällt und die Steckdose noch aus ist.
-     */
-    if (currentBatt < 30 && !isCharging) {
-      //console.log(`Akku niedrig (${currentBatt}%). Starte Ladevorgang.`);
-      setState("alias.0.wohnzimmer.energie.fully.POWER", true);
+  /**
+   * LOGIK 1: LADEN STARTEN
+   * Wenn der Akku unter 30% fällt und die Steckdose noch aus ist.
+   */
+  if (currentBatt < 30 && !isCharging) {
+    //console.log(`Akku niedrig (${currentBatt}%). Starte Ladevorgang.`);
+    setState("alias.0.wohnzimmer.energie.fully.POWER", true);
 
-      // Nach dem Einschalten der Dose geht oft das Display an -> Ausschalten planen
-      scheduleScreenOff();
-    } else if (currentBatt >= 70 && isCharging) {
-
+    // Nach dem Einschalten der Dose geht oft das Display an -> Ausschalten planen
+    scheduleScreenOff();
+  } else if (currentBatt >= 70 && isCharging) {
     /**
      * LOGIK 2: LADEN STOPPEN
      * Wenn der Akku die Zielmarke von 70% erreicht hat und gerade geladen wird.
      * (Akkuschonung: Idealbereich liegt meist zwischen 20% und 80%)
      */
-      //console.log(`Ziel-Ladestand erreicht (${currentBatt}%). Beende Ladevorgang.`);
-      setState("alias.0.wohnzimmer.energie.fully.POWER", false);
+    //console.log(`Ziel-Ladestand erreicht (${currentBatt}%). Beende Ladevorgang.`);
+    setState("alias.0.wohnzimmer.energie.fully.POWER", false);
 
-      // Auch beim Ausstecken/Abschalten kann das Display reagieren -> Ausschalten planen
-      scheduleScreenOff();
-    } else if (currentBatt < 28 && currentBatt < oldBatt) {
-
+    // Auch beim Ausstecken/Abschalten kann das Display reagieren -> Ausschalten planen
+    scheduleScreenOff();
+  } else if (currentBatt < 28 && currentBatt < oldBatt) {
     /**
      * LOGIK 3: ALARM-SYSTEM
      * Wenn der Akku unter 28% ist UND der Wert weiter sinkt (trotz Ladewunsch).
      * Dies deutet auf ein defektes Kabel oder eine hängende Steckdose hin.
      */
-      const message = `Achtung: Wandtablet lädt nicht korrekt, Stand: ${currentBatt}% (Sinkend)`;
-      console.error(message);
-      await sendGlobalNotify(
-        message,
-        "",
-        2,
-        compareTime("08:00", "20:00", "between") ? 40 : null, // Sprachausgabe nur tagsüber
-      );
-    }
-  },
-);
+    const message = `Achtung: Wandtablet lädt nicht korrekt, Stand: ${currentBatt}% (Sinkend)`;
+    console.error(message);
+    await sendGlobalNotify(
+      message,
+      "",
+      2,
+      compareTime("08:00", "20:00", "between") ? 40 : null, // Sprachausgabe nur tagsüber
+    );
+  }
+});

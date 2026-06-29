@@ -21,8 +21,7 @@
 const geraete = {
   "Das Smartphone von Kiki": {
     levelId: "0_userdata.0.Energie.Smartphone.Kiki_level", // Woher kommt der Akkustand?
-    powerId:
-      "alias.0.wohnzimmer.energie.ladestation_kiki.Ladestation_Kiki.POWER", // Eigene Dose für Kiki
+    powerId: "alias.0.wohnzimmer.energie.ladestation_kiki.Ladestation_Kiki.POWER", // Eigene Dose für Kiki
     notifiedFullId: "0_userdata.0.Energie.Smartphone.Kiki_MeldungVoll", // Speicher für "Schon gemeldet"
     lowBatId: "0_userdata.0.Energie.Smartphone.Kiki_lowBat", // Rotes Icon in der VIS
     min: 35,
@@ -75,7 +74,7 @@ async function initStates() {
       });
     }
     // C. Der "Lädt"-Datenpunkt (zeigt an, ob der Akku gerade steigt)
-    let laedtId = config.levelId.replace("_level", "_laedt");
+    const laedtId = config.levelId.replace("_level", "_laedt");
     if (!existsState(laedtId)) {
       await createStateAsync(laedtId, false, {
         name: "Ladestatus Aktiv",
@@ -111,14 +110,10 @@ Object.keys(geraete).forEach((name) => {
     const isPlugged = config.pluggedId ? getState(config.pluggedId)?.val : undefined;
 
     // 1. VIS LADESTATUS AKTUALISIEREN
-    let targetLaedtId = config.levelId.replace("_level", "_laedt");
+    const targetLaedtId = config.levelId.replace("_level", "_laedt");
     if (existsState(targetLaedtId)) {
       // Wenn neuer Wert > alter Wert, dann lädt das Gerät
-      setState(
-        targetLaedtId,
-        level > (obj.oldState ? obj.oldState.val : 0),
-        true,
-      );
+      setState(targetLaedtId, level > (obj.oldState ? obj.oldState.val : 0), true);
     }
 
     // 2. SPERRE ZURÜCKSETZEN
@@ -136,15 +131,18 @@ Object.keys(geraete).forEach((name) => {
       // Wir senden nur eine Nachricht, wenn das Gerät NICHT eingesteckt ist (isPlugged === false).
       // Wenn es bereits eingesteckt ist (true), aktivieren wir nur lautlos den Strom.
       // Geräte ohne plugged-Sensor (wie Kiki aktuell) melden sich wie gewohnt immer.
-      if (isPlugged === true) { // Wenn eingesteckt, aber noch nicht geladen
-        console.log(`[Smart-Charging] ${name} ist bereits eingesteckt (${level}%). Ladung wurde lautlos gestartet.`);
+      if (isPlugged === true) {
+        // Wenn eingesteckt, aber noch nicht geladen
+        console.log(
+          `[Smart-Charging] ${name} ist bereits eingesteckt (${level}%). Ladung wurde lautlos gestartet.`,
+        );
       } else {
         await sendGlobalNotify(
-            "🪫 " + name + " sollte geladen werden.\nStand: " + level + "%",
-            "",
-            1, // Priorität
-            compareTime("08:00", "20:00", "between") ? 50 : null // Sprachausgabe Lautstärke 50
-          );
+          "🪫 " + name + " sollte geladen werden.\nStand: " + level + "%",
+          "",
+          1, // Priorität
+          compareTime("08:00", "20:00", "between") ? 50 : null, // Sprachausgabe Lautstärke 50
+        );
       }
     }
 
@@ -158,7 +156,7 @@ Object.keys(geraete).forEach((name) => {
         "🔋 " + name + " ist geladen.\nStand: " + level + "%",
         "",
         1, // Priorität
-        compareTime("08:00", "20:00", "between") ? 50 : null // Sprachausgabe Lautstärke 50
+        compareTime("08:00", "20:00", "between") ? 50 : null, // Sprachausgabe Lautstärke 50
       );
     }
   });

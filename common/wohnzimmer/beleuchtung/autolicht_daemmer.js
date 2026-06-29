@@ -10,13 +10,17 @@ function notify(text) {
 
   const token = getState(ID_GOTIFY_TOKEN)?.val;
   if (token) {
-    httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
-      title: "ioBroker:",
-      message: text,
-      priority: 1
-    }, (error) => {
-      if (error) console.error(`[Autolicht Dämmer] Gotify Fehler: ${error}`);
-    });
+    httpPost(
+      `https://mygotify.meistermopper.de/message?token=${token}`,
+      {
+        title: "ioBroker:",
+        message: text,
+        priority: 1,
+      },
+      (error) => {
+        if (error) console.error(`[Autolicht Dämmer] Gotify Fehler: ${error}`);
+      },
+    );
   }
 }
 

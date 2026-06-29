@@ -38,10 +38,7 @@ on({ id: ID_MOTION, change: "gt" }, async () => {
 
   // Display einschalten und Helligkeit setzen
   setState(ID_COMMAND + "screenOn", true);
-  setState(
-    ID_COMMAND + "setStringSetting",
-    `&key=screenBrightness&value=${BRI_HOCH}`,
-  );
+  setState(ID_COMMAND + "setStringSetting", `&key=screenBrightness&value=${BRI_HOCH}`);
 
   // Timer für das Ausschalten starten
   timeout_screen = setTimeout(async () => {
@@ -60,10 +57,7 @@ on({ id: ID_MOTION, change: "gt" }, async () => {
 on({ id: ID_HELL, change: "ne" }, (obj) => {
   if (obj.state.val) {
     setState(ID_COMMAND + "screenOn", true);
-    setState(
-      ID_COMMAND + "setStringSetting",
-      `&key=screenBrightness&value=${BRI_HOCH}`,
-    );
+    setState(ID_COMMAND + "setStringSetting", `&key=screenBrightness&value=${BRI_HOCH}`);
   } else {
     setState(ID_COMMAND + "screenOff", true);
   }

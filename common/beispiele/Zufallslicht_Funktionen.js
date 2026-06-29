@@ -1,7 +1,6 @@
 var startverz_C3_B6gerung;
 
-
-schedule({astro: "sunrise", shift: 0}, async function () {
+schedule({ astro: "sunrise", shift: 0 }, async () => {
   if (getState("ID auswählen")?.val) {
     startverz_C3_B6gerung = 0;
   }

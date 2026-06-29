@@ -9,8 +9,7 @@ schedule({ astro: "goldenHour", shift: 0 }, async () => {
     // Der 'on'-Trigger unten kümmert sich automatisch um die Galaxie!
     setState("sonoff.0.Weihnachtsbaum.POWER", true);
 
-    const msg =
-      "+++🎄 Wohnzimmer: Goldene Stunde, Weihnachtsbaum wurde eingeschaltet +++";
+    const msg = "+++🎄 Wohnzimmer: Goldene Stunde, Weihnachtsbaum wurde eingeschaltet +++";
     sendTo("telegram", "send", { text: msg });
     console.log(msg);
   }
@@ -36,8 +35,6 @@ on({ id: "sonoff.0.Weihnachtsbaum.POWER", change: "gt" }, async (obj) => {
   if (getState("sonoff.0.Galaxie.POWER")?.val) {
     // Wir schalten die Galaxie aus, damit der Baum alleine wirkt
     setState("sonoff.0.Galaxie.POWER", false);
-    console.log(
-      "Galaxie wurde automatisch ausgeschaltet, da der Weihnachtsbaum Priorität hat.",
-    );
+    console.log("Galaxie wurde automatisch ausgeschaltet, da der Weihnachtsbaum Priorität hat.");
   }
 });

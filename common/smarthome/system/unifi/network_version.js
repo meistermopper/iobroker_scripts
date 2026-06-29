@@ -38,14 +38,11 @@ async function getUnifiData() {
     const headers = { Cookie: loginRes.headers["set-cookie"].join("; ") };
 
     // 2. Network Version & Update-Status abrufen
-    const sysRes = await axios.get(
-      `https://${udmIp}/proxy/network/api/s/default/stat/sysinfo`,
-      {
-        headers: headers,
-        httpsAgent: agent,
-        timeout: 15000,
-      },
-    );
+    const sysRes = await axios.get(`https://${udmIp}/proxy/network/api/s/default/stat/sysinfo`, {
+      headers: headers,
+      httpsAgent: agent,
+      timeout: 15000,
+    });
 
     if (sysRes.data && sysRes.data.data && sysRes.data.data[0]) {
       const sys = sysRes.data.data[0];

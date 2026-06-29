@@ -11,9 +11,7 @@ let vaillantTimeout = null;
 on({ id: ID_TRIGGER, change: "any" }, async (obj) => {
   // 1. Echten Neustart der Instanz auslösen
   try {
-    console.warn(
-      `Vaillant-Watchdog: Neustart der Instanz ${INSTANCE} eingeleitet`,
-    );
+    console.warn(`Vaillant-Watchdog: Neustart der Instanz ${INSTANCE} eingeleitet`);
     await restartInstanceAsync(INSTANCE);
 
     // Benachrichtigung (optional, wie bei den anderen Skripten)
@@ -30,9 +28,7 @@ on({ id: ID_TRIGGER, change: "any" }, async (obj) => {
     // falls es kein Taster (Button) sondern ein Schalter ist.
     // setState(ID_TRIGGER, false, true);
 
-    console.log(
-      `Vaillant-Watchdog: Neustart-Prozess für ${INSTANCE} abgeschlossen`,
-    );
+    console.log(`Vaillant-Watchdog: Neustart-Prozess für ${INSTANCE} abgeschlossen`);
     vaillantTimeout = null;
   }, 5000); // 5 Sekunden Pause bis zum nächsten möglichen Reset
 });

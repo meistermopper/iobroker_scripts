@@ -1,22 +1,21 @@
 var lampe1, lampe2, lampe3;
 
-
-on({id: 'default', change: "ne"}, function (obj) {
+on({ id: "default", change: "ne" }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  if ((obj.state ? obj.state.val : "")) {
+  if (obj.state ? obj.state.val : "") {
     lampe1 = getState("ID auswählen")?.val;
     lampe2 = getState("ID auswählen")?.val;
     lampe3 = getState("ID auswählen")?.val;
   }
   if (!lampe1) {
-    setState("Object ID", (obj.state ? obj.state.val : ""));
+    setState("Object ID", obj.state ? obj.state.val : "");
   }
   if (!lampe2) {
-    setState("Object ID", (obj.state ? obj.state.val : ""));
+    setState("Object ID", obj.state ? obj.state.val : "");
   }
   if (!lampe2) {
-    setState("Object ID", (obj.state ? obj.state.val : ""));
+    setState("Object ID", obj.state ? obj.state.val : "");
   }
 });
 

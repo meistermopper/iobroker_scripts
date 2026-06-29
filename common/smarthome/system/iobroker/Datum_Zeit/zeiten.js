@@ -16,16 +16,8 @@ schedule("5 * * * *", () => {
   const sunset = getAstroDate("sunset");
 
   setState(`${BASE_PATH}sonnenaufgang`, formatTime(sunrise), true);
-  setState(
-    `${BASE_PATH}sonnenaufgang_stunde`,
-    sunrise.getHours().toString(),
-    true,
-  );
-  setState(
-    `${BASE_PATH}sonnenaufgang_minute`,
-    sunrise.getMinutes().toString(),
-    true,
-  );
+  setState(`${BASE_PATH}sonnenaufgang_stunde`, sunrise.getHours().toString(), true);
+  setState(`${BASE_PATH}sonnenaufgang_minute`, sunrise.getMinutes().toString(), true);
   setState(`${BASE_PATH}sonnenuntergang`, formatTime(sunset), true);
 });
 
@@ -43,11 +35,7 @@ schedule("5 0 * * *", async () => {
 
   // Werte speichern
   const gesternMin = getState(`${BASE_PATH}tageslaenge_in_minuten`)?.val;
-  setState(
-    `${BASE_PATH}tageslaenge_in_minuten_gestern`,
-    String(gesternMin),
-    true,
-  );
+  setState(`${BASE_PATH}tageslaenge_in_minuten_gestern`, String(gesternMin), true);
   setState(`${BASE_PATH}tageslaenge_in_minuten`, String(tageslaengeMin), true);
   setState(`${BASE_PATH}tageslaenge`, `${std}:${min}`, true);
 
@@ -63,11 +51,7 @@ schedule("5 0 * * *", async () => {
   // Differenz berechnen (nach kurzem Timeout für DB-Sync)
   setTimeout(() => {
     const diff = tageslaengeMin - gesternMin;
-    setState(
-      `${BASE_PATH}tageslaenge_differenz`,
-      diff >= 0 ? `+${diff}` : `${diff}`,
-      true,
-    );
+    setState(`${BASE_PATH}tageslaenge_differenz`, diff >= 0 ? `+${diff}` : `${diff}`, true);
   }, 5000);
 });
 
@@ -79,16 +63,12 @@ schedule("* * * * *", () => {
   const tageslaengeMin = getState(`${BASE_PATH}tageslaenge_in_minuten`)?.val;
 
   // Minuten bis Sonnenuntergang
-  let restLichtMin = Math.floor((sunset - now) / 60000);
+  const restLichtMin = Math.floor((sunset - now) / 60000);
 
   if (restLichtMin > 0 && restLichtMin <= tageslaengeMin) {
     const prozent = Math.round((restLichtMin * 100) / tageslaengeMin);
     setState(`${BASE_PATH}tageslaenge_fortschritt`, prozent.toString(), true);
-    setState(
-      `${BASE_PATH}tageslaenge_tageslicht_in_minuten`,
-      restLichtMin.toString(),
-      true,
-    );
+    setState(`${BASE_PATH}tageslaenge_tageslicht_in_minuten`, restLichtMin.toString(), true);
 
     const h = Math.floor(restLichtMin / 60)
       .toString()
@@ -101,10 +81,7 @@ schedule("* * * * *", () => {
     // Nachtfortschritt Logik
     let restNachtMin = 0;
     if (now > sunset) {
-      const morgenSunrise = getAstroDate(
-        "sunrise",
-        new Date().setDate(now.getDate() + 1),
-      );
+      const morgenSunrise = getAstroDate("sunrise", new Date().setDate(now.getDate() + 1));
       restNachtMin = Math.floor((morgenSunrise - now) / 60000);
     } else {
       restNachtMin = Math.floor((sunrise - now) / 60000);

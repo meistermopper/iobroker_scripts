@@ -21,8 +21,7 @@ const CONFIG = {
   symbols: { ok: "●", warn: "▲", crit: "✖" },
 
   design: {
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     fontSize: "11px",
     // Der blaue Verlauf für die Überschriften (macht sie lesbar!)
     colorHeader: "linear-gradient(180deg, #265686, #1a3a5c)",
@@ -90,7 +89,7 @@ function getSmartName(id) {
  * Bewertet die Volt-Zahl je nach Batterietyp (Knopfzelle vs. AA).
  */
 function evaluateVoltage(v) {
-  let res = {
+  const res = {
     status: CONFIG.symbols.ok,
     color: CONFIG.design.colorOk,
     isCrit: false,
@@ -133,8 +132,8 @@ function evaluateVoltage(v) {
  * Sammelt alle Akkustände, verhindert Dubletten und sortiert nach Ladestand.
  */
 async function collectGroupedData() {
-  let groups = {};
-  let allCritical = [];
+  const groups = {};
+  const allCritical = [];
 
   for (const conf of ADAPTER_CONFIG) {
     if (!groups[conf.name]) groups[conf.name] = [];
@@ -148,21 +147,16 @@ async function collectGroupedData() {
       const val = state.val;
 
       // DEDUPLIZIERUNG: Volt hat Vorrang vor LOW_BAT.
-      const existingIdx = groups[conf.name].findIndex(
-        (d) => d.device === deviceName,
-      );
+      const existingIdx = groups[conf.name].findIndex((d) => d.device === deviceName);
       if (existingIdx !== -1) {
-        if (
-          conf.type === "volt" &&
-          groups[conf.name][existingIdx].type === "bool"
-        ) {
+        if (conf.type === "volt" && groups[conf.name][existingIdx].type === "bool") {
           groups[conf.name].splice(existingIdx, 1);
         } else return;
       }
 
       // Umwandlung in Zahl zur sicheren Farbberechnung.
-      let valNum = conf.type === "bool" ? (val ? 0 : 100) : parseFloat(val);
-      let displayValue =
+      const valNum = conf.type === "bool" ? (val ? 0 : 100) : parseFloat(val);
+      const displayValue =
         conf.type === "bool"
           ? val
             ? "low bat"
@@ -208,7 +202,7 @@ async function collectGroupedData() {
   }
 
   // Sortierung: Die schwächsten Akkus stehen in ihrer Gruppe oben.
-  for (let key in groups) {
+  for (const key in groups) {
     groups[key].sort((a, b) => a.valNum - b.valNum);
   }
   return { groups, allCritical };
@@ -236,16 +230,9 @@ function buildModernHTML(groupedData) {
 
     // 4-SPALTEN LOGIK
     for (let i = 0; i < devices.length; i += 4) {
-      const devArray = [
-        devices[i],
-        devices[i + 1],
-        devices[i + 2],
-        devices[i + 3],
-      ];
+      const devArray = [devices[i], devices[i + 1], devices[i + 2], devices[i + 3]];
       const rowColor =
-        Math.floor(i / 4) % 2 === 0
-          ? CONFIG.design.colorBgEven
-          : CONFIG.design.colorBgOdd;
+        Math.floor(i / 4) % 2 === 0 ? CONFIG.design.colorBgEven : CONFIG.design.colorBgOdd;
 
       htmlRows += `<tr style="background-color: ${rowColor}; color: ${CONFIG.design.colorText}; font-size: 11px; height: 32px;">`;
 
@@ -293,13 +280,17 @@ async function sendNotifications(criticalDevices) {
     const tokenState = await getStateAsync(CONFIG.idGotifyToken);
     if (tokenState && tokenState.val) {
       const prio = isQuietTime ? 0 : 1;
-      httpPost(`https://mygotify.meistermopper.de/message?token=${tokenState.val}`, {
-        title: "Batterie Alarm",
-        message: message,
-        priority: prio
-      }, (error) => {
-        if (error) console.error(`[Battery States] Gotify Fehler: ${error}`);
-      });
+      httpPost(
+        `https://mygotify.meistermopper.de/message?token=${tokenState.val}`,
+        {
+          title: "Batterie Alarm",
+          message: message,
+          priority: prio,
+        },
+        (error) => {
+          if (error) console.error(`[Battery States] Gotify Fehler: ${error}`);
+        },
+      );
     }
   }
 }

@@ -1,20 +1,19 @@
 var emailSent, value;
 
-
 //  Send email if outside temperature is more than 25 grad Celsius.
 emailSent = false;
-on({id: 'javascript.0.Outside_temperature', change: "ne", ack: true}, function (obj) {
+on({ id: "javascript.0.Outside_temperature", change: "ne", ack: true }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
   if (emailSent == false && true) {
     // Remember, that email was sent
     emailSent = false;
     sendTo("email", "send", {
-       text: 'Temperature is over 25°C',
-       to: 'myaddress@domain.com',
-       subject: 'Temperature alert'
+      text: "Temperature is over 25°C",
+      to: "myaddress@domain.com",
+      subject: "Temperature alert",
     });
-    console.log("email: " + 'Temperature is over 25°C');
+    console.log("email: " + "Temperature is over 25°C");
   } else if (value < 23) {
     emailSent = false;
   }

@@ -29,7 +29,7 @@ const NODE_STATUS_IDS = [
 ];
 
 // Speicher für Timer und Zustände (verhindert doppelte Meldungen)
-let states = {
+const states = {
   temp: {},
   nodes: {},
   disks: {},
@@ -95,11 +95,7 @@ on({ id: Object.keys(SERVER_MAP), change: "ne" }, (obj) => {
   // Entwarnung erst, wenn Hysterese unterschritten wird (verhindert Alarm-Spam)
   else if (temp < TEMP_LIMIT - TEMP_HYST && s.alarm) {
     s.alarm = false;
-    notify(
-      "❄️ Abkühlung",
-      `${geraet} ist wieder im grünen Bereich (${temp}°C).`,
-      4,
-    );
+    notify("❄️ Abkühlung", `${geraet} ist wieder im grünen Bereich (${temp}°C).`, 4);
   }
 });
 
@@ -113,11 +109,7 @@ on({ id: /^proxmox\.0\.(lxc|qemu)_.*\.disk_lev$/, change: "ne" }, (obj) => {
   if (level >= DISK_LIMIT && oldLevel < DISK_LIMIT) {
     const type = obj.id.includes("lxc") ? "LXC" : "VM";
     const name = obj.id.split(".")[2].replace("lxc_", "").replace("qemu_", "");
-    notify(
-      "💾 Speicher-Warnung",
-      `${type} "${name}" ist zu ${level}% belegt!`,
-      6,
-    );
+    notify("💾 Speicher-Warnung", `${type} "${name}" ist zu ${level}% belegt!`, 6);
   }
 });
 
@@ -133,11 +125,7 @@ on({ id: NODE_STATUS_IDS, change: "ne" }, (obj) => {
     // Puffer, falls der Proxmox-Adapter nur kurz neu startet
     s.timer = setTimeout(() => {
       if (getState(id)?.val === "offline") {
-        notify(
-          "❌ Node Offline",
-          `${name} ist seit 1 Minute nicht erreichbar!`,
-          8,
-        );
+        notify("❌ Node Offline", `${name} ist seit 1 Minute nicht erreichbar!`, 8);
         s.alarm = true;
       }
       s.timer = null;

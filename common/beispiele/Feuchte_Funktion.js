@@ -1,4 +1,9 @@
-var Menue_Schaltungen_empfaenger, Telegram_Text, Telegram_Empfaenger, Letzter_Text_klein, Letzter_Absender, Letzter_Text;
+var Menue_Schaltungen_empfaenger,
+  Telegram_Text,
+  Telegram_Empfaenger,
+  Letzter_Text_klein,
+  Letzter_Absender,
+  Letzter_Text;
 
 function subsequenceFromStartLast(sequence, at1) {
   var start = at1;
@@ -10,20 +15,20 @@ function subsequenceFromStartLast(sequence, at1) {
  * Beschreibe diese Funktion …
  */
 function Menue_Schaltungen(Menue_Schaltungen_empfaenger) {
-    sendTo('telegram.0', {
-        user: (Menue_Schaltungen_empfaenger),
-        text:  'Bitte wählen',
-        reply_markup: {
-        keyboard: [
-                ['Übersicht'],
-                ['Terrasse An', 'Terrasse Aus'],
-                ['Drehspieß An', 'Drehspieß Aus'],
-                ['Steckleiste An', 'Steckleiste Aus'],
-            ],
-            resize_keyboard:   true,
-            one_time_keyboard: true
-        }
-    });
+  sendTo("telegram.0", {
+    user: Menue_Schaltungen_empfaenger,
+    text: "Bitte wählen",
+    reply_markup: {
+      keyboard: [
+        ["Übersicht"],
+        ["Terrasse An", "Terrasse Aus"],
+        ["Drehspieß An", "Drehspieß Aus"],
+        ["Steckleiste An", "Steckleiste Aus"],
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: true,
+    },
+  });
 }
 
 /**
@@ -31,57 +36,65 @@ function Menue_Schaltungen(Menue_Schaltungen_empfaenger) {
  */
 function Telegram_senden(Telegram_Text, Telegram_Empfaenger) {
   sendTo("telegram", "send", {
-      text: Telegram_Text,
-      user: Telegram_Empfaenger
+    text: Telegram_Text,
+    user: Telegram_Empfaenger,
   });
 }
 
-
-on({id: getState("ID auswählen")?.val, change: "ne"}, function (obj) {
+on({ id: getState("ID auswählen")?.val, change: "ne" }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  Letzter_Text_klein = subsequenceFromStartLast((obj.state ? obj.state.val : ""), (((obj.state ? obj.state.val : "").indexOf(']') + 1 + 1) - 1)).toLowerCase();
+  Letzter_Text_klein = subsequenceFromStartLast(
+    obj.state ? obj.state.val : "",
+    (obj.state ? obj.state.val : "").indexOf("]") + 1 + 1 - 1,
+  ).toLowerCase();
   // Menü Übersicht
-  if (Letzter_Absender == 'Thomas' && (Letzter_Text_klein == 'übersicht' || Letzter_Text_klein == 'ü')) {
-  } else if (Letzter_Absender == 'Kiki' && (Letzter_Text_klein == 'übersicht' || Letzter_Text_klein == 'ü')) {
+  if (
+    Letzter_Absender == "Thomas" &&
+    (Letzter_Text_klein == "übersicht" || Letzter_Text_klein == "ü")
+  ) {
+  } else if (
+    Letzter_Absender == "Kiki" &&
+    (Letzter_Text_klein == "übersicht" || Letzter_Text_klein == "ü")
+  ) {
   }
   // Menü Heizung
-  if (Letzter_Absender == 'Thomas' && Letzter_Text == 'Heizung') {
+  if (Letzter_Absender == "Thomas" && Letzter_Text == "Heizung") {
   }
   // Status Ender 3
   // Schaltung Ender 3
   // Menü Schalter
-  if (Letzter_Text == 'Schaltungen') {
+  if (Letzter_Text == "Schaltungen") {
     Menue_Schaltungen(Letzter_Absender);
   }
   // Drehspieß schalten
-  if (Letzter_Text == 'Drehspieß An') {
-    setState("sonoff.0.Terrassendose.POWER2"/*Grill*/, true);
-  } else if (Letzter_Text == 'Drehspieß Aus') {
-    setState("sonoff.0.Terrassendose.POWER2"/*Grill*/, false);
+  if (Letzter_Text == "Drehspieß An") {
+    setState("sonoff.0.Terrassendose.POWER2" /*Grill*/, true);
+  } else if (Letzter_Text == "Drehspieß Aus") {
+    setState("sonoff.0.Terrassendose.POWER2" /*Grill*/, false);
   }
   // Terrasse komplett schalten
-  if (Letzter_Text == 'Terrasse An') {
-    setState("sonoff.0.Terrassendose.POWER"/*Terrassendose POWER*/, true);
-  } else if (Letzter_Text == 'Terrasse Aus') {
-    setState("sonoff.0.Terrassendose.POWER"/*Terrassendose POWER*/, false);
+  if (Letzter_Text == "Terrasse An") {
+    setState("sonoff.0.Terrassendose.POWER" /*Terrassendose POWER*/, true);
+  } else if (Letzter_Text == "Terrasse Aus") {
+    setState("sonoff.0.Terrassendose.POWER" /*Terrassendose POWER*/, false);
   }
   // Steckleiste schalten
-  if (Letzter_Text == 'Steckleiste An') {
-    setState("sonoff.0.Terrassendose.POWER1"/*Steckdosenleiste*/, true);
-  } else if (Letzter_Text == 'Steckleiste Aus') {
-    setState("sonoff.0.Terrassendose.POWER1"/*Steckdosenleiste*/, false);
+  if (Letzter_Text == "Steckleiste An") {
+    setState("sonoff.0.Terrassendose.POWER1" /*Steckdosenleiste*/, true);
+  } else if (Letzter_Text == "Steckleiste Aus") {
+    setState("sonoff.0.Terrassendose.POWER1" /*Steckdosenleiste*/, false);
   }
   // Ping Maschinen
-  if (Letzter_Text == 'Ping Maschinen') {
-    setState("0_userdata.0.Anwesenheit.Ping_Maschinen"/*Ping_Maschinen*/, true);
+  if (Letzter_Text == "Ping Maschinen") {
+    setState("0_userdata.0.Anwesenheit.Ping_Maschinen" /*Ping_Maschinen*/, true);
   }
   // Ping Maschinen
-  if (Letzter_Text == 'Adapter') {
-    setState("0_userdata.0.Anwesenheit.Ping_Adapter"/*Ping_Adapter*/, true);
+  if (Letzter_Text == "Adapter") {
+    setState("0_userdata.0.Anwesenheit.Ping_Adapter" /*Ping_Adapter*/, true);
   }
   // Spritpreise
-  if (Letzter_Text == 'Spritpreise') {
+  if (Letzter_Text == "Spritpreise") {
     Telegram_senden(null, Letzter_Absender);
   }
 });

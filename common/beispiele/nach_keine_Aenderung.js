@@ -1,14 +1,17 @@
 var timeout;
 
-
-on({id: 'default', change: "ne"}, function (obj) {
+on({ id: "default", change: "ne" }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
   if ((obj.state ? obj.state.val : "") >= 20) {
-    (function () {if (timeout) {clearTimeout(timeout); timeout = null;}})();
+    (() => {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+    })();
   } else if ((obj.oldState ? obj.oldState.val : "") >= 20) {
-    timeout = setTimeout(function () {
-    }, 1000);
+    timeout = setTimeout(() => {}, 1000);
   }
 });
 

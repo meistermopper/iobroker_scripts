@@ -8,12 +8,18 @@ const BASE_PATH = "0_userdata.0.ioBroker.versionen."; // Der Stammordner für di
 // Definition aller Datenpunkte, die automatisch erstellt und aktualisiert werden sollen.
 // Entspricht den IDs aus dem ioBroker-Objektbaum. Fehlende Datenpunkte werden automatisch angelegt.
 const STATES_TO_CREATE = [
-  { id: "JS_Controller", val: "", name: "JS-Controller Version", type: "string", role: "info.version" },
+  {
+    id: "JS_Controller",
+    val: "",
+    name: "JS-Controller Version",
+    type: "string",
+    role: "info.version",
+  },
   { id: "node", val: "", name: "Node.js Version", type: "string", role: "info.version" },
   { id: "nodejs", val: "", name: "NodeJS Version", type: "string", role: "info.version" },
   { id: "NPM", val: "", name: "NPM Version", type: "string", role: "info.version" },
   { id: "last_update", val: "", name: "Letztes Update", type: "string", role: "date" },
-  { id: "online", val: false, name: "Online Status", type: "boolean", role: "indicator.connected" }
+  { id: "online", val: false, name: "Online Status", type: "boolean", role: "indicator.connected" },
 ];
 
 /**
@@ -32,7 +38,7 @@ async function initDP() {
         type: s.type,
         role: s.role,
         read: true,
-        write: false
+        write: false,
       });
     }
   }
@@ -41,7 +47,7 @@ async function initDP() {
 /**
  * Hilfsfunktion zur Ausführung von Shell-Befehlen (exec) verpackt in ein Promise.
  * Dies erlaubt die Verwendung von modernem async/await anstelle von verschachtelten Callbacks.
- * 
+ *
  * @param {string} cmd - Der auszuführende Shell-Befehl
  * @returns {Promise<string>} Das bereinigte Ergebnis (stdout) der Befehlsausführung
  */
@@ -80,7 +86,7 @@ async function updateMasterVersions() {
   try {
     // Führt den Befehl asynchron aus
     const stdout = await runShell(command);
-    
+
     // Splittet den Output anhand von Zeilenumbrüchen auf
     const lines = stdout.split("\n");
 
@@ -91,16 +97,18 @@ async function updateMasterVersions() {
       setState(BASE_PATH + "node", lines[1].trim(), true);
       setState(BASE_PATH + "nodejs", lines[2].trim(), true);
       setState(BASE_PATH + "NPM", lines[3].trim(), true);
-      
+
       // Aktuelles Datum und Uhrzeit im deutschen Format generieren und wegschreiben
       const now = new Date().toLocaleString("de-DE");
       setState(BASE_PATH + "last_update", now, true);
-      
+
       // Da die Abfrage erfolgreich war, setzen wir den Online-Status auf true
       setState(BASE_PATH + "online", true, true);
     } else {
       // Warnung protokollieren, falls die Ausgabe unvollständig war
-      console.warn(`[Version-Check-Master] Unerwarteter Output (zu kurz). Zeilen: ${lines.length}.`);
+      console.warn(
+        `[Version-Check-Master] Unerwarteter Output (zu kurz). Zeilen: ${lines.length}.`,
+      );
       setState(BASE_PATH + "online", false, true);
     }
   } catch (error) {

@@ -5,10 +5,7 @@
     "moduleDetection": "force",
     "checkJs": true
   },
-  "include": [
-    "**/*.js",
-    ".iobroker/types/javascript.d.ts"
-  ],
+  "include": ["**/*.js", ".iobroker/types/javascript.d.ts"],
   "typeAcquisition": {
     "enable": true,
     "include": ["node"]

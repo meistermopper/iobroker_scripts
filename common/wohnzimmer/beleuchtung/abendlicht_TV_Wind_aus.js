@@ -18,12 +18,7 @@ schedule("30 23 * * *", async () => {
   //console.log("[GoodNight] Starte automatische Abschaltung...");
 
   // 1. Einfache Schalter (An/Aus)
-  const schalter = [
-    ALIASE.FERNSEHLICHT,
-    ALIASE.GALAXIE,
-    ALIASE.VENTILATOR,
-    ALIASE.MARANTZ,
-  ];
+  const schalter = [ALIASE.FERNSEHLICHT, ALIASE.GALAXIE, ALIASE.VENTILATOR, ALIASE.MARANTZ];
 
   schalter.forEach((id) => {
     if (existsState(id) && getState(id)?.val) {
@@ -44,12 +39,16 @@ schedule("30 23 * * *", async () => {
   const tokenState = getState(GOTIFY_TOKEN_ID);
   const token = tokenState ? tokenState.val : null;
   if (token) {
-    httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
-      title: "ioBroker",
-      message: msg,
-      priority: 1
-    }, (error) => {
-      if (error) console.error(`[Abendlicht TV Wind Aus] Gotify Fehler: ${error}`);
-    });
+    httpPost(
+      `https://mygotify.meistermopper.de/message?token=${token}`,
+      {
+        title: "ioBroker",
+        message: msg,
+        priority: 1,
+      },
+      (error) => {
+        if (error) console.error(`[Abendlicht TV Wind Aus] Gotify Fehler: ${error}`);
+      },
+    );
   }
 });

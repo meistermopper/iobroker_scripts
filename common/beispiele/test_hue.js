@@ -3,23 +3,37 @@ var level, hochdimmen, timeout3;
 // Beschreibe diese Funktion …
 async function hochdimmen2() {
   level = 1;
-  setState("hue.0.Hue_Go_Schlazi.ct"/*Hue Go Schlazi.ct*/, 5500);
-  (function () {if (hochdimmen) {clearInterval(hochdimmen); hochdimmen = null;}})();
-  hochdimmen = setInterval(async function () {
+  setState("hue.0.Hue_Go_Schlazi.ct" /*Hue Go Schlazi.ct*/, 5500);
+  (() => {
+    if (hochdimmen) {
+      clearInterval(hochdimmen);
+      hochdimmen = null;
+    }
+  })();
+  hochdimmen = setInterval(async () => {
     if (level < 100) {
-      setState("hue.0.Hue_Go_Schlazi.level"/*Hue Go Schlazi.level*/, level);
-      level = (typeof level == 'number' ? level : 0) + 1;
+      setState("hue.0.Hue_Go_Schlazi.level" /*Hue Go Schlazi.level*/, level);
+      level = (typeof level == "number" ? level : 0) + 1;
     } else {
-      (function () {if (hochdimmen) {clearInterval(hochdimmen); hochdimmen = null;}})();
-      (function () {if (timeout3) {clearTimeout(timeout3); timeout3 = null;}})();
-      timeout3 = setTimeout(async function () {
-        setState("hue.0.Hue_Go_Schlazi.ct"/*Hue Go Schlazi.ct*/, 2700);
-        setState("hue.0.Hue_Go_Schlazi.level"/*Hue Go Schlazi.level*/, 50);
+      (() => {
+        if (hochdimmen) {
+          clearInterval(hochdimmen);
+          hochdimmen = null;
+        }
+      })();
+      (() => {
+        if (timeout3) {
+          clearTimeout(timeout3);
+          timeout3 = null;
+        }
+      })();
+      timeout3 = setTimeout(async () => {
+        setState("hue.0.Hue_Go_Schlazi.ct" /*Hue Go Schlazi.ct*/, 2700);
+        setState("hue.0.Hue_Go_Schlazi.level" /*Hue Go Schlazi.level*/, 50);
       }, 180000);
     }
   }, 12000);
 }
-
 
 await hochdimmen2();
 

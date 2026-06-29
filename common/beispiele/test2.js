@@ -1,23 +1,37 @@
-var parameter, Meldetext, Strompreis_proKWh, GrenzWertInWatt, timeout, Waschdauer, start, EnergieVerbrauch, EnergieVerbrauchEuro, Minuten;
+var parameter,
+  Meldetext,
+  Strompreis_proKWh,
+  GrenzWertInWatt,
+  timeout,
+  Waschdauer,
+  start,
+  EnergieVerbrauch,
+  EnergieVerbrauchEuro,
+  Minuten;
 
 // Beschreibe diese Funktion …
 async function checkFertig(parameter) {
   // Timer stoppen
-  (() => { if (timeout) { clearTimeout(timeout); timeout = null; }})();
+  (() => {
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = null;
+    }
+  })();
   if (parameter == true) {
     // Timer starten
     timeout = setTimeout(async () => {
       timeout = null;
-      Waschdauer = Math.round(((new Date().getTime()) - start) / 60000);
-      EnergieVerbrauch = getState('sonoff.0.Waschmaschine.ENERGY_Total')?.val - EnergieVerbrauch;
+      Waschdauer = Math.round((new Date().getTime() - start) / 60000);
+      EnergieVerbrauch = getState("sonoff.0.Waschmaschine.ENERGY_Total")?.val - EnergieVerbrauch;
       EnergieVerbrauchEuro = EnergieVerbrauch * Strompreis_proKWh;
       if (Waschdauer % 60 < 10) {
-        Minuten = '0' + String(Waschdauer % 60);
+        Minuten = "0" + String(Waschdauer % 60);
       } else {
         Minuten = Waschdauer % 60;
       }
-      setState('0_userdata.0.Haushalt.waschen' /* waschen */, false);
-      await Melden('🧺 Die Waschmaschine ist fertig.');
+      setState("0_userdata.0.Haushalt.waschen" /* waschen */, false);
+      await Melden("🧺 Die Waschmaschine ist fertig.");
     }, 60000);
   }
 }
@@ -27,27 +41,35 @@ async function Melden(Meldetext) {
   console.log(Meldetext);
 }
 
-
-Strompreis_proKWh = getState('0_userdata.0.Energie.Strompreise.akt_Preis')?.val;
-on({ id: '0_userdata.0.Energie.Strompreise.akt_Preis' /* akt_Preis */, change: 'ne' }, async (obj) => {
-  let value = obj.state.val;
-  let oldValue = obj.oldState.val;
-  Strompreis_proKWh = getState('0_userdata.0.Energie.Strompreise.akt_Preis')?.val;
-});
+Strompreis_proKWh = getState("0_userdata.0.Energie.Strompreise.akt_Preis")?.val;
+on(
+  { id: "0_userdata.0.Energie.Strompreise.akt_Preis" /* akt_Preis */, change: "ne" },
+  async (obj) => {
+    const value = obj.state.val;
+    const oldValue = obj.oldState.val;
+    Strompreis_proKWh = getState("0_userdata.0.Energie.Strompreise.akt_Preis")?.val;
+  },
+);
 GrenzWertInWatt = 2;
 // Entscheidungswert festlegen
-on({ id: [].concat(['sonoff.0.Waschmaschine.ENERGY_Power']), change: 'ne' }, async (obj) => {
-  let value = obj.state.val;
-  let oldValue = obj.oldState.val;
-  if ((obj.state ? obj.state.val : '') > GrenzWertInWatt && !getState('0_userdata.0.Haushalt.waschen')?.val) {
-    start = (new Date().getTime());
-    setState('0_userdata.0.Haushalt.waschen' /* waschen */, true);
-    EnergieVerbrauch = getState('sonoff.0.Waschmaschine.ENERGY_Total')?.val;
-    console.warn('Waschmaschine läuft');
-  } else if ((obj.state ? obj.state.val : '') > GrenzWertInWatt) {
+on({ id: [].concat(["sonoff.0.Waschmaschine.ENERGY_Power"]), change: "ne" }, async (obj) => {
+  const value = obj.state.val;
+  const oldValue = obj.oldState.val;
+  if (
+    (obj.state ? obj.state.val : "") > GrenzWertInWatt &&
+    !getState("0_userdata.0.Haushalt.waschen")?.val
+  ) {
+    start = new Date().getTime();
+    setState("0_userdata.0.Haushalt.waschen" /* waschen */, true);
+    EnergieVerbrauch = getState("sonoff.0.Waschmaschine.ENERGY_Total")?.val;
+    console.warn("Waschmaschine läuft");
+  } else if ((obj.state ? obj.state.val : "") > GrenzWertInWatt) {
     // Timer stoppen
     await checkFertig(false);
-  } else if ((obj.state ? obj.state.val : '') < GrenzWertInWatt && getState('0_userdata.0.Haushalt.waschen')?.val) {
+  } else if (
+    (obj.state ? obj.state.val : "") < GrenzWertInWatt &&
+    getState("0_userdata.0.Haushalt.waschen")?.val
+  ) {
     // Timer starten
     await checkFertig(true);
   }

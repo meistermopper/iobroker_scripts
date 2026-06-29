@@ -1,6 +1,5 @@
 // --- KONFIGURATION ---
-const ID_STECKDOSE_SCHLAZI =
-  "alias.0.schlafzimmer.energie.Schlazi-Steckdose.ENERGY_Power";
+const ID_STECKDOSE_SCHLAZI = "alias.0.schlafzimmer.energie.Schlazi-Steckdose.ENERGY_Power";
 const ID_SAT_DEEP_STANDBY = "enigma2.1.main_command.DEEP_STANDBY";
 const ID_ZIGBEE_SWITCH_1 = "alias.0.schlafzimmer.energie.bett.state";
 const ID_ZIGBEE_SWITCH_2 = "alias.0.schlafzimmer.energie.schrank.state";
@@ -22,8 +21,7 @@ schedule("30 23 * * *", async () => {
     if (msgTimeout) clearTimeout(msgTimeout);
 
     msgTimeout = setTimeout(() => {
-      const message =
-        "+++📡 Sat im Schlafzimmer wurde in Deepstandby geschickt.+++";
+      const message = "+++📡 Sat im Schlafzimmer wurde in Deepstandby geschickt.+++";
 
       sendGlobalNotify(message, "Schlafzimmer-Standby", 1);
       console.log(`Schlafzimmer-Standby: Meldung gesendet an Thomas & Gotify`);

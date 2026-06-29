@@ -30,13 +30,17 @@ schedule("0 4 * * *", async () => {
   // 5. Versand an Gotify via httpPost
   const token = getState("0_userdata.0.gotifytoken.iobroker")?.val;
   if (token) {
-    httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
-      title: "ioBroker: Astro",
-      message: msgPlain,
-      priority: 1
-    }, (error) => {
-      if (error) console.error(`[Astrozeiten] Gotify Fehler: ${error}`);
-    });
+    httpPost(
+      `https://mygotify.meistermopper.de/message?token=${token}`,
+      {
+        title: "ioBroker: Astro",
+        message: msgPlain,
+        priority: 1,
+      },
+      (error) => {
+        if (error) console.error(`[Astrozeiten] Gotify Fehler: ${error}`);
+      },
+    );
   }
 
   //console.log(`Astro-Info: Daten für heute gesendet (${sunrise} / ${sunset})`);

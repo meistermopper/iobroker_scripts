@@ -58,9 +58,7 @@ async function initDP() {
       });
     }
   }
-  console.log(
-    "[USV-APC] Datenpunkte unter 0_userdata.0 erfolgreich initialisiert.",
-  );
+  console.log("[USV-APC] Datenpunkte unter 0_userdata.0 erfolgreich initialisiert.");
 }
 
 // --- 4. AKTIONEN ---
@@ -75,7 +73,9 @@ async function startWartung(isManual = false) {
   sendGlobalNotify(
     isManual
       ? "Manuelle Wartung Serverschrank gestartet."
-      : "Automatische Wartung Serverschrank gestartet.", "USV Serverschrank", 1
+      : "Automatische Wartung Serverschrank gestartet.",
+    "USV Serverschrank",
+    1,
   );
 }
 
@@ -89,7 +89,11 @@ async function stopWartung(reason = "") {
     setState(`${dpPrefix}.Jetzt_Warten`, false);
   }, 15000);
   const soc = getState(`${upsNutPrefix}.battery.charge`)?.val;
-  sendGlobalNotify(`Wartung Serverschrank beendet (${reason}). Stand: ${soc}%.`, "USV Serverschrank", 1);
+  sendGlobalNotify(
+    `Wartung Serverschrank beendet (${reason}). Stand: ${soc}%.`,
+    "USV Serverschrank",
+    1,
+  );
 }
 
 // --- 5. TRIGGER & EVENT-STEUERUNG ---
@@ -121,15 +125,11 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
     if (!canSpeak) return;
 
     // Nachtruhe nur bei geplanter Wartung, bei echtem Ausfall immer sprechen!
-    const isDay = compareTime('08:00', '20:00', 'between');
-    const voiceVol = (isWartung && !isDay) ? null : getState(`${dpPrefix}.Google_lautstaerke`)?.val;
+    const isDay = compareTime("08:00", "20:00", "between");
+    const voiceVol = isWartung && !isDay ? null : getState(`${dpPrefix}.Google_lautstaerke`)?.val;
 
     // Sprech-Bremse: Nur bei 5%-Schritten oder kurz vor dem Limit
-    if (
-      lastSpokenSoc === -1 ||
-      (soc % 5 === 0 && soc !== lastSpokenSoc) ||
-      soc === minSoc + 2
-    ) {
+    if (lastSpokenSoc === -1 || (soc % 5 === 0 && soc !== lastSpokenSoc) || soc === minSoc + 2) {
       lastSpokenSoc = soc;
 
       let text = isWartung
@@ -137,8 +137,7 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
         : "Warnung. Stromversorgung Serverschrank unterbrochen. ";
       if (getState(`${dpPrefix}.Speak_Minuten`)?.val)
         text += `Restlaufzeit ${Math.floor(runtime)} Minuten. `;
-      if (getState(`${dpPrefix}.Speak_Prozent`)?.val)
-        text += `Akkustand ${soc} Prozent.`;
+      if (getState(`${dpPrefix}.Speak_Prozent`)?.val) text += `Akkustand ${soc} Prozent.`;
 
       // WIFI-STABILISATOR: Bei der ersten Ansage (nahe 100%) verzögern
       if (speakTimeout) clearTimeout(speakTimeout);
@@ -165,12 +164,13 @@ on({ id: `${upsNutPrefix}.status.onbattery`, change: "ne" }, async (obj) => {
       "⚠️ WARNUNG: Stromversorgung Serverschrank unterbrochen!",
       "USV Serverschrank",
       8, // Prio 8 für echte Notfälle
-      50 // Immer sprechen mit 50%
+      50, // Immer sprechen mit 50%
     );
   } else if (obj.state.val === false) {
     if (speakTimeout) clearTimeout(speakTimeout);
     lastSpokenSoc = -1; // Reset für den nächsten Vorfall
-    if (!isWartance) sendGlobalNotify("✅ Netzspannung Serverschrank wiederhergestellt.", "USV Serverschrank", 1);
+    if (!isWartance)
+      sendGlobalNotify("✅ Netzspannung Serverschrank wiederhergestellt.", "USV Serverschrank", 1);
   }
 });
 
@@ -207,7 +207,7 @@ on({ id: `${dpPrefix}.Jetzt_Warten`, change: "ne", val: true }, () => {
 /**
  * Stellt sicher, dass die USV wieder Saft bekommt, wenn das Skript beendet wird.
  */
-onStop(function (callback) {
+onStop((callback) => {
   console.warn("[USV-APC-Safety] Skript-Stopp! Erzwinge Netzbetrieb...");
   setState(sonoffPower, true);
   setTimeout(callback, 500);

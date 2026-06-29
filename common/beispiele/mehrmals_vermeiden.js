@@ -1,9 +1,8 @@
 var sperre;
 
-
-on({ id: 'Object ID', change: 'ne' }, async (obj) => {
-  let value = obj.state.val;
-  let oldValue = obj.oldState.val;
+on({ id: "Object ID", change: "ne" }, async (obj) => {
+  const value = obj.state.val;
+  const oldValue = obj.oldState.val;
   if (!sperre) {
     sperre = setTimeout(async () => {
       sperre = null;

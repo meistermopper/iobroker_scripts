@@ -9,12 +9,18 @@ const BASE_PATH = "0_userdata.0.ioBroker.RPI_Zigbee."; // Der Stammordner, unter
 // Definition aller Datenpunkte, die automatisch erstellt und aktualisiert werden sollen.
 // Jedes Objekt beschreibt ID, Standardwert (val), Anzeigename (name), Datentyp (type) und ioBroker-Rolle (role).
 const STATES_TO_CREATE = [
-  { id: "js_contr_ver", val: "", name: "JS-Controller Version", type: "string", role: "info.version" },
+  {
+    id: "js_contr_ver",
+    val: "",
+    name: "JS-Controller Version",
+    type: "string",
+    role: "info.version",
+  },
   { id: "node_ver", val: "", name: "Node.js Version", type: "string", role: "info.version" },
   { id: "nodejs_ver", val: "", name: "NodeJS Version", type: "string", role: "info.version" },
   { id: "npm_ver", val: "", name: "NPM Version", type: "string", role: "info.version" },
   { id: "last_update", val: "", name: "Letztes Update", type: "string", role: "date" },
-  { id: "online", val: false, name: "Online Status", type: "boolean", role: "indicator.connected" }
+  { id: "online", val: false, name: "Online Status", type: "boolean", role: "indicator.connected" },
 ];
 
 /**
@@ -33,7 +39,7 @@ async function initDP() {
         type: s.type,
         role: s.role,
         read: true,
-        write: false
+        write: false,
       });
     }
   }
@@ -42,7 +48,7 @@ async function initDP() {
 /**
  * Hilfsfunktion zur Ausführung von Shell-Befehlen (exec) verpackt in ein Promise.
  * Dies erlaubt die Verwendung von modernem async/await anstelle von verschachtelten Callbacks.
- * 
+ *
  * @param {string} cmd - Der auszuführende Shell-Befehl
  * @returns {Promise<string>} Das bereinigte Ergebnis (stdout) der Befehlsausführung
  */
@@ -77,18 +83,18 @@ async function updateZigbeeVersions() {
   // -o StrictHostKeyChecking=no: Akzeptiert den SSH-Key des Remote-Hosts automatisch (verhindert interaktiven Prompt)
   // -o UserKnownHostsFile=/dev/null: Speichert den Key nicht dauerhaft in der known_hosts Datei (hält das System sauber)
   const sshFlags = "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null";
-  
+
   // Der Befehl, der auf dem entfernten Raspberry Pi ausgeführt werden soll.
   // Führt nacheinander ioBroker-, Node- und NPM-Versionstests aus, getrennt durch ein Semikolon.
   const remoteCmd = '"iobroker -v; node -v; nodejs -v; npm -v"';
-  
+
   // Zusammengebauter SSH-Aufruf für den Benutzer "thomas"
   const command = `ssh ${sshFlags} thomas@${ID_REMOTE_IP} ${remoteCmd}`;
 
   try {
     // Führt den SSH-Befehl asynchron aus
     const stdout = await runShell(command);
-    
+
     // Splittet den Output anhand von Zeilenumbrüchen auf
     const lines = stdout.split("\n");
 
@@ -99,11 +105,11 @@ async function updateZigbeeVersions() {
       setState(BASE_PATH + "node_ver", lines[1].trim(), true);
       setState(BASE_PATH + "nodejs_ver", lines[2].trim(), true);
       setState(BASE_PATH + "npm_ver", lines[3].trim(), true);
-      
+
       // Aktuelles Datum und Uhrzeit im deutschen Format generieren und wegschreiben
       const now = new Date().toLocaleString("de-DE");
       setState(BASE_PATH + "last_update", now, true);
-      
+
       // Da die Abfrage erfolgreich war, setzen wir den Online-Status auf true
       setState(BASE_PATH + "online", true, true);
     } else {

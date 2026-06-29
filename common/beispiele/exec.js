@@ -1,7 +1,6 @@
 var result;
 
-
-exec('who -r', async (error, result, stderr) => {
+exec("who -r", async (error, result, stderr) => {
   console.warn(result);
 });
 

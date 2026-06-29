@@ -8,8 +8,20 @@ const ID_STOP_TRIGGER = "0_userdata.0.ioBroker.iobroker_stop";
 
 // Array mit den zu erstellenden Datenpunkten
 const STATES_TO_CREATE = [
-  { id: ID_RESTART_TRIGGER, name: "ioBroker Master Neustart", type: "boolean", role: "button", def: false },
-  { id: ID_STOP_TRIGGER, name: "ioBroker Master Stoppen", type: "boolean", role: "button", def: false }
+  {
+    id: ID_RESTART_TRIGGER,
+    name: "ioBroker Master Neustart",
+    type: "boolean",
+    role: "button",
+    def: false,
+  },
+  {
+    id: ID_STOP_TRIGGER,
+    name: "ioBroker Master Stoppen",
+    type: "boolean",
+    role: "button",
+    def: false,
+  },
 ];
 
 /**
@@ -25,7 +37,7 @@ async function initDP() {
         type: s.type,
         role: s.role,
         read: true,
-        write: true // Da VIS diese Buttons drücken soll, müssen sie beschreibbar sein
+        write: true, // Da VIS diese Buttons drücken soll, müssen sie beschreibbar sein
       });
     }
   }
@@ -33,7 +45,7 @@ async function initDP() {
 
 /**
  * Führt einen lokalen Systembefehl aus.
- * 
+ *
  * @param {string} cmd - Der auszuführende Befehl
  */
 function runCommand(cmd) {
@@ -55,11 +67,13 @@ async function main() {
 
   // Trigger für RESTART: Reagiert, wenn der Datenpunkt auf "true" gesetzt wird
   on({ id: ID_RESTART_TRIGGER, val: true, change: "ne" }, async () => {
-    console.warn("[ioBroker-Control] Neustart-Trigger empfangen! Der ioBroker-Master wird neu gestartet...");
-    
+    console.warn(
+      "[ioBroker-Control] Neustart-Trigger empfangen! Der ioBroker-Master wird neu gestartet...",
+    );
+
     // WICHTIG: Trigger sofort wieder auf false zurücksetzen, um eine Endlosschleife beim Systemstart zu verhindern!
     setState(ID_RESTART_TRIGGER, false, true);
-    
+
     // 1 Sekunde Verzögerung, damit der State-Reset sicher in der DB gespeichert wird,
     // bevor der ioBroker-Daemon beendet und neu gestartet wird.
     setTimeout(() => {
@@ -69,11 +83,13 @@ async function main() {
 
   // Trigger für STOP: Reagiert, wenn der Datenpunkt auf "true" gesetzt wird
   on({ id: ID_STOP_TRIGGER, val: true, change: "ne" }, async () => {
-    console.warn("[ioBroker-Control] Stopp-Trigger empfangen! Der ioBroker-Master wird heruntergefahren...");
-    
+    console.warn(
+      "[ioBroker-Control] Stopp-Trigger empfangen! Der ioBroker-Master wird heruntergefahren...",
+    );
+
     // WICHTIG: Trigger sofort wieder auf false zurücksetzen, damit er beim nächsten Systemstart zurückgesetzt ist.
     setState(ID_STOP_TRIGGER, false, true);
-    
+
     // 1 Sekunde Verzögerung für sauberen DB-State-Reset
     setTimeout(() => {
       runCommand("iobroker stop");

@@ -30,47 +30,48 @@
 
 // Namen von Geräten, die wir im Chromecast-Adapter nicht sehen wollen.
 // (Wird zur Prüfung normalisiert: Unterstriche werden zu Leerzeichen)
-const bannedDeviceNames = [
-    'HEOS Sauna',
-    'Marantz CINEMA 60',
-    'Heos5'
-];
+const bannedDeviceNames = ["HEOS Sauna", "Marantz CINEMA 60", "Heos5"];
 
 // Bekannte Hardware-IDs (MAC-Adressen ohne Doppelpunkt), die blockiert werden sollen.
 // Dies ist unsere "zweite Verteidigungslinie", falls der Name noch nicht geladen wurde.
 const bannedDeviceIds = [
-    '0005cd77e0a8', // HEOS Sauna
-    '000678ef039d' // Marantz CINEMA 60
+  "0005cd77e0a8", // HEOS Sauna
+  "000678ef039d", // Marantz CINEMA 60
 ];
 
 // Da deine HEOS-Geräte feste IPs haben, ist dies der sicherste Filter.
 // Jedes Gerät, das mit einer dieser IPs auftaucht, wird sofort neutralisiert.
 const bannedIPs = [
-    '192.168.178.222', // Beispiel: HEOS Sauna
-    '192.168.178.32',  // Beispiel: Marantz
-    '192.168.178.34'   // Heos5
+  "192.168.178.222", // Beispiel: HEOS Sauna
+  "192.168.178.32", // Beispiel: Marantz
+  "192.168.178.34", // Heos5
 ];
 
 // Geräte-IDs, die explizit NICHT blockiert werden dürfen (z.B. cc-wozi).
 const whitelistDeviceIds = [
-    'b87bd4deaa73', // cc-wozi
-    'CC-Schlazi',    // Chromecast Schlafzimmer
-    '8e5',          // Platzhalter/Teile von IDs deiner Minis (falls bekannt)
+  "b87bd4deaa73", // cc-wozi
+  "CC-Schlazi", // Chromecast Schlafzimmer
+  "8e5", // Platzhalter/Teile von IDs deiner Minis (falls bekannt)
 ];
 
 const whitelistNames = [
-    'cc-wozi', 'Mini-draussen', 'Mini-Konfi',
-    'Mini-Schlazi', 'CC-Schlazi', 'Mini-Wozi', 'Home-Kueche',
-    'Mini-Buero'
+  "cc-wozi",
+  "Mini-draussen",
+  "Mini-Konfi",
+  "Mini-Schlazi",
+  "CC-Schlazi",
+  "Mini-Wozi",
+  "Home-Kueche",
+  "Mini-Buero",
 ];
 
 /**
  * Hilfsfunktion für Verzögerungen
  */
-const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Ziel-Instanz, die überwacht wird
-const adapterInstance = 'chromecast.0';
+const adapterInstance = "chromecast.0";
 
 // 2. STATUS-VARIABLEN
 
@@ -79,8 +80,8 @@ const pendingDeletions = new Set();
 
 // Fehler-Zähler und Zeitstempel für den automatischen Neustart (Watchdog).
 let adapterErrorCount = 0; // Aktuelle Fehlerlast
-let lastRestart = 0;       // Zeitpunkt des letzten automatischen Neustarts
-let isRepairing = false;   // Flag, während die "Tiefenreinigung" läuft
+let lastRestart = 0; // Zeitpunkt des letzten automatischen Neustarts
+let isRepairing = false; // Flag, während die "Tiefenreinigung" läuft
 
 /**
  * NEUTRALISIEREN statt Löschen:
@@ -88,47 +89,53 @@ let isRepairing = false;   // Flag, während die "Tiefenreinigung" läuft
  * Dies verhindert die gefürchteten "TypeError: socket of null" Abstürze.
  */
 async function neutralizeDevice(devicePath, reason) {
-    // WHITELIST-CHECK: Falls das Gerät gesteuert werden soll, hier abbrechen
-    const deviceId = devicePath.split('.').pop();
-    if (whitelistDeviceIds.includes(deviceId)) return;
+  // WHITELIST-CHECK: Falls das Gerät gesteuert werden soll, hier abbrechen
+  const deviceId = devicePath.split(".").pop();
+  if (whitelistDeviceIds.includes(deviceId)) return;
 
-    if (pendingDeletions.has(devicePath)) return; // Dubletten-Schutz
-    pendingDeletions.add(devicePath);
+  if (pendingDeletions.has(devicePath)) return; // Dubletten-Schutz
+  pendingDeletions.add(devicePath);
 
-    const addrId = `${devicePath}.address`;
-    const nameId = `${devicePath}.name`;
-    const portId = `${devicePath}.port`; // Port-Datenpunkt
-    const enabledId = `${devicePath}.enabled`; // Der entscheidende Schalter
+  const addrId = `${devicePath}.address`;
+  const nameId = `${devicePath}.name`;
+  const portId = `${devicePath}.port`; // Port-Datenpunkt
+  const enabledId = `${devicePath}.enabled`; // Der entscheidende Schalter
 
-    try {
-        // SCHRITT 1: Den Adapter-internen 'enabled' Schalter hart auf false setzen und sperren
-        if (existsObject(enabledId)) {
-            log(`Schutzmaßnahme: ${enabledId} wird deaktiviert und für den Adapter schreibgeschützt (write: false).`, 'warn');
-            await setStateAsync(enabledId, false, true);
-            // Wir entziehen dem Adapter das Schreibrecht für diesen Datenpunkt
-            await extendObjectAsync(enabledId, { common: { write: false } });
-        }
-
-        // Nur neutralisieren, wenn die IP nicht schon 0.0.0.0 ist
-        if (existsState(addrId) && getState(addrId)?.val !== '0.0.0.0') {
-            log(`Neutralisierung: ${devicePath} wird stillgelegt (IP/Port -> 0). Grund: ${reason}`, 'warn');
-
-            // SCHRITT 2: IP und Port auf ungültig setzen
-            await setStateAsync(addrId, '0.0.0.0', true);
-            if (existsState(portId)) await setStateAsync(portId, 0, true);
-
-            // SCHRITT 3: Name zur visuellen Kontrolle markieren
-            if (existsState(nameId)) {
-                await setStateAsync(nameId, 'BANNED - ' + (getState(nameId)?.val || 'Unknown'), true);
-            }
-
-            // Nach 10 Sekunden wieder für Trigger freigeben
-            setTimeout(() => pendingDeletions.delete(devicePath), 10000);
-        }
-    } catch (e) {
-        log(`Fehler bei Neutralisierung von ${devicePath}: ${e}`, 'error');
-        pendingDeletions.delete(devicePath);
+  try {
+    // SCHRITT 1: Den Adapter-internen 'enabled' Schalter hart auf false setzen und sperren
+    if (existsObject(enabledId)) {
+      log(
+        `Schutzmaßnahme: ${enabledId} wird deaktiviert und für den Adapter schreibgeschützt (write: false).`,
+        "warn",
+      );
+      await setStateAsync(enabledId, false, true);
+      // Wir entziehen dem Adapter das Schreibrecht für diesen Datenpunkt
+      await extendObjectAsync(enabledId, { common: { write: false } });
     }
+
+    // Nur neutralisieren, wenn die IP nicht schon 0.0.0.0 ist
+    if (existsState(addrId) && getState(addrId)?.val !== "0.0.0.0") {
+      log(
+        `Neutralisierung: ${devicePath} wird stillgelegt (IP/Port -> 0). Grund: ${reason}`,
+        "warn",
+      );
+
+      // SCHRITT 2: IP und Port auf ungültig setzen
+      await setStateAsync(addrId, "0.0.0.0", true);
+      if (existsState(portId)) await setStateAsync(portId, 0, true);
+
+      // SCHRITT 3: Name zur visuellen Kontrolle markieren
+      if (existsState(nameId)) {
+        await setStateAsync(nameId, "BANNED - " + (getState(nameId)?.val || "Unknown"), true);
+      }
+
+      // Nach 10 Sekunden wieder für Trigger freigeben
+      setTimeout(() => pendingDeletions.delete(devicePath), 10000);
+    }
+  } catch (e) {
+    log(`Fehler bei Neutralisierung von ${devicePath}: ${e}`, "error");
+    pendingDeletions.delete(devicePath);
+  }
 }
 
 /**
@@ -137,63 +144,72 @@ async function neutralizeDevice(devicePath, reason) {
  * @param {string} fullId - Die vollständige ID des States
  */
 function checkAndFilter(val, fullId) {
-    // Während der Adapter gerade repariert wird, ignorieren wir Events
-    if (isRepairing) return;
+  // Während der Adapter gerade repariert wird, ignorieren wir Events
+  if (isRepairing) return;
 
-    // Identifizieren, ob wir gerade eine IP-Adresse (.address) oder einen Namen (.name) prüfen
-    const isAddress = fullId.endsWith('.address');
+  // Identifizieren, ob wir gerade eine IP-Adresse (.address) oder einen Namen (.name) prüfen
+  const isAddress = fullId.endsWith(".address");
 
-    const parts = fullId.split('.');
-    if (parts.length < 3) return;
+  const parts = fullId.split(".");
+  if (parts.length < 3) return;
 
-    const deviceId = parts[2];
+  const deviceId = parts[2];
 
-    // WHITELIST-CHECK: ID oder Name (falls bekannt) prüfen
-    if (whitelistDeviceIds.includes(deviceId)) return;
-    if (val && typeof val === 'string' && whitelistNames.some(n => val.toLowerCase().includes(n.toLowerCase()))) return;
+  // WHITELIST-CHECK: ID oder Name (falls bekannt) prüfen
+  if (whitelistDeviceIds.includes(deviceId)) return;
+  if (
+    val &&
+    typeof val === "string" &&
+    whitelistNames.some((n) => val.toLowerCase().includes(n.toLowerCase()))
+  )
+    return;
 
-    // Extrahiere den Gerätepfad (z.B. chromecast.0.0005cd77e0a8)
-    const devicePath = parts[0] + '.' + parts[1] + '.' + parts[2];
-    let shouldNeutralize = false;
-    let reason = '';
+  // Extrahiere den Gerätepfad (z.B. chromecast.0.0005cd77e0a8)
+  const devicePath = parts[0] + "." + parts[1] + "." + parts[2];
+  let shouldNeutralize = false;
+  let reason = "";
 
-    // Prüfung 1: Ist die ID in der Verbotsliste?
-    if (bannedDeviceIds.includes(deviceId)) {
+  // Prüfung 1: Ist die ID in der Verbotsliste?
+  if (bannedDeviceIds.includes(deviceId)) {
+    shouldNeutralize = true;
+    reason = `Geräte-ID '${deviceId}' steht auf der schwarzen Liste`;
+  }
+
+  // Prüfung 2: Ist es eine gesperrte IP?
+  if (!shouldNeutralize && isAddress && bannedIPs.includes(String(val))) {
+    shouldNeutralize = true;
+    reason = `IP-Adresse '${val}' steht auf der schwarzen Liste`;
+  }
+
+  // Prüfungen, die einen gültigen Namen erfordern (nur wenn es keine IP-Adresse ist)
+  if (!shouldNeutralize && val && typeof val === "string" && !isAddress) {
+    // Prüfung 2: Ist es in der HEOS-Verbotsliste (Name)?
+    // Wir normalisieren Unterstriche zu Leerzeichen und machen es case-insensitive
+    const normalizedNameLower = val.trim().replace(/_/g, " ").toLowerCase();
+    if (
+      bannedDeviceNames.some((bannedName) => normalizedNameLower.includes(bannedName.toLowerCase()))
+    ) {
+      shouldNeutralize = true;
+      reason = `Gerät '${val}' steht auf der Verbotsliste (HEOS-Filter)`;
+    }
+
+    // Prüfung 3: Unvollständige Einträge (Google-Geräte beim Start)
+    // Wir neutralisieren 'unvollständig' nur, wenn es NICHT nach einem Google-Gerät aussieht
+    if (!shouldNeutralize && val.includes("(unvollständig)")) {
+      const isPotentialGoogle = whitelistNames.some((n) =>
+        val.toLowerCase().includes(n.toLowerCase()),
+      );
+      if (!isPotentialGoogle) {
         shouldNeutralize = true;
-        reason = `Geräte-ID '${deviceId}' steht auf der schwarzen Liste`;
+        reason = "Unvollständiger Eintrag erkannt (mDNS-Initialisierung)";
+      }
     }
+  }
 
-    // Prüfung 2: Ist es eine gesperrte IP?
-    if (!shouldNeutralize && isAddress && bannedIPs.includes(String(val))) {
-        shouldNeutralize = true;
-        reason = `IP-Adresse '${val}' steht auf der schwarzen Liste`;
-    }
-
-    // Prüfungen, die einen gültigen Namen erfordern (nur wenn es keine IP-Adresse ist)
-    if (!shouldNeutralize && val && typeof val === 'string' && !isAddress) {
-        // Prüfung 2: Ist es in der HEOS-Verbotsliste (Name)?
-        // Wir normalisieren Unterstriche zu Leerzeichen und machen es case-insensitive
-        const normalizedNameLower = val.trim().replace(/_/g, ' ').toLowerCase();
-        if (bannedDeviceNames.some(bannedName => normalizedNameLower.includes(bannedName.toLowerCase()))) {
-            shouldNeutralize = true;
-            reason = `Gerät '${val}' steht auf der Verbotsliste (HEOS-Filter)`;
-        }
-
-        // Prüfung 3: Unvollständige Einträge (Google-Geräte beim Start)
-        // Wir neutralisieren 'unvollständig' nur, wenn es NICHT nach einem Google-Gerät aussieht
-        if (!shouldNeutralize && val.includes('(unvollständig)')) {
-            const isPotentialGoogle = whitelistNames.some(n => val.toLowerCase().includes(n.toLowerCase()));
-            if (!isPotentialGoogle) {
-                shouldNeutralize = true;
-                reason = 'Unvollständiger Eintrag erkannt (mDNS-Initialisierung)';
-            }
-        }
-    }
-
-    if (shouldNeutralize) {
-        // Wenn ein Grund gefunden wurde: Stilllegen.
-        neutralizeDevice(devicePath, reason);
-    }
+  if (shouldNeutralize) {
+    // Wenn ein Grund gefunden wurde: Stilllegen.
+    neutralizeDevice(devicePath, reason);
+  }
 }
 
 /**
@@ -205,145 +221,167 @@ function checkAndFilter(val, fullId) {
  * Objekte beim Start nicht sauber neu initialisieren.
  */
 async function performDeepClean() {
-    if (isRepairing) return;
-    isRepairing = true;
+  if (isRepairing) return;
+  isRepairing = true;
 
-    log(`[Watchdog] Kritischer Zustand! Starte Tiefenreinigung für ${adapterInstance} (Offline-Bereinigung)...`, 'warn');
+  log(
+    `[Watchdog] Kritischer Zustand! Starte Tiefenreinigung für ${adapterInstance} (Offline-Bereinigung)...`,
+    "warn",
+  );
 
-    try {
-        // 1. Adapter hart stoppen
-        await stopInstanceAsync(adapterInstance);
-        await wait(3000); // Warten bis Sockets geschlossen sind und Adapter komplett beendet ist
+  try {
+    // 1. Adapter hart stoppen
+    await stopInstanceAsync(adapterInstance);
+    await wait(3000); // Warten bis Sockets geschlossen sind und Adapter komplett beendet ist
 
-        // 2. Suche alle verbliebenen Problemfälle im ioBroker-Baum während der Adapter OFF ist
-        const pathsToFix = new Set();
+    // 2. Suche alle verbliebenen Problemfälle im ioBroker-Baum während der Adapter OFF ist
+    const pathsToFix = new Set();
 
-        // Suche über IDs
-        for (const id of bannedDeviceIds) {
-            const path = `${adapterInstance}.${id}`;
-            if (existsObject(path)) pathsToFix.add(path);
-        }
-
-        // Suche über IPs in den verbliebenen Objekten
-        $(adapterInstance + '.*.address').each(id => {
-            if (bannedIPs.includes(getState(id)?.val)) {
-                pathsToFix.add(id.split('.').slice(0, 3).join('.'));
-            }
-        });
-
-        // Suche über Namen (Normalisiert)
-        $(adapterInstance + '.*.name').each(id => {
-            const name = getState(id)?.val;
-            if (name && bannedDeviceNames.includes(String(name).trim().replace(/_/g, ' '))) {
-                pathsToFix.add(id.split('.').slice(0, 3).join('.'));
-            }
-        });
-
-        // Problemfälle offline neutralisieren (IP 0.0.0.0 und Enabled False)
-        for (const path of pathsToFix) {
-            log(`[Watchdog] Offline-Bereinigung: Neutralisiere Pfad ${path}`, 'info');
-
-            // Offline-Neutralisierung (sicherer als Löschen)
-            const enabledId = `${path}.enabled`;
-            if (existsObject(enabledId)) {
-                await setStateAsync(enabledId, false, true);
-                await extendObjectAsync(enabledId, { common: { write: false } });
-            }
-            await setStateAsync(`${path}.address`, '0.0.0.0', true);
-            if (existsState(`${path}.port`)) await setStateAsync(`${path}.port`, 0, true);
-        }
-
-        // 3. Adapter wieder hochfahren
-        await wait(1000);
-        await startInstanceAsync(adapterInstance);
-        log(`[Watchdog] Tiefenreinigung abgeschlossen. ${adapterInstance} wurde neu gestartet.`, 'info');
-    } catch (e) {
-        log(`[Watchdog] Fehler bei Tiefenreinigung: ${e}`, 'error');
-    } finally {
-        isRepairing = false;
-        adapterErrorCount = 0;
-        lastRestart = Date.now();
+    // Suche über IDs
+    for (const id of bannedDeviceIds) {
+      const path = `${adapterInstance}.${id}`;
+      if (existsObject(path)) pathsToFix.add(path);
     }
+
+    // Suche über IPs in den verbliebenen Objekten
+    $(adapterInstance + ".*.address").each((id) => {
+      if (bannedIPs.includes(getState(id)?.val)) {
+        pathsToFix.add(id.split(".").slice(0, 3).join("."));
+      }
+    });
+
+    // Suche über Namen (Normalisiert)
+    $(adapterInstance + ".*.name").each((id) => {
+      const name = getState(id)?.val;
+      if (name && bannedDeviceNames.includes(String(name).trim().replace(/_/g, " "))) {
+        pathsToFix.add(id.split(".").slice(0, 3).join("."));
+      }
+    });
+
+    // Problemfälle offline neutralisieren (IP 0.0.0.0 und Enabled False)
+    for (const path of pathsToFix) {
+      log(`[Watchdog] Offline-Bereinigung: Neutralisiere Pfad ${path}`, "info");
+
+      // Offline-Neutralisierung (sicherer als Löschen)
+      const enabledId = `${path}.enabled`;
+      if (existsObject(enabledId)) {
+        await setStateAsync(enabledId, false, true);
+        await extendObjectAsync(enabledId, { common: { write: false } });
+      }
+      await setStateAsync(`${path}.address`, "0.0.0.0", true);
+      if (existsState(`${path}.port`)) await setStateAsync(`${path}.port`, 0, true);
+    }
+
+    // 3. Adapter wieder hochfahren
+    await wait(1000);
+    await startInstanceAsync(adapterInstance);
+    log(
+      `[Watchdog] Tiefenreinigung abgeschlossen. ${adapterInstance} wurde neu gestartet.`,
+      "info",
+    );
+  } catch (e) {
+    log(`[Watchdog] Fehler bei Tiefenreinigung: ${e}`, "error");
+  } finally {
+    isRepairing = false;
+    adapterErrorCount = 0;
+    lastRestart = Date.now();
+  }
 }
 
 /**
  * WATCHDOG: Überwacht das ioBroker Log auf Fehlermeldungen des Adapters.
  * Wenn zu viele Fehler auftreten, wird eine Tiefenreinigung ausgelöst.
  */
-onLog('error', (data) => {
-    if (data.from.startsWith(adapterInstance)) {
-        const msg = data.message;
+onLog("error", (data) => {
+  if (data.from.startsWith(adapterInstance)) {
+    const msg = data.message;
 
-        // Prüfen, ob der Fehler von einem Gerät auf der Whitelist kommt (ID oder Name)
-        const isWhitelisted = msg.includes('cc-wozi') ||
-                              whitelistDeviceIds.some(id => msg.includes(id)) ||
-                              msg.includes('Mini-draussen') ||
-                              msg.includes('Mini-Konfi') ||
-                              msg.includes('Mini-Schlazi') ||
-                              msg.includes('Mini-Wozi') ||
-                              msg.includes('Home-Kueche') ||
-                              msg.includes('Mini-Buero');
-        if (isWhitelisted) return;
+    // Prüfen, ob der Fehler von einem Gerät auf der Whitelist kommt (ID oder Name)
+    const isWhitelisted =
+      msg.includes("cc-wozi") ||
+      whitelistDeviceIds.some((id) => msg.includes(id)) ||
+      msg.includes("Mini-draussen") ||
+      msg.includes("Mini-Konfi") ||
+      msg.includes("Mini-Schlazi") ||
+      msg.includes("Mini-Wozi") ||
+      msg.includes("Home-Kueche") ||
+      msg.includes("Mini-Buero");
+    if (isWhitelisted) return;
 
-        // KRITISCHE FEHLER-ERKENNUNG:
-        // 1. TypeError/socket/unique: Der Adapter-Kern ist abgestürzt (HEOS-Problem).
-        // 2. "Cannot get status" bei echten Google-Geräten nach der Startphase (3 Min).
-        const isSocketCrash = msg.includes('TypeError') || msg.includes('socket') || msg.includes('unique');
-        const isBlockade = !isWhitelisted && msg.includes('Cannot get status') && !msg.includes('HEOS') && (Date.now() - lastRestart > 180000); // 3 Min Karenz
-        const isCritical = isSocketCrash || isBlockade;
+    // KRITISCHE FEHLER-ERKENNUNG:
+    // 1. TypeError/socket/unique: Der Adapter-Kern ist abgestürzt (HEOS-Problem).
+    // 2. "Cannot get status" bei echten Google-Geräten nach der Startphase (3 Min).
+    const isSocketCrash =
+      msg.includes("TypeError") || msg.includes("socket") || msg.includes("unique");
+    const isBlockade =
+      !isWhitelisted &&
+      msg.includes("Cannot get status") &&
+      !msg.includes("HEOS") &&
+      Date.now() - lastRestart > 180000; // 3 Min Karenz
+    const isCritical = isSocketCrash || isBlockade;
 
-        // Sofort-Reaktion bei "not unique" Fehlern
-        if (!isWhitelisted && msg.includes('is not unique')) {
-            const idMatch = msg.match(/([a-f0-9]{12})/i);
-            if (idMatch) {
-                const extractedId = idMatch[1];
-                neutralizeDevice(`${adapterInstance}.${extractedId}`, `Extrahiert aus 'not unique' Fehlermeldung`);
-            }
-        }
-
-        // Gewichtung der Fehler: Kritische Fehler (Crash/Blockade) füllen den Zähler sofort.
-        // Damit reichen 5 schwere Crash-Meldungen für eine Reparatur.
-        adapterErrorCount += isCritical ? 10 : 1;
-
-        // Schwellenwert erreicht (50): Reparatur einleiten.
-        if (adapterErrorCount >= 50) {
-            const now = Date.now();
-            if (now - lastRestart > 300000) { // Max alle 5 Minuten neustarten
-                performDeepClean();
-            }
-        }
+    // Sofort-Reaktion bei "not unique" Fehlern
+    if (!isWhitelisted && msg.includes("is not unique")) {
+      const idMatch = msg.match(/([a-f0-9]{12})/i);
+      if (idMatch) {
+        const extractedId = idMatch[1];
+        neutralizeDevice(
+          `${adapterInstance}.${extractedId}`,
+          `Extrahiert aus 'not unique' Fehlermeldung`,
+        );
+      }
     }
+
+    // Gewichtung der Fehler: Kritische Fehler (Crash/Blockade) füllen den Zähler sofort.
+    // Damit reichen 5 schwere Crash-Meldungen für eine Reparatur.
+    adapterErrorCount += isCritical ? 10 : 1;
+
+    // Schwellenwert erreicht (50): Reparatur einleiten.
+    if (adapterErrorCount >= 50) {
+      const now = Date.now();
+      if (now - lastRestart > 300000) {
+        // Max alle 5 Minuten neustarten
+        performDeepClean();
+      }
+    }
+  }
 });
 
 // Fehlerzähler alle 60 Sekunden reduzieren, damit normale Fehler nicht zum Neustart führen
 // (Dies verhindert, dass der Adapter wegen gelegentlicher WLAN-Abbrüche neu startet)
 setInterval(() => {
-    adapterErrorCount = Math.max(0, adapterErrorCount - 1);
+  adapterErrorCount = Math.max(0, adapterErrorCount - 1);
 }, 60000);
 
 /**
  * TRIGGER: Überwachung auf neue oder geänderte Gerätenamen oder Adressen
  * Verwendet einen regulären Ausdruck (RegExp), um alle passenden Datenpunkte im Adapter zu finden.
  */
-on({id: new RegExp('^' + adapterInstance.replace('.', '\\.') + '\\..*\\.(name|address)$'), change: 'any'}, function (obj) {
+on(
+  {
+    id: new RegExp("^" + adapterInstance.replace(".", "\\.") + "\\..*\\.(name|address)$"),
+    change: "any",
+  },
+  (obj) => {
     checkAndFilter(obj.state.val, obj.id);
-});
+  },
+);
 
 /**
  * 4. INITIALISIERUNG
  * Wird beim Speichern des Skripts oder Start des JS-Adapters ausgeführt.
  * Scannt den kompletten Objektbaum nach bereits vorhandenen Leichen.
  */
-log('Chromecast-Cleaner & HEOS-Schutzschild aktiv', 'info');
+log("Chromecast-Cleaner & HEOS-Schutzschild aktiv", "info");
 
 // Alle ".name" Zustände prüfen
-$(adapterInstance + '.*.name').each(function(id) {
-    const val = getState(id)?.val;
-    if (val !== null && val !== undefined) checkAndFilter(val, id);
+$(adapterInstance + ".*.name").each((id) => {
+  const val = getState(id)?.val;
+  if (val !== null && val !== undefined) checkAndFilter(val, id);
 });
 
 // Alle ".address" Zustände prüfen
-$(adapterInstance + '.*.address').each(function(id) {
-    const val = getState(id)?.val;
-    if (val !== null && val !== undefined) checkAndFilter(val, id);
+$(adapterInstance + ".*.address").each((id) => {
+  const val = getState(id)?.val;
+  if (val !== null && val !== undefined) checkAndFilter(val, id);
 });

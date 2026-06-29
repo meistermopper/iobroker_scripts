@@ -77,9 +77,7 @@ async function processPowerRestore() {
 
     // Nach der Wiederherstellung den Speicher leeren.
     setState(CONFIG.idStore, "{}", true);
-    console.log(
-      `USV-Restore: ${restoreCount} Geräte wurden zeitversetzt geschaltet.`,
-    );
+    console.log(`USV-Restore: ${restoreCount} Geräte wurden zeitversetzt geschaltet.`);
 
     if (CONFIG.useNotifications) {
       sendNotification(
@@ -115,9 +113,7 @@ function createSnapshot() {
   console.log(`USV-Snapshot: ${count} Zustände erfolgreich gesichert.`);
 
   if (CONFIG.useNotifications) {
-    sendNotification(
-      `🔋 Stromausfall! USV übernimmt. ${count} Gerätestati wurden gesichert.`,
-    );
+    sendNotification(`🔋 Stromausfall! USV übernimmt. ${count} Gerätestati wurden gesichert.`);
   }
 }
 

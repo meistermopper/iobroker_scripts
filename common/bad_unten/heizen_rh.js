@@ -25,8 +25,7 @@ const ID_ACTUAL_TEMP = "alias.0.bad_unten.heizung.ACTUAL_TEMPERATURE";
 const ID_WINDOW_STATE = "alias.0.bad_unten.heizung.WINDOW_STATE"; // 0 = zu
 const ID_HEATING_MODE =
   "vaillant.0.44c040a5-2e4f-4933-b508-22584e0854c2.configuration.zones01.heating.operationModeHeating";
-const ID_ENTFEUCHTEN_VOTUM =
-  "0_userdata.0.Heizen.Feuchte.Bad_unten.entfeuchten";
+const ID_ENTFEUCHTEN_VOTUM = "0_userdata.0.Heizen.Feuchte.Bad_unten.entfeuchten";
 
 // Initialisierung mit Sicherheitscheck
 // Falls das Skript startet, während das Fenster offen ist (10°C), setzen wir 21°C als Default-Rückkehrwert.
@@ -48,13 +47,7 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
    * 4. Heizung ist im Automatik/Manu-Modus (nicht auf Aus)
    * 5. Wir entfeuchten nicht bereits
    */
-  if (
-    luftfeuchte >= 60 &&
-    fensterZu &&
-    istTempNiedrig &&
-    heizungAn &&
-    !istAmEntfeuchten
-  ) {
+  if (luftfeuchte >= 60 && fensterZu && istTempNiedrig && heizungAn && !istAmEntfeuchten) {
     // SCHUTZ VOR DER 10°C-FALLE:
     // Wir lesen die aktuelle Soll-Temperatur. Wenn sie <= 12°C ist, ignorieren wir sie
     // beim Speichern, da es sich wahrscheinlich um die Absenktemperatur des Fensters handelt.
@@ -69,26 +62,22 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
     sendGlobalNotify(
       `♨️ Entfeuchtung im Bad unten gestartet (${luftfeuchte}% rL).\nTemperatur auf 24°C gesetzt (vorher ${vorigesTemperaturLevel}°C).`,
       "",
-      1
+      1,
     );
-  }
-
-  /**
-   * STOPP-BEDINGUNG:
-   * 1. Feuchtigkeit ist wieder unter 57% gefallen
-   * 2. Fenster ist immer noch zu (wird Fenster geöffnet, greift der separate Trigger unten)
-   * 3. Modus war aktiv
-   */
-  else if (luftfeuchte <= 57 && fensterZu && istAmEntfeuchten) {
+  } else if (luftfeuchte <= 57 && fensterZu && istAmEntfeuchten) {
+    /**
+     * STOPP-BEDINGUNG:
+     * 1. Feuchtigkeit ist wieder unter 57% gefallen
+     * 2. Fenster ist immer noch zu (wird Fenster geöffnet, greift der separate Trigger unten)
+     * 3. Modus war aktiv
+     */
     istAmEntfeuchten = false;
     setState(ID_ENTFEUCHTEN_VOTUM, false, true);
 
     // ZIELTEMPERATUR BESTIMMEN:
     let neueTemp = vorigesTemperaturLevel;
     const istTag = compareTime("05:00", "22:00", "between");
-    const programmZuhause = getState(
-      "0_userdata.0.Heizen.Programme.Zuhause",
-    )?.val;
+    const programmZuhause = getState("0_userdata.0.Heizen.Programme.Zuhause")?.val;
 
     if (istTag && programmZuhause) {
       // Falls wir zu Hause sind und es Tag ist, erzwingen wir 21°C Komforttemperatur
@@ -103,7 +92,7 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
     sendGlobalNotify(
       `✅ Entfeuchtung im Bad unten beendet (${luftfeuchte}% rL).\nHeizung wieder auf ${neueTemp}°C eingestellt.`,
       "",
-      1
+      1,
     );
   }
 });

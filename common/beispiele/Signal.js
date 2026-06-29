@@ -1,6 +1,6 @@
 sendTo("signal-cmb", "send", {
-    text: '😲 Wow, das funktioniert!'
+  text: "😲 Wow, das funktioniert!",
 });
-console.warn("signal-cmb: " + '😲 Wow, das funktioniert!');
+console.warn("signal-cmb: " + "😲 Wow, das funktioniert!");
 
 //JTNDeG1sJTIweG1sbnMlM0QlMjJodHRwcyUzQSUyRiUyRmRldmVsb3BlcnMuZ29vZ2xlLmNvbSUyRmJsb2NrbHklMkZ4bWwlMjIlM0UlM0NibG9jayUyMHR5cGUlM0QlMjJzaWduYWwtY21iJTIyJTIwaWQlM0QlMjIlNDB4azV2dHMqZSU1RTYzd0lGJTVFN0ElM0YlN0IlMjIlMjB4JTNEJTIyLTM3JTIyJTIweSUzRCUyMjM4JTIyJTNFJTNDZmllbGQlMjBuYW1lJTNEJTIySU5TVEFOQ0UlMjIlM0UlM0MlMkZmaWVsZCUzRSUzQ2ZpZWxkJTIwbmFtZSUzRCUyMkxPRyUyMiUzRXdhcm4lM0MlMkZmaWVsZCUzRSUzQ3ZhbHVlJTIwbmFtZSUzRCUyMk1FU1NBR0UlMjIlM0UlM0NzaGFkb3clMjB0eXBlJTNEJTIydGV4dCUyMiUyMGlkJTNEJTIycCU0MCU1QiUyQmxKOSUzQV8lM0RaJTdCOSUyM09PV0RfXyUyMiUzRSUzQ2ZpZWxkJTIwbmFtZSUzRCUyMlRFWFQlMjIlM0UlRjAlOUYlOTglQjIlMjBXb3clMkMlMjBkYXMlMjBmdW5rdGlvbmllcnQhJTNDJTJGZmllbGQlM0UlM0MlMkZzaGFkb3clM0UlM0MlMkZ2YWx1ZSUzRSUzQyUyRmJsb2NrJTNFJTNDJTJGeG1sJTNF

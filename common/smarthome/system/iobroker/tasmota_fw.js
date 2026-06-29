@@ -11,8 +11,7 @@
  */
 
 const logging = true;
-const idVersionInternet =
-  "0_userdata.0.Servicemeldungen.Verfuegbare_Tasmota-Firmware";
+const idVersionInternet = "0_userdata.0.Servicemeldungen.Verfuegbare_Tasmota-Firmware";
 const idGotifyToken = "0_userdata.0.gotifytoken.iobroker";
 const maxRetries = 3; // Maximale Anzahl der Versuche bei Fehlern
 
@@ -20,9 +19,7 @@ async function checkTasmotaVersion(retryCount = 0) {
   const url = "https://api.github.com/repos/arendst/Tasmota/releases/latest";
 
   if (logging && retryCount > 0)
-    console.log(
-      `Tasmota: Wiederholung der Abfrage... (Versuch ${retryCount + 1}/${maxRetries})`,
-    );
+    console.log(`Tasmota: Wiederholung der Abfrage... (Versuch ${retryCount + 1}/${maxRetries})`);
 
   // Abfrage starten mit erhöhtem Timeout
   httpGet(
@@ -41,9 +38,7 @@ async function checkTasmotaVersion(retryCount = 0) {
             : "Keine Antwort";
 
         if (retryCount < maxRetries - 1) {
-          console.warn(
-            `Tasmota: Fehler beim Abruf (${errorMsg}). Erneuter Versuch in 60 Sekunden`,
-          );
+          console.warn(`Tasmota: Fehler beim Abruf (${errorMsg}). Erneuter Versuch in 60 Sekunden`);
           setTimeout(() => checkTasmotaVersion(retryCount + 1), 60000); // Nach 1 Minute erneut versuchen
         } else {
           console.error(
@@ -56,13 +51,12 @@ async function checkTasmotaVersion(retryCount = 0) {
       try {
         // --- DATENVERARBEITUNG ---
         const data = JSON.parse(response.data);
-        const latestFullVersion =
-          data.tag_name.replace(/v/i, "").trim() + "(release-tasmota)";
+        const latestFullVersion = data.tag_name.replace(/v/i, "").trim() + "(release-tasmota)";
 
         const stateLastKnown = await getStateAsync(idVersionInternet);
         const lastKnownVersion = stateLastKnown ? stateLastKnown.val : "";
 
-        let updateDevices = [];
+        const updateDevices = [];
         // Suche alle Sonoff-Geräte mit dem Info1_Version Datenpunkt
         const tasmotaStates = $("channel[state.id=sonoff.0.*.Info1_Version]");
 
@@ -70,30 +64,21 @@ async function checkTasmotaVersion(retryCount = 0) {
           const stateVal = getState(id)?.val;
           if (!stateVal) return; // Überspringen, falls leer
 
-          const installed = stateVal
-            .replace(/\((sonoff|tasmota)\)/gi, "")
-            .trim();
+          const installed = stateVal.replace(/\((sonoff|tasmota)\)/gi, "").trim();
           const deviceRoot = id.substring(0, id.lastIndexOf("."));
 
           const hostState = getState(deviceRoot + ".Info2_Hostname");
-          const hostName =
-            hostState && hostState.val ? hostState.val : "Unbekannt";
+          const hostName = hostState && hostState.val ? hostState.val : "Unbekannt";
 
           // Vergleich (Version ohne Suffix)
-          if (
-            installed !==
-            latestFullVersion.replace("(release-tasmota)", "").trim()
-          ) {
+          if (installed !== latestFullVersion.replace("(release-tasmota)", "").trim()) {
             updateDevices.push(`${hostName} (ist: ${installed})`);
           }
         });
 
         // --- MELDUNG VERSENDEN ---
         // Nur wenn Version neu ODER Geräte noch nicht aktualisiert
-        if (
-          latestFullVersion !== lastKnownVersion &&
-          updateDevices.length > 0
-        ) {
+        if (latestFullVersion !== lastKnownVersion && updateDevices.length > 0) {
           const message = `🆕 Tasmota Firmware vorhanden!\nVersion: ${latestFullVersion}\n\nBetroffene Geräte:\n${updateDevices.join("\n")}`;
 
           // Internet-Stand aktualisieren
@@ -105,28 +90,28 @@ async function checkTasmotaVersion(retryCount = 0) {
           // Gotify
           const tokenState = await getStateAsync(idGotifyToken);
           if (tokenState && tokenState.val) {
-            httpPost(`https://mygotify.meistermopper.de/message?token=${tokenState.val}`, {
-              title: "Tasmota Update",
-              message: message,
-              priority: 1
-            }, (error) => {
-              if (error) console.error(`[Tasmota FW] Gotify Fehler: ${error}`);
-            });
+            httpPost(
+              `https://mygotify.meistermopper.de/message?token=${tokenState.val}`,
+              {
+                title: "Tasmota Update",
+                message: message,
+                priority: 1,
+              },
+              (error) => {
+                if (error) console.error(`[Tasmota FW] Gotify Fehler: ${error}`);
+              },
+            );
           }
 
           if (logging)
-            console.warn(
-              `Tasmota: Update-Meldung versendet für ${updateDevices.length} Geräte`,
-            );
+            console.warn(`Tasmota: Update-Meldung versendet für ${updateDevices.length} Geräte`);
         } else if (logging) {
           console.log(
             `Tasmota: Check beendet. System ist auf dem neuesten Stand (${latestFullVersion})`,
           );
         }
       } catch (parseError) {
-        console.error(
-          `Tasmota: Fehler beim Verarbeiten der JSON-Daten: ${parseError}`,
-        );
+        console.error(`Tasmota: Fehler beim Verarbeiten der JSON-Daten: ${parseError}`);
       }
     },
   );

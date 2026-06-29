@@ -110,9 +110,7 @@ function fetchSolarData() {
  */
 function processDayData(dayName, dataArray) {
   if (!dataArray || dataArray.length === 0) {
-    console.log(
-      `Solar-Prognose: Hinweis, keine Daten für '${dayName}' geliefert`,
-    );
+    console.log(`Solar-Prognose: Hinweis, keine Daten für '${dayName}' geliefert`);
     return;
   }
 
@@ -139,8 +137,7 @@ function processDayData(dayName, dataArray) {
   if (existsState(path + "Json")) setState(path + "Json", dataArray, true);
   if (existsState(path + "gesamt")) setState(path + "gesamt", gesamtWh, true);
   if (existsState(path + "uhrzeit")) setState(path + "uhrzeit", peakTime, true);
-  if (existsState(path + "leistung"))
-    setState(path + "leistung", maxWatt, true);
+  if (existsState(path + "leistung")) setState(path + "leistung", maxWatt, true);
 
   //console.log(`[Solar-Prognose] ${dayName.toUpperCase()}: Peak ${maxWatt}W um ${peakTime} Uhr`);
 }
@@ -152,11 +149,7 @@ function formatAndSplitData(data) {
   const MS_IN_DAY = 86400000;
   const now = new Date();
   // Zeitstempel von heute 00:00:00 Uhr
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  ).getTime();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
   const result = { heute: [], morgen: [] };
 
@@ -172,10 +165,7 @@ function formatAndSplitData(data) {
     // Einsortierung in heute oder morgen
     if (ts >= startOfToday && ts < startOfToday + MS_IN_DAY) {
       result.heute.push(entry);
-    } else if (
-      ts >= startOfToday + MS_IN_DAY &&
-      ts < startOfToday + MS_IN_DAY * 2
-    ) {
+    } else if (ts >= startOfToday + MS_IN_DAY && ts < startOfToday + MS_IN_DAY * 2) {
       result.morgen.push(entry);
     }
   }

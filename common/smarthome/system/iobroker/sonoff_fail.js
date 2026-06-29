@@ -5,7 +5,7 @@
 
 const ID_SELECTOR = "sonoff.0.*.alive";
 
-// @ts-ignore
+// @ts-expect-error
 on({ id: $(ID_SELECTOR), change: "ne" }, (obj) => {
   // Wenn 'alive' auf false geht, ist das Gerät offline
   if (obj.state.val === false) {
@@ -21,13 +21,17 @@ on({ id: $(ID_SELECTOR), change: "ne" }, (obj) => {
     // Gotify-Benachrichtigung (als Ergänzung für deine Infrastruktur)
     const token = getState("0_userdata.0.gotifytoken.iobroker")?.val;
     if (token) {
-      httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
-        title: "Verbindungsabbruch",
-        message: `MQTT offline: ${deviceName}`,
-        priority: 2
-      }, (error) => {
-        if (error) console.error(`[Sonoff Fail] Gotify Fehler: ${error}`);
-      });
+      httpPost(
+        `https://mygotify.meistermopper.de/message?token=${token}`,
+        {
+          title: "Verbindungsabbruch",
+          message: `MQTT offline: ${deviceName}`,
+          priority: 2,
+        },
+        (error) => {
+          if (error) console.error(`[Sonoff Fail] Gotify Fehler: ${error}`);
+        },
+      );
     }
 
     console.warn(`Watchdog: ${deviceName} ist offline`);

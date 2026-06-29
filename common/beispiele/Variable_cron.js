@@ -1,13 +1,16 @@
 var cron, schedule1;
 
-
-on({id: 'default', change: "ne"}, function (obj) {
+on({ id: "default", change: "ne" }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  cron = '* * * * *';
-  (function () {if (schedule1) {clearSchedule(schedule1); schedule1 = null;}})();
-  schedule1 = schedule(cron, function () {
-  });
+  cron = "* * * * *";
+  (() => {
+    if (schedule1) {
+      clearSchedule(schedule1);
+      schedule1 = null;
+    }
+  })();
+  schedule1 = schedule(cron, () => {});
   // Variable cron setzen
 });
 

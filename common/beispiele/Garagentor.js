@@ -1,16 +1,23 @@
 var timeout;
 
-
-on({ id: 'zigbee.0.00158d0005435fe1.opened' /* Is open */, change: 'ne' }, async (obj) => {
-  let value = obj.state.val;
-  let oldValue = obj.oldState.val;
-  if ((obj.state ? obj.state.val : '') && ((new Date().getMonth() + 1) < 4 || (new Date().getMonth() + 1) > 9)) {
+on({ id: "zigbee.0.00158d0005435fe1.opened" /* Is open */, change: "ne" }, async (obj) => {
+  const value = obj.state.val;
+  const oldValue = obj.oldState.val;
+  if (
+    (obj.state ? obj.state.val : "") &&
+    (new Date().getMonth() + 1 < 4 || new Date().getMonth() + 1 > 9)
+  ) {
     timeout = setTimeout(async () => {
       timeout = null;
       // Fingerbot
     }, 1800000);
   } else {
-    (() => { if (timeout) { clearTimeout(timeout); timeout = null; }})();
+    (() => {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+    })();
   }
 });
 

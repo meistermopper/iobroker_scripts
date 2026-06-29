@@ -1,14 +1,18 @@
 var timeout;
 
-
-on({ id: 'Object ID', change: 'ne' }, async (obj) => {
-  let value = obj.state.val;
-  let oldValue = obj.oldState.val;
+on({ id: "Object ID", change: "ne" }, async (obj) => {
+  const value = obj.state.val;
+  const oldValue = obj.oldState.val;
   // Entprellen
   if (!timeout) {
     timeout = setTimeout(async () => {
       timeout = null;
-      (() => { if (timeout) { clearTimeout(timeout); timeout = null; }})();
+      (() => {
+        if (timeout) {
+          clearTimeout(timeout);
+          timeout = null;
+        }
+      })();
     }, 500);
     if (!(obj.state ? obj.state.val : "")) {
       // Aktionen

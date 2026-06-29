@@ -28,10 +28,10 @@ const zielPfad = "0_userdata.0.Energie.Verbrauch.Jahr";
 
 // Jedes Jahr am 31.12. um 23:59:59 Uhr
 schedule("59 59 23 31 12 *", async () => {
-  let reportListe = [];
+  const reportListe = [];
   const jahr = new Date().getFullYear();
 
-  for (let name in geraeteListe) {
+  for (const name in geraeteListe) {
     const quellPfad = `${geraeteListe[name]}.ENERGY_Total`;
     const wert = Math.round(getState(quellPfad)?.val);
     const speicherPfad = `${zielPfad}.${name.replace("-", "_")}`; // Ersetzt Bindestriche für DP-Kompatibilität

@@ -47,31 +47,28 @@ on({ id: KALENDER_IDS, change: "ne" }, () => {
 });
 
 // --- 4. LOGIK: SONDERPROGRAMME (GAST / TAGUNG) ---
-on(
-  { id: [PROG.GAST_OBEN, PROG.GAST_UNTEN, PROG.TAGUNG], change: "ne" },
-  (obj) => {
-    const aktiv = !!obj.state.val;
-    const profil = aktiv ? 2 : 1;
-    let name = "";
+on({ id: [PROG.GAST_OBEN, PROG.GAST_UNTEN, PROG.TAGUNG], change: "ne" }, (obj) => {
+  const aktiv = !!obj.state.val;
+  const profil = aktiv ? 2 : 1;
+  let name = "";
 
-    if (obj.id === PROG.GAST_OBEN) {
-      name = "Gästezimmer & Bad oben";
-      setState(HEIZUNGEN.gast_oben, profil);
-      setStateDelayed(HEIZUNGEN.bad_oben, profil, 1000, false); // Master-DP
-    } else if (obj.id === PROG.GAST_UNTEN) {
-      name = "Gästezimmer unten";
-      setState(HEIZUNGEN.gast_unten, profil);
-    } else if (obj.id === PROG.TAGUNG) {
-      name = "Konferenzraum & Bad oben";
-      setState(HEIZUNGEN.konferenz, profil);
-      setStateDelayed(HEIZUNGEN.bad_oben, profil, 1000, false); // Master-DP
-    }
+  if (obj.id === PROG.GAST_OBEN) {
+    name = "Gästezimmer & Bad oben";
+    setState(HEIZUNGEN.gast_oben, profil);
+    setStateDelayed(HEIZUNGEN.bad_oben, profil, 1000, false); // Master-DP
+  } else if (obj.id === PROG.GAST_UNTEN) {
+    name = "Gästezimmer unten";
+    setState(HEIZUNGEN.gast_unten, profil);
+  } else if (obj.id === PROG.TAGUNG) {
+    name = "Konferenzraum & Bad oben";
+    setState(HEIZUNGEN.konferenz, profil);
+    setStateDelayed(HEIZUNGEN.bad_oben, profil, 1000, false); // Master-DP
+  }
 
-    const msg = `⚙️ Programm für ${name} wurde ${aktiv ? "gestartet" : "beendet"}.`;
-    console.log(`[Heizung] ${msg}`);
-    sendTo("telegram", "send", { text: msg });
-  },
-);
+  const msg = `⚙️ Programm für ${name} wurde ${aktiv ? "gestartet" : "beendet"}.`;
+  console.log(`[Heizung] ${msg}`);
+  sendTo("telegram", "send", { text: msg });
+});
 
 // --- 5. LOGIK: HAUPT-MODI (AUSSERHAUS / ZUHAUSE) ---
 on({ id: [PROG.AUSSERHAUS, PROG.ZUHAUSE], change: "ne" }, (obj) => {

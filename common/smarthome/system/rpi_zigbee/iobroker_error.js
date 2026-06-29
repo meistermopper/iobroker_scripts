@@ -15,9 +15,7 @@ on({ id: ID_HOST_ALIVE, change: "ne" }, (obj) => {
 
   if (!alive) {
     // FALL: Host geht OFFLINE
-    console.log(
-      `[Watchdog] rpizigbee ist offline. Starte ${WATCH_TIME / 60000}min Timer...`,
-    );
+    console.log(`[Watchdog] rpizigbee ist offline. Starte ${WATCH_TIME / 60000}min Timer...`);
 
     // Timer starten
     if (watchdogTimer) clearTimeout(watchdogTimer);

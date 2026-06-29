@@ -20,11 +20,7 @@ const HARMONY_VIDEO = [
 
 function istDunkel() {
   const lux = parseFloat(getState(ID_ILLU)?.val) || 0;
-  const istNacht = compareTime(
-    getAstroDate("sunrise"),
-    getAstroDate("sunset"),
-    "not between",
-  );
+  const istNacht = compareTime(getAstroDate("sunrise"), getAstroDate("sunset"), "not between");
   // Wenn Nacht ODER Lux unter Schwelle
   return istNacht || lux <= 1000;
 }
@@ -41,8 +37,8 @@ function videoAktiv() {
 
 on({ id: [...HARMONY_VIDEO, ID_ILLU], change: "ne" }, async (obj) => {
   const luxState = getState(ID_ILLU);
-  const lux = (luxState && luxState.val !== null) ? parseFloat(luxState.val) : 0;
-  const tvLichtAn = !!(getState(ID_FERNSEHLICHT)?.val);
+  const lux = luxState && luxState.val !== null ? parseFloat(luxState.val) : 0;
+  const tvLichtAn = !!getState(ID_FERNSEHLICHT)?.val;
   const amSchauen = videoAktiv();
 
   // Feststellen, ob der Trigger der Lux-Sensor war

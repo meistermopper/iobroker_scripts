@@ -58,9 +58,7 @@ async function initDP() {
       });
     }
   }
-  console.log(
-    "USV-Wartung: Alle 11 Datenpunkte unter 0_userdata.0 erfolgreich initialisiert",
-  );
+  console.log("USV-Wartung: Alle 11 Datenpunkte unter 0_userdata.0 erfolgreich initialisiert");
 }
 
 // --- 3. KOMMUNIKATIONS-FUNKTIONEN ---
@@ -76,7 +74,8 @@ async function startWartung(isManual = false) {
   setState(sonoffPower, false); // Trennung vom Netz
   sendGlobalNotify(
     isManual ? "Manuelle Wartung gestartet" : "Automatische Wartung gestartet",
-    "USV Büro", 1
+    "USV Büro",
+    1,
   );
 }
 
@@ -120,24 +119,16 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
     if (!canSpeak) return;
 
     // Nachtruhe nur bei geplanter Wartung, bei echtem Ausfall immer sprechen!
-    const isDay = compareTime('08:00', '20:00', 'between');
-    const voiceVol = (isWartung && !isDay) ? null : getState(`${dpPrefix}.Google_lautstaerke`)?.val;
+    const isDay = compareTime("08:00", "20:00", "between");
+    const voiceVol = isWartung && !isDay ? null : getState(`${dpPrefix}.Google_lautstaerke`)?.val;
 
     // Modulo-Check: Sprechen bei Start, alle 5% oder kurz vor dem Ende
-    if (
-      lastSpokenSoc === -1 ||
-      (soc % 5 === 0 && soc !== lastSpokenSoc) ||
-      soc === minSoc + 2
-    ) {
+    if (lastSpokenSoc === -1 || (soc % 5 === 0 && soc !== lastSpokenSoc) || soc === minSoc + 2) {
       lastSpokenSoc = soc;
-      const runtime = Math.floor(
-        getState(`${dpPrefix}.Restlaufzeit_in_Minuten`)?.val,
-      );
+      const runtime = Math.floor(getState(`${dpPrefix}.Restlaufzeit_in_Minuten`)?.val);
 
       // Textbaustein nach deinen VIS-Einstellungen (Minuten vs Prozent)
-      let text = isWartung
-        ? "Wartung im Büro läuft, "
-        : "Warnung, Stromausfall im Büro, ";
+      let text = isWartung ? "Wartung im Büro läuft, " : "Warnung, Stromausfall im Büro, ";
 
       const speakMin = getState(`${dpPrefix}.Speak_Minuten`)?.val;
       const speakPct = getState(`${dpPrefix}.Speak_Prozent`)?.val;
@@ -153,9 +144,7 @@ on({ id: `${upsNutPrefix}.battery.charge`, change: "ne" }, async (obj) => {
       if (speakTimeout) clearTimeout(speakTimeout);
 
       if (soc >= 98) {
-        console.log(
-          "USV-Audio: Warte 10s auf WLAN-Stabilität vor der ersten Ansage",
-        );
+        console.log("USV-Audio: Warte 10s auf WLAN-Stabilität vor der ersten Ansage");
         speakTimeout = setTimeout(() => {
           sendGlobalNotify(text, "USV Büro", 5, voiceVol);
         }, wifiStabilizeDelay);
@@ -204,7 +193,7 @@ on({ id: `${dpPrefix}.Jetzt_Warten`, change: "ne", val: true }, () => {
 /**
  * Verhindert, dass die USV auf Batterie bleibt, wenn du das Skript stoppst.
  */
-onStop(function (callback) {
+onStop((callback) => {
   console.warn("USV-Safety: Skript-Stopp, erzwinge Netzbetrieb zur Sicherheit");
   setState(sonoffPower, true);
   setTimeout(callback, 500);

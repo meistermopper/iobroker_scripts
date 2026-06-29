@@ -1,7 +1,7 @@
-on({id: "Object ID", change: "ne"}, function (obj) {
+on({ id: "Object ID", change: "ne" }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  if ((obj.state ? obj.state.val : "")) {
+  if (obj.state ? obj.state.val : "") {
     setState("Object ID", true);
   } else {
     setState("Object ID", false);

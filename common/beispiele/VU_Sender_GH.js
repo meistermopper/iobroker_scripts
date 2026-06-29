@@ -2,138 +2,167 @@ var IPAddresse, Channel, SNR, timeout2, Datapoint, Action, timeout;
 
 // Beschreibe diese Funktion …
 function Channel2PID(Channel) {
-    const Channelname = {
-        'ProSieben_' : {
-            PID : '1:0:19:EF75:3F9:1:C00000:0:0:0'
+  const Channelname = {
+    ProSieben_: {
+      PID: "1:0:19:EF75:3F9:1:C00000:0:0:0",
+    },
+    RTL_: {
+      PID: "1:0:19:EF10:421:1:C00000:0:0:0",
+    },
+    SAT1_: {
+      PID: "1:0:19:EF74:3F9:1:C00000:0:0:0",
+    },
+    ZDF_: {
+      PID: "1:0:19:2B66:3F3:1:C00000:0:0:0",
+    },
+    ARD_: {
+      PID: "1:0:19:283D:3FB:1:C00000:0:0:0",
+    },
+    "Kabel Eins_": {
+      PID: "1:0:19:EF76:3F9:1:C00000:0:0:0",
+    },
+    "National Geographic_": {
+      PID: "1:0:19:70:D:85:C00000:0:0:0",
+    },
+    DMAX_: {
+      PID: "1:0:19:151A:455:1:C00000:0:0:0",
+    },
+    Discovery_: {
+      PID: "1:0:19:82:6:85:C00000:0:0:0",
+    },
+    NTV_: {
+      PID: "1:0:19:EF14:421:1:C00000:0:0:0",
+    },
+    SIXX_: {
+      PID: "1:0:19:EF77:3F9:1:C00000:0:0:0",
+    },
+    "Sky Sport 1_": {
+      PID: "1:0:19:81:6:85:C00000:0:0:0",
+    },
+    VOX_: {
+      PID: "1:0:19:EF11:421:1:C00000:0:0:0",
+    },
+  };
 
-        },
-        'RTL_' : {
-            PID : '1:0:19:EF10:421:1:C00000:0:0:0'
-
-        },
-        'SAT1_' : {
-            PID : '1:0:19:EF74:3F9:1:C00000:0:0:0'
-
-        },
-        'ZDF_' : {
-            PID : '1:0:19:2B66:3F3:1:C00000:0:0:0'
-
-        },
-        'ARD_' : {
-            PID : '1:0:19:283D:3FB:1:C00000:0:0:0'
-
-        },
-        'Kabel Eins_' : {
-            PID : '1:0:19:EF76:3F9:1:C00000:0:0:0'
-
-        },
-        'National Geographic_' : {
-            PID : '1:0:19:70:D:85:C00000:0:0:0'
-
-        },
-        'DMAX_' : {
-            PID : '1:0:19:151A:455:1:C00000:0:0:0'
-
-        },
-        'Discovery_' : {
-            PID : '1:0:19:82:6:85:C00000:0:0:0'
-
-        },
-        'NTV_' : {
-            PID : '1:0:19:EF14:421:1:C00000:0:0:0'
-
-        },
-        'SIXX_' : {
-            PID : '1:0:19:EF77:3F9:1:C00000:0:0:0'
-
-        },
-        'Sky Sport 1_' : {
-            PID : '1:0:19:81:6:85:C00000:0:0:0'
-
-        },
-        'VOX_' : {
-            PID : '1:0:19:EF11:421:1:C00000:0:0:0'
-
-        },
-
-    }
-
-    const antwort = Channelname[Channel] ?  Channelname[Channel].PID : "No Alexa found";
-    return antwort;
+  const antwort = Channelname[Channel] ? Channelname[Channel].PID : "No Alexa found";
+  return antwort;
 }
 
 // Beschreibe diese Funktion …
 function SNR2IP(SNR) {
-    const Serialnumber = {
-        '8257bb465f9844139555a30b7fbf9400' : {
-            IPvalue : 'http://192.168.0.65/api/zap?sRef='
+  const Serialnumber = {
+    "8257bb465f9844139555a30b7fbf9400": {
+      IPvalue: "http://192.168.0.65/api/zap?sRef=",
+    },
+    G090LF11814302BC: {
+      IPvalue: "http://192.168.0.63/api/zap?sRef=",
+    },
+    G0911B0592270K25: {
+      IPvalue: "http://192.168.0.70/api/zap?sRef=",
+    },
+  };
 
-        },
-        'G090LF11814302BC' : {
-            IPvalue : 'http://192.168.0.63/api/zap?sRef='
-
-        },
-        'G0911B0592270K25' : {
-            IPvalue : 'http://192.168.0.70/api/zap?sRef='
-
-        },
-
-
-    }
-
-    const antwort = Serialnumber[SNR] ?  Serialnumber[SNR].IPvalue : " no IP found";
-    return antwort;
+  const antwort = Serialnumber[SNR] ? Serialnumber[SNR].IPvalue : " no IP found";
+  return antwort;
 }
 
 // Beschreibe diese Funktion …
 function SNR2IDP(SNR) {
-    const Serialnumber = {
-        '8257bb465f9844139555a30b7fbf9400' : {
-            datapoint: 'enigma2.2.main_command.'
+  const Serialnumber = {
+    "8257bb465f9844139555a30b7fbf9400": {
+      datapoint: "enigma2.2.main_command.",
+    },
+    G090LF11814302BC: {
+      datapoint: "enigma2.1.main_command.",
+    },
+    G0911B0592270K25: {
+      datapoint: "enigma2.0.main_command.",
+    },
+  };
 
-        },
-        'G090LF11814302BC' : {
-            datapoint : 'enigma2.1.main_command.'
-
-        },
-        'G0911B0592270K25' : {
-            datapoint : 'enigma2.0.main_command.'
-
-        },
-
-
-    }
-
-    const antwort = Serialnumber[SNR] ?  Serialnumber[SNR].datapoint : " no DP found";
-    return antwort;
+  const antwort = Serialnumber[SNR] ? Serialnumber[SNR].datapoint : " no DP found";
+  return antwort;
 }
 
-
 IPAddresse = getState("alexa2.0.History.serialNumber")?.val;
-on({id: "alexa2.0.History.serialNumber", change: "any"}, function (obj) {
+on({ id: "alexa2.0.History.serialNumber", change: "any" }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  IPAddresse = SNR2IP((obj.state ? obj.state.val : ""));
-  Datapoint = SNR2IDP((obj.state ? obj.state.val : ""));
+  IPAddresse = SNR2IP(obj.state ? obj.state.val : "");
+  Datapoint = SNR2IDP(obj.state ? obj.state.val : "");
 });
-on({id: new RegExp('Mein_TV\\.0\\.ProSieben' + "|" + 'Mein_TV\\.0\\.RTL' + "|" + 'Mein_TV\\.0\\.SAT1' + "|" + 'Mein_TV\\.0\\.ZDF' + "|" + '0_userdata\\.0\\.Mein_TV\\.ARD' + "|" + 'Mein_TV\\.0\\.DMAX' + "|" + 'Mein_TV\\.0\\.Discovery' + "|" + 'Mein_TV\\.0\\.Kabel_Eins' + "|" + 'Mein_TV\\.0\\.NTV' + "|" + 'Mein_TV\\.0\\.National_Geographic' + "|" + 'Mein_TV\\.0\\.SIXX' + "|" + 'Mein_TV\\.0\\.Sky_Sport_1' + "|" + 'Mein_TV\\.0\\.VOX' + "|" + 'Mein_TV\\.0\\.EPG' + "|" + 'Mein_TV\\.0\\.Exit'), change: "gt"}, function (obj) {
-    (function () {if (IPAddresse) {clearTimeout(IPAddresse); IPAddresse = null;}})();
-  timeout = setTimeout(function () {
-    try {
-      require("request")((String(IPAddresse) + String(Channel2PID((obj.common ? obj.common.name : ""))))).on("error", function (e) {console.error(e);});
-    } catch (e) { console.error(e); }
-    console.log("request: " + (String(IPAddresse) + String(Channel2PID((obj.common ? obj.common.name : "")))));
-    setStateDelayed(obj.id, false, false, parseInt(0, 10), false);
-  }, 50);
-});
+on(
+  {
+    id: new RegExp(
+      "Mein_TV\\.0\\.ProSieben" +
+        "|" +
+        "Mein_TV\\.0\\.RTL" +
+        "|" +
+        "Mein_TV\\.0\\.SAT1" +
+        "|" +
+        "Mein_TV\\.0\\.ZDF" +
+        "|" +
+        "0_userdata\\.0\\.Mein_TV\\.ARD" +
+        "|" +
+        "Mein_TV\\.0\\.DMAX" +
+        "|" +
+        "Mein_TV\\.0\\.Discovery" +
+        "|" +
+        "Mein_TV\\.0\\.Kabel_Eins" +
+        "|" +
+        "Mein_TV\\.0\\.NTV" +
+        "|" +
+        "Mein_TV\\.0\\.National_Geographic" +
+        "|" +
+        "Mein_TV\\.0\\.SIXX" +
+        "|" +
+        "Mein_TV\\.0\\.Sky_Sport_1" +
+        "|" +
+        "Mein_TV\\.0\\.VOX" +
+        "|" +
+        "Mein_TV\\.0\\.EPG" +
+        "|" +
+        "Mein_TV\\.0\\.Exit",
+    ),
+    change: "gt",
+  },
+  (obj) => {
+    (() => {
+      if (IPAddresse) {
+        clearTimeout(IPAddresse);
+        IPAddresse = null;
+      }
+    })();
+    timeout = setTimeout(() => {
+      try {
+        require("request")(
+          String(IPAddresse) + String(Channel2PID(obj.common ? obj.common.name : "")),
+        ).on("error", (e) => {
+          console.error(e);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+      console.log(
+        "request: " + (String(IPAddresse) + String(Channel2PID(obj.common ? obj.common.name : ""))),
+      );
+      setStateDelayed(obj.id, false, false, parseInt(0, 10), false);
+    }, 50);
+  },
+);
 
-on({id: "Mein_TV.0.TV_BOX", change: "any"}, function (obj) {
+on({ id: "Mein_TV.0.TV_BOX", change: "any" }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  (function () {if (timeout) {clearTimeout(timeout); timeout = null;}})();
-  timeout2 = setTimeout(function () {
-    Action = (obj.state ? obj.state.val : "") ? 'WAKEUP_FROM_STANDBY' : 'STANDBY';
-    setStateDelayed((String(Datapoint) + String(Action)), true, false, parseInt(0, 10), false);
+  (() => {
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = null;
+    }
+  })();
+  timeout2 = setTimeout(() => {
+    Action = (obj.state ? obj.state.val : "") ? "WAKEUP_FROM_STANDBY" : "STANDBY";
+    setStateDelayed(String(Datapoint) + String(Action), true, false, parseInt(0, 10), false);
   }, 50);
 });
 

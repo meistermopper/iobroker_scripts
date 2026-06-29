@@ -35,8 +35,7 @@ const daysLong = [
 ];
 
 // Hilfsfunktionen
-const isLeapYear = (year) =>
-  (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+const isLeapYear = (year) => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 const getQuarter = (date) => Math.floor(date.getMonth() / 3) + 1;
 const getDayOfYear = (date) => {
   const start = new Date(date.getFullYear(), 0, 0);
@@ -47,9 +46,7 @@ const getDayOfYear = (date) => {
 
 // Kalenderwoche nach ISO 8601 (robust)
 function getKW(date) {
-  const d = new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
-  );
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
@@ -113,9 +110,7 @@ function updateDateInfo() {
   setState(`${path}.Woche.Jahr.Kalenderwoche.Nummer`, kw.num, true);
   setState(`${path}.Tag.Woche.Nummer`, dayOfWeek, true);
 
-  const yearShare = parseFloat(
-    ((dayYear * 100) / daysInYear).toFixed(decimals),
-  );
+  const yearShare = parseFloat(((dayYear * 100) / daysInYear).toFixed(decimals));
   setState(`${path}.Tag.Jahr.Vergangenheit.Anteil`, yearShare, true);
 
   const formatted = `${daysLong[now.getDay()]}, ${day}. ${monthLong[now.getMonth()]} ${year}`;

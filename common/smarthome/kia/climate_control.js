@@ -27,12 +27,7 @@ function istGeradeWoche() {
   const week1 = new Date(d.getFullYear(), 0, 4);
   const kw =
     1 +
-    Math.round(
-      ((d.getTime() - week1.getTime()) / 86400000 -
-        3 +
-        ((week1.getDay() + 6) % 7)) /
-        7,
-    );
+    Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
   return kw % 2 === 0;
 }
 
@@ -60,9 +55,7 @@ async function starteHeizung() {
   const amStandort = getState(IDS.location)?.val === HOME_ADDRESS;
   const heizenAktiv = getState(IDS.isHome)?.val;
   const keineArbeit =
-    getState(IDS.holiday)?.val ||
-    getState(IDS.vacation1)?.val ||
-    getState(IDS.vacation2)?.val;
+    getState(IDS.holiday)?.val || getState(IDS.vacation1)?.val || getState(IDS.vacation2)?.val;
 
   if (heizenAktiv && amStandort && !keineArbeit) {
     // Logik: Entfrosten oder nur Heizen?

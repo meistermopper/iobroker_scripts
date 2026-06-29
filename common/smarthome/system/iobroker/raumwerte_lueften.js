@@ -139,29 +139,32 @@ function internalNotify(text, priority = 1) {
   if (token) {
     // HTML für Gotify entfernen (Reintext-Formatierung)
     const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
-    httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
-      title: "Haus-Klima",
-      message: cleanText,
-      priority: priority
-    }, (error) => {
-      if (error) console.error(`[Raumwerte Lüften] Gotify Fehler: ${error}`);
-    });
+    httpPost(
+      `https://mygotify.meistermopper.de/message?token=${token}`,
+      {
+        title: "Haus-Klima",
+        message: cleanText,
+        priority: priority,
+      },
+      (error) => {
+        if (error) console.error(`[Raumwerte Lüften] Gotify Fehler: ${error}`);
+      },
+    );
   }
 }
 
 // --- 3. MORGEN-REPORT (TÄGLICH 08:00) ---
 
 function runMorningReport() {
-  let kritischKlima = [];
-  let offeneFenster = [];
+  const kritischKlima = [];
+  const offeneFenster = [];
 
   for (const raum in RAEUME) {
     if (raum === "Aussen") continue;
     const conf = RAEUME[raum];
 
     // Feuchtigkeit prüfen
-    const hSuffix =
-      conf.type === "heizung" ? "heizung.HUMIDITY" : "klima.humidity";
+    const hSuffix = conf.type === "heizung" ? "heizung.HUMIDITY" : "klima.humidity";
     const humID = `alias.0.${conf.aliasName}.${hSuffix}`;
 
     if (existsState(humID)) {
@@ -193,8 +196,7 @@ function runMorningReport() {
 // --- 4. BERECHNUNG & LOGIK ---
 
 const xdp = new Dewpoint(HUNN);
-const runden = (wert, stellen) =>
-  Math.round(wert * Math.pow(10, stellen)) / Math.pow(10, stellen);
+const runden = (wert, stellen) => Math.round(wert * 10 ** stellen) / 10 ** stellen;
 
 function calc(raum) {
   const config = RAEUME[raum];
@@ -204,20 +206,12 @@ function calc(raum) {
   const rh = getState(config.Sensor_HUM)?.val;
   const y = xdp.Calc(t, rh);
 
-  setState(
-    `${PFAD}${RAUM_PFAD}${raum}.Feuchtegehalt_Absolut`,
-    runden(y.x, 2),
-    true,
-  );
+  setState(`${PFAD}${RAUM_PFAD}${raum}.Feuchtegehalt_Absolut`, runden(y.x, 2), true);
   setState(`${PFAD}${RAUM_PFAD}${raum}.Temperatur`, runden(t, 1), true);
 
   if (config.Aussensensor) {
-    const ta = getState(
-      `${PFAD}${RAUM_PFAD}${config.Aussensensor}.Temperatur`,
-    )?.val;
-    const xa = getState(
-      `${PFAD}${RAUM_PFAD}${config.Aussensensor}.Feuchtegehalt_Absolut`,
-    )?.val;
+    const ta = getState(`${PFAD}${RAUM_PFAD}${config.Aussensensor}.Temperatur`)?.val;
+    const xa = getState(`${PFAD}${RAUM_PFAD}${config.Aussensensor}.Feuchtegehalt_Absolut`)?.val;
     if (xa === 0) return;
 
     // Lüftungsempfehlung: Physikalischer Vergleich (Innen vs Außen)
@@ -276,7 +270,7 @@ function notify(dp, msg) {
   if (existsState(dp)) setState(dp, true, true);
   if (isDay) {
     // Alle SayIt-Instanzen dynamisch finden und benachrichtigen
-    $(`system.adapter.sayit.*.alive`).each(function (id) {
+    $(`system.adapter.sayit.*.alive`).each((id) => {
       const instance = id.split(".").slice(2, 4).join(".");
       sendTo(instance, "say", { text: msg.replace(/_/g, " ") });
     });

@@ -1,24 +1,43 @@
 var level, timeout3, dimmen, timeout9;
 
-
 level = 1;
-(() => { if (timeout3) { clearTimeout(timeout3); timeout3 = null; }})();
+(() => {
+  if (timeout3) {
+    clearTimeout(timeout3);
+    timeout3 = null;
+  }
+})();
 timeout3 = setTimeout(async () => {
   timeout3 = null;
-  setState('hue.0.Hue_Go_1.level' /* Hue_Go_1.level */, level);
-  setState('hue.0.Hue_Go_1.ct' /* Hue_Go_1.ct */, 5500);
-  (() => { if (dimmen) { clearInterval(dimmen); dimmen = null; }})();
+  setState("hue.0.Hue_Go_1.level" /* Hue_Go_1.level */, level);
+  setState("hue.0.Hue_Go_1.ct" /* Hue_Go_1.ct */, 5500);
+  (() => {
+    if (dimmen) {
+      clearInterval(dimmen);
+      dimmen = null;
+    }
+  })();
   dimmen = setInterval(async () => {
     if (level < 100) {
-      setState('hue.0.Hue_Go_1.level' /* Hue_Go_1.level */, level);
-      level = (typeof level === 'number' ? level : 0) + 1;
+      setState("hue.0.Hue_Go_1.level" /* Hue_Go_1.level */, level);
+      level = (typeof level === "number" ? level : 0) + 1;
     } else {
-      (() => { if (dimmen) { clearInterval(dimmen); dimmen = null; }})();
-      (() => { if (timeout9) { clearTimeout(timeout9); timeout9 = null; }})();
+      (() => {
+        if (dimmen) {
+          clearInterval(dimmen);
+          dimmen = null;
+        }
+      })();
+      (() => {
+        if (timeout9) {
+          clearTimeout(timeout9);
+          timeout9 = null;
+        }
+      })();
       timeout9 = setTimeout(async () => {
         timeout9 = null;
-        setState('hue.0.Hue_Go_1.ct' /* Hue_Go_1.ct */, 2700);
-        setState('hue.0.Hue_Go_1.level' /* Hue_Go_1.level */, 50);
+        setState("hue.0.Hue_Go_1.ct" /* Hue_Go_1.ct */, 2700);
+        setState("hue.0.Hue_Go_1.level" /* Hue_Go_1.level */, 50);
       }, 180000);
     }
   }, 12000);

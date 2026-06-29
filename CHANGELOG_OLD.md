@@ -4,6 +4,11 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [2.0.87] - 2026-06-29
+
+- Update of playerstate.js
+- Update of jsconfig.json
+
 ### [2.0.86] - 2026-06-29
 
 - Update of geschirr.js

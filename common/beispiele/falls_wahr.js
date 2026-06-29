@@ -1,8 +1,8 @@
-on({id: "Object ID", change: "ne"}, function (obj) {
+on({ id: "Object ID", change: "ne" }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
   sendTo("telegram", "send", {
-      text: ((obj.state ? obj.state.val : "") ? 'Text 1' : 'Text 2')
+    text: (obj.state ? obj.state.val : "") ? "Text 1" : "Text 2",
   });
 });
 

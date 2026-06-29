@@ -14,12 +14,16 @@ on({ id: dpSoH, change: "lt" }, (obj) => {
   console.log(`Batterie-SoH: ${msg}`);
 
   if (gotifyToken) {
-    httpPost(`https://mygotify.meistermopper.de/message?token=${gotifyToken}`, {
-      title: "ioBroker: Batterie",
-      message: msg,
-      priority: 1
-    }, (error) => {
-      if (error) console.error(`[Soh Change] Gotify Fehler: ${error}`);
-    });
+    httpPost(
+      `https://mygotify.meistermopper.de/message?token=${gotifyToken}`,
+      {
+        title: "ioBroker: Batterie",
+        message: msg,
+        priority: 1,
+      },
+      (error) => {
+        if (error) console.error(`[Soh Change] Gotify Fehler: ${error}`);
+      },
+    );
   }
 });

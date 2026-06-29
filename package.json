@@ -1,13 +1,16 @@
 {
   "name": "iobroker_js",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "Meine ioBroker Skript-Sammlung",
   "main": "index.js",
   "author": "Thomas",
   "devDependencies": {
+    "@biomejs/biome": "^2.5.1",
     "husky": "^9.1.7"
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint": "biome lint .",
+    "format": "biome format --write ."
   }
 }

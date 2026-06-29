@@ -14,8 +14,7 @@ const CONFIG = {
   dpTrigger: "0_userdata.0.Tabellen.SONOFFTabelleVIS.RefreshTrigger",
 
   design: {
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     colorBgMain: "#111111",
     colorHeader: "linear-gradient(180deg, #265686, #1a3a5c)",
     rssiOk: 70, // Ab 70% Grün.
@@ -31,10 +30,10 @@ const CONFIG = {
  * wo ein Wert (z.B. RSSI) liegt, klappert sie alle gängigen Tasmota-Verstecke ab.
  */
 function findStateDeep(devicePath, searchKeys, fallback) {
-  for (let key of searchKeys) {
-    let fullPath = devicePath + "." + key;
+  for (const key of searchKeys) {
+    const fullPath = devicePath + "." + key;
     if (existsState(fullPath)) {
-      let val = getState(fullPath)?.val;
+      const val = getState(fullPath)?.val;
       // Falls wir eine Zahl oder einen Text finden, der nicht leer ist, nehmen wir ihn.
       if (val !== null && val !== undefined && val !== "") return val;
     }
@@ -73,11 +72,7 @@ async function collectData() {
     const deviceName = obj?.common?.name || path.split(".").pop();
 
     // RSSI-SUCHE: Wir suchen an allen bekannten Stellen (STATE, Wifi oder Root).
-    const rssi = findStateDeep(
-      path,
-      ["STATE.Wifi.RSSI", "Wifi.RSSI", "Wifi_RSSI", "RSSI"],
-      0,
-    );
+    const rssi = findStateDeep(path, ["STATE.Wifi.RSSI", "Wifi.RSSI", "Wifi_RSSI", "RSSI"], 0);
 
     // UPTIME-SUCHE: Auch hier suchen wir an verschiedenen Stellen.
     const uptime = findStateDeep(path, ["STATE.Uptime", "Uptime"], "---");
@@ -200,10 +195,7 @@ async function run() {
   setState(CONFIG.dpVIS, buildHTML(data), true);
 
   // Refresh-Trigger zurücksetzen.
-  if (
-    existsState(CONFIG.dpTrigger) &&
-    getState(CONFIG.dpTrigger)?.val === true
-  ) {
+  if (existsState(CONFIG.dpTrigger) && getState(CONFIG.dpTrigger)?.val === true) {
     setState(CONFIG.dpTrigger, false, true);
   }
 }

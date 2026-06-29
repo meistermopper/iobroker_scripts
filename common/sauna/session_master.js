@@ -17,23 +17,23 @@
  */
 
 // --- KONFIGURATION ---
-const ID_SAUNA_AKTIV  = "0_userdata.0.Haushalt.sauna_laeuft";  // Trigger für Automatik
-const PREFERED_SENDER = "smoothjazz";                            // Standard-Sender für Automatik
-const VOL_SAUNA       = 10;                                    // Start-Lautstärke Sauna
-const VOL_BAD         = 15;                                    // Start-Lautstärke Bad
+const ID_SAUNA_AKTIV = "0_userdata.0.Haushalt.sauna_laeuft"; // Trigger für Automatik
+const PREFERED_SENDER = "smoothjazz"; // Standard-Sender für Automatik
+const VOL_SAUNA = 10; // Start-Lautstärke Sauna
+const VOL_BAD = 15; // Start-Lautstärke Bad
 
-const DELAY_BAD       = 5 * 60 * 1000;                         // Einschaltverzögerung Bad
-const DELAY_SAUNA     = 20 * 60 * 1000;                        // Einschaltverzögerung Sauna
+const DELAY_BAD = 5 * 60 * 1000; // Einschaltverzögerung Bad
+const DELAY_SAUNA = 20 * 60 * 1000; // Einschaltverzögerung Sauna
 
 // Datenpunkt-Pfade
 const IDS = {
-    saunaPlayer: "alias.0.sauna.media.heos",                   // HEOS Gerät Sauna
-    saunaSender: "0_userdata.0.heos.Sauna.sender",             // Auswahl-Datenpunkt Sauna
-    saunaStatus: "0_userdata.0.heos.Sauna.radio_status",       // An/Aus Status Sauna
-    saunaLight:  "0_userdata.0.Energie.Sauna.lightOn",         // Sauna Licht
-    badPlayer:   "alias.0.bad_unten.media.heos",                     // HEOS Gerät Bad
-    badSender:   "0_userdata.0.heos.Bad.sender",               // Auswahl-Datenpunkt Bad
-    badStatus:   "0_userdata.0.heos.Bad.radio_status"          // An/Aus Status Bad
+  saunaPlayer: "alias.0.sauna.media.heos", // HEOS Gerät Sauna
+  saunaSender: "0_userdata.0.heos.Sauna.sender", // Auswahl-Datenpunkt Sauna
+  saunaStatus: "0_userdata.0.heos.Sauna.radio_status", // An/Aus Status Sauna
+  saunaLight: "0_userdata.0.Energie.Sauna.lightOn", // Sauna Licht
+  badPlayer: "alias.0.bad_unten.media.heos", // HEOS Gerät Bad
+  badSender: "0_userdata.0.heos.Bad.sender", // Auswahl-Datenpunkt Bad
+  badStatus: "0_userdata.0.heos.Bad.radio_status", // An/Aus Status Bad
 };
 
 // Sender-Liste: Key -> HEOS Preset (muss in der HEOS App unter Favoriten gespeichert sein)
@@ -41,11 +41,11 @@ const saunaMap = {
   jazzgroove: { preset: 1, name: "The Jazz Groove" },
   jazzradio: { preset: 2, name: "Jazz Radio" },
   smoothjazz: { preset: 3, name: "Smoothjazz" },
-  hr1:       { preset: 4, name: "HR 1" },
-  hrinfo:    { preset: 5, name: "hr info" },
+  hr1: { preset: 4, name: "HR 1" },
+  hrinfo: { preset: 5, name: "hr info" },
   swissjazz: { preset: 6, name: "Swiss Jazz" },
   mdrkultur: { preset: 7, name: "MDR Kultur" },
-  jazzloft: { preset: 10, name: "Jazz Loft" }
+  jazzloft: { preset: 10, name: "Jazz Loft" },
 };
 
 // Timer für die Automatik
@@ -56,8 +56,14 @@ let tAutoSauna = null;
  * Stoppt laufende Einschalt-Timer
  */
 function clearAutoTimers() {
-    if (tAutoBad) { clearTimeout(tAutoBad); tAutoBad = null; }
-    if (tAutoSauna) { clearTimeout(tAutoSauna); tAutoSauna = null; }
+  if (tAutoBad) {
+    clearTimeout(tAutoBad);
+    tAutoBad = null;
+  }
+  if (tAutoSauna) {
+    clearTimeout(tAutoSauna);
+    tAutoSauna = null;
+  }
 }
 
 // --- LOGIK ---
@@ -66,35 +72,34 @@ function clearAutoTimers() {
  * 1. AUTOMATIK-TRIGGER (Sauna Master-Schalter)
  */
 on({ id: ID_SAUNA_AKTIV, change: "ne" }, (obj) => {
-    const isStarting = !!obj.state.val;
+  const isStarting = !!obj.state.val;
 
-    if (isStarting) {
-        sendGlobalNotify("🧖 Sauna-Modus aktiv: Musik-Automatik gestartet.", "Radio Master", 1);
-        clearAutoTimers();
+  if (isStarting) {
+    sendGlobalNotify("🧖 Sauna-Modus aktiv: Musik-Automatik gestartet.", "Radio Master", 1);
+    clearAutoTimers();
 
-        // Bad verzögert einschalten
-        tAutoBad = setTimeout(() => {
-            setState(IDS.badSender, PREFERED_SENDER);
-            tAutoBad = null;
-        }, DELAY_BAD);
+    // Bad verzögert einschalten
+    tAutoBad = setTimeout(() => {
+      setState(IDS.badSender, PREFERED_SENDER);
+      tAutoBad = null;
+    }, DELAY_BAD);
 
-        // Sauna verzögert einschalten
-        tAutoSauna = setTimeout(() => {
-            setState(IDS.saunaSender, PREFERED_SENDER);
-            tAutoSauna = null;
-        }, DELAY_SAUNA);
+    // Sauna verzögert einschalten
+    tAutoSauna = setTimeout(() => {
+      setState(IDS.saunaSender, PREFERED_SENDER);
+      tAutoSauna = null;
+    }, DELAY_SAUNA);
+  } else {
+    sendGlobalNotify("⏹️ Sauna-Modus beendet: Musik wird gestoppt.", "Radio Master", 1);
+    clearAutoTimers();
 
-    } else {
-        sendGlobalNotify("⏹️ Sauna-Modus beendet: Musik wird gestoppt.", "Radio Master", 1);
-        clearAutoTimers();
-
-        // Alles aus
-        // Alles ausschalten und Auswahl zurücksetzen
-        setState(IDS.saunaStatus, false);
-        setState(IDS.badStatus, false);
-        setState(IDS.saunaSender, "");
-        setState(IDS.badSender, "");
-    }
+    // Alles aus
+    // Alles ausschalten und Auswahl zurücksetzen
+    setState(IDS.saunaStatus, false);
+    setState(IDS.badStatus, false);
+    setState(IDS.saunaSender, "");
+    setState(IDS.badSender, "");
+  }
 });
 
 /**
@@ -110,7 +115,7 @@ on({ id: IDS.saunaStatus, change: "ne" }, (obj) => {
 
   // Benachrichtigung nur senden, wenn manuell ausgeschaltet wurde (Sauna läuft noch)
   if (!isPlaying && saunaAktiv) {
-      sendGlobalNotify("+++ 📻 ⏹️ Radio in der Sauna wurde ausgeschaltet +++", "Radio Sauna", 1);
+    sendGlobalNotify("+++ 📻 ⏹️ Radio in der Sauna wurde ausgeschaltet +++", "Radio Sauna", 1);
   }
 });
 
@@ -122,7 +127,10 @@ on({ id: IDS.saunaSender, change: "any" }, (obj) => {
   if (!obj.state.val) return; // Leere Sender (Reset) ignorieren
 
   // RACE CONDITION PROTECTION: Automatik-Timer stoppen, wenn manuell gewählt wird
-  if (tAutoSauna) { clearTimeout(tAutoSauna); tAutoSauna = null; }
+  if (tAutoSauna) {
+    clearTimeout(tAutoSauna);
+    tAutoSauna = null;
+  }
 
   const senderKey = obj.state.val;
   const sender = saunaMap[senderKey];

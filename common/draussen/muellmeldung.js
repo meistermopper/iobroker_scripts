@@ -11,21 +11,21 @@
 
 // --- 1. KONFIGURATION ---
 const CONFIG = {
-    daysLeft: 'trashschedule.0.next.daysLeft',
-    trashTypes: 'trashschedule.0.next.typesText',
+  daysLeft: "trashschedule.0.next.daysLeft",
+  trashTypes: "trashschedule.0.next.typesText",
 };
 
 // --- 3. HAUPTLOGIK ---
 
 // Trigger: Jeden Sonntag bis Freitag um 18:00 Uhr
 schedule("0 18 * * 0-5", async () => {
-    const daysLeft = getState(CONFIG.daysLeft)?.val;
+  const daysLeft = getState(CONFIG.daysLeft)?.val;
 
-    if (daysLeft === 1) {
-        const muellSorte = getState(CONFIG.trashTypes)?.val;
-        const muellText = `Morgen wird ${muellSorte} abgeholt.`;
+  if (daysLeft === 1) {
+    const muellSorte = getState(CONFIG.trashTypes)?.val;
+    const muellText = `Morgen wird ${muellSorte} abgeholt.`;
 
-        // Globale Benachrichtigung mit Sprachausgabe
-        await sendGlobalNotify(`${muellText}`, "Müll", 5, 40);
-    }
+    // Globale Benachrichtigung mit Sprachausgabe
+    await sendGlobalNotify(`${muellText}`, "Müll", 5, 40);
+  }
 });

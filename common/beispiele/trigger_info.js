@@ -1,9 +1,54 @@
-on({ id: 'zigbee.0.00158d00053e7aae.opened' /* Is open */, change: 'ne' }, async (obj) => {
-  let value = obj.state.val;
-  let oldValue = obj.oldState.val;
-  sendTo('telegram', 'send', {
-    text: (['Objekt ID: ',obj.id,'\n','Name: ',(obj.common ? obj.common.name : ''),'\n','Bechreibung: ',(obj.common ? obj.common.desc : ''),'\n','Kanal ID: ',obj.channelId,'\n','Kanalname: ',obj.channelName,'\n','Geräte ID: ',obj.deviceId,'\n','Gerätename: ',obj.deviceName,'\n','Wert: ',(obj.state ? obj.state.val : ''),'\n','Zeitstempel: ',(obj.state ? obj.state.ts : ''),'\n','Qualität',(obj.state ? obj.state.q : ''),'\n','Ursprung: ',(obj.state ? obj.state.from : ''),'\n','Befehl oder Aktualisierung: ',(obj.state ? obj.state.ack : ''),'\n','letzte Änderung: ',(obj.state ? obj.state.lc : ''),'\n','Kommentar des letzten Zustands: ',(obj.state ? obj.state.c : ''),'\n','Benutzer des letzten Zustands: ',(obj.state ? obj.state.user : '')].join('')),
-    user: 'Thomas',
+on({ id: "zigbee.0.00158d00053e7aae.opened" /* Is open */, change: "ne" }, async (obj) => {
+  const value = obj.state.val;
+  const oldValue = obj.oldState.val;
+  sendTo("telegram", "send", {
+    text: [
+      "Objekt ID: ",
+      obj.id,
+      "\n",
+      "Name: ",
+      obj.common ? obj.common.name : "",
+      "\n",
+      "Bechreibung: ",
+      obj.common ? obj.common.desc : "",
+      "\n",
+      "Kanal ID: ",
+      obj.channelId,
+      "\n",
+      "Kanalname: ",
+      obj.channelName,
+      "\n",
+      "Geräte ID: ",
+      obj.deviceId,
+      "\n",
+      "Gerätename: ",
+      obj.deviceName,
+      "\n",
+      "Wert: ",
+      obj.state ? obj.state.val : "",
+      "\n",
+      "Zeitstempel: ",
+      obj.state ? obj.state.ts : "",
+      "\n",
+      "Qualität",
+      obj.state ? obj.state.q : "",
+      "\n",
+      "Ursprung: ",
+      obj.state ? obj.state.from : "",
+      "\n",
+      "Befehl oder Aktualisierung: ",
+      obj.state ? obj.state.ack : "",
+      "\n",
+      "letzte Änderung: ",
+      obj.state ? obj.state.lc : "",
+      "\n",
+      "Kommentar des letzten Zustands: ",
+      obj.state ? obj.state.c : "",
+      "\n",
+      "Benutzer des letzten Zustands: ",
+      obj.state ? obj.state.user : "",
+    ].join(""),
+    user: "Thomas",
   });
 });
 

@@ -23,7 +23,7 @@ const CONFIG = {
 };
 
 // Interner Speicher für Zustände
-let GUARD = {
+const GUARD = {
   failoverActive: false,
   startTime: 0,
   discrepancyAlarm: false,
@@ -45,7 +45,8 @@ on({ id: CONFIG.dpWanIp, change: "ne" }, async (obj) => {
   if (neueIp === CONFIG.ipFailover) {
     GUARD.startTime = Date.now();
     GUARD.failoverActive = true;
-    sendGlobalNotify( // Hier wird die globale Funktion verwendet
+    sendGlobalNotify(
+      // Hier wird die globale Funktion verwendet
       "Internet-Failover",
       "Hauptleitung ausgefallen, Backup-LTE ist jetzt aktiv",
       8,
@@ -58,12 +59,9 @@ on({ id: CONFIG.dpWanIp, change: "ne" }, async (obj) => {
     // DDNS Update ausführen (native httpGet)
     const ddnssKey = getState(CONFIG.dpDdnssKey)?.val;
     if (ddnssKey) {
-      httpGet(
-        `https://www.ddnss.de/upd.php?key=${ddnssKey}&host=all`,
-        (err) => {
-          if (!err) console.log("UniFi-Guard: DDNS Update gesendet");
-        },
-      );
+      httpGet(`https://www.ddnss.de/upd.php?key=${ddnssKey}&host=all`, (err) => {
+        if (!err) console.log("UniFi-Guard: DDNS Update gesendet");
+      });
     }
 
     let title = "IP-Wechsel";

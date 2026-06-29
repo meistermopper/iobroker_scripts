@@ -58,7 +58,7 @@ function repairAndHide() {
         type: "state",
         common: {
           type: "string", // Hue Commands sind JSON-Strings
-          role: "text",   // Verhindert, dass der Adapter den Typ als Lampe fehlinterpretiert
+          role: "text", // Verhindert, dass der Adapter den Typ als Lampe fehlinterpretiert
           smartName: null, // Entfernt den Datenpunkt sicher aus Google Home / Alexa
         },
         native: {
@@ -68,10 +68,7 @@ function repairAndHide() {
         },
       },
       (err) => {
-        if (err)
-          console.error(
-            `[Abendlicht] Fehler bei Reparatur von ${cfg.id}: ${err}`,
-          );
+        if (err) console.error(`[Abendlicht] Fehler bei Reparatur von ${cfg.id}: ${err}`);
         // Info-Meldung nur beim Skript-Start zur Kontrolle
         else console.log(`[Abendlicht] Info: ${cfg.id} initialisiert`);
       },

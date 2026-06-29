@@ -1,0 +1,60 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "correctness": {
+        "noUnusedVariables": "warn"
+      },
+      "style": {},
+      "suspicious": {
+        "noVar": "error"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double"
+    },
+    "globals": [
+      "getState",
+      "setState",
+      "setStateDelayed",
+      "clearStateDelayed",
+      "existsState",
+      "existsObject",
+      "getObject",
+      "setObject",
+      "extendObject",
+      "on",
+      "subscribe",
+      "unsubscribe",
+      "schedule",
+      "clearSchedule",
+      "sendTo",
+      "sendToHost",
+      "httpGet",
+      "httpPost",
+      "log",
+      "compareTime",
+      "formatDate",
+      "getDateObject",
+      "$",
+      "require",
+      "Buffer",
+      "setTimeout",
+      "clearTimeout",
+      "setInterval",
+      "clearInterval"
+    ]
+  }
+}

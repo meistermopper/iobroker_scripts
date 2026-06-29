@@ -1,8 +1,8 @@
-on({id: "0_userdata.0.Energie.Smartphone.Thomas_level"/*Thomas_level*/, change: "ne"}, function (obj) {
+on({ id: "0_userdata.0.Energie.Smartphone.Thomas_level" /*Thomas_level*/, change: "ne" }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
   if ((obj.state ? obj.state.val : "") > 70) {
-    setState("sayit.3.tts.text", "" + 'Handy ist geladen');
+    setState("sayit.3.tts.text", "" + "Handy ist geladen");
   }
 });
 

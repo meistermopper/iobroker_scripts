@@ -22,11 +22,7 @@ let autoModusMusik = false; // Merker für Automatik-Schaltung
 
 function istDunkelMusik() {
   const lux = getState(ID_ILLU)?.val || 0;
-  const istNacht = compareTime(
-    getAstroDate("sunrise"),
-    getAstroDate("goldenHour"),
-    "not between",
-  );
+  const istNacht = compareTime(getAstroDate("sunrise"), getAstroDate("goldenHour"), "not between");
   return istNacht || lux <= 300;
 }
 

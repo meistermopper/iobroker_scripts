@@ -32,9 +32,7 @@ on({ id: ID_BOILER, change: "ne" }, (obj) => {
     // Falls bereits ein Reaktivierungs-Versuch läuft: abbrechen
     if (reaktivierungsTimer) clearTimeout(reaktivierungsTimer);
 
-    console.warn(
-      "Boiler: Unerwartete Abschaltung erkannt! Reaktivierung in 2 Sekunden...",
-    );
+    console.warn("Boiler: Unerwartete Abschaltung erkannt! Reaktivierung in 2 Sekunden...");
 
     reaktivierungsTimer = setTimeout(() => {
       setState(ID_BOILER, true);

@@ -1,7 +1,7 @@
-on({id: "Object ID", change: "ne"}, function (obj) {
+on({ id: "Object ID", change: "ne" }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  if ((obj.state ? obj.state.from : "") != 'system.adapter.javascript.0') {
+  if ((obj.state ? obj.state.from : "") != "system.adapter.javascript.0") {
   }
 });
 

@@ -17,13 +17,17 @@ function notify(msg) {
   // Gotify
   const token = getState(ID_GOTIFY_TOKEN)?.val;
   if (token) {
-    httpPost(`https://mygotify.meistermopper.de/message?token=${token}`, {
-      title: "ioBroker Fan",
-      message: msg,
-      priority: 1
-    }, (error) => {
-      if (error) console.error(`[Kachelofen Ventilator] Gotify Fehler: ${error}`);
-    });
+    httpPost(
+      `https://mygotify.meistermopper.de/message?token=${token}`,
+      {
+        title: "ioBroker Fan",
+        message: msg,
+        priority: 1,
+      },
+      (error) => {
+        if (error) console.error(`[Kachelofen Ventilator] Gotify Fehler: ${error}`);
+      },
+    );
   }
 
   //console.log("Meldung gesendet: " + msg);

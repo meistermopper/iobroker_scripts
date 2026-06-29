@@ -38,10 +38,7 @@ async function termineSenden() {
       else if (diffTage === 1) prefix = "Morgen: ";
       else {
         // Falls mehr als 2 Tage: Datum aus dem 'date' String extrahieren (die ersten 10 Zeichen)
-        prefix =
-          termin.date.length >= 10
-            ? termin.date.substring(0, 10) + ": "
-            : "Später: ";
+        prefix = termin.date.length >= 10 ? termin.date.substring(0, 10) + ": " : "Später: ";
       }
 
       // 2. Uhrzeit extrahieren, falls vorhanden und NICHT ganztägig

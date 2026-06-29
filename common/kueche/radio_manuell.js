@@ -31,8 +31,7 @@ const chromeStreams = {
   hr1: "https://dispatcher.rndfnk.com/hr/hr1/live/mp3/high",
   hrinfo: "http://addrad.io/4WRF2F",
   swissjazz: "http://stream.srg-ssr.ch/m/rsj/aacp_96",
-  mdrkultur:
-    "http://mdr-284310-0.cast.mdr.de/mdr/284310/0/aac/high/stream.aac?ar-distributor=f0a1",
+  mdrkultur: "http://mdr-284310-0.cast.mdr.de/mdr/284310/0/aac/high/stream.aac?ar-distributor=f0a1",
   ffh: "http://streams.ffh.de/radioffh/aac/playerid:RTFFHTunein/hqlivestream.aac",
 };
 
@@ -63,9 +62,7 @@ on({ id: `${chromePath}.sender_tunein`, change: "any" }, (obj) => {
     setState(`${chromeID}.player.volume`, chromeVolume);
     setStateDelayed(`${chromeID}.player.url2play`, streamUrl, 500, false);
     setState(`${chromePath}.tunein`, true);
-    console.log(
-      `Chromecast: Starte ${obj.state.val} mit Volume ${chromeVolume}`,
-    );
+    console.log(`Chromecast: Starte ${obj.state.val} mit Volume ${chromeVolume}`);
   }
 });
 

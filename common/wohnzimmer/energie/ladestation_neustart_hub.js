@@ -39,9 +39,7 @@ on({ id: HUB_CONNECTED, change: "ne", ack: true }, (obj) => {
   // Fall A: Hub ist wieder da -> Sperre lösen
   if (obj.state.val === true && isRecovering) {
     isRecovering = false;
-    console.log(
-      "+++ Harmony Hub wieder verbunden. Recovery-Sperre aufgehoben. +++",
-    );
+    console.log("+++ Harmony Hub wieder verbunden. Recovery-Sperre aufgehoben. +++");
     return;
   }
 
@@ -62,8 +60,8 @@ async function startHardReset() {
   console.warn("Harmony Hub dauerhaft offline! Starte Hard-Reset-Sequenz...");
 
   // 1. Aktuelle Aktivitäten im RAM & 0_userdata sichern
-  for (let key in activityMapping) {
-    let state = getState(PATH_ACTIVITIES + activityMapping[key]);
+  for (const key in activityMapping) {
+    const state = getState(PATH_ACTIVITIES + activityMapping[key]);
     if (state) {
       setState(PATH_STORAGE + key, state.val, true);
     }
@@ -80,14 +78,10 @@ async function startHardReset() {
     setTimeout(() => {
       console.log("Stelle Aktivitäten wieder her...");
       let stagger = 0;
-      for (let key in activityMapping) {
-        let saved = getState(PATH_STORAGE + key);
+      for (const key in activityMapping) {
+        const saved = getState(PATH_STORAGE + key);
         if (saved && saved.val === true) {
-          setStateDelayed(
-            PATH_ACTIVITIES + activityMapping[key],
-            true,
-            stagger,
-          );
+          setStateDelayed(PATH_ACTIVITIES + activityMapping[key], true, stagger);
           stagger += 500;
         }
       }

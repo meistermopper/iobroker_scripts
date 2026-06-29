@@ -1,29 +1,41 @@
 var intervall_dauer, minute, zaehler, Fenster;
 
-
 // 60000 = 1 Minute
 intervall_dauer = 60000 * 2;
 minute = 60000;
 zaehler = 0;
-on({id: 'hm-rpc.0.0000D709956847.1.STATE', change: "ne"}, function (obj) {
+on({ id: "hm-rpc.0.0000D709956847.1.STATE", change: "ne" }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
-  if ((obj.state ? obj.state.val : "")) {
+  if (obj.state ? obj.state.val : "") {
     zaehler = 0;
-    (function () {if (Fenster) {clearInterval(Fenster); Fenster = null;}})();
-    Fenster = setInterval(function () {
-      zaehler = (typeof zaehler == 'number' ? zaehler : 0) + 1;
+    (() => {
+      if (Fenster) {
+        clearInterval(Fenster);
+        Fenster = null;
+      }
+    })();
+    Fenster = setInterval(() => {
+      zaehler = (typeof zaehler == "number" ? zaehler : 0) + 1;
       sendTo("telegram", "send", {
-          text: (['Die Terassentür ist seit',' ',(zaehler * intervall_dauer) / minute,' ','Minuten geöffnet ☝️','\n','Bitte schließen ❗️'].join('')),
-          user: 'Heiko',
-          parse_mode: "Markdown"
+        text: [
+          "Die Terassentür ist seit",
+          " ",
+          (zaehler * intervall_dauer) / minute,
+          " ",
+          "Minuten geöffnet ☝️",
+          "\n",
+          "Bitte schließen ❗️",
+        ].join(""),
+        user: "Heiko",
+        parse_mode: "Markdown",
       });
     }, intervall_dauer);
   }
   if (!(obj.state ? obj.state.val : "") && zaehler > 0) {
     sendTo("telegram", "send", {
-        text: 'Danke das Du die Terassentür geschlossen hast 👍',
-        user: 'Heiko'
+      text: "Danke das Du die Terassentür geschlossen hast 👍",
+      user: "Heiko",
     });
   }
 });

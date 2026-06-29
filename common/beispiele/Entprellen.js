@@ -1,13 +1,12 @@
 var Triggersperre, timeout;
 
-
-on({id: 'default', change: "ne"}, function (obj) {
+on({ id: "default", change: "ne" }, (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
   if (!Triggersperre) {
     Triggersperre = true;
     // Aktionen
-    timeout = setTimeout(function () {
+    timeout = setTimeout(() => {
       Triggersperre = false;
     }, 100);
   }

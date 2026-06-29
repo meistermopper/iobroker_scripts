@@ -10,32 +10,62 @@ function listsGetRandomItem(list, remove) {
 }
 
 function textReplace(haystack, needle, replacement) {
-  needle = needle.replace(/([-()\[\]{}+?*.$\^|,:#<!\\])/g, '\\$1')
-                 .replace(/\x08/g, '\\x08');
-  return haystack.replace(new RegExp(needle, 'g'), replacement);
+  needle = needle.replace(/([-()[\]{}+?*.$^|,:#<!\\])/g, "\\$1").replace(/\x08/g, "\\x08");
+  return haystack.replace(new RegExp(needle, "g"), replacement);
 }
 
 // Beschreibe diese Funktion …
 async function Witz_sagen() {
   // https://witzapi.de/api-docs/
-  httpGet((['https://witzapi.de/api/joke/?limit=1&category=',listsGetRandomItem(genre, false),'&language=de'].join('')), { timeout: 2000, responseType: 'text' }, async (err, response) => {
-    Witz = ('' + getAttr((() => { try { return JSON.parse(response.data); } catch (e) { return {}; }})(), '0.text'));
-    Witz = textReplace(Witz, '\n', '');
-    Witz = textReplace(Witz, '\\n-\\', '');
-    setState('sayit.4.tts.clearQueue' /* Clear queued texts */, true);
-    if (Ansage == null) {
-      Ansage = 'Hier kommt der nächste Witz:';
-    }
-    sendTo("sayit.4", "say", { language: "de-DE_AP_Female", text: ('' + Ansage) });setState('sayit.4.tts.clearQueue' /* Clear queued texts */, true);
-    await wait(2000);
-    sendTo("sayit.4", "say", { language: "de-DE_AP_Female", text: ('' + Witz) });
-    console.debug("Executed sayit.4: : " + ('' + Witz));
-    console.warn((['-HausInfos- ',Ansage,': ',Witz].join('')));
-  });
+  httpGet(
+    [
+      "https://witzapi.de/api/joke/?limit=1&category=",
+      listsGetRandomItem(genre, false),
+      "&language=de",
+    ].join(""),
+    { timeout: 2000, responseType: "text" },
+    async (err, response) => {
+      Witz =
+        "" +
+        getAttr(
+          (() => {
+            try {
+              return JSON.parse(response.data);
+            } catch (e) {
+              return {};
+            }
+          })(),
+          "0.text",
+        );
+      Witz = textReplace(Witz, "\n", "");
+      Witz = textReplace(Witz, "\\n-\\", "");
+      setState("sayit.4.tts.clearQueue" /* Clear queued texts */, true);
+      if (Ansage == null) {
+        Ansage = "Hier kommt der nächste Witz:";
+      }
+      sendTo("sayit.4", "say", { language: "de-DE_AP_Female", text: "" + Ansage });
+      setState("sayit.4.tts.clearQueue" /* Clear queued texts */, true);
+      await wait(2000);
+      sendTo("sayit.4", "say", { language: "de-DE_AP_Female", text: "" + Witz });
+      console.debug("Executed sayit.4: : " + ("" + Witz));
+      console.warn(["-HausInfos- ", Ansage, ": ", Witz].join(""));
+    },
+  );
 }
 
-
-genre = ['flachwitze', 'lehrerwitze', 'programmierwitze', 'scherzfragen', 'chuck-norris-witze', 'antiwitze', 'antiwitze', 'blondienenwitze', 'schulwitze', 'ddr-witze', 'arztwitze'];
+genre = [
+  "flachwitze",
+  "lehrerwitze",
+  "programmierwitze",
+  "scherzfragen",
+  "chuck-norris-witze",
+  "antiwitze",
+  "antiwitze",
+  "blondienenwitze",
+  "schulwitze",
+  "ddr-witze",
+  "arztwitze",
+];
 
 await Witz_sagen();
 

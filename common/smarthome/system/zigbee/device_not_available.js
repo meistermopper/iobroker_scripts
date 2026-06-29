@@ -26,7 +26,7 @@ const CONFIG = {
 };
 
 // Interner Speicher für die Zeitpuffer
-let activeTimers = {};
+const activeTimers = {};
 
 // --- 2. HILFSFUNKTIONEN ---
 
@@ -82,9 +82,7 @@ on({ id: /^zigbee\.0\..*\.available$/, change: "ne" }, async (obj) => {
     if (activeTimers[deviceId]) {
       clearTimeout(activeTimers[deviceId]);
       delete activeTimers[deviceId];
-      console.log(
-        `✅ Zigbee-Gerät ${deviceName} hat sich rechtzeitig wieder gemeldet.`,
-      );
+      console.log(`✅ Zigbee-Gerät ${deviceName} hat sich rechtzeitig wieder gemeldet.`);
     } else {
       // Optionale Info im Log, wenn ein Gerät nach längerer Zeit wiederkam
       console.log(`🛎️ Zigbee-Gerät wieder erreichbar: ${deviceName}`);

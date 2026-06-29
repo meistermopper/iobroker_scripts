@@ -1,17 +1,16 @@
 var Summe, Dauer, start;
 
-
 Summe = 0;
 Dauer = 0;
-on({id: "0_userdata.0.Schalter"/*Schalter*/, change: "ne"}, async function (obj) {
+on({ id: "0_userdata.0.Schalter" /*Schalter*/, change: "ne" }, async (obj) => {
   var value = obj.state.val;
   var oldValue = obj.oldState.val;
   if (getState("0_userdata.0.Schalter")?.val) {
-    start = (new Date().getTime());
+    start = new Date().getTime();
   } else {
-    Dauer = parseFloat((new Date().getTime())) - start;
-    Summe = (typeof Summe == 'number' ? Summe : 0) + Dauer;
-    setState("0_userdata.0.Dauer"/*Dauer*/, (Math.round(parseFloat(Summe) / 60000)), true);
+    Dauer = parseFloat(new Date().getTime()) - start;
+    Summe = (typeof Summe == "number" ? Summe : 0) + Dauer;
+    setState("0_userdata.0.Dauer" /*Dauer*/, Math.round(parseFloat(Summe) / 60000), true);
   }
 });
 

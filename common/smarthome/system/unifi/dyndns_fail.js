@@ -24,18 +24,14 @@ schedule("*/30 * * * *", async () => {
 
     // Schritt B: Prüfen, ob UniFi-Datenpunkte erreichbar sind
     if (!existsState(ID_UNIFI_IP)) {
-      console.warn(
-        `[UniFi-Guard] Datenpunkt fehlt: ${ID_UNIFI_IP}. Check die MAC-Adresse!`,
-      );
+      console.warn(`[UniFi-Guard] Datenpunkt fehlt: ${ID_UNIFI_IP}. Check die MAC-Adresse!`);
       return;
     }
 
     const unifiIP = getState(ID_UNIFI_IP)?.val; // Die IP, die der UniFi-Adapter aktuell meldet
 
     // WAN-IP für die Nachricht auslesen
-    let dyndnsIP = existsState(ID_WAN_IP)
-      ? getState(ID_WAN_IP)?.val
-      : "unbekannt";
+    const dyndnsIP = existsState(ID_WAN_IP) ? getState(ID_WAN_IP)?.val : "unbekannt";
 
     // --- 4. VERGLEICHS-LOGIK ---
     // Wenn die echte IP NICHT der gemeldeten UniFi-IP entspricht...
