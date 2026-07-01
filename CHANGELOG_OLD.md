@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [2.2.3] - 2026-06-29
+- feat: add monitoring scripts for NUT client connectivity and Sonoff MQTT availability with alert notifications (sonoff_fail.js, nut_client_inactive.js)
+
 ### [2.2.2] - 2026-06-29
 - feat: add set of smarthome automation, monitoring, and utility scripts for ioBroker (Weihnachtsbaum_Terrasse.js, geschirr.js, trockner.js, waschmaschine.js, heos_offline.js, batterie_voll.js, batteriehitzewarnung.js, soh_change.js, stromausfall.js, fritz_reboot.js, astrozeiten.js, adapter_off.js, battery_states.js, raumwerte_lueften.js, sonoff_fail.js, tasmota_fw.js, nut_client_inactive.js, telegram_menue.js, sat_tv_auto_aus.js, abendlicht_TV_Wind_aus.js, autolicht_daemmer.js, kachelofen_ventilator.js)
 

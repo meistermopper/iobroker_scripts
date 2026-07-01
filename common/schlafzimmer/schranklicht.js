@@ -12,34 +12,43 @@ const POST_MOTION_DELAY = 10000;
 const LUX_THRESHOLD = 10;
 
 let offTimer = null;
+let gedenkpauseTimer = null;
 
 on({ id: ID_OCCUPANCY, change: "ne" }, (obj) => {
-  const isMotion = !!obj.state.val;
-  const lightAlreadyOn = getState(ID_SWITCH)?.val === true;
-
-  // Bestehenden Timer stoppen, wenn der Sensor reagiert
-  if (offTimer) {
-    clearTimeout(offTimer);
-    offTimer = null;
+  if (gedenkpauseTimer) {
+    clearTimeout(gedenkpauseTimer);
+    gedenkpauseTimer = null;
   }
 
-  if (isMotion) {
-    // Einschalten wenn es dunkel ist ODER wenn es bereits an ist (Bewegung verlängern)
-    const currentLux = getState(ID_ILLUMINANCE)?.val;
+  // 50ms Gedenkpause, damit der neue Helligkeitswert in der DB ankommt
+  gedenkpauseTimer = setTimeout(() => {
+    const isMotion = !!obj.state.val;
+    const lightAlreadyOn = getState(ID_SWITCH)?.val === true;
 
-    if (lightAlreadyOn || currentLux <= LUX_THRESHOLD) {
-      if (!lightAlreadyOn) {
-        setState(ID_SWITCH, true);
+    // Bestehenden Timer stoppen, wenn der Sensor reagiert
+    if (offTimer) {
+      clearTimeout(offTimer);
+      offTimer = null;
+    }
+
+    if (isMotion) {
+      // Einschalten wenn es dunkel ist ODER wenn es bereits an ist (Bewegung verlängern)
+      const currentLux = getState(ID_ILLUMINANCE)?.val;
+
+      if (lightAlreadyOn || currentLux <= LUX_THRESHOLD) {
+        if (!lightAlreadyOn) {
+          setState(ID_SWITCH, true);
+        }
+      }
+    } else {
+      // Sensor geht auf 'false' (nach seinen internen 90s)
+      // Jetzt startet die kurze 10s Sicherheits-Nachlaufzeit
+      if (lightAlreadyOn) {
+        offTimer = setTimeout(() => {
+          setState(ID_SWITCH, false);
+          offTimer = null;
+        }, POST_MOTION_DELAY);
       }
     }
-  } else {
-    // Sensor geht auf 'false' (nach seinen internen 90s)
-    // Jetzt startet die kurze 10s Sicherheits-Nachlaufzeit
-    if (lightAlreadyOn) {
-      offTimer = setTimeout(() => {
-        setState(ID_SWITCH, false);
-        offTimer = null;
-      }, POST_MOTION_DELAY);
-    }
-  }
+  }, 50);
 });

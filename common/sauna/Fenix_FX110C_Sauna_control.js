@@ -381,8 +381,6 @@ async function updateStatus() {
     }
 
     if (p || s) {
-
-
       if (Date.now() - lastCommandTime < LATENCY_MS) return;
 
       const heatKeys = ["heatOn", "heatState", "heat", "heater", "heat_on", "is_heating"];
