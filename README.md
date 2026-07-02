@@ -2,7 +2,10 @@
 # ioBroker Script Collection
 
 ![Environment](https://img.shields.io/badge/Environment-ioBroker-orange?style=flat-square)
-![Editor](https://img.shields.io/badge/Editor-VS%20Code-blueviolet?style=flat-square)
+![Node.js Version](https://img.shields.io/badge/Node.js-%E2%89%A5%2018.x-green?logo=node.js&logoColor=white&style=flat-square)
+![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
+![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
+![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
 ![Version](https://img.shields.io/badge/Version-3.0.4-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
