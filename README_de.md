@@ -39,7 +39,6 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 - **Badezimmer Entfeuchtung (`heizen_rh.js`)**: Steuert die Fußbodenheizung im Bad zur Reduzierung der Luftfeuchtigkeit nach dem Duschen (Schimmelprävention). Aktiviert die Heizung auf 24°C bei steigender Luftfeuchtigkeit, mit Fensterschutz und automatischem Reset auf vorherige oder Standardtemperaturen.
 - **Müllabfuhr-Benachrichtigung**: Sagt die Müllabfuhr für den nächsten Tag per Sprache und Nachricht am Vorabend um 18:00 Uhr an und visualisiert diese.
 - **Lüftungsempfehlungen**: Basierend auf der Innen- und Außentemperatur sowie der Luftfeuchtigkeit.
-- **Spritpreise**: Wertet die günstigste Tankstelle in der Nähe aus und visualisiert sie.
 - **Gefahrenmelder**: Akustische und nachrichtenbasierte Rauch- und Wasserwarnungen.
 - **Haushaltsgeräte**: Statusmeldungen für Waschmaschine, Spülmaschine und Trockner.
 - **Anwesenheitserkennung**: Über Smartphones im WLAN (UniFi Network Adapter).
@@ -67,9 +66,9 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 
 ## 🚀 Workflow & Synchronisation
 
-Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (VS Code) und Laufzeit (ioBroker).
+Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und Laufzeit (ioBroker).
 
-- **Source of Truth**: Die primäre Entwicklungsumgebung ist **VS Code** auf dem lokalen Rechner.
+- **Source of Truth**: Die primäre Entwicklungsumgebung ist **Antigravity IDE** auf dem lokalen Rechner.
 - **Git Status**: Wird auf dem Server und bei GitHub verwaltet.
 - **Deployment (Go Live)**: Die Übertragung zu ioBroker erfolgt manuell über die ioBroker Extension.
 
@@ -93,13 +92,14 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (VS Code) und Laufzeit 
 
 1. **Dateiberechtigungen**: Alle Dateien auf dem Server müssen dem Benutzer `iobroker` gehören.
 2. **Sauberkeit**: Das Repository wird frei von temporären Systemdateien gehalten.
-3. **Source of Truth**: Bei Unstimmigkeiten ist der Zustand in VS Code maßgeblich.
+3. **Source of Truth**: Bei Unstimmigkeiten ist der Zustand in der Antigravity IDE maßgeblich.
 
 ---
 
 ## 📝 Changelog
 
 ### [3.0.5] - 2026-07-02
+
 - feat: implement solar prognosis, secret management, Unifi monitoring, and Telegram menu modules (charge_master.js, climate_control.js, location_and_status.js, solarprognose_master.js, setup_secrets.js, network_version.js, telegram_menue.js)
 
 ### [3.0.4] - 2026-07-01

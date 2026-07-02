@@ -1,4 +1,4 @@
-<img src="media/iobroker.png" align="right" width="100" alt="Projekt Logo">
+<img src="media/iobroker.png" align="right" width="100" alt="Projekt Logo">
 
 [🇩🇪 Deutsche Version](README_de.md)
 
@@ -39,7 +39,6 @@ The scripts are logically organized by rooms and functions:
 - **Bathroom Dehumidification (`heizen_rh.js`)**: Controls underfloor heating in the bathroom to reduce humidity after showering (mold prevention). Activates heating to 24°C when humidity rises, with window protection and automatic reset to previous or default temperatures.
 - **Waste Collection Notification**: Announces and visualizes the next day's waste collection type via voice and message at 6:00 PM the day before.
 - **Ventilation Recommendations**: Based on indoor and outdoor temperature and humidity.
-- **Fuel Prices**: Evaluates the cheapest gas station nearby and visualizes it.
 - **Alarm Detectors**: Acoustic and message-based smoke and water warnings.
 - **Household Appliances**: Status messages for washing machine, dishwasher, and dryer.
 - **Presence Detection**: Via smartphones using WLAN (UniFi Network Adapter).
@@ -67,9 +66,9 @@ The scripts are logically organized by rooms and functions:
 
 ## 🚀 Workflow & Synchronization
 
-Script management is separated between development (VS Code) and runtime (ioBroker).
+Script management is separated between development (Antigravity IDE) and runtime (ioBroker).
 
-- **Source of Truth**: The primary development environment is **VS Code** on the local machine.
+- **Source of Truth**: The primary development environment is ** Antigravity IDE ** on the local machine.
 - **Git Status**: Maintained on the server and GitHub.
 - **Deployment (Go Live)**: Transfer to ioBroker is done manually via the ioBroker Extension.
 
@@ -93,16 +92,18 @@ Script management is separated between development (VS Code) and runtime (ioBrok
 
 1. **File Permissions**: All files on the server must belong to the `iobroker` user.
 2. **Cleanliness**: The repository is kept free of temporary system files.
-3. **Source of Truth**: In case of discrepancies, the state in VS Code is authoritative.
+3. **Source of Truth**: In case of discrepancies, the state in Antigravity IDE is authoritative.
 
 ---
 
 ## 📝 Changelog
 
 ### [3.0.6] - 2026-07-02
+
 - feat: add solarprognose master script and link German documentation in README (solarprognose_master.js)
 
 ### [3.0.5] - 2026-07-02
+
 - feat: implement solar prognosis, secret management, Unifi monitoring, and Telegram menu modules (charge_master.js, climate_control.js, location_and_status.js, solarprognose_master.js, setup_secrets.js, network_version.js, telegram_menue.js)
 
 ### [3.0.4] - 2026-07-01
