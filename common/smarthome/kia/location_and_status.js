@@ -13,7 +13,7 @@
 
 // --- 1. BASIS-KONFIGURATION ---
 // Hier definierst du die Pfade zu deinem Kia-Adapter und deinem Speicherort.
-const VIN = "bluelink.0.KNAFD81A7S6058382";
+const VIN = `bluelink.0.${getState("0_userdata.0.Energie.Kia_e_niro.vin")?.val}`;
 const PATH_USER = "0_userdata.0.Energie.Kia_e_niro";
 
 const IDS = {

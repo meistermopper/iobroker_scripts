@@ -12,7 +12,7 @@
  */
 
 // --- 1. KONFIGURATION ---
-const API_TOKEN = "72206e8f60f98f2a22101ea20fd0c999";
+const API_TOKEN = getState("0_userdata.0.Energie.PV.Prognose.token")?.val;
 const INVERTER_ID = "4511";
 const url = `http://www.solarprognose.de/web/solarprediction/api/v1?_format=json&access-token=${API_TOKEN}&item=inverter&id=${INVERTER_ID}&type=hourly`;
 

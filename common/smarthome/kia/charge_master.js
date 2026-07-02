@@ -30,7 +30,7 @@
 
 // --- 1. SETUP: DIGITALE ZENTRALE (21 DATENPUNKTE) ---
 
-const VIN = "bluelink.0.KNAFD81A7S6058382";
+const VIN = `bluelink.0.${getState("0_userdata.0.Energie.Kia_e_niro.vin")?.val}`;
 const PATH_USER = "0_userdata.0.Energie.Kia_e_niro";
 
 const IDS = {

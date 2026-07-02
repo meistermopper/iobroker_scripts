@@ -7,8 +7,8 @@ const https = require("node:https");
 
 // --- KONFIGURATION ---
 const udmIp = "192.168.1.1";
-const user = "meistermopper";
-const pass = "DBtRkL###123";
+const user = getState("0_userdata.0.Unifi.user")?.val;
+const pass = getState("0_userdata.0.Unifi.password")?.val;
 
 const DP_PATH = "0_userdata.0.Unifi.";
 const dpNetworkVersion = `${DP_PATH}network_version`;

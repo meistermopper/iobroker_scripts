@@ -4,11 +4,12 @@
 
 const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";
 const ID_GOOGLE_KEY = "0_userdata.0.google.mapsAPItoken";
+const VIN = getState("0_userdata.0.Energie.Kia_e_niro.vin")?.val;
 
 const ID_KIA_LOC = {
-  lat: "bluelink.0.KNAFD81A7S6058382.vehicleStatusRaw.Location.GeoCoord.Latitude",
-  lon: "bluelink.0.KNAFD81A7S6058382.vehicleStatusRaw.Location.GeoCoord.Longitude",
-  url: "bluelink.0.KNAFD81A7S6058382.vehicleLocation.position_url",
+  lat: `bluelink.0.${VIN}.vehicleStatusRaw.Location.GeoCoord.Latitude`,
+  lon: `bluelink.0.${VIN}.vehicleStatusRaw.Location.GeoCoord.Longitude`,
+  url: `bluelink.0.${VIN}.vehicleLocation.position_url`,
   update: "0_userdata.0.Energie.Kia_e_niro.Aktualisierung",
   save: "0_userdata.0.Energie.Kia_e_niro.Standort",
 };

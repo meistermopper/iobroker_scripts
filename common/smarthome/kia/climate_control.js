@@ -4,10 +4,12 @@ const TEMP_DEFROST = -3;
 const TEMP_MAX_HEAT = 10;
 const HOME_ADDRESS = "Stettiner Str. 4, 34613 Schwalmstadt, Germany";
 
+const VIN = getState("0_userdata.0.Energie.Kia_e_niro.vin")?.val;
+
 const IDS = {
-  airTemp: "bluelink.0.KNAFD81A7S6058382.control.clima.set.airTemp",
-  defrost: "bluelink.0.KNAFD81A7S6058382.control.clima.set.defrost",
-  climaStart: "bluelink.0.KNAFD81A7S6058382.control.clima.start",
+  airTemp: `bluelink.0.${VIN}.control.clima.set.airTemp`,
+  defrost: `bluelink.0.${VIN}.control.clima.set.defrost`,
+  climaStart: `bluelink.0.${VIN}.control.clima.start`,
   outerTemp: "alias.0.draussen.thermometer.ACTUAL_TEMPERATURE",
   location: "0_userdata.0.Energie.Kia_e_niro.Standort",
   isHome: "0_userdata.0.Heizen.Programme.Zuhause",
@@ -41,7 +43,7 @@ on({ id: IDS.airTemp, change: "ne" }, async (obj) => {
 // 2. KLIMA-STATUS AKTUALISIEREN
 on(
   {
-    id: "bluelink.0.KNAFD81A7S6058382.vehicleStatusRaw.Green.PowerConsumption.Prediction.Climate",
+    id: `bluelink.0.${VIN}.vehicleStatusRaw.Green.PowerConsumption.Prediction.Climate`,
     change: "ne",
   },
   async (obj) => {
