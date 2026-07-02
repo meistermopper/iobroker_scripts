@@ -98,8 +98,11 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
-### [3.0.5] - 2026-07-02
+### [3.0.6] - 2026-07-02
 
+- feat: add solarprognose master script and link German documentation in README (solarprognose_master.js)
+
+### [3.0.5] - 2026-07-02
 - feat: implement solar prognosis, secret management, Unifi monitoring, and Telegram menu modules (charge_master.js, climate_control.js, location_and_status.js, solarprognose_master.js, setup_secrets.js, network_version.js, telegram_menue.js)
 
 ### [3.0.4] - 2026-07-01
