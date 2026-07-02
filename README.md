@@ -120,6 +120,4 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
 
----
 
-_Note: This is a private project._
