@@ -87,7 +87,7 @@ function fetchSolarData() {
     try {
       const obj = JSON.parse(response.data);
       if (!obj?.data || (obj.status && obj.status !== 0)) {
-        console.warn("Solar-Prognose: API liefert keine gültigen Daten");
+        console.warn(`Solar-Prognose: API liefert keine gültigen Daten. Response: ${response.data}`);
         return;
       }
 
