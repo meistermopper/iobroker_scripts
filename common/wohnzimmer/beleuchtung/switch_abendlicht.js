@@ -21,11 +21,11 @@ const TARGET_EI = "hue.0.Ei.command";
 
 const START_BRI_KOMMODE = 40;
 const START_BRI_EI = 60;
-const START_CT_EI = 2525; // Warmweiß
+const START_CT_EI = 396; // 2525K (Warmweiß) -> 1000000 / 2525 = 396 Mireds
 
 const END_BRI_KOMMODE = 20;
 const END_BRI_EI = 20;
-const END_CT_EI = 2000; // Untergrenze Kelvin
+const END_CT_EI = 500; // 2000K (Untergrenze Kelvin) -> 1000000 / 2000 = 500 Mireds
 
 const START_FADE_IN_SEC = 50;
 const TRANSITION_DURATION = 27000; // 45 Minuten
@@ -59,7 +59,7 @@ function repairAndHide() {
         common: {
           type: "string", // Hue Commands sind JSON-Strings
           role: "text", // Verhindert, dass der Adapter den Typ als Lampe fehlinterpretiert
-          smartName: null, // Entfernt den Datenpunkt sicher aus Google Home / Alexa
+          smartName: false, // Entfernt den Datenpunkt sicher aus Google Home / Alexa
         },
         native: {
           alias: {
@@ -102,7 +102,7 @@ on({ id: ID_TRIGGER, change: "ne", ack: false }, (obj) => {
     const fadeInEi = JSON.stringify({
       on: true,
       level: limit(START_BRI_EI, 0, 100),
-      ct: limit(START_CT_EI, 2000, 6536),
+      ct: limit(START_CT_EI, 153, 500),
       transitiontime: limit(START_FADE_IN_SEC, 0, 65535),
     });
 
@@ -127,7 +127,7 @@ on({ id: ID_TRIGGER, change: "ne", ack: false }, (obj) => {
           ALIAS_EI,
           JSON.stringify({
             level: limit(END_BRI_EI, 0, 100),
-            ct: limit(END_CT_EI, 2000, 6536),
+            ct: limit(END_CT_EI, 153, 500),
             transitiontime: limit(TRANSITION_DURATION, 0, 65535),
           }),
         );

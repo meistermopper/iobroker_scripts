@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.0.3] - 2026-06-30
+
+- feat: add global notification utility for Telegram, Gotify, and Chromecast announcements (notify.js)
+
 ### [3.0.2] - 2026-06-29
 
 - feat: add Harvia Fenix FX 110C sauna control script with cloud integration (Fenix_FX110C_Sauna_control.js)
