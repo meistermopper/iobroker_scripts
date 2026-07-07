@@ -169,7 +169,7 @@ on({ id: `${upsNutPrefix}.status.onbattery`, change: "ne" }, async (obj) => {
   } else if (obj.state.val === false) {
     if (speakTimeout) clearTimeout(speakTimeout);
     lastSpokenSoc = -1; // Reset für den nächsten Vorfall
-    if (!isWartance)
+    if (!isWartung)
       sendGlobalNotify("✅ Netzspannung Serverschrank wiederhergestellt.", "USV Serverschrank", 1);
   }
 });
@@ -188,8 +188,8 @@ on({ id: `${upsNutPrefix}.battery.runtime`, change: "ne" }, (obj) => {
   setState(`${dpPrefix}.Restlaufzeit_in_Minuten`, realMinutes, true);
 });
 
-// ZEITPLAN: Automatische Wartung (jeden 1. Montag alle 2 Monate)
-schedule("0 11 1-7 */2 *", async () => {
+// ZEITPLAN: Automatische Wartung (jeden 1. Montag alle 2 Monate um 10:00 Uhr)
+schedule("0 10 1-7 */2 *", async () => {
   if (new Date().getDay() === 1) {
     const autoAktiv = getState(`${dpPrefix}.Automatische_Wartung_Aktiv`)?.val;
     const soc = getState(`${upsNutPrefix}.battery.charge`)?.val;

@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.2] - 2026-07-06
+- feat: add living room evening light automation script with automatic alias repair and GHOME sync suppression (switch_abendlicht.js)
+
 ### [3.1.1] - 2026-07-03
 - feat: add script to control living room fan based on stove temperature and season (kachelofen_ventilator.js)
 

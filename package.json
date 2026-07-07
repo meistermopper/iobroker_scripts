@@ -1,6 +1,6 @@
 {
   "name": "iobroker_js",
-  "version": "3.1.6",
+  "version": "3.1.7",
   "description": "Meine ioBroker Skript-Sammlung",
   "main": "index.js",
   "author": "Thomas",
@@ -11,6 +11,7 @@
   "scripts": {
     "prepare": "husky",
     "lint": "biome lint .",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "commit": "node utils/ai-commit.js"
   }
 }
