@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.1] - 2026-07-03
+- feat: add script to control living room fan based on stove temperature and season (kachelofen_ventilator.js)
+
 ### [3.0.6] - 2026-07-02
 
 - feat: add solarprognose master script and link German documentation in README (solarprognose_master.js)
