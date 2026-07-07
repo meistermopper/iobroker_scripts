@@ -174,7 +174,7 @@ on({ id: manualTriggers, val: true }, async (obj) => {
   setState("alias.0.wohnzimmer.energie.smartlader.on", true);
 
   // B. Globale Benachrichtigung mit Sprachausgabe (asynchron)
-  await sendGlobalNotify("Bitte links einstöpseln, ich habe eingeschaltet.", "", 1, 50);
+  await sendGlobalNotify("Bitte links einstöpseln, ich habe eingeschaltet", "", 1, 50);
 
   // C. Den Button in der VIS nach 2 Sekunden wieder auf 'false' setzen
   setTimeout(() => {

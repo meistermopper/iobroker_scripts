@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.4] - 2026-07-07
+- feat: add UniFi access point monitoring and network version status scripts (ap_management.js, network_version.js)
+
 ### [3.1.3] - 2026-07-07
 - refactor: remove redundant utility functions from codebase (ap_management.js, dyndns_fail.js, neue_ip_failover.js)
 

@@ -77,8 +77,8 @@ async function startWartung(isManual = false) {
   setState(sonoffPower, false); // Netzspannung kappen
   sendGlobalNotify(
     isManual
-      ? "Manuelle Wartung Serverschrank gestartet."
-      : "Automatische Wartung Serverschrank gestartet.",
+      ? "Manuelle Wartung Serverschrank gestartet"
+      : "Automatische Wartung Serverschrank gestartet",
     "USV Serverschrank",
     1,
   );
@@ -95,7 +95,7 @@ async function stopWartung(reason = "") {
   }, 15000);
   const soc = getState(`${upsNutPrefix}.battery.charge`)?.val;
   sendGlobalNotify(
-    `Wartung Serverschrank beendet (${reason}). Stand: ${soc}%.`,
+    `Wartung Serverschrank beendet (${reason}), Stand: ${soc}%`,
     "USV Serverschrank",
     1,
   );
@@ -175,7 +175,7 @@ on({ id: `${upsNutPrefix}.status.onbattery`, change: "ne" }, async (obj) => {
     if (speakTimeout) clearTimeout(speakTimeout);
     lastSpokenSoc = -1; // Reset für den nächsten Vorfall
     if (!isWartung)
-      sendGlobalNotify("✅ Netzspannung Serverschrank wiederhergestellt.", "USV Serverschrank", 1);
+      sendGlobalNotify("✅ Netzspannung Serverschrank wiederhergestellt", "USV Serverschrank", 1);
   }
 });
 
