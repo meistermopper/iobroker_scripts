@@ -51,9 +51,14 @@ async function initDP() {
   for (const s of states) {
     const fullPath = `${dpPrefix}.${s[0]}`;
     if (!existsState(fullPath)) {
+      /** @type {any} */
+      const name = s[3];
+      /** @type {any} */
+      const type = s[2];
+
       await createStateAsync(fullPath, s[1], {
-        name: s[3],
-        type: s[2],
+        name: name,
+        type: type,
         role: "state",
       });
     }

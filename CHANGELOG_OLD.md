@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.3] - 2026-07-07
+- refactor: remove redundant utility functions from codebase (ap_management.js, dyndns_fail.js, neue_ip_failover.js)
+
 ### [3.1.2] - 2026-07-06
 - feat: add living room evening light automation script with automatic alias repair and GHOME sync suppression (switch_abendlicht.js)
 
