@@ -54,7 +54,7 @@ async function getUnifiData() {
 
       //console.log(`[Unifi] Check erfolgreich: v${version} (Update: ${updateAvailable})`);
     } else {
-      console.warn("[Unifi] API lieferte keine gültigen Daten für sysinfo.");
+      console.warn("[Unifi] API lieferte keine gültigen Daten für sysinfo");
     }
 
     // 3. UDM Pro Gerätestatus (inkl. Firmware-Update) abrufen
@@ -90,15 +90,15 @@ async function getUnifiData() {
           setState(dpUdmUpgradable, udmUpgradable, true);
         }
       } else {
-        console.warn(`[Unifi] UDM Pro mit MAC ${udmMac} nicht in Geräteliste gefunden.`);
+        console.warn(`[Unifi] UDM Pro mit MAC ${udmMac} nicht in Geräteliste gefunden`);
       }
     } else {
-      console.warn("[Unifi] API lieferte keine gültigen Daten für Gerätestatus.");
+      console.warn("[Unifi] API lieferte keine gültigen Daten für Gerätestatus");
     }
   } catch (err) {
     if (err.code === "ECONNABORTED") {
       console.error(
-        `[Unifi] Timeout erreicht: Die UDM unter ${udmIp} hat nicht schnell genug geantwortet.`,
+        `[Unifi] Timeout erreicht: Die UDM unter ${udmIp} hat nicht schnell genug geantwortet`,
       );
     } else {
       console.error(`[Unifi] Fehler im Skript: ${err.message}`);
