@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.1.3-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.1.4-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -98,6 +98,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.1.4] - 2026-07-07
+- feat: add UniFi access point monitoring and network version status scripts (ap_management.js, network_version.js)
+
 ### [3.1.3] - 2026-07-07
 - refactor: remove redundant utility functions from codebase (ap_management.js, dyndns_fail.js, neue_ip_failover.js)
 
@@ -110,10 +113,6 @@ Script management is separated between development (Antigravity IDE) and runtime
 ### [3.0.6] - 2026-07-02
 
 - feat: add solarprognose master script and link German documentation in README (solarprognose_master.js)
-
-### [3.0.5] - 2026-07-02
-
-- feat: implement solar prognosis, secret management, Unifi monitoring, and Telegram menu modules (charge_master.js, climate_control.js, location_and_status.js, solarprognose_master.js, setup_secrets.js, network_version.js, telegram_menue.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
 

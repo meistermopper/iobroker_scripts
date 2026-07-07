@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.0.5] - 2026-07-02
+
+- feat: implement solar prognosis, secret management, Unifi monitoring, and Telegram menu modules (charge_master.js, climate_control.js, location_and_status.js, solarprognose_master.js, setup_secrets.js, network_version.js, telegram_menue.js)
+
 ### [3.0.4] - 2026-07-01
 
 - feat: add Harvia Fenix sauna controller and automated bedroom lighting script (Fenix_FX110C_Sauna_control.js, schranklicht.js)

@@ -56,6 +56,45 @@ async function getUnifiData() {
     } else {
       console.warn("[Unifi] API lieferte keine gültigen Daten für sysinfo.");
     }
+
+    // 3. UDM Pro Gerätestatus (inkl. Firmware-Update) abrufen
+    const devRes = await axios.get(`https://${udmIp}/proxy/network/api/s/default/stat/device`, {
+      headers: headers,
+      httpsAgent: agent,
+      timeout: 15000,
+    });
+
+    if (devRes.data?.data) {
+      const udmMac = "78:45:58:c7:61:75";
+      const udm = devRes.data.data.find((d) => d.mac === udmMac);
+      if (udm) {
+        const udmUpgradable = !!udm.upgradable;
+        const dpUdmUpgradable = `${DP_PATH}udm_pro_upgradable`;
+
+        if (!existsState(dpUdmUpgradable)) {
+          createState(
+            dpUdmUpgradable,
+            false,
+            {
+              name: "UDM Pro Update verfügbar",
+              type: "boolean",
+              role: "indicator.update",
+              read: true,
+              write: false,
+            },
+            () => {
+              setState(dpUdmUpgradable, udmUpgradable, true);
+            },
+          );
+        } else {
+          setState(dpUdmUpgradable, udmUpgradable, true);
+        }
+      } else {
+        console.warn(`[Unifi] UDM Pro mit MAC ${udmMac} nicht in Geräteliste gefunden.`);
+      }
+    } else {
+      console.warn("[Unifi] API lieferte keine gültigen Daten für Gerätestatus.");
+    }
   } catch (err) {
     if (err.code === "ECONNABORTED") {
       console.error(
