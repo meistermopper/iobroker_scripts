@@ -44,6 +44,7 @@ const NOTIFY_CONFIG = {
  * @param {number} priority - Gotify Priorität (1-5)
  * @param {number} [voiceVol] - Wenn gesetzt, wird die Sprachausgabe mit dieser Lautstärke getriggert.
  */
+// biome-ignore lint/correctness/noUnusedVariables: Global function used in other scripts
 async function sendGlobalNotify(text, title = "ioBroker", priority = 1, voiceVol = null) {
   // 1. Telegram
   sendTo(NOTIFY_CONFIG.telegramInstanz, "send", { text: `[${title}] ${text}` });

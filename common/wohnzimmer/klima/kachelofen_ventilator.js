@@ -193,7 +193,7 @@ schedule("2 0 * * *", () => {
 // Falls der Ventilator vor 23:00 Uhr von selbst ausgeht, prüfen wir, ob wir ihn reaktivieren müssen.
 // "val: false" stellt sicher, dass wir nur auf das Ausschalten reagieren.
 // @ts-expect-error
-on({ id: ID_FAN_SWITCH, change: "ne", val: false }, (obj) => {
+on({ id: ID_FAN_SWITCH, change: "ne", val: false }, () => {
   const hour = new Date().getHours();
 
   // Das geplante Ausschalten um 23 Uhr (und die Nachtruhe bis z.B. 6 Uhr) ignorieren wir.

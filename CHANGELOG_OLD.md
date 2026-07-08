@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.5] - 2026-07-07
+- feat: add UniFi network and UDM Pro firmware version checker script (network_version.js)
+
 ### [3.1.4] - 2026-07-07
 - feat: add UniFi access point monitoring and network version status scripts (ap_management.js, network_version.js)
 
