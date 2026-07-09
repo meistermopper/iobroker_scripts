@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.8] - 2026-07-07
+- feat(global): Implement AI-powered commit message generation (usv_wartung_apc_server.js, usv_wartung_eaton_buero.js, ai-commit-hook.js)
+
 ### [3.1.7] - 2026-07-07
 - feat: add APC UPS maintenance automation script with monitoring and notification support (usv_wartung_apc_server.js)
 
