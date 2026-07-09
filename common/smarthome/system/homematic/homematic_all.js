@@ -3,6 +3,7 @@
  * Zweck:  Überwacht UNREACH, LOWBAT, CONFIG_PENDING und CCU-Firmware
  */
 
+// --- KONFIGURATION ---
 const PATH = "0_userdata.0.HM-Servicemeldungen";
 const ID_LOCAL_FW = "hm-rega.0.PEQ1947872.0.FIRMWARE_VERSION";
 const ID_ONLINE_FW = "0_userdata.0.ccu.Verfuegbare_CCU-Firmware";
@@ -12,6 +13,7 @@ const SelectorUNREACH = $("channel[state.id=*.UNREACH]");
 const SelectorLOWBAT = $("channel[state.id=*.LOWBAT]");
 const SelectorCONFIG = $("channel[state.id=*.CONFIG_PENDING]");
 
+// --- LOGIK ---
 // 1. Initialisierung der Datenpunkte (Korrektur: extendObject statt setObjectNotExistsAsync)
 function init() {
   const states = [
@@ -34,6 +36,35 @@ function init() {
       native: {},
     });
   });
+}
+
+/**
+ * Vergleicht zwei Versionsnummern.
+ * Gibt true zurück, wenn versionOnline neuer ist als versionLocal.
+ *
+ * @param {string} versionLocal
+ * @param {string} versionOnline
+ * @returns {boolean}
+ */
+function isVersionNewer(versionLocal, versionOnline) {
+  if (!versionLocal || !versionOnline) return false;
+
+  const cleanLocal = String(versionLocal).replace(/^v/i, "").trim();
+  const cleanOnline = String(versionOnline).replace(/^v/i, "").trim();
+
+  const localParts = cleanLocal.split(".").map((num) => parseInt(num, 10) || 0);
+  const onlineParts = cleanOnline.split(".").map((num) => parseInt(num, 10) || 0);
+
+  const maxLength = Math.max(localParts.length, onlineParts.length);
+  for (let i = 0; i < maxLength; i++) {
+    const localPart = localParts[i] || 0;
+    const onlinePart = onlineParts[i] || 0;
+
+    if (onlinePart > localPart) return true;
+    if (onlinePart < localPart) return false;
+  }
+
+  return false;
 }
 
 function checkHomematicService() {
@@ -63,7 +94,7 @@ function checkHomematicService() {
   let fwUpdate = false;
 
   if (stateLocal && stateOnline && stateLocal.val && stateOnline.val) {
-    if (stateLocal.val < stateOnline.val) {
+    if (isVersionNewer(stateLocal.val, stateOnline.val)) {
       fwUpdate = true;
       textList.push(
         `🆕 <b>CCU Firmware</b>: Update verfügbar (${stateLocal.val} ➔ ${stateOnline.val})`,

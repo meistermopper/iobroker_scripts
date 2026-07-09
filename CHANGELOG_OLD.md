@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.6] - 2026-07-07
+- feat: add script for terrace Google Home announcement on incoming FRITZ!Box calls (anruf_klingel_terrasse.js)
+
 ### [3.1.5] - 2026-07-07
 - feat: add UniFi network and UDM Pro firmware version checker script (network_version.js)
 
