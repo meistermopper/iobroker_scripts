@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.7] - 2026-07-07
+- feat: add APC UPS maintenance automation script with monitoring and notification support (usv_wartung_apc_server.js)
+
 ### [3.1.6] - 2026-07-07
 - feat: add script for terrace Google Home announcement on incoming FRITZ!Box calls (anruf_klingel_terrasse.js)
 

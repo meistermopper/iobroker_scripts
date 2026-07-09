@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.1.11-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.1.12-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -98,6 +98,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.1.12] - 2026-07-09
+- refactor(homematic): Improve Homematic service type safety and error handling (homematic_all.js)
+
 ### [3.1.11] - 2026-07-09
 - refactor(homematic): Refactor firmware version comparison logic (homematic_all.js)
 
@@ -109,9 +112,6 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.1.8] - 2026-07-07
 - feat(global): Implement AI-powered commit message generation (usv_wartung_apc_server.js, usv_wartung_eaton_buero.js, ai-commit-hook.js)
-
-### [3.1.7] - 2026-07-07
-- feat: add APC UPS maintenance automation script with monitoring and notification support (usv_wartung_apc_server.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
 

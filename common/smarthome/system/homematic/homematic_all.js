@@ -23,11 +23,13 @@ function init() {
   ];
 
   states.forEach(([id, type, name, unit]) => {
+    /** @type {any} */
+    const stateType = type;
     extendObject(`${PATH}.${id}`, {
       type: "state",
       common: {
         name: name,
-        type: type,
+        type: stateType,
         role: type === "boolean" ? "indicator.maintenance" : "value",
         read: true,
         write: false,
@@ -114,8 +116,11 @@ function checkHomematicService() {
 }
 
 // --- TRIGGER ---
+// @ts-expect-error
 SelectorUNREACH.on(checkHomematicService);
+// @ts-expect-error
 SelectorLOWBAT.on(checkHomematicService);
+// @ts-expect-error
 SelectorCONFIG.on(checkHomematicService);
 on({ id: [ID_LOCAL_FW, ID_ONLINE_FW], change: "ne" }, checkHomematicService);
 
@@ -148,6 +153,10 @@ on({ id: `${PATH}.Anzahl`, change: "gt" }, (obj) => {
       priority: 1,
     };
     const options = { headers: { "Content-Type": "application/json" }, timeout: 10000 };
-    httpPost(url, payload, options);
+    httpPost(url, payload, options, (err) => {
+      if (err) {
+        console.error(`[Homematic Service-Zentrale] Gotify Fehler: ${err}`);
+      }
+    });
   }
 });
