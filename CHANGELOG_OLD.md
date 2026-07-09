@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.9] - 2026-07-07
+- style(notifications): Standardize global notification messages (usv_wartung_apc_server.js, smartphones_laden.js)
+
 ### [3.1.8] - 2026-07-07
 - feat(global): Implement AI-powered commit message generation (usv_wartung_apc_server.js, usv_wartung_eaton_buero.js, ai-commit-hook.js)
 

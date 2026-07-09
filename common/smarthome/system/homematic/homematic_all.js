@@ -15,6 +15,9 @@ const ID_LOCAL_FW = "hm-rega.0.PEQ1947872.0.FIRMWARE_VERSION";
 // Datenpunkt zur Speicherung der aktuell im Internet verfügbaren CCU-Firmware-Version.
 const ID_ONLINE_FW = "0_userdata.0.ccu.Verfuegbare_CCU-Firmware";
 
+// Datenpunkt zur Speicherung der Verfügbarkeit einer neuen CCU-Firmware-Version (für VIS).
+const ID_NEW_FW = "0_userdata.0.ccu.neue_ccu_firmware";
+
 // jQuery-artige Selektoren zur Überwachung aller Homematic-Gerätekanäle.
 // SelectorUNREACH: Findet alle Datenpunkte, die Verbindungsabbrüche signalisieren.
 const SelectorUNREACH = $("channel[state.id=*.UNREACH]");
@@ -53,6 +56,31 @@ function init() {
       },
       native: {},
     });
+  });
+
+  // Sicherstellen, dass die Datenpunkte unter 0_userdata.0.ccu existieren
+  extendObject(ID_ONLINE_FW, {
+    type: "state",
+    common: {
+      name: "Verfügbare CCU-Firmware",
+      type: "string",
+      role: "info.version",
+      read: true,
+      write: false,
+    },
+    native: {},
+  });
+
+  extendObject(ID_NEW_FW, {
+    type: "state",
+    common: {
+      name: "Neue CCU Firmware verfügbar",
+      type: "boolean",
+      role: "indicator.maintenance",
+      read: true,
+      write: false,
+    },
+    native: {},
   });
 }
 
@@ -216,6 +244,7 @@ function checkHomematicService() {
 
   // --- TEIL 3: Ergebnisse schreiben ---
   setState(`${PATH}.Firmware_Update`, fwUpdate, true);
+  setState(ID_NEW_FW, fwUpdate, true);
   setState(`${PATH}.Anzahl`, anzahl, true);
 
   // Generierung des finalen Zustandstextes
