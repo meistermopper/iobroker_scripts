@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.10] - 2026-07-08
+- chore: fix linting issues after biome update (kachelofen_ventilator.js, notify.js)
+
 ### [3.1.9] - 2026-07-07
 - style(notifications): Standardize global notification messages (usv_wartung_apc_server.js, smartphones_laden.js)
 

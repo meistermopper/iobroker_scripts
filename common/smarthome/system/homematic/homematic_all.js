@@ -164,7 +164,7 @@ async function updateOnlineFirmwareVersion() {
 
     // eQ-3 API antwortet im Format: setLatestVersion('3.87.6.20260614', 'HM-CCU3')
     const match = response.data.match(/setLatestVersion\('([^']+)'/);
-    if (match && match[1]) {
+    if (match?.[1]) {
       const version = match[1];
       console.log(
         `[Homematic Service-Zentrale] Online-Firmware erfolgreich vom eQ-3 Server abgerufen: ${version}`,
