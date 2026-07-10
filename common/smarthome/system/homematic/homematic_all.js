@@ -132,22 +132,26 @@ function isVersionNewer(versionLocal, versionOnline) {
 }
 
 /**
- * Hilfsfunktion zum Abrufen der Online-Version von den eQ-3 Servern als Promise.
+ * Hilfsfunktion zum Abrufen der Online-Version von den OpenCCU GitHub Releases als Promise.
  *
  * @returns {Promise<{err?: Error | null, response?: iobJS.httpResponse}>} Das Promise mit Fehler oder HTTP-Antwort.
  */
 function fetchOnlineVersion() {
-  const url =
-    "https://ccu3-update.homematic.com/firmware/download?cmd=js_check_version&version=0.0.0&product=HM-CCU3&serial=0";
+  const url = "https://api.github.com/repos/OpenCCU/OpenCCU/releases/latest";
+  const options = {
+    headers: {
+      "User-Agent": "ioBroker-Script",
+    },
+  };
   return new Promise((resolve) => {
-    httpGet(url, (err, response) => {
+    httpGet(url, options, (err, response) => {
       resolve({ err, response });
     });
   });
 }
 
 /**
- * Holt die aktuelle CCU3-Firmwareversion von den offiziellen eQ-3 Update-Servern
+ * Holt die aktuelle OpenCCU-Firmwareversion von den offiziellen GitHub Releases
  * und aktualisiert den Online-Firmware-Datenpunkt in ioBroker.
  *
  * @returns {Promise<void>}
@@ -157,25 +161,39 @@ async function updateOnlineFirmwareVersion() {
     const { err, response } = await fetchOnlineVersion();
     if (err || !response || response.statusCode !== 200 || !response.data) {
       console.warn(
-        `[Homematic Service-Zentrale] Fehler beim Abrufen der Online-Firmware: ${err || (response ? response.statusCode : "keine Antwort")}`,
+        `[Homematic Service-Zentrale] Fehler beim Abrufen der Online-Firmware von GitHub: ${err || (response ? response.statusCode : "keine Antwort")}`,
       );
       return;
     }
 
-    // eQ-3 API antwortet im Format: setLatestVersion('3.87.6.20260614', 'HM-CCU3')
-    const match = response.data.match(/setLatestVersion\('([^']+)'/);
-    if (match?.[1]) {
-      const version = match[1];
-      console.log(
-        `[Homematic Service-Zentrale] Online-Firmware erfolgreich vom eQ-3 Server abgerufen: ${version}`,
-      );
-      if (existsState(ID_ONLINE_FW)) {
-        await setStateAsync(ID_ONLINE_FW, version, true);
+    let releaseData;
+    if (typeof response.data === "object") {
+      releaseData = response.data;
+    } else {
+      try {
+        releaseData = JSON.parse(response.data);
+      } catch (e) {
+        console.warn(`[Homematic Service-Zentrale] Fehler beim Parsen der GitHub-Antwort: ${e}`);
+        return;
+      }
+    }
+
+    if (releaseData && releaseData.tag_name) {
+      const version = extractVersion(releaseData.tag_name);
+      if (version) {
+        console.log(
+          `[Homematic Service-Zentrale] Online-Firmware erfolgreich von GitHub abgerufen: ${version}`,
+        );
+        if (existsState(ID_ONLINE_FW)) {
+          await setStateAsync(ID_ONLINE_FW, version, true);
+        }
+      } else {
+        console.warn(
+          `[Homematic Service-Zentrale] Keine gültige Version in tag_name gefunden: ${releaseData.tag_name}`,
+        );
       }
     } else {
-      console.warn(
-        `[Homematic Service-Zentrale] Unerwartetes Antwortformat vom eQ-3 Update-Server: ${response.data}`,
-      );
+      console.warn(`[Homematic Service-Zentrale] tag_name fehlt in GitHub-Antwort`);
     }
   } catch (error) {
     console.error(`[Homematic Service-Zentrale] Fehler beim Abrufen der CCU-Firmware: ${error}`);
