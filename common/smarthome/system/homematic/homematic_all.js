@@ -181,9 +181,9 @@ async function updateOnlineFirmwareVersion() {
     if (releaseData && releaseData.tag_name) {
       const version = extractVersion(releaseData.tag_name);
       if (version) {
-        console.log(
-          `[Homematic Service-Zentrale] Online-Firmware erfolgreich von GitHub abgerufen: ${version}`,
-        );
+        //console.log(
+        //  `[Homematic Service-Zentrale] Online-Firmware erfolgreich von GitHub abgerufen: ${version}`,
+        //);
         if (existsState(ID_ONLINE_FW)) {
           await setStateAsync(ID_ONLINE_FW, version, true);
         }

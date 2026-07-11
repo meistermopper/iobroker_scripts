@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.1.16-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.1.17-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -98,6 +98,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.1.17] - 2026-07-11
+- chore(homematic): Remove verbose logging for online firmware update (homematic_all.js)
+
 ### [3.1.16] - 2026-07-10
 - refactor(homematic): Refactor online firmware check to use OpenCCU GitHub releases (homematic_all.js)
 
@@ -109,9 +112,6 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.1.13] - 2026-07-09
 - feat(homematic): Add automatic CCU firmware version fetching and enhance monitoring (homematic_all.js)
-
-### [3.1.12] - 2026-07-09
-- refactor(homematic): Improve Homematic service type safety and error handling (homematic_all.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
 

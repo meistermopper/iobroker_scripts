@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.12] - 2026-07-09
+- refactor(homematic): Improve Homematic service type safety and error handling (homematic_all.js)
+
 ### [3.1.11] - 2026-07-09
 - refactor(homematic): Refactor firmware version comparison logic (homematic_all.js)
 
