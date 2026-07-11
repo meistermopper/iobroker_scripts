@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * SKRIPT: EV3 CHARGE-MASTER v6.6.0
+ * SKRIPT: EV3 CHARGE-MASTER v6.6.1
  * =============================================================================
  * KONZEPT: Fokussiertes Start-/Stopp-Management für den Kia EV3.
  * STRATEGIE: Nutzung von festen 6A (ca. 3,960 kW) für zwei Betriebsmodi:
@@ -25,6 +25,8 @@
  *   der Entprellzeit, wenn die Ladung vom Auto suspendiert wurde (z.B. Ladeziel erreicht).
  * - NEU (v6.6.0): Modifizierte Benachrichtigungen (Telegram, Gotify, Alexa/SayIt),
  *   wenn das Ladeziel erreicht wurde.
+ * - NEU (v6.6.1): Verzögerte Prüfung für erzwungenen Stopp zur Vermeidung von Race Conditions
+ *   und robusterer Ladesitzungs-Wiederherstellung bei Skript-Neustarts.
  * =============================================================================
  */
 
@@ -79,7 +81,6 @@ const FIXED_CHARGE_W = 3960; // Fixe Leistung bei 6A (220V * 3 Phasen * 6A)
 const CAR_CAPACITY_KWH = 81.4;
 const RANGE_SUMMER = 550;
 const RANGE_WINTER = 450;
-const GOTIFY_TOKEN = getState("0_userdata.0.gotifytoken.iobroker")?.val;
 
 // --- TIMING KONSTANTEN ---
 const DEBOUNCE_STOP_MS = 45000; // 45 Sek. Wartezeit vor endgültigem Stopp
@@ -131,11 +132,13 @@ async function initLadeSystem() {
     await createStateAsync(IDS.u_origSoc, 0, { type: "number", name: "Original MinSoc Backup" });
 
   // Laufende Prozesse nach Skript-Neustart wiederherstellen
-  if (getState(IDS.wbStat)?.val === "Charging") {
+  if (getState(IDS.wbTrans)?.val === true) {
     startZeitLaden = getState(IDS.u_startTs)?.val || Date.now();
     const savedSoc = getState(IDS.u_origSoc)?.val;
     originalMinSoc = savedSoc !== null && savedSoc !== 0 ? savedSoc : null;
-    setState(IDS.u_power, FIXED_CHARGE_W, true);
+    if (getState(IDS.wbStat)?.val === "Charging") {
+      setState(IDS.u_power, FIXED_CHARGE_W, true);
+    }
   }
 }
 initLadeSystem();
@@ -263,17 +266,22 @@ async function forceStopCharging() {
 function ev3Notify(text, prio = 1, spoken = null) {
   sendTo("telegram", "send", { text: text }); // An Telegram senden
 
-  // Effizienter HTTP-Post statt Shell-Prozess
-  const url = `https://mygotify.meistermopper.de/message?token=${GOTIFY_TOKEN}`;
-  const payload = { title: "EV3 Master", message: text, priority: prio };
-  const options = {
-    headers: { "Content-Type": "application/json" },
-    timeout: 10000,
-  };
+  // Token dynamisch auflösen für erhöhte Robustheit
+  const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
+  if (gotifyToken) {
+    const url = `https://mygotify.meistermopper.de/message?token=${gotifyToken}`;
+    const payload = { title: "EV3 Master", message: text, priority: prio };
+    const options = {
+      headers: { "Content-Type": "application/json" },
+      timeout: 10000,
+    };
 
-  httpPost(url, payload, options, (err) => {
-    if (err) console.error(`[EV3 Master] Gotify Error: ${err}`);
-  });
+    httpPost(url, payload, options, (err) => {
+      if (err) console.error(`[EV3 Master] Gotify Error: ${err}`);
+    });
+  } else {
+    console.warn("[EV3 Master] Gotify Token ist nicht definiert oder leer.");
+  }
 
   // Sprachausgabe tagsüber
   if (compareTime("08:00", "20:00", "between")) {
@@ -376,13 +384,19 @@ on({ id: IDS.wbConn, val: true, change: "ne" }, checkPvAutomation);
 
 // [NEU] Listener für den Datenpunkt wbTrans.
 // Dieser Listener ist entscheidend für das Erkennen und Beheben von "hängenden" Ladestatuse.
-// Wenn `wbTrans` auf `false` wechselt (Stopp-Befehl gesendet), aber `wbStat` immer noch `Charging` ist,
-// wird `forceStopCharging()` aufgerufen.
-on({ id: IDS.wbTrans, change: "ne" }, async (obj) => {
-  // Wenn wbTrans auf false geht, aber wbStat immer noch "Charging" ist,
-  // bedeutet dies, dass der Stopp-Befehl möglicherweise nicht korrekt verarbeitet wurde.
-  if (obj.state.val === false && getState(IDS.wbStat)?.val === "Charging") {
-    await forceStopCharging();
+// Wenn `wbTrans` auf `false` wechselt (Stopp-Befehl gesendet), prüfen wir nach einer Verzögerung
+// von 10 Sekunden, ob `wbStat` immer noch `Charging` ist, und rufen in diesem Fall `forceStopCharging()` auf.
+on({ id: IDS.wbTrans, change: "ne" }, (obj) => {
+  if (obj.state.val === false) {
+    // 10 Sekunden Verzögerung, um der Wallbox Zeit zur Verarbeitung zu geben
+    setTimeout(async () => {
+      if (getState(IDS.wbStat)?.val === "Charging") {
+        console.warn(
+          "[EV3 Master] Wallbox hängt im Status 'Charging' trotz beendeter Transaktion. Erzwinge Stopp.",
+        );
+        await forceStopCharging();
+      }
+    }, 10000);
   }
 });
 // --- 6. ÜBERWACHUNG & STATISTIKEN ---
