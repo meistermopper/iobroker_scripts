@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.15] - 2026-07-09
+- refactor(homematic): Use optional chaining for firmware version parsing (homematic_all.js)
+
 ### [3.1.14] - 2026-07-09
 - feat(homematic): Add new data point for CCU firmware update availability (homematic_all.js)
 

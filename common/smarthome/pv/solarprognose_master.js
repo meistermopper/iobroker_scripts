@@ -1,20 +1,22 @@
 /**
- * =============================================================================
- * SKRIPT: SOLAR-PROGNOSE MASTER (VERSION 1.6)
- * =============================================================================
- * ZWECK: Stündliche PV-Prognose von solarprognose.de für heute & morgen.
- * OPTIMIERT:
- * - Reduziert auf 2 Tage (übermorgen entfernt, um Logs sauber zu halten).
- * - Automatisches Anlegen der Datenpunkte in 0_userdata.0.
- * - Unterdrückung von Warnmeldungen bei der Initialisierung.
- * - Logs bereinigt
- * =============================================================================
+ * Name:   Solarprognose Master (Forecast.Solar)
+ * Zweck:  Stündliche PV-Prognose über Forecast.Solar für heute & morgen.
+ * Version: 2.0
  */
 
 // --- 1. KONFIGURATION ---
-const API_TOKEN = getState("0_userdata.0.Energie.PV.Prognose.token")?.val;
-const INVERTER_ID = "4511";
-const url = `http://www.solarprognose.de/web/solarprediction/api/v1?_format=json&access-token=${API_TOKEN}&item=inverter&id=${INVERTER_ID}&type=hourly`;
+// Geografische Koordinaten der PV-Anlage (Fallbacks, werden automatisch aus den ioBroker-Systemeinstellungen geladen)
+let latitude = 51.1234; // Breitengrad
+let longitude = 9.1234; // Längengrad
+
+// Anlagendaten:
+// - Dachneigung (TILT) in Grad: 0 = flach, 90 = senkrecht
+// - Ausrichtung (AZIMUTH) in Grad: 0 = Süden, -90 = Osten, 90 = Westen, 180 = Norden
+const TILT = 35;
+const AZIMUTH = 0;
+
+// Installierte Peak-Leistung der Anlage in kWp (z.B. 10.5 für 10.5 kWp)
+const KWP = 10;
 
 // Basis-Pfad für die Datenpunkte (ohne Punkt am Ende)
 const baseRef = "0_userdata.0.Energie.PV.Prognose";
@@ -38,9 +40,9 @@ async function initDPs() {
   for (const day of days) {
     const path = `${baseRef}.${day}.`;
 
-    await createStateAsync(`${path}Json`, [], {
+    await createStateAsync(`${path}Json`, "[]", {
       name: `JSON ${day}`,
-      type: "array",
+      type: "string",
       role: "json",
     });
     await createStateAsync(`${path}gesamt`, 0, {
@@ -61,8 +63,33 @@ async function initDPs() {
   //console.log("[Solar-Prognose] Datenstruktur (heute/morgen) wurde geprüft/erstellt");
 }
 
+/**
+ * Liest die geografischen Koordinaten aus den globalen ioBroker-Systemeinstellungen.
+ */
+async function loadSystemCoordinates() {
+  try {
+    const sysConfig = await getObjectAsync("system.config");
+    if (sysConfig && sysConfig.common) {
+      if (typeof sysConfig.common.latitude === "number" && sysConfig.common.latitude !== 0) {
+        latitude = sysConfig.common.latitude;
+      }
+      if (typeof sysConfig.common.longitude === "number" && sysConfig.common.longitude !== 0) {
+        longitude = sysConfig.common.longitude;
+      }
+    }
+  } catch (e) {
+    console.warn(
+      `[Solar-Prognose] Konnte System-Koordinaten nicht laden, nutze Fallbacks: ${e.message}`,
+    );
+  }
+}
+
 // Start der Initialisierung beim Skriptstart
-initDPs();
+async function startScript() {
+  await initDPs();
+  await loadSystemCoordinates();
+}
+startScript();
 
 // --- 3. ZEITPLAN ---
 // Abfrage alle 2 Stunden ab 08:04 Uhr
@@ -76,7 +103,20 @@ schedule("4 8,10,12,14,16,18,20 * * *", () => {
  * Holt die Daten von der API und verteilt sie auf die Tage.
  */
 function fetchSolarData() {
-  //console.log("[Solar-Prognose] Starte API-Abfrage");
+  //console.log("[Solar-Prognose] Starte API-Abfrage (Forecast.Solar)");
+
+  let token = getState(`${baseRef}.token`)?.val;
+  if (token) {
+    token = String(token).trim();
+  }
+
+  let url;
+  if (token && token !== "" && token !== "null" && token !== "undefined") {
+    url = `https://api.forecast.solar/${token}/estimate/${latitude}/${longitude}/${TILT}/${AZIMUTH}/${KWP}`;
+  } else {
+    // Falls kein Token vorhanden ist, nutzen wir die kostenfreie API
+    url = `https://api.forecast.solar/estimate/${latitude}/${longitude}/${TILT}/${AZIMUTH}/${KWP}`;
+  }
 
   httpGet(url, { timeout: 15000 }, (error, response) => {
     if (error) {
@@ -91,8 +131,15 @@ function fetchSolarData() {
 
     if (response.statusCode && response.statusCode !== 200) {
       const bodyPreview = response.data ? response.data.trim().substring(0, 150) : "Keine Daten";
+      let hint = "";
+      if (response.statusCode === 429) {
+        hint =
+          " (Tipp: Rate-Limit von Forecast.Solar überschritten. Bitte weniger Abfragen durchführen)";
+      } else if (response.statusCode === 400) {
+        hint = " (Tipp: Bitte prüfen Sie die Konfiguration der Koordinaten, Dachneigung oder kWp)";
+      }
       console.warn(
-        `[Solar-Prognose] HTTP-Statuscode ${response.statusCode} erhalten. Antwort-Vorschau: ${bodyPreview}...`,
+        `[Solar-Prognose] HTTP-Statuscode ${response.statusCode} erhalten.${hint} Antwort-Vorschau: ${bodyPreview}...`,
       );
       return;
     }
@@ -117,17 +164,37 @@ function fetchSolarData() {
 
     try {
       const obj = JSON.parse(responseData);
-      if (!obj?.data || (obj.status && obj.status !== 0)) {
+      if (obj.message && obj.message.type === "error") {
         console.warn(
-          `[Solar-Prognose] API liefert keine gültigen Daten. Response: ${responseData}`,
+          `[Solar-Prognose] API lieferte einen Fehler: ${obj.message.text} (Code: ${obj.message.code})`,
         );
         return;
       }
 
-      // Gesamte Rohdaten speichern
-      setState(`${baseRef}.Json`, JSON.stringify(obj.data), true);
+      if (!obj?.result?.watts) {
+        console.warn(
+          `[Solar-Prognose] API lieferte keine gültigen Prognosedaten. Response: ${responseData}`,
+        );
+        return;
+      }
 
-      const splitData = formatAndSplitData(obj.data);
+      // Forecast.Solar Datenstruktur in das alte Format übersetzen:
+      // data[timestampInSeconds] = [leistung_watt, kumulierter_ertrag_wh]
+      const data = {};
+      for (const [dateTimeStr, watt] of Object.entries(obj.result.watts)) {
+        const normalizedStr = dateTimeStr.replace(" ", "T");
+        const tsMs = new Date(normalizedStr).getTime();
+        if (!isNaN(tsMs)) {
+          const tsSec = Math.floor(tsMs / 1000);
+          const wh = obj.result.watt_hours ? obj.result.watt_hours[dateTimeStr] || 0 : 0;
+          data[tsSec] = [watt, wh];
+        }
+      }
+
+      // Gesamte Rohdaten speichern
+      setState(`${baseRef}.Json`, JSON.stringify(data), true);
+
+      const splitData = formatAndSplitData(data);
 
       // Verarbeitung nur für heute und morgen
       processDayData("heute", splitData.heute);
