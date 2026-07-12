@@ -80,14 +80,47 @@ function fetchSolarData() {
 
   httpGet(url, { timeout: 15000 }, (error, response) => {
     if (error) {
-      console.warn(`Solar-Prognose: API-Fehler - ${error}`);
+      console.warn(`[Solar-Prognose] API-Fehler: ${error}`);
+      return;
+    }
+
+    if (!response) {
+      console.warn("[Solar-Prognose] Keine Antwort vom API-Server erhalten.");
+      return;
+    }
+
+    if (response.statusCode && response.statusCode !== 200) {
+      const bodyPreview = response.data ? response.data.trim().substring(0, 150) : "Keine Daten";
+      console.warn(
+        `[Solar-Prognose] HTTP-Statuscode ${response.statusCode} erhalten. Antwort-Vorschau: ${bodyPreview}...`,
+      );
+      return;
+    }
+
+    const responseData = response.data ? response.data.trim() : "";
+    if (!responseData) {
+      console.warn("[Solar-Prognose] API lieferte eine leere Antwort.");
+      return;
+    }
+
+    if (
+      responseData.startsWith("<!DOCTYPE") ||
+      responseData.startsWith("<html") ||
+      responseData.startsWith("<")
+    ) {
+      const bodyPreview = responseData.substring(0, 150);
+      console.warn(
+        `[Solar-Prognose] Server lieferte eine HTML-Fehlerseite statt JSON. Antwort-Vorschau: ${bodyPreview}...`,
+      );
       return;
     }
 
     try {
-      const obj = JSON.parse(response.data);
+      const obj = JSON.parse(responseData);
       if (!obj?.data || (obj.status && obj.status !== 0)) {
-        console.warn(`Solar-Prognose: API liefert keine gültigen Daten. Response: ${response.data}`);
+        console.warn(
+          `[Solar-Prognose] API liefert keine gültigen Daten. Response: ${responseData}`,
+        );
         return;
       }
 
@@ -100,7 +133,7 @@ function fetchSolarData() {
       processDayData("heute", splitData.heute);
       processDayData("morgen", splitData.morgen);
     } catch (e) {
-      console.error(`Solar-Prognose: Fehler beim Parsen - ${e}`);
+      console.error(`[Solar-Prognose Fail] Fehler beim Parsen der API-Antwort: ${e.message}`);
     }
   });
 }
