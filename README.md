@@ -99,20 +99,19 @@ Script management is separated between development (Antigravity IDE) and runtime
 ## 📝 Changelog
 
 ### [3.1.21] - 2026-07-13
-- feat(pv-forecast, before solarprognose): Add Telegram and Gotify notifications for PV forecast updates (solarprognose_master.js)
+
+- feat(forecast.solar): Add Telegram and Gotify notifications for PV forecast updates (solarprognose_master.js)
 
 ### [3.1.20] - 2026-07-12
+
 - feat(pv): Migrate solar forecast script to Forecast.Solar API (solarprognose_master.js)
 
-### [3.1.19] - 2026-07-12
-- fix(pv): Improve solar forecast API error handling and robustness (solarprognose_master.js)
-
 ### [3.1.18] - 2026-07-11
+
 - fix(chargemaster): Improve robustness for charging session recovery and forced stop (charge_master.js)
 
 ### [3.1.17] - 2026-07-11
+
 - chore(homematic): Remove verbose logging for online firmware update (homematic_all.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
-
-
