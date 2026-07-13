@@ -13,7 +13,7 @@ let longitude = 9.1234; // Längengrad
 // - Dachneigung (TILT) in Grad: 0 = flach, 90 = senkrecht
 // - Ausrichtung (AZIMUTH) in Grad: 0 = Süden, -90 = Osten, 90 = Westen, 180 = Norden
 const TILT = 35;
-const AZIMUTH = 90;
+const AZIMUTH = 45;
 
 // Installierte Peak-Leistung der Anlage in kWp (z.B. 10.5 für 10.5 kWp)
 const KWP = 7.1;

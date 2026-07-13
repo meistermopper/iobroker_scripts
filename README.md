@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.1.21-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.1.22-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -97,6 +97,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 ---
 
 ## 📝 Changelog
+
+### [3.1.22] - 2026-07-13
+- chore(pv): Update solar panel azimuth configuration (solarprognose_master.js)
 
 ### [3.1.21] - 2026-07-13
 
