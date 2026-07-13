@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.16] - 2026-07-10
+- refactor(homematic): Refactor online firmware check to use OpenCCU GitHub releases (homematic_all.js)
+
 ### [3.1.15] - 2026-07-09
 - refactor(homematic): Use optional chaining for firmware version parsing (homematic_all.js)
 

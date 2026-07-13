@@ -13,13 +13,17 @@ let longitude = 9.1234; // Längengrad
 // - Dachneigung (TILT) in Grad: 0 = flach, 90 = senkrecht
 // - Ausrichtung (AZIMUTH) in Grad: 0 = Süden, -90 = Osten, 90 = Westen, 180 = Norden
 const TILT = 35;
-const AZIMUTH = 0;
+const AZIMUTH = 90;
 
 // Installierte Peak-Leistung der Anlage in kWp (z.B. 10.5 für 10.5 kWp)
-const KWP = 10;
+const KWP = 7.1;
 
 // Basis-Pfad für die Datenpunkte (ohne Punkt am Ende)
 const baseRef = "0_userdata.0.Energie.PV.Prognose";
+
+// Benachrichtigungen (Telegram & Gotify)
+const SEND_TELEGRAM = true; // Auf true setzen, um Telegram-Nachrichten zu erhalten
+const SEND_GOTIFY = true; // Auf true setzen, um Gotify-Nachrichten zu erhalten
 
 // --- 2. INITIALISIERUNG ---
 
@@ -35,6 +39,13 @@ async function initDPs() {
     name: "Rohdaten JSON",
     type: "string",
     role: "json",
+  });
+
+  // API-Token für Forecast.Solar (optional)
+  await createStateAsync(`${baseRef}.token_forecast_solar`, "", {
+    name: "Forecast.Solar API-Token (optional)",
+    type: "string",
+    role: "text",
   });
 
   for (const day of days) {
@@ -69,7 +80,7 @@ async function initDPs() {
 async function loadSystemCoordinates() {
   try {
     const sysConfig = await getObjectAsync("system.config");
-    if (sysConfig && sysConfig.common) {
+    if (sysConfig?.common) {
       if (typeof sysConfig.common.latitude === "number" && sysConfig.common.latitude !== 0) {
         latitude = sysConfig.common.latitude;
       }
@@ -105,7 +116,7 @@ schedule("4 8,10,12,14,16,18,20 * * *", () => {
 function fetchSolarData() {
   //console.log("[Solar-Prognose] Starte API-Abfrage (Forecast.Solar)");
 
-  let token = getState(`${baseRef}.token`)?.val;
+  let token = getState(`${baseRef}.token_forecast_solar`)?.val;
   if (token) {
     token = String(token).trim();
   }
@@ -184,7 +195,7 @@ function fetchSolarData() {
       for (const [dateTimeStr, watt] of Object.entries(obj.result.watts)) {
         const normalizedStr = dateTimeStr.replace(" ", "T");
         const tsMs = new Date(normalizedStr).getTime();
-        if (!isNaN(tsMs)) {
+        if (!Number.isNaN(tsMs)) {
           const tsSec = Math.floor(tsMs / 1000);
           const wh = obj.result.watt_hours ? obj.result.watt_hours[dateTimeStr] || 0 : 0;
           data[tsSec] = [watt, wh];
@@ -199,6 +210,35 @@ function fetchSolarData() {
       // Verarbeitung nur für heute und morgen
       processDayData("heute", splitData.heute);
       processDayData("morgen", splitData.morgen);
+
+      // Benachrichtigungen senden (Telegram & Gotify)
+      if (SEND_TELEGRAM || SEND_GOTIFY) {
+        setTimeout(() => {
+          try {
+            const peakHeute = getState(`${baseRef}.heute.leistung`)?.val || 0;
+            const ertragHeute = getState(`${baseRef}.heute.gesamt`)?.val || 0;
+            const peakMorgen = getState(`${baseRef}.morgen.leistung`)?.val || 0;
+            const ertragMorgen = getState(`${baseRef}.morgen.gesamt`)?.val || 0;
+
+            const textHtml =
+              `<b>PV-Prognose Update (Forecast.Solar)</b>\n\n` +
+              `• <b>Heute:</b> ${ertragHeute} Wh (Peak: ${peakHeute} W)\n` +
+              `• <b>Morgen:</b> ${ertragMorgen} Wh (Peak: ${peakMorgen} W)`;
+
+            const textPlain =
+              `PV-Prognose Update (Forecast.Solar)\n\n` +
+              `- Heute: ${ertragHeute} Wh (Peak: ${peakHeute} W)\n` +
+              `- Morgen: ${ertragMorgen} Wh (Peak: ${peakMorgen} W)`;
+
+            sendTelegramMessage(textHtml);
+            sendGotifyMessage("PV-Prognose Update", textPlain);
+          } catch (err) {
+            console.error(
+              `[Solar-Prognose Fail] Fehler beim Erstellen der Benachrichtigung: ${err.message}`,
+            );
+          }
+        }, 1000);
+      }
     } catch (e) {
       console.error(`[Solar-Prognose Fail] Fehler beim Parsen der API-Antwort: ${e.message}`);
     }
@@ -274,3 +314,47 @@ function formatAndSplitData(data) {
 
 // Erster Start verzögert (gibt ioBroker Zeit zum Registrieren der Datenpunkte)
 setTimeout(fetchSolarData, 10000);
+
+/**
+ * Sendet eine Nachricht über den Telegram-Adapter.
+ */
+function sendTelegramMessage(msg) {
+  if (!SEND_TELEGRAM) return;
+  sendTo("telegram", "send", {
+    text: msg,
+    parse_mode: "HTML",
+  });
+}
+
+/**
+ * Sendet eine Nachricht an den Gotify-Server mittels httpPost().
+ */
+function sendGotifyMessage(title, message) {
+  if (!SEND_GOTIFY) return;
+
+  const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
+  if (!gotifyToken) {
+    console.error(
+      "[Solar-Prognose Fail] Gotify-Token konnte nicht aus '0_userdata.0.gotifytoken.iobroker' gelesen werden.",
+    );
+    return;
+  }
+
+  const url = `https://mygotify.meistermopper.de/message?token=${gotifyToken}`;
+  const payload = {
+    title: title,
+    message: message,
+    priority: 5,
+  };
+
+  httpPost(
+    url,
+    JSON.stringify(payload),
+    { headers: { "Content-Type": "application/json" } },
+    (error) => {
+      if (error) {
+        console.error(`[Solar-Prognose Fail] Gotify Fehler: ${error}`);
+      }
+    },
+  );
+}
