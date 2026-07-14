@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.1.25-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.1.26-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -101,6 +101,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.1.26] - 2026-07-14
+- feat(vigor166): Enhance DrayTek Vigor 166 alert handling and notification system (connected.js)
+
 ### [3.1.25] - 2026-07-14
 
 - feat(pv): Add daily solar forecast vs. actual statistics and enhance data collection (solarprognose_master.js)
@@ -116,9 +119,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 ### [3.1.22] - 2026-07-13
 
 - chore(pv): Update solar panel azimuth configuration (solarprognose_master.js)
-
-### [3.1.21] - 2026-07-13
-
-- feat(forecast.solar): Add Telegram and Gotify notifications for PV forecast updates (solarprognose_master.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).

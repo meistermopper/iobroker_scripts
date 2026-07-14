@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.21] - 2026-07-13
+
+- feat(forecast.solar): Add Telegram and Gotify notifications for PV forecast updates (solarprognose_master.js)
+
 ### [3.1.20] - 2026-07-12
 
 - feat(pv): Migrate solar forecast script to Forecast.Solar API (solarprognose_master.js)
