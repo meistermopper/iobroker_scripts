@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 const IDS_POWER = [
   "sonoff.0.AVR-Steckdose.ENERGY_Power",
   "sonoff.0.Medienplayer-Steckdose.ENERGY_Power",

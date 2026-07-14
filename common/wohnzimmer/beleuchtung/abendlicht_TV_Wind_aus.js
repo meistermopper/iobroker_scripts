@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION (Aliase) ---
 const ID_TRIGGER_ABENDLICHT = "0_userdata.0.Licht.Wohnzimmer.Abendlicht";
 

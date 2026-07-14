@@ -4,27 +4,28 @@ Dieses Dokument definiert die spezifischen Standards und Best Practices für ioB
 
 ## 1. Benachrichtigungen (Telegram & Gotify)
 
-*   **Telegram-Benachrichtigungen:**
-    *   Sollen immer über den Telegram-Adapter gesendet werden:
-        ```javascript
-        sendTo("telegram", "send", {
-            text: msg,
-            // optional bei HTML-Formatierung:
-            parse_mode: "HTML"
-        });
-        ```
-*   **Gotify-Benachrichtigungen:**
-    *   Verwende **niemals** externe Tools wie `exec` mit `curl` für Gotify-Benachrichtigungen!
-    *   Verwende immer die native `httpPost()` Funktion.
-    *   Der Gotify-Server ist standardmäßig `https://mygotify.meistermopper.de/message?token=${token}`.
-    *   Der Gotify-Token soll aus dem Datenpunkt `0_userdata.0.gotifytoken.iobroker` ausgelesen werden:
-        ```javascript
-        const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
-        ```
+- **Telegram-Benachrichtigungen:**
+  - Sollen immer über den Telegram-Adapter gesendet werden:
+    ```javascript
+    sendTo("telegram", "send", {
+      text: msg,
+      // optional bei HTML-Formatierung:
+      parse_mode: "HTML",
+    });
+    ```
+- **Gotify-Benachrichtigungen:**
+  - Verwende **niemals** externe Tools wie `exec` mit `curl` für Gotify-Benachrichtigungen!
+  - Verwende immer die native `httpPost()` Funktion.
+  - Der Gotify-Server ist standardmäßig `https://mygotify.meistermopper.de/message?token=${token}`.
+  - Der Gotify-Token soll aus dem Datenpunkt `0_userdata.0.gotifytoken.iobroker` ausgelesen werden:
+    ```javascript
+    const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
+    ```
 
 ## 2. Struktur von JavaScript-Dateien
 
 Jedes Skript sollte in zwei logische Abschnitte unterteilt sein:
+
 1.  **Dateikopf (Metadaten):**
     Ein JSDoc-Block ganz oben mit `Name` und `Zweck` des Skripts:
     ```javascript
@@ -40,20 +41,25 @@ Jedes Skript sollte in zwei logische Abschnitte unterteilt sein:
 
 ## 3. Typisierung & Linting
 
-*   **jQuery-ähnliche Trigger (`$()`):**
-    Wenn Selektoren wie `$(ID_SELECTOR)` in Triggern verwendet werden, setze einen `// @ts-ignore` Kommentar direkt über die Zeile mit `on()`, um TypeScript-Fehlermeldungen im Editor zu unterdrücken, falls diese auftreten:
-    ```javascript
-    // @ts-ignore
-    on({ id: $(ID_SELECTOR), ... }, (obj) => { ... });
-    ```
-*   **Formatierung:**
-    *   Verwende **2 Leerzeichen** zur Einrückung.
-    *   Konstanten/Variablen im Konfigurationsbereich in `const` definieren.
+- **jQuery-ähnliche Trigger (`$()`):**
+  Wenn Selektoren wie `$(ID_SELECTOR)` in Triggern verwendet werden, setze einen `// @ts-ignore` Kommentar direkt über die Zeile mit `on()`, um TypeScript-Fehlermeldungen im Editor zu unterdrücken, falls diese auftreten:
+  ```javascript
+  // @ts-ignore
+  on({ id: $(ID_SELECTOR), ... }, (obj) => { ... });
+  ```
+- **ESLint-Umgebung (Linter im ioBroker-Editor):**
+  Damit der ioBroker-interne Linter moderne JavaScript-Features (wie Optional Chaining `?.` und Trailing Commas) nicht als Fehler markiert, soll ganz oben in jedem Skript (noch vor dem Dateikopf) folgender Kommentar eingefügt werden:
+  ```javascript
+  /* eslint-env es2022 */
+  ```
+- **Formatierung:**
+  - Verwende **2 Leerzeichen** zur Einrückung.
+  - Konstanten/Variablen im Konfigurationsbereich in `const` definieren.
 
 ## 4. Logging & Fehlerbehandlung
 
-*   Verwende `console.log()`, `console.warn()` oder `console.error()` statt der veralteten globalen `log()` Funktion.
-*   Bei Warnungen oder Fehlern sollte der Log-Meldung der Name des Skripts in eckigen Klammern vorangestellt werden:
-    ```javascript
-    console.error(`[Sonoff Fail] Gotify Fehler: ${error}`);
-    ```
+- Verwende `console.log()`, `console.warn()` oder `console.error()` statt der veralteten globalen `log()` Funktion.
+- Bei Warnungen oder Fehlern sollte der Log-Meldung der Name des Skripts in eckigen Klammern vorangestellt werden:
+  ```javascript
+  console.error(`[Sonoff Fail] Gotify Fehler: ${error}`);
+  ```

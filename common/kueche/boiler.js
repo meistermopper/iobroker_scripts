@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const ID_BOILER = "alias.0.kueche.boiler.POWER";
 const ID_AUSSERHAUS = "0_userdata.0.Heizen.Programme.Ausserhaus";

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Send iCal Appointments (Optimized)
  * Zweck:  Anstehende Termine via Telegram senden

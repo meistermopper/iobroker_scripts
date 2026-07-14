@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // Konfiguration der Pi-hole Server und Datenpunkte
 const piholeServers = [
   // Struktur: 0_userdata.0.Pihole.piholeX.UniqueGravityDomains

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Terrassen-Klingel (Anrufe & Haustür)
  * Zweck:  Meldet eingehende Anrufe oder Haustür-Klingeln auf der Terrasse (Google Mini via sayit.1) und benachrichtigt via Telegram & Gotify.

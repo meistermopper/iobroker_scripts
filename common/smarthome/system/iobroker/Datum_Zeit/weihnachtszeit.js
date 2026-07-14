@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Weihnachts-Modus-Manager
  * Zweck:  Automatisches Aktivieren/Deaktivieren der Weihnachtsbeleuchtung

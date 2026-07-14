@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * =============================================================================
  * SKRIPT: SMART-CHARGING ZENTRALE (V4.0 - mit Plugged-Erkennung)

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Reinigungsmodus-Steuerung
  * Zweck:  Deaktiviert/Aktiviert BWM-Automatiken kaskadiert

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- Konfiguration ---
 const ID_ABENDLICHT = "0_userdata.0.Licht.Wohnzimmer.Abendlicht";
 const ID_REINIGUNG = "0_userdata.0.Licht.Reinigungsmodus";

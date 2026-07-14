@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Abendlicht Wohnzimmer Master (V6.4)
  * Fix:    Repariert Alias-Ziele, setzt Objekttyp 'state' und unterdrückt GHOME-Fehler.

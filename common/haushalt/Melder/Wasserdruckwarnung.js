@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Heizung Wasserdruck Überwachung v1.2
  * Zweck:  Warnt, wenn der Druck unter die Schwelle fällt.

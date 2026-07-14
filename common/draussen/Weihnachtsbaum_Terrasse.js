@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // Hilfsfunktion für Benachrichtigungen (spart massiv Platz)
 function notifyThomas(msg) {
   const token = getState("0_userdata.0.gotifytoken.iobroker")?.val;

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION & KONSTANTEN ---
 const IDS = {
   batSoc: "modbus.0.inputRegisters.100.843_Battery_State_of_Charge_(System)",

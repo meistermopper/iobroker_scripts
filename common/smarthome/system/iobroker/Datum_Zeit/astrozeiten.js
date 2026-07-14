@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Tägliche Astro-Info
  * Zweck:  Sendet Sonnenzeiten an Telegram und Gotify

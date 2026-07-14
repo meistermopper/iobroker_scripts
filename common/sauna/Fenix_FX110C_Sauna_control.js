@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * ioBroker Script: Harvia Fenix FX 110C (inkl. Remote-Steuerung) - Auto-Synced
  * -----------------------------------------------------------------------------

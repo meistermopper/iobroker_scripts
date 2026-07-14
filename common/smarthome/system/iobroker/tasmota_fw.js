@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * SKRIPT: Tasmota Firmware Checker & Notifier (Robust)
  * * BESCHREIBUNG:

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- 1. Goldene Stunde: Baum an ---
 schedule({ astro: "goldenHour", shift: 0 }, async () => {
   // Prüfen ob Online und aktuell noch Aus

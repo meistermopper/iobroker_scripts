@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * =============================================================================
  * LICHTSTEUERUNG BAD UNTEN (BEWEGUNG & TAGESZEIT) v1.1 - Kommentiert

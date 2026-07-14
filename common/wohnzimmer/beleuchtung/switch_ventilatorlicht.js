@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 on({ id: "0_userdata.0.Licht.Wohnzimmer.Ventilatorlicht", change: "ne" }, async (obj) => {
   // Wir erzwingen ein true/false.
   // Falls der Wert null/undefined ist, wird er automatisch zu 'false'.

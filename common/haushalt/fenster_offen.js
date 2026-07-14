@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * =============================================================================
  * FENSTER-MONITOR v2.2 (Lüftungswarnung & Nachtruhe)

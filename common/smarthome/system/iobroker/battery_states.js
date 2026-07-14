@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * SKRIPT: Akku-Zustands-Tabelle (V35 - Modern UI Edition)
  * * ZWECK:

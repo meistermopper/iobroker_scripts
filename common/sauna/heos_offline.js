@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const ID_PING = "ping.0.iobroker.192_168_178_222";
 const ID_RESTART_BUTTON = "0_userdata.0.heos.Sauna.restart";

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 const _ventilator_timeout = null;
 
 on({ id: "0_userdata.0.Entprellen.Kühlung.Ventilator", change: "ne" }, async (obj) => {

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Büro Chromecast Steuerung
  * Zweck:  Synchronisierung von Status-Datenpunkten und Senderwahl

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- PROGRAMM-MAPPING ---
 const PROGRAMME = {
   200: "eco",

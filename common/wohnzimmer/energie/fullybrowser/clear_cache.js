@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // Nur 1x nachts um 03:00 Uhr: Cache leeren und Seite frisch laden
 schedule("0 3 * * *", async () => {
   setState("fullybrowser.0.Fully-Browser.Commands.clearCache", true, true);

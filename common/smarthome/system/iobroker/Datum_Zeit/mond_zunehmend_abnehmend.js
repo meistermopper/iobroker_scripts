@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 const suncalc = require("suncalc");
 const dp_mond_zunehmend = "0_userdata.0.Zeiten.Mondphase"; // Ihr gewünschter Datenpunkt-Pfad
 

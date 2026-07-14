@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // Skriptname: Wochentage_Berechnen
 
 // Funktion zum Ermitteln und Setzen der nächsten 7 Wochentage

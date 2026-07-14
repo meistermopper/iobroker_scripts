@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Kalender Datuminfo Pro (Fixed)
  * Zweck:  Erzeugt umfangreiche Datums- und Zeitinformationen für VIS

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * =============================================================================
  * SKRIPT: Navigations-Ansage "Ziegenhain" (Broadcast-Version)

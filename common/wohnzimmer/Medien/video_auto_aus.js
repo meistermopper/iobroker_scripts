@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const ID_ACTIVITY_SAT = "harmony.0.Harmony_Wozi.activities.SAT_TV";
 const ID_ACTIVITY_CHROME = "harmony.0.Harmony_Wozi.activities.Chromecast_Video";

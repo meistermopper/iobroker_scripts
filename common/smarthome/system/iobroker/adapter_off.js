@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // Überwacht alle Adapter-Status-Datenpunkte
 const selector = "system.adapter.*.*.alive";
 

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Homematic Service-Zentrale (FIXED)
  * Zweck:  Überwacht Homematic-Hardwaremeldungen (UNREACH, LOWBAT, CONFIG_PENDING)

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 let timeout_ventilator;
 let wasReportedOffline = false;
 

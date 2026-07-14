@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Schrank-Licht Steuerung (Aqara BWM)
  * Berücksichtigt die 90s Hardware-Blindzeit des Sensors

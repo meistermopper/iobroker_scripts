@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Miele-Adapter Neustart-Service
  * Zweck:  Startet die Instanz neu und prüft nach 10s den Verbindungsstatus

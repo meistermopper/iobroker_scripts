@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const PATH_ENTPRELLEN = "0_userdata.0.Entprellen.Medien.VUSolo4K.";
 const PATH_ENIGMA = "enigma2.0.command.";

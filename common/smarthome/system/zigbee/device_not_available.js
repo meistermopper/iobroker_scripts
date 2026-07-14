@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * SKRIPT: Zigbee Availability Monitor (V2026)
  * * ZWECK:

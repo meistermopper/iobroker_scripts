@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const ID_ZONE_MAIN = "denon.0.zoneMain.powerZone";
 const ID_ZONE_2 = "denon.0.zone2.powerZone";

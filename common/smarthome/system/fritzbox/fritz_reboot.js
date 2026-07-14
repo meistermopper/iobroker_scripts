@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const dpFritzActive = "tr-064.0.devices.Fritzbox.active";
 const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;

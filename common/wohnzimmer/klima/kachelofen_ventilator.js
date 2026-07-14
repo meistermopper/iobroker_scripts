@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Kachelofen Ventilator
  * Zweck:  Steuert den Ventilator im Wohnzimmer abhängig von der Temperatur und Jahreszeit.

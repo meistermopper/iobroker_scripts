@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   AP-Manager
  * Zweck:  Überwacht UniFi-Accesspoints auf Fehlerzustände und benachrichtigt bei Problemen.

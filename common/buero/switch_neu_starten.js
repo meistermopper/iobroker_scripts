@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const ID_TRIGGER = "0_userdata.0.Energie.Switch.Neustart";
 const ID_SWITCH = "alias.0.buero.schalter.POWER";

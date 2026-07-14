@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Heizungs- & Anwesenheits-Master (V8)
  * Release: Korrektur Badezimmer Oben (Master-Slave)

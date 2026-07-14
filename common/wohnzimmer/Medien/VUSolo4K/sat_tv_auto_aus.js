@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const ID_ENIGMA_STANDBY = "enigma2.0.enigma2.STANDBY";
 const ID_ENIGMA_RECORD = "enigma2.0.enigma2.isRecording";

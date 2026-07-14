@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const dpVerbrauchGestern = "alias.0.vorkeller.serverschrank.ENERGY_Yesterday";
 const dpStrompreis = "0_userdata.0.Energie.Strompreise.akt_Preis";

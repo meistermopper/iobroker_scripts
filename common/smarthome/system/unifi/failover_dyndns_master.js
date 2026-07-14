@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:    UniFi Master-Guard (Ereignis & Intervall)
  * Version: 5.0 (Silent Night)

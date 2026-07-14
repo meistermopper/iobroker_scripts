@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const ID_RECEIVER_STANDBY = "enigma2.1.enigma2.STANDBY";
 const ID_ZIGBEE_LICHT = "alias.0.schlafzimmer.energie.bett.state";

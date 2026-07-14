@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * SKRIPT: Tasmota Master-Tabelle V34 (Data Accuracy Edition)
  * * ZWECK:

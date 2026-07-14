@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * =============================================================================
  * LICHTSTEUERUNG GARDEROBE (PRESENCE FOLLOWER)

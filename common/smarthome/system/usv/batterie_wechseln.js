@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const upsServerschrank = "nut.0.status.replacebattery";
 const upsBuero = "nut.1.status.replacebattery";

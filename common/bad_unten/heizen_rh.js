@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * =============================================================================
  * BAD-ENTFEUCHTUNG ÜBER FUSSBODENHEIZUNG (Bad unten)

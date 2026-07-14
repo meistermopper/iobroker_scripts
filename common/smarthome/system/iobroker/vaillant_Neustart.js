@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Vaillant-Adapter Restart-Watchdog
  * Zweck:  Echter Neustart der Instanz bei Trigger-Impuls

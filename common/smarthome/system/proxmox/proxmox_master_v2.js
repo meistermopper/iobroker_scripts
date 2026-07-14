@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:    Proxmox Cluster Master-Wächter
  * Version: 2.2 (Broadcast & Logic Deep-Dive)

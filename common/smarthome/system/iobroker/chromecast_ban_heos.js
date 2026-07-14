@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * =============================================================================
  * SKRIPT: CHROMECAST-CLEANER & HEOS-SCHUTZSCHILD (V7.1)

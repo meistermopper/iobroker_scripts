@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Setup Secrets Datapoints
  * Zweck:  Legt die benötigten Datenpunkte für API-Tokens, Zugangsdaten und VINs an, 

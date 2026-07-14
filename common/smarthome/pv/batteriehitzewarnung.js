@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const dpBatteryTemp = "modbus.0.inputRegisters.225.262_Battery_temp";
 const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;

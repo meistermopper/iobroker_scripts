@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * =============================================================================
  * SKRIPT: USV WARTUNG & KONDITIONIERUNG (BÜRO) - VERSION 41

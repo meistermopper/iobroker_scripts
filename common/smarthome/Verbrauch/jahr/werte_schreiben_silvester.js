@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION DER GERÄTE ---
 // Format: 'Anzeigename': 'Sonoff-Datenpunkt-Pfad'
 const geraeteListe = {

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Solarprognose Master (Forecast.Solar)
  * Zweck:  Stündliche PV-Prognose über Forecast.Solar für heute & morgen.

@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 schedule("1 0 1 3 *", () => {
   const aktuellerWert = getState(
     "modbus.0.holdingRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",

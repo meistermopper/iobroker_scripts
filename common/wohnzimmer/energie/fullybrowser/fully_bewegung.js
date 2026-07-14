@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 let timeout_screen;
 const ID_MOTION = "fullybrowser.0.Fully-Browser.Events.onMotion";
 const ID_HELL = "0_userdata.0.Fully.hell";

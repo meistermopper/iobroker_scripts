@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const ID_STECKDOSE_SCHLAZI = "alias.0.schlafzimmer.energie.Schlazi-Steckdose.ENERGY_Power";
 const ID_SAT_DEEP_STANDBY = "enigma2.1.main_command.DEEP_STANDBY";

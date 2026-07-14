@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Energie-Tagesabrechnung
  * Zweck:  Berechnet täglich die Kosten pro Gerät und die Gesamtsumme

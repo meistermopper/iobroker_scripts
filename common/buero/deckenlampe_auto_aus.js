@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const ID_PC_POWER = "alias.0.buero.kiki_pc.ENERGY_Power";
 const ID_LICHT = "alias.0.buero.licht.POWER";

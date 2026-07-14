@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * SKRIPT: USV Power-Restore Manager (V2026)
  * * ZWECK:

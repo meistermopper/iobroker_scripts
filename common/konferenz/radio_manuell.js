@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const playerID = "heos.0.players.820887846";
 const senderDP = "0_userdata.0.heos.heos5.sender";

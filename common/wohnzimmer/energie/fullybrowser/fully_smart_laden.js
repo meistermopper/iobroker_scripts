@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Smart Tablet Charging & Screen Control
  * Steuert die Ladestation eines Wandtablets zur Akkuschonung (30-70% Strategie)

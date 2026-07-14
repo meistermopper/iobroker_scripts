@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 let _wozilampe_timeout;
 
 on({ id: "0_userdata.0.Licht.Wohnzimmer.alle_Lampen", change: "ne" }, async (obj) => {

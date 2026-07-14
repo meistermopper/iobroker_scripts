@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const TARGET_TEMP = 21;
 const TEMP_DEFROST = -3;

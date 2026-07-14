@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // =============================================================================
 // DENON SURROUND-MANAGER v1.0
 // Automatische Klangmodus-Wahl basierend auf Harmony Aktivitäten

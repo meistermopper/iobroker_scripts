@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Tasmota MQTT-Watchdog
  * Zweck:  Überwacht die Erreichbarkeit (alive) aller Sonoff-Geräte

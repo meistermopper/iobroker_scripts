@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * =============================================================================
  * RAUMKLIMA-MASTER v4.0.0 (MONITORING, LÜFTUNG & MORGEN-REPORT)

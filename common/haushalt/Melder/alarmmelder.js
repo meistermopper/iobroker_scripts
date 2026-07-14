@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Gefahren-Melder (Rauch & Wasser)
  * Zweck:  Sofortige Alarmierung über alle Kanäle mit Anti-Spam-Schutz

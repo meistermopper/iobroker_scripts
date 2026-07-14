@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   DrayTek Vigor 166 Online-Status (Nativer Webhook)
  * Zweck:  Erstellt die Datenpunkte und startet einen eigenen HTTP-Server

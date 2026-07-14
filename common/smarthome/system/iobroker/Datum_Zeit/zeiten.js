@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Astro- & Zeitberechnungen
  * Zweck:  Berechnung von Tageslänge, Nachtlänge und Fortschritt für VIS

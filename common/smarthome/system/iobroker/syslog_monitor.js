@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /**
  * Name:   Master-Log-Monitor (v4)
  * Zweck:  Liest 30 Log-Einträge von VM 101, neueste oben, repariert Metadaten.

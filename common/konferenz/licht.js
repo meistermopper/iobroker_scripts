@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 // --- KONFIGURATION ---
 const ID_LUX = "alias.0.draussen.licht.CURRENT_ILLUMINATION";
 const ID_TAGUNG_AKTIV = "0_userdata.0.Heizen.Programme.Tagung";
