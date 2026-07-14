@@ -6,8 +6,8 @@
 
 // --- 1. KONFIGURATION ---
 // Geografische Koordinaten der PV-Anlage (Fallbacks, werden automatisch aus den ioBroker-Systemeinstellungen geladen)
-let latitude = 51.1234; // Breitengrad
-let longitude = 9.1234; // Längengrad
+let latitude = 50.906969899192376; // Breitengrad
+let longitude = 9.194973707308236; // Längengrad
 
 // Anlagendaten:
 // - Dachneigung (TILT) in Grad: 0 = flach, 90 = senkrecht
@@ -48,6 +48,13 @@ async function initDPs() {
     role: "text",
   });
 
+  // Vergleichsstatistik Prognose vs Realität
+  await createStateAsync(`${baseRef}.statistik`, "[]", {
+    name: "Vergleichsstatistik Prognose vs Realität",
+    type: "string",
+    role: "json",
+  });
+
   for (const day of days) {
     const path = `${baseRef}.${day}.`;
 
@@ -70,6 +77,13 @@ async function initDPs() {
       type: "number",
       unit: "W",
     });
+    if (day === "heute") {
+      await createStateAsync(`${path}tatsaechlicher_peak`, 0, {
+        name: "Tatsächlicher Peak heute",
+        type: "number",
+        unit: "W",
+      });
+    }
   }
   //console.log("[Solar-Prognose] Datenstruktur (heute/morgen) wurde geprüft/erstellt");
 }
@@ -102,10 +116,29 @@ async function startScript() {
 }
 startScript();
 
-// --- 3. ZEITPLAN ---
-// Abfrage alle 2 Stunden ab 08:04 Uhr
-schedule("4 8,10,12,14,16,18,20 * * *", () => {
+// --- 3. ZEITPLAN & TRIGGER ---
+// Abfrage um 06:04, 12:04 und 18:04 Uhr
+schedule("4 6,12,18 * * *", () => {
   fetchSolarData();
+});
+
+// Täglicher Statistik-Eintrag um 23:58 Uhr
+schedule("58 23 * * *", () => {
+  recordDailyStats();
+});
+
+// Reset des tatsächlichen Peaks um Mitternacht
+schedule("0 0 * * *", () => {
+  setState(`${baseRef}.heute.tatsaechlicher_peak`, 0, true);
+});
+
+// Trigger zur Erfassung der tatsächlichen Spitzenleistung am Tag
+on({ id: "solax.0.data.acpower", change: "ne" }, (obj) => {
+  const val = Number(obj.state.val) || 0;
+  const currentMax = Number(getState(`${baseRef}.heute.tatsaechlicher_peak`)?.val) || 0;
+  if (val > currentMax) {
+    setState(`${baseRef}.heute.tatsaechlicher_peak`, val, true);
+  }
 });
 
 // --- 4. DATENVERARBEITUNG ---
@@ -357,4 +390,55 @@ function sendGotifyMessage(title, message) {
       }
     },
   );
+}
+
+/**
+ * Zeichnet die täglichen Vorhersagedaten im Vergleich zur Realität auf.
+ */
+function recordDailyStats() {
+  try {
+    const today = new Date();
+    const dateStr = today.getFullYear() + "-" +
+                    String(today.getMonth() + 1).padStart(2, "0") + "-" +
+                    String(today.getDate()).padStart(2, "0");
+
+    const forecastYield = Number(getState(`${baseRef}.heute.gesamt`)?.val) || 0;
+    const actualYield = Number(getState("0_userdata.0.Energie.PV.Tageserzeugung")?.val) || 0;
+    const forecastPeak = Number(getState(`${baseRef}.heute.leistung`)?.val) || 0;
+    const actualPeak = Number(getState(`${baseRef}.heute.tatsaechlicher_peak`)?.val) || 0;
+
+    let statsList = [];
+    const statsState = getState(`${baseRef}.statistik`)?.val;
+    if (statsState && statsState !== "" && statsState !== "[]") {
+      statsList = JSON.parse(statsState);
+    }
+
+    const existingIndex = statsList.findIndex(item => item.datum === dateStr);
+
+    const newEntry = {
+      datum: dateStr,
+      prognose_ertrag_wh: forecastYield,
+      tatsaechlich_ertrag_wh: actualYield,
+      prognose_peak_w: forecastPeak,
+      tatsaechlich_peak_w: actualPeak,
+      abweichung_ertrag_prozent: forecastYield > 0 ? Math.round(((actualYield - forecastYield) / forecastYield) * 100) : 0,
+      abweichung_peak_prozent: forecastPeak > 0 ? Math.round(((actualPeak - forecastPeak) / forecastPeak) * 100) : 0
+    };
+
+    if (existingIndex !== -1) {
+      statsList[existingIndex] = newEntry;
+    } else {
+      statsList.push(newEntry);
+    }
+
+    // Begrenze auf die letzten 30 Tage
+    if (statsList.length > 30) {
+      statsList = statsList.slice(statsList.length - 30);
+    }
+
+    setState(`${baseRef}.statistik`, JSON.stringify(statsList), true);
+    console.log(`[Solar-Prognose] Statistik-Eintrag für ${dateStr} gespeichert: Prognose Ertrag = ${forecastYield}Wh, Real = ${actualYield}Wh.`);
+  } catch (err) {
+    console.error(`[Solar-Prognose Fail] Fehler beim Speichern der Statistik: ${err.message}`);
+  }
 }
