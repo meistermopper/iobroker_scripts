@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.23] - 2026-07-14
+
+- feat(fritzbox): Integrate doorbell detection and notification (anruf_klingel_terrasse.js)
+
 ### [3.1.22] - 2026-07-13
 
 - chore(pv): Update solar panel azimuth configuration (solarprognose_master.js)

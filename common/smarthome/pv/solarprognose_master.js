@@ -147,18 +147,56 @@ on({ id: "solax.0.data.acpower", change: "ne" }, (obj) => {
 /**
  * Holt die Daten von der API und verteilt sie auf die Tage.
  */
-function fetchSolarData() {
+function fetchSolarData(ignoreToken = false) {
   //console.log("[Solar-Prognose] Starte API-Abfrage (Forecast.Solar)");
 
-  let token = getState(`${baseRef}.token_forecast_solar`)?.val;
-  if (token) {
-    token = String(token).trim();
+  let token = null;
+  if (!ignoreToken) {
+    // Versuche zuerst token_forecast_solar zu lesen
+    const tokenStateFS = existsState(`${baseRef}.token_forecast_solar`)
+      ? getState(`${baseRef}.token_forecast_solar`)
+      : null;
+    if (tokenStateFS && tokenStateFS.val !== null && tokenStateFS.val !== undefined) {
+      const valStr = String(tokenStateFS.val).trim();
+      if (
+        valStr !== "" &&
+        valStr !== "null" &&
+        valStr !== "undefined" &&
+        valStr !== "placeholder"
+      ) {
+        token = valStr;
+      }
+    }
+
+    // Falls leer, versuche den von setup_secrets.js angelegten Datenpunkt (.token) zu lesen
+    if (!token) {
+      const tokenStateSecret = existsState(`${baseRef}.token`)
+        ? getState(`${baseRef}.token`)
+        : null;
+      if (tokenStateSecret && tokenStateSecret.val !== null && tokenStateSecret.val !== undefined) {
+        const valStr = String(tokenStateSecret.val).trim();
+        if (
+          valStr !== "" &&
+          valStr !== "null" &&
+          valStr !== "undefined" &&
+          valStr !== "placeholder"
+        ) {
+          token = valStr;
+        }
+      }
+    }
   }
 
   let url;
-  if (token && token !== "" && token !== "null" && token !== "undefined") {
+  if (token) {
+    console.log(
+      `[Solar-Prognose] Verwende API-Token (Länge: ${token.length}, maskiert: ${token.slice(0, 3)}...${token.slice(-3)})`,
+    );
     url = `https://api.forecast.solar/${token}/estimate/${latitude}/${longitude}/${TILT}/${AZIMUTH}/${KWP}`;
   } else {
+    console.log(
+      "[Solar-Prognose] Kein API-Token gefunden (oder Wert ist leer/ungültig/ignoriert). Verwende kostenfreie API.",
+    );
     // Falls kein Token vorhanden ist, nutzen wir die kostenfreie API
     url = `https://api.forecast.solar/estimate/${latitude}/${longitude}/${TILT}/${AZIMUTH}/${KWP}`;
   }
@@ -182,6 +220,15 @@ function fetchSolarData() {
           " (Tipp: Rate-Limit von Forecast.Solar überschritten. Bitte weniger Abfragen durchführen)";
       } else if (response.statusCode === 400) {
         hint = " (Tipp: Bitte prüfen Sie die Konfiguration der Koordinaten, Dachneigung oder kWp)";
+      } else if (response.statusCode === 404) {
+        if (token) {
+          console.warn(
+            `[Solar-Prognose] HTTP-Statuscode 404 erhalten. Ihr API-Token (${token.slice(0, 3)}...${token.slice(-3)}) ist ungültig oder abgelaufen. Versuche Fallback auf die kostenfreie API...`,
+          );
+          fetchSolarData(true);
+          return;
+        }
+        hint = " (Tipp: Der Endpunkt wurde nicht gefunden. Bitte prüfen Sie die API-Dokumentation)";
       }
       console.warn(
         `[Solar-Prognose] HTTP-Statuscode ${response.statusCode} erhalten.${hint} Antwort-Vorschau: ${bodyPreview}...`,
@@ -363,10 +410,12 @@ function sendTelegramMessage(msg) {
 /**
  * Sendet eine Nachricht an den Gotify-Server mittels httpPost().
  */
-function sendGotifyMessage(title, message) {
+function sendGotifyMessage(title, message, priority = 1) {
   if (!SEND_GOTIFY) return;
 
-  const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
+  const gotifyToken = existsState("0_userdata.0.gotifytoken.iobroker")
+    ? getState("0_userdata.0.gotifytoken.iobroker")?.val
+    : null;
   if (!gotifyToken) {
     console.error(
       "[Solar-Prognose Fail] Gotify-Token konnte nicht aus '0_userdata.0.gotifytoken.iobroker' gelesen werden.",
@@ -378,7 +427,7 @@ function sendGotifyMessage(title, message) {
   const payload = {
     title: title,
     message: message,
-    priority: 5,
+    priority: priority,
   };
 
   httpPost(
@@ -399,9 +448,12 @@ function sendGotifyMessage(title, message) {
 function recordDailyStats() {
   try {
     const today = new Date();
-    const dateStr = today.getFullYear() + "-" +
-                    String(today.getMonth() + 1).padStart(2, "0") + "-" +
-                    String(today.getDate()).padStart(2, "0");
+    const dateStr =
+      today.getFullYear() +
+      "-" +
+      String(today.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(today.getDate()).padStart(2, "0");
 
     const forecastYield = Number(getState(`${baseRef}.heute.gesamt`)?.val) || 0;
     const actualYield = Number(getState("0_userdata.0.Energie.PV.Tageserzeugung")?.val) || 0;
@@ -414,7 +466,7 @@ function recordDailyStats() {
       statsList = JSON.parse(statsState);
     }
 
-    const existingIndex = statsList.findIndex(item => item.datum === dateStr);
+    const existingIndex = statsList.findIndex((item) => item.datum === dateStr);
 
     const newEntry = {
       datum: dateStr,
@@ -422,8 +474,10 @@ function recordDailyStats() {
       tatsaechlich_ertrag_wh: actualYield,
       prognose_peak_w: forecastPeak,
       tatsaechlich_peak_w: actualPeak,
-      abweichung_ertrag_prozent: forecastYield > 0 ? Math.round(((actualYield - forecastYield) / forecastYield) * 100) : 0,
-      abweichung_peak_prozent: forecastPeak > 0 ? Math.round(((actualPeak - forecastPeak) / forecastPeak) * 100) : 0
+      abweichung_ertrag_prozent:
+        forecastYield > 0 ? Math.round(((actualYield - forecastYield) / forecastYield) * 100) : 0,
+      abweichung_peak_prozent:
+        forecastPeak > 0 ? Math.round(((actualPeak - forecastPeak) / forecastPeak) * 100) : 0,
     };
 
     if (existingIndex !== -1) {
@@ -438,7 +492,9 @@ function recordDailyStats() {
     }
 
     setState(`${baseRef}.statistik`, JSON.stringify(statsList), true);
-    console.log(`[Solar-Prognose] Statistik-Eintrag für ${dateStr} gespeichert: Prognose Ertrag = ${forecastYield}Wh, Real = ${actualYield}Wh.`);
+    console.log(
+      `[Solar-Prognose] Statistik-Eintrag für ${dateStr} gespeichert: Prognose Ertrag = ${forecastYield}Wh, Real = ${actualYield}Wh.`,
+    );
   } catch (err) {
     console.error(`[Solar-Prognose Fail] Fehler beim Speichern der Statistik: ${err.message}`);
   }

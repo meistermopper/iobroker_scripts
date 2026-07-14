@@ -76,7 +76,7 @@ function setupPresenceLogic(person) {
   let offlineTimer = null;
 
   // 1. Initialer Statusabgleich beim Skriptstart (ohne Benachrichtigung)
-  const triggerState = getState(triggerId);
+  const triggerState = existsState(triggerId) ? getState(triggerId) : null;
   const initialOnline = triggerState ? !!triggerState.val : false;
   updateStatus(person, initialOnline, true);
 
@@ -133,7 +133,7 @@ function updateStatus(person, isOnline, silent = false) {
   sendTo("telegram.0", { user: telegramUser, text: text });
 
   // 2. Benachrichtigung per Gotify senden (ressourcenschonend via nativem httpPost statt curl)
-  const tokenState = getState(gotifyTokenDP);
+  const tokenState = existsState(gotifyTokenDP) ? getState(gotifyTokenDP) : null;
   const token = tokenState ? tokenState.val : null;
   if (token) {
     const url = `https://mygotify.meistermopper.de/message?token=${token}`;
