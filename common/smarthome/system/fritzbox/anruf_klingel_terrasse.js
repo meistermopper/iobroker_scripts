@@ -1,6 +1,6 @@
 /**
- * Name:   Terrassen-Klingel (Anrufe)
- * Zweck:  Meldet eingehende Anrufe auf der Terrasse (Google Mini via sayit.1) und benachrichtigt via Telegram & Gotify.
+ * Name:   Terrassen-Klingel (Anrufe & Haustür)
+ * Zweck:  Meldet eingehende Anrufe oder Haustür-Klingeln auf der Terrasse (Google Mini via sayit.1) und benachrichtigt via Telegram & Gotify.
  */
 
 // --- KONFIGURATION ---
@@ -12,6 +12,10 @@ const ID_CALLER_NAME = "tr-064.0.callmonitor.inbound.callerName";
 
 // Datenpunkt für die Rufnummer des Anrufers
 const ID_CALLER_NUMBER = "tr-064.0.callmonitor.inbound.caller";
+
+// Name und Rufnummer der Türsprechanlage in der FRITZ!Box
+const DOORBELL_NAME = "Videoklingel";
+const DOORBELL_NUMBER = "621";
 
 // SayIt Datenpunkt für die Sprachausgabe auf dem Terrassen-Google-Speaker (Terrassen Google Mini)
 const ID_SAYIT_TEXT = "sayit.1.tts.text";
@@ -29,38 +33,53 @@ on({ id: ID_RINGING, val: true }, () => {
     const callerName = getState(ID_CALLER_NAME)?.val;
     const callerNumber = getState(ID_CALLER_NUMBER)?.val;
 
-    // Standard-Sprachausgabe vorbereiten (wird angesagt, falls der Anrufer unbekannt ist)
-    let speakText = "Das Telefon klingelt";
-    let isKnown = false;
-    let who = "unbekannt";
-
     // Rufnummer säubern und in String konvertieren, falls vorhanden
     const formattedNumber = callerNumber ? String(callerNumber).trim() : "";
 
-    // Prüfung, ob ein gültiger Name im Telefonbuch der FRITZ!Box existiert:
-    // Der Name darf nicht leer, "unknown", "Unbekannt" oder identisch mit der Rufnummer sein.
-    if (
-      callerName &&
-      String(callerName).trim() !== "" &&
-      String(callerName).trim() !== "unknown" &&
-      String(callerName).trim() !== "Unbekannt" &&
-      String(callerName).trim() !== formattedNumber
-    ) {
-      // Wenn ein Name gefunden wurde, diesen als Identität hinterlegen
-      who = String(callerName).trim();
-      isKnown = true; // Flag setzen, dass der Anrufer im Telefonbuch existiert
-    } else if (formattedNumber) {
-      // Falls kein Name existiert, aber eine Nummer übertragen wurde
-      who = `Nummer ${formattedNumber}`;
-    }
+    // Prüfung, ob es sich um die Türsprechanlage handelt (Name matches or number is 621 / **621)
+    const isDoorbell =
+      (callerName && String(callerName).trim() === DOORBELL_NAME) ||
+      formattedNumber === DOORBELL_NUMBER ||
+      formattedNumber === `**${DOORBELL_NUMBER}`;
 
-    // Wenn der Anrufer im Telefonbuch bekannt ist, passen wir den Ansagetext an
-    if (isKnown) {
-      speakText = `${who} ruft an.`;
-    }
+    let speakText = "";
+    let notifyText = "";
+    let category = "Telefon";
 
-    // Der Benachrichtigungstext für Telegram & Gotify soll detaillierter sein
-    const notifyText = `Anruf von ${who}`;
+    if (isDoorbell) {
+      // Wenn es an der Haustür klingelt
+      speakText = "Es klingelt an der Haustür.";
+      notifyText = "Es klingelt an der Haustür!";
+      category = "Haustür";
+    } else {
+      // Standard-Sprachausgabe für normale Anrufe (falls der Anrufer unbekannt ist)
+      speakText = "Das Telefon klingelt";
+      let isKnown = false;
+      let who = "unbekannt";
+
+      // Prüfung, ob ein gültiger Name im Telefonbuch der FRITZ!Box existiert:
+      // Der Name darf nicht leer, "unknown", "Unbekannt" oder identisch mit der Rufnummer sein.
+      if (
+        callerName &&
+        String(callerName).trim() !== "" &&
+        String(callerName).trim() !== "unknown" &&
+        String(callerName).trim() !== "Unbekannt" &&
+        String(callerName).trim() !== formattedNumber
+      ) {
+        // Wenn ein Name gefunden wurde, diesen als Identität hinterlegen
+        who = String(callerName).trim();
+        isKnown = true; // Flag setzen, dass der Anrufer im Telefonbuch existiert
+      } else if (formattedNumber) {
+        // Falls kein Name existiert, aber eine Nummer übertragen wurde
+        who = `Nummer ${formattedNumber}`;
+      }
+
+      // Wenn der Anrufer im Telefonbuch bekannt ist, passen wir den Ansagetext an
+      if (isKnown) {
+        speakText = `${who} ruft an.`;
+      }
+      notifyText = `Anruf von ${who}`;
+    }
 
     // 1. Sprachausgabe auf der Terrasse via SayIt auslösen
     if (existsState(ID_SAYIT_TEXT)) {
@@ -81,6 +100,6 @@ on({ id: ID_RINGING, val: true }, () => {
     }
 
     // 2. Text-Benachrichtigungen an Telegram und Gotify via globale Funktion senden
-    sendGlobalNotify(notifyText, "Telefon", 2);
+    sendGlobalNotify(notifyText, category, 2);
   }, 1000);
 });

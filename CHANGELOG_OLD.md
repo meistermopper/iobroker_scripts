@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.17] - 2026-07-11
+
+- chore(homematic): Remove verbose logging for online firmware update (homematic_all.js)
+
 ### [3.1.16] - 2026-07-10
 - refactor(homematic): Refactor online firmware check to use OpenCCU GitHub releases (homematic_all.js)
 
