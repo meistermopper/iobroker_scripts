@@ -21,7 +21,7 @@ The scripts are logically organized by rooms and functions:
 - **EV Charging Master (`charge_master.js`)**: Manages focused start/stop for Kia EV3 charging based on PV surplus or manual input. Includes battery protection for the house battery during manual charging, robust stop mechanisms for hanging wallbox states, connection monitoring, and intelligent wallbox resets to ensure reliable charging. Optimizes time formatting, kilometer calculation, and provides detailed statistics.
 - **Harvia Sauna Control (`Fenix_FX110C_Sauna_control.js`)**: Provides full remote control of the Harvia Fenix FX 110C sauna, including heating, lighting, and temperature settings via REST API. Features robust token management, error handling, and real-time status monitoring.
 - **Smart Charging (`fully_smart_laden.js`, `smartphones_laden.js`)**: Intelligent charging control for wall-mounted tablets and smartphones to protect battery life (e.g., 30-70% strategy) and manage automatic display shutdown. Includes self-healing data points, smart notifications, and voice control triggers.
-- **Solar Forecast**: Visualizes today's and tomorrow's solar energy production values.
+- **Solar Forecast (`solarprognose_master.js`)**: Visualizes today's and tomorrow's solar energy production values, tracks daily solar forecast vs. actual statistics, and supports Telegram/Gotify notifications.
 - **UPS Management**: Secures and restores the state of lights and sockets after a power outage (`hue_zigbee_states_restore.js`).
 
 ### 💡 Light & Presence
@@ -37,6 +37,7 @@ The scripts are logically organized by rooms and functions:
 - **Mailbox Monitor (`post_da.js`)**: Notifies upon mail delivery with voice announcements and updates VIS status. Prevents duplicate notifications and handles day/night modes for announcements.
 - **Robotic Mower Control (R2Mäh2) (`zustand_r2maeh2.js`)**: Monitors mower status via power consumption, sends notifications (start, end, issues, frost warning), performs voice announcements, and calculates daily statistics and electricity costs.
 - **Bathroom Dehumidification (`heizen_rh.js`)**: Controls underfloor heating in the bathroom to reduce humidity after showering (mold prevention). Activates heating to 24°C when humidity rises, with window protection and automatic reset to previous or default temperatures.
+- **Doorbell & Call Monitor (`anruf_klingel_terrasse.js`)**: Detects incoming phone calls or doorbell rings via the FRITZ!Box TR-064 adapter, announces them via Google Speaker (SayIt) on the terrace with dynamic volume control, and dispatches notifications.
 - **Waste Collection Notification**: Announces and visualizes the next day's waste collection type via voice and message at 6:00 PM the day before.
 - **Ventilation Recommendations**: Based on indoor and outdoor temperature and humidity.
 - **Alarm Detectors**: Acoustic and message-based smoke and water warnings.
@@ -55,6 +56,8 @@ The scripts are logically organized by rooms and functions:
 - **Network Management**:
   - Monitors WAN IP for changes, controls DDNS updates, and manages failover scenarios (`failover_dyndns_master.js`).
 - **Proxmox Cluster Master Watchdog**: Monitors temperature, hard drives & status - sends alarms to ALL Telegram users and Gotify.
+- **DrayTek Vigor 166 Monitor (`connected.js`)**: Starts a local HTTP server to receive Grafana webhook alerts for DSL connection status, setting state values, and notifying via Telegram, Gotify, or Google Speaker.
+- **Global Notifications (`notify.js`)**: Centralizes alerts and status messages across the entire smart home, sending messages via Telegram and Gotify, and broadcasting voice announcements with dynamic Chromecast resume logic.
 - **Football Bundesliga**: Displays the current table and upcoming matches for SGE and FCB using the OpenLigaDB adapter.
 
 ### 📺🎵 Media
@@ -68,7 +71,7 @@ The scripts are logically organized by rooms and functions:
 
 Script management is separated between development (Antigravity IDE) and runtime (ioBroker).
 
-- **Source of Truth**: The primary development environment is ** Antigravity IDE ** on the local machine.
+- **Source of Truth**: The primary development environment is **Antigravity IDE** on the local machine.
 - **Git Status**: Maintained on the server and GitHub.
 - **Deployment (Go Live)**: Transfer to ioBroker is done manually via the ioBroker Extension.
 
@@ -99,15 +102,19 @@ Script management is separated between development (Antigravity IDE) and runtime
 ## 📝 Changelog
 
 ### [3.1.25] - 2026-07-14
+
 - feat(pv): Add daily solar forecast vs. actual statistics and enhance data collection (solarprognose_master.js)
 
 ### [3.1.24] - 2026-07-14
+
 - feat(vigor166): add DrayTek Vigor 166 connection status monitoring via Grafana webhooks (connected.js)
 
 ### [3.1.23] - 2026-07-14
+
 - feat(fritzbox): Integrate doorbell detection and notification (anruf_klingel_terrasse.js)
 
 ### [3.1.22] - 2026-07-13
+
 - chore(pv): Update solar panel azimuth configuration (solarprognose_master.js)
 
 ### [3.1.21] - 2026-07-13

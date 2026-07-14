@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.0.5-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.1.25-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -20,8 +20,8 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 
 - **EV Lade-Master (`charge_master.js`)**: Verwaltet den gezielten Start/Stopp für das Laden des Kia EV3 basierend auf PV-Überschuss oder manueller Eingabe. Beinhaltet Batterieschutz für den Hausspeicher bei manuellem Laden, robuste Stopp-Mechanismen für hängende Wallbox-Zustände, Verbindungsüberwachung und intelligente Wallbox-Resets, um zuverlässiges Laden zu gewährleisten. Optimiert die Zeitformatierung, Kilometerberechnung und bietet detaillierte Statistiken.
 - **Harvia Sauna Steuerung (`Fenix_FX110C_Sauna_control.js`)**: Bietet die volle Fernsteuerung der Harvia Fenix FX 110C Sauna, einschließlich Heizung, Beleuchtung und Temperatureinstellungen über die REST-API. Verfügt über robustes Token-Management, Fehlerbehandlung und Echtzeit-Statusüberwachung.
-- **Intelligentes Laden (`fully_smart_laden.js`, `smartphones_laden.js`)**: Intelligente Ladesteuerung für wandmontierte Tablets und Smartphones zur Schonung der Batterie (z.B. 30-70% Strategie) und Steuerung der automatischen Display-Abschaltung. Enthält selbstheilende Datenpunkte, intelligente Benachrichtigungen und Sprachsteuerungs-Trigger.
-- **Solar-Prognose**: Visualisiert die Solarstromproduktion von heute und morgen.
+- **Intelligentes Laden (`fully_smart_laden.js`, `smartphones_laden.js`)**: Intelligente Ladesteuerung für wandmontierte Tablets und smartphones zur Schonung der Batterie (z.B. 30-70% Strategie) und Steuerung der automatischen Display-Abschaltung. Enthält selbstheilende Datenpunkte, intelligente Benachrichtigungen und Sprachsteuerungs-Trigger.
+- **Solar-Prognose (`solarprognose_master.js`)**: Visualisiert die Solarstromproduktion von heute und morgen, vergleicht Prognosen mit Ist-Werten und unterstützt Telegram/Gotify-Benachrichtigungen bei Updates.
 - **USV Management**: Sichert den Zustand von Lichtern und Steckdosen nach einem Stromausfall und stellt diesen wieder her (`hue_zigbee_states_restore.js`).
 
 ### 💡 Licht & Präsenz
@@ -37,6 +37,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 - **Briefkasten-Monitor (`post_da.js`)**: Benachrichtigt bei Postzustellung mit Sprachansagen und aktualisiert den VIS-Status. Verhindert doppelte Benachrichtigungen und handhabt Tag/Nacht-Modi für Ansagen.
 - **Mähroboter-Steuerung (R2Mäh2) (`zustand_r2maeh2.js`)**: Überwacht den Status des Mähers über den Stromverbrauch, sendet Benachrichtigungen (Start, Ende, Probleme, Frostwarnung), führt Sprachansagen durch und berechnet tägliche Statistiken sowie Stromkosten.
 - **Badezimmer Entfeuchtung (`heizen_rh.js`)**: Steuert die Fußbodenheizung im Bad zur Reduzierung der Luftfeuchtigkeit nach dem Duschen (Schimmelprävention). Aktiviert die Heizung auf 24°C bei steigender Luftfeuchtigkeit, mit Fensterschutz und automatischem Reset auf vorherige oder Standardtemperaturen.
+- **Terrassen-Klingel (`anruf_klingel_terrasse.js`)**: Kündigt Haustürklingeln und Telefonanrufe der FRITZ!Box über SayIt auf dem Terrassen-Google-Speaker mit dynamischer Lautstärkeanpassung an und sendet Kurznachrichten.
 - **Müllabfuhr-Benachrichtigung**: Sagt die Müllabfuhr für den nächsten Tag per Sprache und Nachricht am Vorabend um 18:00 Uhr an und visualisiert diese.
 - **Lüftungsempfehlungen**: Basierend auf der Innen- und Außentemperatur sowie der Luftfeuchtigkeit.
 - **Gefahrenmelder**: Akustische und nachrichtenbasierte Rauch- und Wasserwarnungen.
@@ -55,6 +56,8 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 - **Netzwerkmanagement**:
   - Überwacht die WAN-IP auf Änderungen, steuert DDNS-Updates und verwaltet Failover-Szenarien (`failover_dyndns_master.js`).
 - **Proxmox Cluster Master Watchdog**: Überwacht Temperatur, Festplatten & Status - sendet Alarme an ALLE Telegram-Nutzer und Gotify.
+- **DrayTek Vigor 166 Monitor (`connected.js`)**: Startet einen lokalen HTTP-Server für Grafana-Webhook-Alerts, um den DSL-Verbindungsstatus zu überwachen und Benachrichtigungen zu senden.
+- **Globale Benachrichtigungen (`notify.js`)**: Zentralisiert Benachrichtigungen über Telegram, Gotify und Sprachansagen auf Chromecast-Geräten inkl. intelligenter Wiedergabe-Fortsetzung (Resume-Funktion).
 - **Fußball Bundesliga**: Zeigt die aktuelle Tabelle und kommende Spiele von SGE und FCB mittels OpenLigaDB-Adapter an.
 
 ### 📺🎵 Medien
@@ -64,7 +67,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 
 ---
 
-## 🚀 Workflow & Synchronisation
+## 🚀 Workflow & Synchronization
 
 Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und Laufzeit (ioBroker).
 
@@ -98,27 +101,19 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
-### [3.0.6] - 2026-07-02
+### [3.1.25] - 2026-07-14
+- feat(pv): Add daily solar forecast vs. actual statistics and enhance data collection (solarprognose_master.js)
 
-- feat: add solarprognose master script and link German documentation in README (solarprognose_master.js)
+### [3.1.24] - 2026-07-14
+- feat(vigor166): add DrayTek Vigor 166 connection status monitoring via Grafana webhooks (connected.js)
 
-### [3.0.5] - 2026-07-02
-- feat: implement solar prognosis, secret management, Unifi monitoring, and Telegram menu modules (charge_master.js, climate_control.js, location_and_status.js, solarprognose_master.js, setup_secrets.js, network_version.js, telegram_menue.js)
+### [3.1.23] - 2026-07-14
+- feat(fritzbox): Integrate doorbell detection and notification (anruf_klingel_terrasse.js)
 
-### [3.0.4] - 2026-07-01
+### [3.1.22] - 2026-07-13
+- chore(pv): Update solar panel azimuth configuration (solarprognose_master.js)
 
-- feat: add Harvia Fenix sauna controller and automated bedroom lighting script (Fenix_FX110C_Sauna_control.js, schranklicht.js)
-
-### [3.0.3] - 2026-06-30
-
-- feat: add global notification utility for Telegram, Gotify, and Chromecast announcements (notify.js)
-
-### [3.0.2] - 2026-06-29
-
-- feat: add Harvia Fenix FX 110C sauna control script with cloud integration (Fenix_FX110C_Sauna_control.js)
-
-### [3.0.1] - 2026-06-29
-
-- feat: add multiple automation scripts and configurations for ioBroker management (licht_bewegung_dunkel.js, licht_bewegung_dunkel.js, switch_neu_starten.js, Weihnachtsbaum_Terrasse.js, post_da.js, zustand_r2maeh2.js, Wasserdruckwarnung.js, morgenprogramm.js, trockner.js, waschmaschine.js, Fenix_FX110C_Sauna_control.js, session_master.js, heizung_anwesenheit_master.js, charge_master.js, climate_control.js, location_and_status.js, energiemaster_und_sauna.js, solarprognose_master.js, homematic_all.js, kalender.js, weihnachtszeit.js, battery_states.js, chromecast_ban_heos.js, sayit_autofix.js, sonoff_devices_table.js, syslog_monitor.js, tasmota_fw.js, vaillant_Neustart.js, versionen.js, vis_PIN.js, ziegenhain.js, domains_blocked.js, versionen.js, network_version.js, neue_ip_failover.js, hue_zigbee_states_restore.js, telegram_menue.js, termine_2T.js, radio_manuell.js, baum_Zeitschalt.js, switch_alle_lampen.js, videolicht.js, fully_bewegung.js, ladestation_neustart_hub.js, smartphones_laden.js, switch_ventilator.js, notify.js)
+### [3.1.21] - 2026-07-13
+- feat(forecast.solar): Add Telegram and Gotify notifications for PV forecast updates (solarprognose_master.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).
