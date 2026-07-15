@@ -194,9 +194,9 @@ function fetchSolarData(ignoreToken = false) {
     );
     url = `https://api.forecast.solar/${token}/estimate/${latitude}/${longitude}/${TILT}/${AZIMUTH}/${KWP}`;
   } else {
-    console.log(
-      "[Solar-Prognose] Kein API-Token gefunden (oder Wert ist leer/ungültig/ignoriert). Verwende kostenfreie API.",
-    );
+    //console.log(
+    //  "[Solar-Prognose] Kein API-Token gefunden (oder Wert ist leer/ungültig/ignoriert). Verwende kostenfreie API.",
+    //);
     // Falls kein Token vorhanden ist, nutzen wir die kostenfreie API
     url = `https://api.forecast.solar/estimate/${latitude}/${longitude}/${TILT}/${AZIMUTH}/${KWP}`;
   }
