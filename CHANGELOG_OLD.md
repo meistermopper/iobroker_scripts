@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.25] - 2026-07-14
+
+- feat(pv): Add daily solar forecast vs. actual statistics and enhance data collection (solarprognose_master.js)
+
 ### [3.1.24] - 2026-07-14
 
 - feat(vigor166): add DrayTek Vigor 166 connection status monitoring via Grafana webhooks (connected.js)
