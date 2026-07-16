@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.26] - 2026-07-14
+- feat(vigor166): Enhance DrayTek Vigor 166 alert handling and notification system (connected.js)
+
 ### [3.1.25] - 2026-07-14
 
 - feat(pv): Add daily solar forecast vs. actual statistics and enhance data collection (solarprognose_master.js)
