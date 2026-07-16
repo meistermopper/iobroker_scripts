@@ -43,8 +43,8 @@ function limit(val, min, max) {
 }
 
 /**
- * Repariert die Alias-Objekte und deaktiviert die GHOME-Synchronisation.
- * Verhindert "Invalid Argument" (Error 400) und "no target" Fehler.
+ * Repairs the alias objects and disables Google Home / Alexa synchronization.
+ * Prevents "Invalid Argument" (Error 400) and "no target" errors.
  */
 function repairAndHide() {
   const configs = [
@@ -53,25 +53,47 @@ function repairAndHide() {
   ];
 
   configs.forEach((cfg) => {
+    // 1. Repair alias and hide it from Google Home / Alexa
     extendObject(
       cfg.id,
       {
         type: "state",
         common: {
-          type: "string", // Hue Commands sind JSON-Strings
-          role: "text", // Verhindert, dass der Adapter den Typ als Lampe fehlinterpretiert
-          smartName: false, // Entfernt den Datenpunkt sicher aus Google Home / Alexa
+          type: "string", // Hue commands are JSON strings
+          role: "text", // Prevents GHOME/Alexa from auto-detecting this as a light/switch
+          smartName: {
+            ghome: false,
+            alexa: false,
+          },
         },
         native: {
           alias: {
-            id: cfg.target, // Repariert die Hardware-Verbindung
+            id: cfg.target, // Link to actual hardware target
           },
         },
       },
       (err) => {
-        if (err) console.error(`[Abendlicht] Fehler bei Reparatur von ${cfg.id}: ${err}`);
-        // Info-Meldung nur beim Skript-Start zur Kontrolle
-        else console.log(`[Abendlicht] Info: ${cfg.id} initialisiert`);
+        if (err) console.error(`[Abendlicht] Error repairing alias ${cfg.id}: ${err}`);
+        else console.log(`[Abendlicht] Info: Alias ${cfg.id} initialized`);
+      },
+    );
+
+    // 2. Also hide the hardware target from Google Home / Alexa to prevent transition sync errors
+    extendObject(
+      cfg.target,
+      {
+        type: "state",
+        common: {
+          role: "text", // Prevents GHOME/Alexa from auto-detecting this as a light/switch
+          smartName: {
+            ghome: false,
+            alexa: false,
+          },
+        },
+      },
+      (err) => {
+        if (err) console.error(`[Abendlicht] Error configuring target ${cfg.target}: ${err}`);
+        else console.log(`[Abendlicht] Info: Target ${cfg.target} initialized`);
       },
     );
   });

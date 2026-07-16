@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.1.31-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.1.32-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -101,6 +101,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.1.32] - 2026-07-16
+- fix(abendlicht): Improve smart home integration hiding and prevent sync errors (switch_abendlicht.js)
+
 ### [3.1.31] - 2026-07-16
 - refactor(pihole): Remove redundant Pi-hole blocking percentage script (percent_blocking_both.js)
 
@@ -112,8 +115,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.1.28] - 2026-07-14
 - refactor(smarthome): improve script robustness and API token handling (anwesenheit_unifi.js, solarprognose_master.js)
-
-### [3.1.27] - 2026-07-14
-- style(global): Introduce ES2022 ESLint environment and update agent docs (heizen_rh.js, licht_bewegung_dunkel.js, heizen_rh.js, licht_bewegung_dunkel.js, radio.js, Radio_manuell.js, deckenlampe_auto_aus.js, switch_neu_starten.js, Weihnachtsbaum_Terrasse.js, muellmeldung.js, post_da.js, zustand_r2maeh2.js, Wasserdruckwarnung.js, alarmmelder.js, tageskosten.js, fenster_offen.js, garderobenlicht.js, geschirr.js, morgenprogramm.js, reinigungsmodus.js, trockner.js, waschmaschine.js, licht.js, radio_manuell.js, boiler.js, licht_presence.js, radio_manuell.js, Fenix_FX110C_Sauna_control.js, heos_offline.js, session_master.js, playerstate.js, schranklicht.js, tv_licht.js, vu_reboot_standby.js, werte_schreiben_silvester.js, serverschrank_taegl.js, weinklima_taegl.js, anwesenheit_unifi.js, heizung_anwesenheit_master.js, charge_master.js, climate_control.js, location_and_status.js, batterie_voll.js, batteriehitzewarnung.js, energiemaster_und_sauna.js, march_minsoc.js, soh_change.js, solarprognose_master.js, stromausfall.js, anruf_klingel_terrasse.js, fritz_reboot.js, homematic_all.js, astrozeiten.js, kalender.js, mond_zunehmend_abnehmend.js, weihnachtszeit.js, wochentage.js, zeiten.js, adapter_off.js, battery_states.js, chromecast_ban_heos.js, iobroker_restart.js, miele_restart.js, raumwerte_lueften.js, sayit_autofix.js, setup_secrets.js, sonoff_devices_table.js, sonoff_fail.js, syslog_monitor.js, tasmota_fw.js, vaillant_Neustart.js, versionen.js, vis_PIN.js, ziegenhain.js, domains_blocked.js, percent_blocking_both.js, proxmox_master_v2.js, iobroker_error.js, ram_monitor.js, versionen.js, ap_management.js, failover_dyndns_master.js, network_version.js, batterie_wechseln.js, hue_zigbee_states_restore.js, nut_client_inactive.js, usv_wartung_apc_server.js, usv_wartung_eaton_buero.js, connected.js, device_not_available.js, telegram_menue.js, termine_2T.js, bedienung.js, bedienung.js, sat_tv_auto_aus.js, denon_surr_manager.js, marantz_laeuft.js, radio_heos.js, radio_manuell.js, video_auto_aus.js, abendlicht_TV_Wind_aus.js, autolicht_daemmer.js, baum_Zeitschalt.js, musiklicht.js, switch_abendlicht.js, switch_alle_lampen.js, switch_ventilatorlicht.js, ventilator_false.js, videolicht.js, clear_cache.js, fully_bewegung.js, fully_smart_laden.js, ladestation_neustart_hub.js, smartphones_laden.js, verbrauch_media.js, kachelofen_ventilator.js, switch_ventilator.js, notify.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
