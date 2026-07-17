@@ -32,6 +32,7 @@ let isLoggingIn = false; // Verhindert doppelte Login-Aufrufe (Race Condition Gu
 let isSendingCommand = false; // Verhindert parallele Befehle an die Cloud
 const lastEventTime = {}; // Speichert Zeitstempel pro Datenpunkt zur Entprellung
 let lastCommandTime = 0; // Timestamp der letzten Aktion, um Polling-Überschreiben zu verhindern
+let lastLoginTime = 0; // Zeitstempel des letzten erfolgreichen Logins für proaktives Refresh
 const LATENCY_MS = 5000; // Zeit (5s), die wir nach einem Befehl warten, bevor wir Telemetrie wieder trauen
 let updateTimerId = null; // Speichert ID des aktiven Polling-Timeouts zur Vermeidung paralleler Schleifen
 let targetTempTimer = null; // Debounce-Timer für Temperatur-Slider
@@ -99,7 +100,7 @@ async function ensureStatesExist() {
   for (const s of states) {
     await createStateAsync(`${BASE_PATH}.${s.id}`, s.def, {
       name: s.name || s.id,
-      type: s.type,
+      type: /** @type {any} */ (s.type),
       role: s.role,
       unit: s.unit,
       read: true,
@@ -169,6 +170,7 @@ async function login() {
       client_id: CLIENT_ID,
     });
     idToken = response.data.idToken;
+    lastLoginTime = Date.now();
     return true;
   } catch (err) {
     console.error(`[Harvia] Login fehlgeschlagen: ${err.message}`);
@@ -187,6 +189,12 @@ async function setSaunaState(stateName, value, isRetry = false) {
   if (!idToken || !deviceBaseUrl) {
     console.warn(`[Harvia] Abbruch: Noch nicht eingeloggt oder Endpunkte unbekannt.`);
     return;
+  }
+
+  // Vorab-Token-Check: Falls Token älter als 45 Minuten ist, proaktiv erneuern
+  if (!isRetry && idToken && Date.now() - lastLoginTime > 45 * 60 * 1000) {
+    console.log("[Harvia] Token ist älter als 45 Minuten. Proaktives Refresh vor Befehlsübermittlung...");
+    await login();
   }
 
   // Lock-Check: Nur blockieren, wenn es kein interner Retry ist
@@ -213,14 +221,47 @@ async function setSaunaState(stateName, value, isRetry = false) {
         },
       };
 
-      const response = await client.post(`${deviceBaseUrl}/devices/command`, payload, {
-        headers: {
-          Authorization: `Bearer ${idToken.trim()}`,
-          "Content-Type": "application/json",
-        },
-      });
+      let attempts = 0;
+      const maxAttempts = 3;
+      let response = null;
+      let handled = false;
+      let failureReason = "Unbekannt";
 
-      if (response.data?.handled) {
+      while (attempts < maxAttempts) {
+        try {
+          response = await client.post(`${deviceBaseUrl}/devices/command`, payload, {
+            headers: {
+              Authorization: `Bearer ${idToken.trim()}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (response.data?.handled) {
+            handled = true;
+            break;
+          } else {
+            failureReason = response.data ? response.data.failureReason : "Unbekannt";
+            if (failureReason.includes("Device unavailable") && attempts < maxAttempts - 1) {
+              attempts++;
+              console.log(`[Harvia] Cloud-Sperre (Device unavailable) bei '${stateName}'. Wiederholung ${attempts}/${maxAttempts} in 1.5s...`);
+              await wait(1500);
+              continue;
+            }
+            break; // Anderer Grund, kein Retry
+          }
+        } catch (err) {
+          const detail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
+          if (detail.includes("Device unavailable") && attempts < maxAttempts - 1) {
+            attempts++;
+            console.log(`[Harvia] Cloud-Fehler (Device unavailable) bei '${stateName}'. Wiederholung ${attempts}/${maxAttempts} in 1.5s...`);
+            await wait(1500);
+            continue;
+          }
+          throw err; // An äußeren Catch weitergeben (z.B. für 401 Re-Login)
+        }
+      }
+
+      if (handled) {
         console.log(`[Harvia] ${commandType === "SAUNA" ? "Heizung" : "Licht"} -> ${stateStr}`);
 
         // BESTÄTIGUNG: Wir setzen ack: true sofort, damit die UI nicht "springt"
@@ -230,9 +271,8 @@ async function setSaunaState(stateName, value, isRetry = false) {
         lastCommandTime = Date.now(); // Timestamp für Latenz-Schutz setzen
         scheduleNextUpdate(LATENCY_MS + 500); // Schnellen Refresh nach Latenzzeit anfordern
       } else {
-        const reason = response.data ? response.data.failureReason : "Unbekannt";
-        console.warn(`[Harvia] Cloud lehnt Befehl ab: ${reason}`);
-        setState(`${BASE_PATH}.errorMsg`, `Cloud-Fehler: ${reason}`, true);
+        console.warn(`[Harvia] Cloud lehnt Befehl ab: ${failureReason}`);
+        setState(`${BASE_PATH}.errorMsg`, `Cloud-Fehler: ${failureReason}`, true);
 
         // Zurücksetzen, da Befehl abgelehnt wurde
         if (stateName === "heatOn") {
@@ -248,12 +288,30 @@ async function setSaunaState(stateName, value, isRetry = false) {
         temperature: parseFloat(value), // Muss zwingend eine Zahl sein
       };
 
-      await client.patch(`${deviceBaseUrl}/devices/target`, payload, {
-        headers: {
-          Authorization: `Bearer ${idToken.trim()}`,
-          "Content-Type": "application/json",
-        },
-      });
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      while (attempts < maxAttempts) {
+        try {
+          await client.patch(`${deviceBaseUrl}/devices/target`, payload, {
+            headers: {
+              Authorization: `Bearer ${idToken.trim()}`,
+              "Content-Type": "application/json",
+            },
+          });
+          break; // Erfolg, Schleife verlassen
+        } catch (err) {
+          const detail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
+          if (detail.includes("Device unavailable") && attempts < maxAttempts - 1) {
+            attempts++;
+            console.log(`[Harvia] Cloud-Fehler (Device unavailable) bei '${stateName}'. Wiederholung ${attempts}/${maxAttempts} in 1.5s...`);
+            await wait(1500);
+            continue;
+          }
+          throw err; // An äußeren Catch weitergeben
+        }
+      }
+
       console.log(`[Harvia] Temp-Soll -> ${value}°C`);
       // Sofortige Bestätigung im ioBroker
       setState(`${BASE_PATH}.targetTemp`, parseFloat(value), true);
@@ -263,10 +321,9 @@ async function setSaunaState(stateName, value, isRetry = false) {
   } catch (err) {
     const detail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
 
-    // "Device unavailable" ist ein Cloud-Sperr-Effekt bei schnellen Klicks.
-    // Wir loggen das nur noch als Debug, um das Info-Log sauber zu halten.
     if (detail.includes("Device unavailable")) {
-      console.log(`[Harvia] Cloud-Sperre: Gerät belegt, Befehl wird verworfen.`);
+      console.warn(`[Harvia] Cloud-Sperre: Gerät dauerhaft belegt nach Wiederholungsversuchen.`);
+      setState(`${BASE_PATH}.errorMsg`, "Fehler: Gerät belegt (Cloud-Sperre)", true);
     } else {
       console.error(`[Harvia] Fehler bei der Steuerung: ${detail}`);
       setState(`${BASE_PATH}.errorMsg`, `Fehler: ${err.message}`, true);

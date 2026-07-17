@@ -52,8 +52,8 @@ function repairAndHide() {
     { id: ALIAS_EI, target: TARGET_EI },
   ];
 
+  // 1. Repair alias and hide it from Google Home / Alexa
   configs.forEach((cfg) => {
-    // 1. Repair alias and hide it from Google Home / Alexa
     extendObject(
       cfg.id,
       {
@@ -61,10 +61,7 @@ function repairAndHide() {
         common: {
           type: "string", // Hue commands are JSON strings
           role: "text", // Prevents GHOME/Alexa from auto-detecting this as a light/switch
-          smartName: {
-            ghome: false,
-            alexa: false,
-          },
+          smartName: false,
         },
         native: {
           alias: {
@@ -85,15 +82,30 @@ function repairAndHide() {
         type: "state",
         common: {
           role: "text", // Prevents GHOME/Alexa from auto-detecting this as a light/switch
-          smartName: {
-            ghome: false,
-            alexa: false,
-          },
+          smartName: false,
         },
       },
       (err) => {
         if (err) console.error(`[Abendlicht] Error configuring target ${cfg.target}: ${err}`);
         else console.log(`[Abendlicht] Info: Target ${cfg.target} initialized`);
+      },
+    );
+  });
+
+  // 3. Disable legacy GHOME/Alexa settings on actual HUE states to prevent sync errors during transition
+  const legacyStates = ["hue.0.Ei.on", "hue.0.Ei.level", "hue.0.Ei.ct", "hue.0.Ei.xy"];
+
+  legacyStates.forEach((stateId) => {
+    extendObject(
+      stateId,
+      {
+        common: {
+          smartName: false,
+        },
+      },
+      (err) => {
+        if (err) console.error(`[Abendlicht] Error hiding legacy state ${stateId}: ${err}`);
+        else console.log(`[Abendlicht] Info: Legacy state ${stateId} hidden from GHOME/Alexa`);
       },
     );
   });

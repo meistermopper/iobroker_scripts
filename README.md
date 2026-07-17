@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.1.32-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.1.33-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -101,6 +101,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.1.33] - 2026-07-17
+- feat(sauna, smart-home): Implement proactive token refresh and retry logic for sauna control; enhance smartName handling (Fenix_FX110C_Sauna_control.js, switch_abendlicht.js)
+
 ### [3.1.32] - 2026-07-16
 - fix(abendlicht): Improve smart home integration hiding and prevent sync errors (switch_abendlicht.js)
 
@@ -112,8 +115,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.1.29] - 2026-07-15
 - chore(pv): Remove verbose log for missing solar API token (solarprognose_master.js)
-
-### [3.1.28] - 2026-07-14
-- refactor(smarthome): improve script robustness and API token handling (anwesenheit_unifi.js, solarprognose_master.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
