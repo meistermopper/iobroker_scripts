@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.29] - 2026-07-15
+- chore(pv): Remove verbose log for missing solar API token (solarprognose_master.js)
+
 ### [3.1.28] - 2026-07-14
 - refactor(smarthome): improve script robustness and API token handling (anwesenheit_unifi.js, solarprognose_master.js)
 

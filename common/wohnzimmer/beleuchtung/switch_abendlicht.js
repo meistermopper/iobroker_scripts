@@ -93,21 +93,32 @@ function repairAndHide() {
   });
 
   // 3. Disable legacy GHOME/Alexa settings on actual HUE states to prevent sync errors during transition
-  const legacyStates = ["hue.0.Ei.on", "hue.0.Ei.level", "hue.0.Ei.ct", "hue.0.Ei.xy"];
+  const legacyStates = [
+    "hue.0.Ei.on",
+    "hue.0.Ei.level",
+    "hue.0.Ei.ct",
+    "hue.0.Ei.xy",
+    "hue.0.Kommode.on",
+    "hue.0.Kommode.level",
+    "hue.0.Kommode.ct",
+    "hue.0.Kommode.xy",
+  ];
 
   legacyStates.forEach((stateId) => {
-    extendObject(
-      stateId,
-      {
-        common: {
-          smartName: false,
+    if (existsObject(stateId)) {
+      extendObject(
+        stateId,
+        {
+          common: {
+            smartName: false,
+          },
         },
-      },
-      (err) => {
-        if (err) console.error(`[Abendlicht] Error hiding legacy state ${stateId}: ${err}`);
-        else console.log(`[Abendlicht] Info: Legacy state ${stateId} hidden from GHOME/Alexa`);
-      },
-    );
+        (err) => {
+          if (err) console.error(`[Abendlicht] Error hiding legacy state ${stateId}: ${err}`);
+          else console.log(`[Abendlicht] Info: Legacy state ${stateId} hidden from GHOME/Alexa`);
+        },
+      );
+    }
   });
 }
 
