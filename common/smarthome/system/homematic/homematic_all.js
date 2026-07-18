@@ -179,7 +179,7 @@ async function updateOnlineFirmwareVersion() {
       }
     }
 
-    if (releaseData && releaseData.tag_name) {
+    if (releaseData?.tag_name) {
       const version = extractVersion(releaseData.tag_name);
       if (version) {
         //console.log(

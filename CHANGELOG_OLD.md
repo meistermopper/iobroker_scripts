@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.30] - 2026-07-16
+- chore(pihole): Remove Pi-hole unique domains blocked script (domains_blocked.js)
+
 ### [3.1.29] - 2026-07-15
 - chore(pv): Remove verbose log for missing solar API token (solarprognose_master.js)
 
