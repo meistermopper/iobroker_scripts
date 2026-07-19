@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.31] - 2026-07-16
+- refactor(pihole): Remove redundant Pi-hole blocking percentage script (percent_blocking_both.js)
+
 ### [3.1.30] - 2026-07-16
 - chore(pihole): Remove Pi-hole unique domains blocked script (domains_blocked.js)
 

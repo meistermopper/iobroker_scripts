@@ -24,7 +24,102 @@ const ID_SAYIT_TEXT = "sayit.1.tts.text";
 // SayIt Datenpunkt zur Steuerung der Lautstärke
 const ID_SAYIT_VOLUME = "sayit.1.tts.volume";
 
+// Datenpunkte für die Steuerung der Hue-Lampen (Blinken bei Klingel)
+const ID_LAMP_EI_COMMAND = "hue.0.Ei.command";
+const ID_LAMP_KOMMODE_COMMAND = "hue.0.Kommode.command";
+
 // --- LOGIK ---
+
+// Globale Variable für die Blink-Timeouts, um Überlappungen zu vermeiden
+let blinkTimeouts = [];
+
+/**
+ * Stoppt alle laufenden Timeouts des optischen Klingel-Signals.
+ */
+function clearBlinkTimeouts() {
+  for (const t of blinkTimeouts) {
+    clearTimeout(t);
+  }
+  blinkTimeouts = [];
+}
+
+/**
+ * Steuert die Lampen "Ei" und "Kommode", damit diese mehrmals blinken.
+ * Das Ei leuchtet dabei in grellem Blau. Anschließend werden die alten
+ * Zustände beider Lampen wiederhergestellt.
+ */
+function triggerVisualAlert() {
+  clearBlinkTimeouts();
+
+  // Aktuelle Zustände sichern (on, level, ct, xy)
+  const oldEi = {
+    on: getState("hue.0.Ei.on")?.val,
+    level: getState("hue.0.Ei.level")?.val,
+    ct: getState("hue.0.Ei.ct")?.val,
+    xy: getState("hue.0.Ei.xy")?.val,
+  };
+
+  const oldKommode = {
+    on: getState("hue.0.Kommode.on")?.val,
+    level: getState("hue.0.Kommode.level")?.val,
+    ct: getState("hue.0.Kommode.ct")?.val,
+    xy: getState("hue.0.Kommode.xy")?.val,
+  };
+
+  // CIE xy-Koordinaten für reines, grelles Blau
+  const blueColor = [0.15, 0.05];
+
+  // Definition der Blink-Befehle (transitiontime: 0 für schnellen Wechsel)
+  const blinkOnEi = JSON.stringify({ on: true, level: 100, xy: blueColor, transitiontime: 0 });
+  const blinkOffEi = JSON.stringify({ on: false, transitiontime: 0 });
+
+  const blinkOnKommode = JSON.stringify({ on: true, level: 100, transitiontime: 0 });
+  const blinkOffKommode = JSON.stringify({ on: false, transitiontime: 0 });
+
+  // Ablauf: 3x blinken (An -> Aus -> An -> Aus -> An -> Aus)
+  const steps = [
+    { t: 0, ei: blinkOnEi, kommode: blinkOnKommode },
+    { t: 800, ei: blinkOffEi, kommode: blinkOffKommode },
+    { t: 1600, ei: blinkOnEi, kommode: blinkOnKommode },
+    { t: 2400, ei: blinkOffEi, kommode: blinkOffKommode },
+    { t: 3200, ei: blinkOnEi, kommode: blinkOnKommode },
+    { t: 4000, ei: blinkOffEi, kommode: blinkOffKommode },
+  ];
+
+  for (const step of steps) {
+    const timeoutId = setTimeout(() => {
+      setState(ID_LAMP_EI_COMMAND, step.ei);
+      setState(ID_LAMP_KOMMODE_COMMAND, step.kommode);
+    }, step.t);
+    blinkTimeouts.push(timeoutId);
+  }
+
+  // Nach dem letzten Aus (bei 4800ms) den gesicherten Zustand wiederherstellen
+  const restoreTimeoutId = setTimeout(() => {
+    // Restore Ei
+    const restoreEi = { on: oldEi.on, transitiontime: 10 };
+    if (oldEi.level !== null && oldEi.level !== undefined) restoreEi.level = oldEi.level;
+    if (oldEi.ct !== null && oldEi.ct !== undefined) restoreEi.ct = oldEi.ct;
+    if (oldEi.xy !== null && oldEi.xy !== undefined) {
+      restoreEi.xy = typeof oldEi.xy === "string" ? oldEi.xy.split(",").map(Number) : oldEi.xy;
+    }
+    setState(ID_LAMP_EI_COMMAND, JSON.stringify(restoreEi));
+
+    // Restore Kommode
+    const restoreKommode = { on: oldKommode.on, transitiontime: 10 };
+    if (oldKommode.level !== null && oldKommode.level !== undefined)
+      restoreKommode.level = oldKommode.level;
+    if (oldKommode.ct !== null && oldKommode.ct !== undefined) restoreKommode.ct = oldKommode.ct;
+    if (oldKommode.xy !== null && oldKommode.xy !== undefined) {
+      restoreKommode.xy =
+        typeof oldKommode.xy === "string" ? oldKommode.xy.split(",").map(Number) : oldKommode.xy;
+    }
+    setState(ID_LAMP_KOMMODE_COMMAND, JSON.stringify(restoreKommode));
+  }, 4800);
+
+  blinkTimeouts.push(restoreTimeoutId);
+}
+
 // Trigger reagiert nur, wenn das Telefon anfängt zu klingeln (ringing wechselt auf true)
 on({ id: ID_RINGING, val: true }, () => {
   // 1 Sekunde Verzögerung (Timeout), damit der TR-064 Adapter die Anruferdaten
@@ -52,6 +147,7 @@ on({ id: ID_RINGING, val: true }, () => {
       speakText = "Es klingelt an der Haustür.";
       notifyText = "Es klingelt an der Haustür!";
       category = "Haustür";
+      triggerVisualAlert();
     } else {
       // Standard-Sprachausgabe für normale Anrufe (falls der Anrufer unbekannt ist)
       speakText = "Das Telefon klingelt";

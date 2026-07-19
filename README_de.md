@@ -37,7 +37,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 - **Briefkasten-Monitor (`post_da.js`)**: Benachrichtigt bei Postzustellung mit Sprachansagen und aktualisiert den VIS-Status. Verhindert doppelte Benachrichtigungen und handhabt Tag/Nacht-Modi für Ansagen.
 - **Mähroboter-Steuerung (R2Mäh2) (`zustand_r2maeh2.js`)**: Überwacht den Status des Mähers über den Stromverbrauch, sendet Benachrichtigungen (Start, Ende, Probleme, Frostwarnung), führt Sprachansagen durch und berechnet tägliche Statistiken sowie Stromkosten.
 - **Badezimmer Entfeuchtung (`heizen_rh.js`)**: Steuert die Fußbodenheizung im Bad zur Reduzierung der Luftfeuchtigkeit nach dem Duschen (Schimmelprävention). Aktiviert die Heizung auf 24°C bei steigender Luftfeuchtigkeit, mit Fensterschutz und automatischem Reset auf vorherige oder Standardtemperaturen.
-- **Terrassen-Klingel (`anruf_klingel_terrasse.js`)**: Kündigt Haustürklingeln und Telefonanrufe der FRITZ!Box über SayIt auf dem Terrassen-Google-Speaker mit dynamischer Lautstärkeanpassung an und sendet Kurznachrichten.
+- **Terrassen-Klingel (`anruf_klingel_terrasse.js`)**: Kündigt Haustürklingeln und Telefonanrufe der FRITZ!Box über SayIt auf dem Terrassen-Google-Speaker mit dynamischer Lautstärkeanpassung an, sendet Kurznachrichten und lässt bei jedem Türklingeln die Wohnzimmer-Lampen "Ei" (in Blau) und "Kommode" zur optischen Signalisierung blinken.
 - **Müllabfuhr-Benachrichtigung**: Sagt die Müllabfuhr für den nächsten Tag per Sprache und Nachricht am Vorabend um 18:00 Uhr an und visualisiert diese.
 - **Lüftungsempfehlungen**: Basierend auf der Innen- und Außentemperatur sowie der Luftfeuchtigkeit.
 - **Gefahrenmelder**: Akustische und nachrichtenbasierte Rauch- und Wasserwarnungen.

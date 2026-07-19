@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.1.35-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.1.36-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -37,7 +37,7 @@ The scripts are logically organized by rooms and functions:
 - **Mailbox Monitor (`post_da.js`)**: Notifies upon mail delivery with voice announcements and updates VIS status. Prevents duplicate notifications and handles day/night modes for announcements.
 - **Robotic Mower Control (R2Mäh2) (`zustand_r2maeh2.js`)**: Monitors mower status via power consumption, sends notifications (start, end, issues, frost warning), performs voice announcements, and calculates daily statistics and electricity costs.
 - **Bathroom Dehumidification (`heizen_rh.js`)**: Controls underfloor heating in the bathroom to reduce humidity after showering (mold prevention). Activates heating to 24°C when humidity rises, with window protection and automatic reset to previous or default temperatures.
-- **Doorbell & Call Monitor (`anruf_klingel_terrasse.js`)**: Detects incoming phone calls or doorbell rings via the FRITZ!Box TR-064 adapter, announces them via Google Speaker (SayIt) on the terrace with dynamic volume control, and dispatches notifications.
+- **Doorbell & Call Monitor (`anruf_klingel_terrasse.js`)**: Detects incoming phone calls or doorbell rings via the FRITZ!Box TR-064 adapter, announces them via Google Speaker (SayIt) on the terrace with dynamic volume control, dispatches notifications, and flashes the living room lights "Ei" (in blue) and "Kommode" on every doorbell ring.
 - **Waste Collection Notification**: Announces and visualizes the next day's waste collection type via voice and message at 6:00 PM the day before.
 - **Ventilation Recommendations**: Based on indoor and outdoor temperature and humidity.
 - **Alarm Detectors**: Acoustic and message-based smoke and water warnings.
@@ -101,6 +101,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.1.36] - 2026-07-19
+- feat(doorbell): Add visual doorbell alert with living room lights (anruf_klingel_terrasse.js)
+
 ### [3.1.35] - 2026-07-18
 - refactor(homematic): Use optional chaining for tag_name check (homematic_all.js)
 
@@ -112,8 +115,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.1.32] - 2026-07-16
 - fix(abendlicht): Improve smart home integration hiding and prevent sync errors (switch_abendlicht.js)
-
-### [3.1.31] - 2026-07-16
-- refactor(pihole): Remove redundant Pi-hole blocking percentage script (percent_blocking_both.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
