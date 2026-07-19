@@ -94,10 +94,13 @@ function triggerVisualAlert() {
     blinkTimeouts.push(timeoutId);
   }
 
-  // Nach dem letzten Aus (bei 4800ms) den gesicherten Zustand wiederherstellen
+  // Nach dem letzten Aus (bei 4800ms) den gesicherten Zustand wiederherstellen.
+  // Damit die Hue-Bridge die alten Werte (Farbe/Helligkeit) sicher übernimmt,
+  // setzen wir diese zuerst bei eingeschalteter Lampe (on: true) und schalten
+  // sie 300ms später aus, falls sie vor dem Klingeln aus war.
   const restoreTimeoutId = setTimeout(() => {
-    // Restore Ei
-    const restoreEi = { on: oldEi.on, transitiontime: 10 };
+    // Restore Ei (zuerst einschalten, um Werte zu schreiben)
+    const restoreEi = { on: true, transitiontime: 10 };
     if (oldEi.level !== null && oldEi.level !== undefined) restoreEi.level = oldEi.level;
     if (oldEi.ct !== null && oldEi.ct !== undefined) restoreEi.ct = oldEi.ct;
     if (oldEi.xy !== null && oldEi.xy !== undefined) {
@@ -105,16 +108,32 @@ function triggerVisualAlert() {
     }
     setState(ID_LAMP_EI_COMMAND, JSON.stringify(restoreEi));
 
-    // Restore Kommode
-    const restoreKommode = { on: oldKommode.on, transitiontime: 10 };
-    if (oldKommode.level !== null && oldKommode.level !== undefined)
+    // Restore Kommode (zuerst einschalten, um Werte zu schreiben)
+    const restoreKommode = { on: true, transitiontime: 10 };
+    if (oldKommode.level !== null && oldKommode.level !== undefined) {
       restoreKommode.level = oldKommode.level;
+    }
     if (oldKommode.ct !== null && oldKommode.ct !== undefined) restoreKommode.ct = oldKommode.ct;
     if (oldKommode.xy !== null && oldKommode.xy !== undefined) {
       restoreKommode.xy =
         typeof oldKommode.xy === "string" ? oldKommode.xy.split(",").map(Number) : oldKommode.xy;
     }
     setState(ID_LAMP_KOMMODE_COMMAND, JSON.stringify(restoreKommode));
+
+    // Falls die Lampen vorher aus waren, schalten wir sie nach 300ms aus
+    if (!oldEi.on) {
+      const offTimeoutEi = setTimeout(() => {
+        setState(ID_LAMP_EI_COMMAND, JSON.stringify({ on: false, transitiontime: 10 }));
+      }, 300);
+      blinkTimeouts.push(offTimeoutEi);
+    }
+
+    if (!oldKommode.on) {
+      const offTimeoutKommode = setTimeout(() => {
+        setState(ID_LAMP_KOMMODE_COMMAND, JSON.stringify({ on: false, transitiontime: 10 }));
+      }, 300);
+      blinkTimeouts.push(offTimeoutKommode);
+    }
   }, 4800);
 
   blinkTimeouts.push(restoreTimeoutId);

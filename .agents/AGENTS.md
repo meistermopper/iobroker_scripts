@@ -63,3 +63,8 @@ Jedes Skript sollte in zwei logische Abschnitte unterteilt sein:
   ```javascript
   console.error(`[Sonoff Fail] Gotify Fehler: ${error}`);
   ```
+
+## 5. Kommentierung & Lesbarkeit
+
+- **Ausführliche Kommentierung:**
+  Alle Skripte müssen ausführlich kommentiert werden. Jede logische Entscheidung, Datenpunkt-Verknüpfung, Timeouts und Hilfsfunktion muss klar dokumentiert sein. Kommentare im Code (JSDoc-Blöcke und Inline-Kommentare) sind immer auf Englisch zu verfassen (gemäß Sprachregelung), müssen jedoch so verständlich und detailliert sein, dass die Logik und der Ablauf der Skripte ohne Rätselraten nachvollzogen werden können.

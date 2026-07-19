@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.32] - 2026-07-16
+
+- fix(abendlicht): Improve smart home integration hiding and prevent sync errors (switch_abendlicht.js)
+
 ### [3.1.31] - 2026-07-16
 - refactor(pihole): Remove redundant Pi-hole blocking percentage script (percent_blocking_both.js)
 
