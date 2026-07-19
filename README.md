@@ -102,6 +102,7 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.2.1] - 2026-07-19
 - fix(fritzbox): Fix Hue lamp state restoration after visual alert (anruf_klingel_terrasse.js)
+- switch to harvia-fenix Adapter (sauna control)
 
 ### [3.1.36] - 2026-07-19
 
