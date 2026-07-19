@@ -19,7 +19,6 @@ The scripts are logically organized by rooms and functions:
 ### ⚡ Energy & Charging
 
 - **EV Charging Master (`charge_master.js`)**: Manages focused start/stop for Kia EV3 charging based on PV surplus or manual input. Includes battery protection for the house battery during manual charging, robust stop mechanisms for hanging wallbox states, connection monitoring, and intelligent wallbox resets to ensure reliable charging. Optimizes time formatting, kilometer calculation, and provides detailed statistics.
-- **Harvia Sauna Control (`Fenix_FX110C_Sauna_control.js`)**: Provides full remote control of the Harvia Fenix FX 110C sauna, including heating, lighting, and temperature settings via REST API. Features robust token management, error handling, and real-time status monitoring.
 - **Smart Charging (`fully_smart_laden.js`, `smartphones_laden.js`)**: Intelligent charging control for wall-mounted tablets and smartphones to protect battery life (e.g., 30-70% strategy) and manage automatic display shutdown. Includes self-healing data points, smart notifications, and voice control triggers.
 - **Solar Forecast (`solarprognose_master.js`)**: Visualizes today's and tomorrow's solar energy production values, tracks daily solar forecast vs. actual statistics, and supports Telegram/Gotify notifications.
 - **UPS Management**: Secures and restores the state of lights and sockets after a power outage (`hue_zigbee_states_restore.js`).
@@ -102,18 +101,23 @@ Script management is separated between development (Antigravity IDE) and runtime
 ## 📝 Changelog
 
 ### [3.1.36] - 2026-07-19
+
 - feat(doorbell): Add visual doorbell alert with living room lights (anruf_klingel_terrasse.js)
 
 ### [3.1.35] - 2026-07-18
+
 - refactor(homematic): Use optional chaining for tag_name check (homematic_all.js)
 
 ### [3.1.34] - 2026-07-18
+
 - feat(abendlicht): Extend legacy HUE state hiding and improve robustness (switch_abendlicht.js)
 
 ### [3.1.33] - 2026-07-17
+
 - feat(sauna, smart-home): Implement proactive token refresh and retry logic for sauna control; enhance smartName handling (Fenix_FX110C_Sauna_control.js, switch_abendlicht.js)
 
 ### [3.1.32] - 2026-07-16
+
 - fix(abendlicht): Improve smart home integration hiding and prevent sync errors (switch_abendlicht.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).

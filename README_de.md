@@ -19,7 +19,6 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 ### ⚡ Energie & Laden
 
 - **EV Lade-Master (`charge_master.js`)**: Verwaltet den gezielten Start/Stopp für das Laden des Kia EV3 basierend auf PV-Überschuss oder manueller Eingabe. Beinhaltet Batterieschutz für den Hausspeicher bei manuellem Laden, robuste Stopp-Mechanismen für hängende Wallbox-Zustände, Verbindungsüberwachung und intelligente Wallbox-Resets, um zuverlässiges Laden zu gewährleisten. Optimiert die Zeitformatierung, Kilometerberechnung und bietet detaillierte Statistiken.
-- **Harvia Sauna Steuerung (`Fenix_FX110C_Sauna_control.js`)**: Bietet die volle Fernsteuerung der Harvia Fenix FX 110C Sauna, einschließlich Heizung, Beleuchtung und Temperatureinstellungen über die REST-API. Verfügt über robustes Token-Management, Fehlerbehandlung und Echtzeit-Statusüberwachung.
 - **Intelligentes Laden (`fully_smart_laden.js`, `smartphones_laden.js`)**: Intelligente Ladesteuerung für wandmontierte Tablets und smartphones zur Schonung der Batterie (z.B. 30-70% Strategie) und Steuerung der automatischen Display-Abschaltung. Enthält selbstheilende Datenpunkte, intelligente Benachrichtigungen und Sprachsteuerungs-Trigger.
 - **Solar-Prognose (`solarprognose_master.js`)**: Visualisiert die Solarstromproduktion von heute und morgen, vergleicht Prognosen mit Ist-Werten und unterstützt Telegram/Gotify-Benachrichtigungen bei Updates.
 - **USV Management**: Sichert den Zustand von Lichtern und Steckdosen nach einem Stromausfall und stellt diesen wieder her (`hue_zigbee_states_restore.js`).
@@ -102,18 +101,23 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 ## 📝 Changelog
 
 ### [3.1.25] - 2026-07-14
+
 - feat(pv): Add daily solar forecast vs. actual statistics and enhance data collection (solarprognose_master.js)
 
 ### [3.1.24] - 2026-07-14
+
 - feat(vigor166): add DrayTek Vigor 166 connection status monitoring via Grafana webhooks (connected.js)
 
 ### [3.1.23] - 2026-07-14
+
 - feat(fritzbox): Integrate doorbell detection and notification (anruf_klingel_terrasse.js)
 
 ### [3.1.22] - 2026-07-13
+
 - chore(pv): Update solar panel azimuth configuration (solarprognose_master.js)
 
 ### [3.1.21] - 2026-07-13
+
 - feat(forecast.solar): Add Telegram and Gotify notifications for PV forecast updates (solarprognose_master.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).
