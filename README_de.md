@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.1.25-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.0-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -100,24 +100,28 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
-### [3.1.25] - 2026-07-14
+### [3.2.0] - 2026-07-19
 
-- feat(pv): Add daily solar forecast vs. actual statistics and enhance data collection (solarprognose_master.js)
+- feat(doorbell): Add visual doorbell alert with living room lights (anruf_klingel_terrasse.js)
 
-### [3.1.24] - 2026-07-14
+### [3.1.36] - 2026-07-19
 
-- feat(vigor166): add DrayTek Vigor 166 connection status monitoring via Grafana webhooks (connected.js)
+- feat(doorbell): Add visual doorbell alert with living room lights (anruf_klingel_terrasse.js)
 
-### [3.1.23] - 2026-07-14
+### [3.1.35] - 2026-07-18
 
-- feat(fritzbox): Integrate doorbell detection and notification (anruf_klingel_terrasse.js)
+- refactor(homematic): Use optional chaining for tag_name check (homematic_all.js)
 
-### [3.1.22] - 2026-07-13
+### [3.1.34] - 2026-07-18
 
-- chore(pv): Update solar panel azimuth configuration (solarprognose_master.js)
+- feat(abendlicht): Extend legacy HUE state hiding and improve robustness (switch_abendlicht.js)
 
-### [3.1.21] - 2026-07-13
+### [3.1.33] - 2026-07-17
 
-- feat(forecast.solar): Add Telegram and Gotify notifications for PV forecast updates (solarprognose_master.js)
+- feat(sauna, smart-home): Implement proactive token refresh and retry logic for sauna control; enhance smartName handling (Fenix_FX110C_Sauna_control.js, switch_abendlicht.js)
+
+### [3.1.32] - 2026-07-16
+
+- fix(abendlicht): Improve smart home integration hiding and prevent sync errors (switch_abendlicht.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

@@ -18,7 +18,16 @@ if (currentBranch !== "main" && currentBranch !== "master") {
   process.exit(0);
 }
 
-const README_PATH = path.join(__dirname, "README.md");
+const README_CONFIGS = [
+  {
+    path: path.join(__dirname, "README.md"),
+    archiveMarker: "Older entries can be found in the [Changelog Archive]"
+  },
+  {
+    path: path.join(__dirname, "README_de.md"),
+    archiveMarker: "Ältere Einträge finden sich im [Changelog-Archiv]"
+  }
+];
 const PKG_PATH = path.join(__dirname, "package.json");
 
 // Files that should never appear in the changelog
@@ -88,111 +97,115 @@ try {
   const fileList = changedFiles.map((f) => path.basename(f)).join(", ");
   const newEntry = `- ${commitMsg} (${fileList})`;
 
-  let content = fs.readFileSync(README_PATH, "utf8");
   const today = new Date().toISOString().split("T")[0];
   const versionHeader = `### [${currentVersion}] - ${today}`;
-
-  // 5. Update Version Badge in README
-  content = content.replace(/(Version-)(\d+\.\d+\.\d+)(-success)/, `$1${currentVersion}$3`);
-
   const changelogMarker = "## 📝 Changelog";
 
-  // 6. Logic: Handle existing or new version blocks
-  if (content.includes(versionHeader)) {
-    const lines = content.split("\n");
-    const headerIndex = lines.findIndex((l) => l.includes(versionHeader));
+  // Loop through all README configurations
+  for (const cfg of README_CONFIGS) {
+    let content = fs.readFileSync(cfg.path, "utf8");
 
-    // Check if this specific entry already exists for today
-    const entryExists = lines.some(
-      (line, index) => index > headerIndex && line.includes(commitMsg),
-    );
+    // 5. Update Version Badge in README
+    content = content.replace(/(Version-)(\d+\.\d+\.\d+)(-success)/, `$1${currentVersion}$3`);
 
-    if (!entryExists) {
-      lines.splice(headerIndex + 1, 0, newEntry);
-      content = lines.join("\n");
-      console.log(`[Changelog] Added entry to existing version ${currentVersion}.`);
-    } else {
-      console.log("[Changelog] Entry already exists in README.");
-      process.exit(0);
-    }
-  } else {
-    // Create a new version block
-    const newSection = `\n\n${versionHeader}\n${newEntry}`;
-    content = content.replace(changelogMarker, `${changelogMarker}${newSection}`);
-    console.log(`[Changelog] Created new block for version ${currentVersion}.`);
-  }
+    // 6. Logic: Handle existing or new version blocks
+    if (content.includes(versionHeader)) {
+      const lines = content.split("\n");
+      const headerIndex = lines.findIndex((l) => l.includes(versionHeader));
 
-  // 6b. Automatically limit README changelog to 5 entries and archive older ones
-  const archiveMarker = "Older entries can be found in the [Changelog Archive]";
-  const changelogStartIndex = content.indexOf(changelogMarker);
-  const archiveStartIndex = content.indexOf(archiveMarker);
-
-  if (changelogStartIndex !== -1 && archiveStartIndex !== -1) {
-    const changelogTextStart = changelogStartIndex + changelogMarker.length;
-    const changelogText = content.substring(changelogTextStart, archiveStartIndex);
-    const parts = changelogText.split("### [");
-
-    if (parts.length > 6) {
-      // Keep the first 5 entries (parts[1] to parts[5])
-      const header = parts[0];
-      const keepBlocks = parts.slice(1, 6).map((p) => `### [${p}`);
-      const archiveBlocks = parts.slice(6).map((p) => `### [${p}`);
-
-      // Reconstruct the new changelog text for README
-      const newChangelogText = header + keepBlocks.join("");
-
-      // Build the archived entries text to move to CHANGELOG_OLD.md
-      const archivedText = archiveBlocks.join("");
-
-      // Update README content
-      content =
-        content.substring(0, changelogTextStart) +
-        newChangelogText +
-        content.substring(archiveStartIndex);
-
-      // Update CHANGELOG_OLD.md
-      const OLD_CHANGELOG_PATH = path.join(__dirname, "CHANGELOG_OLD.md");
-      if (!fs.existsSync(OLD_CHANGELOG_PATH)) {
-        fs.writeFileSync(
-          OLD_CHANGELOG_PATH,
-          "# Changelog Archive\n\nThis archive contains older changelog entries for the ioBroker Script Collection.\n\n---\n",
-          "utf8",
-        );
-      }
-
-      let archiveContent = fs.readFileSync(OLD_CHANGELOG_PATH, "utf8");
-      const markerIndex = archiveContent.indexOf("---");
-
-      if (markerIndex !== -1) {
-        const insertPos = markerIndex + "---".length;
-        const before = archiveContent.substring(0, insertPos);
-        const after = archiveContent.substring(insertPos);
-        const formattedArchiveText = `\n\n${archivedText.trim()}\n`;
-        archiveContent = before + formattedArchiveText + after.replace(/^\s+/, "\n");
-      } else {
-        archiveContent = `${archivedText}\n${archiveContent}`;
-      }
-
-      fs.writeFileSync(OLD_CHANGELOG_PATH, archiveContent, "utf8");
-      console.log(
-        `[Changelog] Archived ${archiveBlocks.length} older entry/entries to CHANGELOG_OLD.md.`,
+      // Check if this specific entry already exists for today
+      const entryExists = lines.some(
+        (line, index) => index > headerIndex && line.includes(commitMsg),
       );
 
-      // Stage CHANGELOG_OLD.md as well
-      execSync(`git add "${OLD_CHANGELOG_PATH}"`);
+      if (!entryExists) {
+        lines.splice(headerIndex + 1, 0, newEntry);
+        content = lines.join("\n");
+        console.log(`[Changelog] Added entry to existing version ${currentVersion} in ${path.basename(cfg.path)}.`);
+      } else {
+        console.log(`[Changelog] Entry already exists in ${path.basename(cfg.path)}.`);
+      }
+    } else {
+      // Create a new version block
+      const newSection = `\n\n${versionHeader}\n${newEntry}`;
+      content = content.replace(changelogMarker, `${changelogMarker}${newSection}`);
+      console.log(`[Changelog] Created new block for version ${currentVersion} in ${path.basename(cfg.path)}.`);
     }
+
+    // 6b. Automatically limit README changelog to 5 entries and archive older ones
+    const changelogStartIndex = content.indexOf(changelogMarker);
+    const archiveStartIndex = content.indexOf(cfg.archiveMarker);
+
+    if (changelogStartIndex !== -1 && archiveStartIndex !== -1) {
+      const changelogTextStart = changelogStartIndex + changelogMarker.length;
+      const changelogText = content.substring(changelogTextStart, archiveStartIndex);
+      const parts = changelogText.split("### [");
+
+      if (parts.length > 6) {
+        // Keep the first 5 entries (parts[1] to parts[5])
+        const header = parts[0];
+        const keepBlocks = parts.slice(1, 6).map((p) => `### [${p}`);
+        const archiveBlocks = parts.slice(6).map((p) => `### [${p}`);
+
+        // Reconstruct the new changelog text for README
+        const newChangelogText = header + keepBlocks.join("");
+
+        // Build the archived entries text to move to CHANGELOG_OLD.md
+        const archivedText = archiveBlocks.join("");
+
+        // Update README content
+        content =
+          content.substring(0, changelogTextStart) +
+          newChangelogText +
+          content.substring(archiveStartIndex);
+
+        // Update CHANGELOG_OLD.md (only once, based on the English version)
+        if (cfg.path.endsWith("README.md")) {
+          const OLD_CHANGELOG_PATH = path.join(__dirname, "CHANGELOG_OLD.md");
+          if (!fs.existsSync(OLD_CHANGELOG_PATH)) {
+            fs.writeFileSync(
+              OLD_CHANGELOG_PATH,
+              "# Changelog Archive\n\nThis archive contains older changelog entries for the ioBroker Script Collection.\n\n---\n",
+              "utf8",
+            );
+          }
+
+          let archiveContent = fs.readFileSync(OLD_CHANGELOG_PATH, "utf8");
+          const markerIndex = archiveContent.indexOf("---");
+
+          if (markerIndex !== -1) {
+            const insertPos = markerIndex + "---".length;
+            const before = archiveContent.substring(0, insertPos);
+            const after = archiveContent.substring(insertPos);
+            const formattedArchiveText = `\n\n${archivedText.trim()}\n`;
+            archiveContent = before + formattedArchiveText + after.replace(/^\s+/, "\n");
+          } else {
+            archiveContent = `${archivedText}\n${archiveContent}`;
+          }
+
+          fs.writeFileSync(OLD_CHANGELOG_PATH, archiveContent, "utf8");
+          console.log(
+            `[Changelog] Archived ${archiveBlocks.length} older entry/entries to CHANGELOG_OLD.md.`,
+          );
+
+          // Stage CHANGELOG_OLD.md as well
+          execSync(`git add "${OLD_CHANGELOG_PATH}"`);
+        }
+      }
+    }
+
+    fs.writeFileSync(cfg.path, content, "utf8");
+    console.log(`[Changelog] ${path.basename(cfg.path)} successfully updated to version ${currentVersion}.`);
   }
 
-  // Write updated package.json and README.md
+  // Write updated package.json
   pkg.version = currentVersion;
   fs.writeFileSync(PKG_PATH, `${JSON.stringify(pkg, null, 2)}\n`, "utf8");
   console.log(`[Changelog] package.json updated: ${oldVersion} -> ${currentVersion}`);
 
-  fs.writeFileSync(README_PATH, content, "utf8");
-  console.log(`[Changelog] README.md successfully updated to version ${currentVersion}.`);
-
-  // 7. ATOMIC UPDATE: Amend the commit to include the package.json and README changes
-  execSync(`git add "${PKG_PATH}" "${README_PATH}"`);
+  // 7. ATOMIC UPDATE: Amend the commit to include package.json and both README changes
+  const readmePathsList = README_CONFIGS.map((cfg) => `"${cfg.path}"`).join(" ");
+  execSync(`git add "${PKG_PATH}" ${readmePathsList}`);
 
   execSync("git commit --amend --no-edit", {
     env: { ...process.env, SKIP_CHANGELOG_HOOK: "1" },
