@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.33] - 2026-07-17
+
+- feat(sauna, smart-home): Implement proactive token refresh and retry logic for sauna control; enhance smartName handling (Fenix_FX110C_Sauna_control.js, switch_abendlicht.js)
+
 ### [3.1.32] - 2026-07-16
 
 - fix(abendlicht): Improve smart home integration hiding and prevent sync errors (switch_abendlicht.js)
