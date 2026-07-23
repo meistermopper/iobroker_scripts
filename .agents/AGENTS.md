@@ -71,6 +71,9 @@ Jedes Skript sollte in zwei logische Abschnitte unterteilt sein:
 
 ## 6. Objektexistenzprüfung & Objektmanipulation
 
+- **Datenpunkterstellung in Skripten (`createStateAsync` statt `setObjectNotExists`):**
+  - **Verwende niemals `setObjectNotExists` oder `setObjectNotExistsAsync` in Skripten!** Diese Methoden existieren nur im ioBroker-Adapter-Kontext. In Skripten der JavaScript-Engine führen sie zu einem `ReferenceError: setObjectNotExists is not defined`.
+  - Verwende zur Erstellung neuer Datenpunkte immer `await createStateAsync(id, defVal, { name, type, role, read, write, unit })` oder `createState()`.
 - **Objektexistenz vor `extendObject()` / `setObject()` prüfen:**
   - Bevor bestehende Objekte oder deren Metadaten via `extendObject()` oder `setObject()` verändert werden, **muss** immer mit `existsObject(id)` (oder `await existsObjectAsync(id)`) geprüft werden, ob das Objekt in der Objektdatenbank existiert.
     ```javascript
@@ -79,3 +82,7 @@ Jedes Skript sollte in zwei logische Abschnitte unterteilt sein:
     }
     ```
   - **Hintergrund:** Ein Aufruf von `extendObject()` auf nicht existierende Objekt-IDs führt im ioBroker js-controller zu Fehlermeldungen (`Object "..." can't be copied: {}`).
+
+## 7. Date-Arithmetik (TypeScript-Konformität)
+
+- Bei Differenzberechnungen oder Vergleichen von `Date`-Objekten verwende immer `.getTime()` (z. B. `date.getTime() - start.getTime()`), um TypeScript-Compilerfehler bezüglich arithmetischer Operatoren zu vermeiden.

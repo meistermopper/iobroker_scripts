@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.5-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.6-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -100,6 +100,9 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.2.6] - 2026-07-23
+- refactor(global): Introduce and apply state creation and date arithmetic best practices (energiemaster_und_sauna.js, homematic_all.js, kalender.js)
+
 ### [3.2.5] - 2026-07-23
 - fix(global): Prevent object modification errors and improve creation (homematic_all.js, kalender.js, switch_abendlicht.js)
 
@@ -111,10 +114,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ### [3.2.2] - 2026-07-21
 - feat(pihole): Implement Pi-hole blocked queries percentage extraction (percent_blocked.js)
-
-### [3.2.1] - 2026-07-19
-
-- fix(fritzbox): Fix Hue lamp state restoration after visual alert (anruf_klingel_terrasse.js)
-- switch to harvia-fenix Adapter (sauna control)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

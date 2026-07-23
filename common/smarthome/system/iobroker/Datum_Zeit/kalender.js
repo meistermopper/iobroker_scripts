@@ -40,7 +40,7 @@ const isLeapYear = (year) => (year % 4 === 0 && year % 100 !== 0) || year % 400 
 const getQuarter = (date) => Math.floor(date.getMonth() / 3) + 1;
 const getDayOfYear = (date) => {
   const start = new Date(date.getFullYear(), 0, 0);
-  const diff = date - start;
+  const diff = date.getTime() - start.getTime();
   const oneDay = 1000 * 60 * 60 * 24;
   return Math.floor(diff / oneDay);
 };
@@ -51,12 +51,12 @@ function getKW(date) {
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const kw = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  const kw = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   return { num: kw, even: kw % 2 === 0 };
 }
 
-// Objekte anlegen mit der Standard-Funktion (synchron im Hintergrund)
-function initObjects() {
+// Objekte anlegen mit createStateAsync
+async function initObjects() {
   const states = [
     ["Jahr.Zahl", "number", "Kalender - Jahreszahl"],
     ["Jahr.Schaltjahr", "boolean", "Kalender - Schaltjahr"],
@@ -70,20 +70,19 @@ function initObjects() {
     ["Datum.tagmonattext", "string", "Datum formatiert"],
   ];
 
-  states.forEach(([id, type, name, unit]) => {
-    setObjectNotExists(`${path}.${id}`, {
-      type: "state",
-      common: {
-        name: name,
-        type: type,
-        role: "value",
-        read: true,
-        write: false,
-        unit: unit || "",
-      },
-      native: {},
+  for (const [id, type, name, unit] of states) {
+    /** @type {any} */
+    const stateType = type;
+    const defVal = type === "boolean" ? false : type === "number" ? 0 : "";
+    await createStateAsync(`${path}.${id}`, defVal, {
+      name: name,
+      type: stateType,
+      role: "value",
+      read: true,
+      write: false,
+      unit: unit || "",
     });
-  });
+  }
 }
 
 function updateDateInfo() {

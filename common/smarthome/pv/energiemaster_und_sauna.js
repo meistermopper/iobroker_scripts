@@ -82,25 +82,16 @@ async function initSystem() {
     if (!existsState(s.id)) {
       const name = s.id.split(".").pop();
       const def = s.type === "boolean" ? false : s.type === "string" ? "" : 0;
-
-      if (s.id.startsWith("0_userdata.0")) {
-        // Sicherstellen, dass der Datenpunkt in 0_userdata existiert
-        await setObjectNotExistsAsync(s.id, {
-          type: "state",
-          common: {
-            name: name,
-            type: s.type,
-            role: "value",
-            unit: s.unit || "",
-            read: true,
-            write: true,
-            def: def,
-          },
-          native: {},
-        });
-      } else {
-        await createStateAsync(s.id, def, { type: s.type, unit: s.unit, name: name });
-      }
+      /** @type {any} */
+      const stateType = s.type;
+      await createStateAsync(s.id, def, {
+        name: name,
+        type: stateType,
+        role: "value",
+        unit: s.unit || "",
+        read: true,
+        write: true,
+      });
     }
   }
   // Werte laden, damit Zähler nach Skript-Neustart weiterlaufen

@@ -32,56 +32,45 @@ const SelectorCONFIG = $("channel[state.id=*.CONFIG_PENDING]");
 /**
  * 1. Initialisierung der Datenpunkte
  * Erstellt die benötigten Datenpunkte unter dem konfigurierten Stammverzeichnis (PATH), falls sie noch nicht existieren.
- * Verwendet setObjectNotExists zur sicheren Erstellung mit Vordefinition der Metadaten.
+ * Verwendet createStateAsync zur sicheren Erstellung mit Vordefinition der Metadaten.
  */
-function init() {
+async function init() {
   const states = [
     ["Anzahl", "number", "Anzahl Servicemeldungen", ""],
     ["Text", "string", "Servicemeldungen Text", ""],
     ["Firmware_Update", "boolean", "CCU Firmware Update verfügbar", ""],
   ];
 
-  states.forEach(([id, type, name, unit]) => {
+  for (const [id, type, name, unit] of states) {
     /** @type {any} */
     const stateType = type;
-    setObjectNotExists(`${PATH}.${id}`, {
-      type: "state",
-      common: {
-        name: name,
-        type: stateType,
-        // Firmware-Update ist ein Wartungsindikator, die anderen sind reguläre Werte
-        role: type === "boolean" ? "indicator.maintenance" : "value",
-        read: true,
-        write: false,
-        unit: unit,
-      },
-      native: {},
+    const defVal = type === "boolean" ? false : type === "number" ? 0 : "";
+    await createStateAsync(`${PATH}.${id}`, defVal, {
+      name: name,
+      type: stateType,
+      // Firmware-Update ist ein Wartungsindikator, die anderen sind reguläre Werte
+      role: type === "boolean" ? "indicator.maintenance" : "value",
+      read: true,
+      write: false,
+      unit: unit,
     });
-  });
+  }
 
   // Sicherstellen, dass die Datenpunkte unter 0_userdata.0.ccu existieren
-  setObjectNotExists(ID_ONLINE_FW, {
-    type: "state",
-    common: {
-      name: "Verfügbare CCU-Firmware",
-      type: "string",
-      role: "info.version",
-      read: true,
-      write: false,
-    },
-    native: {},
+  await createStateAsync(ID_ONLINE_FW, "", {
+    name: "Verfügbare CCU-Firmware",
+    type: "string",
+    role: "info.version",
+    read: true,
+    write: false,
   });
 
-  setObjectNotExists(ID_NEW_FW, {
-    type: "state",
-    common: {
-      name: "Neue CCU Firmware verfügbar",
-      type: "boolean",
-      role: "indicator.maintenance",
-      read: true,
-      write: false,
-    },
-    native: {},
+  await createStateAsync(ID_NEW_FW, false, {
+    name: "Neue CCU Firmware verfügbar",
+    type: "boolean",
+    role: "indicator.maintenance",
+    read: true,
+    write: false,
   });
 }
 

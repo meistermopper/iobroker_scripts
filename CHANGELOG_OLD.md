@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.1] - 2026-07-19
+- fix(fritzbox): Fix Hue lamp state restoration after visual alert (anruf_klingel_terrasse.js)
+- switch to harvia-fenix Adapter (sauna control)
+
 ### [3.1.36] - 2026-07-19
 
 - feat(doorbell): Add visual doorbell alert with living room lights (anruf_klingel_terrasse.js)
