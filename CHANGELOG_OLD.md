@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.36] - 2026-07-19
+
+- feat(doorbell): Add visual doorbell alert with living room lights (anruf_klingel_terrasse.js)
+
 ### [3.1.35] - 2026-07-18
 
 - refactor(homematic): Use optional chaining for tag_name check (homematic_all.js)

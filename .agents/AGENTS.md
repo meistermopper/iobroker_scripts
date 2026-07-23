@@ -68,3 +68,14 @@ Jedes Skript sollte in zwei logische Abschnitte unterteilt sein:
 
 - **Ausführliche Kommentierung:**
   Alle Skripte müssen ausführlich kommentiert werden. Jede logische Entscheidung, Datenpunkt-Verknüpfung, Timeouts und Hilfsfunktion muss klar dokumentiert sein. Kommentare im Code (JSDoc-Blöcke und Inline-Kommentare) sind immer auf Englisch zu verfassen (gemäß Sprachregelung), müssen jedoch so verständlich und detailliert sein, dass die Logik und der Ablauf der Skripte ohne Rätselraten nachvollzogen werden können.
+
+## 6. Objektexistenzprüfung & Objektmanipulation
+
+- **Objektexistenz vor `extendObject()` / `setObject()` prüfen:**
+  - Bevor bestehende Objekte oder deren Metadaten via `extendObject()` oder `setObject()` verändert werden, **muss** immer mit `existsObject(id)` (oder `await existsObjectAsync(id)`) geprüft werden, ob das Objekt in der Objektdatenbank existiert.
+    ```javascript
+    if (existsObject(id)) {
+      extendObject(id, { ... });
+    }
+    ```
+  - **Hintergrund:** Ein Aufruf von `extendObject()` auf nicht existierende Objekt-IDs führt im ioBroker js-controller zu Fehlermeldungen (`Object "..." can't be copied: {}`).

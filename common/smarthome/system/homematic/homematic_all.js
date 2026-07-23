@@ -31,8 +31,8 @@ const SelectorCONFIG = $("channel[state.id=*.CONFIG_PENDING]");
 
 /**
  * 1. Initialisierung der Datenpunkte
- * Erstellt oder aktualisiert die benötigten Datenpunkte unter dem konfigurierten Stammverzeichnis (PATH).
- * Verwendet extendObject zur sicheren Erstellung mit Vordefinition der Metadaten.
+ * Erstellt die benötigten Datenpunkte unter dem konfigurierten Stammverzeichnis (PATH), falls sie noch nicht existieren.
+ * Verwendet setObjectNotExists zur sicheren Erstellung mit Vordefinition der Metadaten.
  */
 function init() {
   const states = [
@@ -44,7 +44,7 @@ function init() {
   states.forEach(([id, type, name, unit]) => {
     /** @type {any} */
     const stateType = type;
-    extendObject(`${PATH}.${id}`, {
+    setObjectNotExists(`${PATH}.${id}`, {
       type: "state",
       common: {
         name: name,
@@ -60,7 +60,7 @@ function init() {
   });
 
   // Sicherstellen, dass die Datenpunkte unter 0_userdata.0.ccu existieren
-  extendObject(ID_ONLINE_FW, {
+  setObjectNotExists(ID_ONLINE_FW, {
     type: "state",
     common: {
       name: "Verfügbare CCU-Firmware",
@@ -72,7 +72,7 @@ function init() {
     native: {},
   });
 
-  extendObject(ID_NEW_FW, {
+  setObjectNotExists(ID_NEW_FW, {
     type: "state",
     common: {
       name: "Neue CCU Firmware verfügbar",

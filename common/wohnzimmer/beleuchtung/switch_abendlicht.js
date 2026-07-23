@@ -54,42 +54,46 @@ function repairAndHide() {
 
   // 1. Repair alias command states and hide them from Google Home / Alexa
   configs.forEach((cfg) => {
-    extendObject(
-      cfg.id,
-      {
-        type: "state",
-        common: {
-          type: "string", // Hue commands are JSON strings
-          role: "text", // Prevents GHOME/Alexa from auto-detecting this as a light/switch
-          smartName: false,
-        },
-        native: {
-          alias: {
-            id: cfg.target, // Link to actual hardware target
+    if (existsObject(cfg.id)) {
+      extendObject(
+        cfg.id,
+        {
+          type: "state",
+          common: {
+            type: "string", // Hue commands are JSON strings
+            role: "text", // Prevents GHOME/Alexa from auto-detecting this as a light/switch
+            smartName: false,
+          },
+          native: {
+            alias: {
+              id: cfg.target, // Link to actual hardware target
+            },
           },
         },
-      },
-      (err) => {
-        if (err) console.error(`[Abendlicht] Error repairing alias ${cfg.id}: ${err}`);
-        else console.log(`[Abendlicht] Info: Alias ${cfg.id} initialized`);
-      },
-    );
+        (err) => {
+          if (err) console.error(`[Abendlicht] Error repairing alias ${cfg.id}: ${err}`);
+          else console.log(`[Abendlicht] Info: Alias ${cfg.id} initialized`);
+        },
+      );
+    }
 
     // 2. Also hide the hardware target command state from Google Home / Alexa
-    extendObject(
-      cfg.target,
-      {
-        type: "state",
-        common: {
-          role: "text", // Prevents GHOME/Alexa from auto-detecting this as a light/switch
-          smartName: false,
+    if (existsObject(cfg.target)) {
+      extendObject(
+        cfg.target,
+        {
+          type: "state",
+          common: {
+            role: "text", // Prevents GHOME/Alexa from auto-detecting this as a light/switch
+            smartName: false,
+          },
         },
-      },
-      (err) => {
-        if (err) console.error(`[Abendlicht] Error configuring target ${cfg.target}: ${err}`);
-        else console.log(`[Abendlicht] Info: Target ${cfg.target} initialized`);
-      },
-    );
+        (err) => {
+          if (err) console.error(`[Abendlicht] Error configuring target ${cfg.target}: ${err}`);
+          else console.log(`[Abendlicht] Info: Target ${cfg.target} initialized`);
+        },
+      );
+    }
   });
 
   // 3. Disable GHOME/Alexa synchronization on raw hardware devices/channels and unsupported states (.xy)
@@ -107,48 +111,44 @@ function repairAndHide() {
   ];
 
   objectsToHide.forEach((id) => {
-    getObject(id, (err, obj) => {
-      if (!err && obj) {
-        extendObject(
-          id,
-          {
-            common: {
-              smartName: false,
-            },
+    if (existsObject(id)) {
+      extendObject(
+        id,
+        {
+          common: {
+            smartName: false,
           },
-          (extendErr) => {
-            if (extendErr) console.error(`[Abendlicht] Error hiding ${id}: ${extendErr}`);
-            else console.log(`[Abendlicht] Info: Hidden object ${id} from GHOME/Alexa`);
-          },
-        );
-      }
-    });
+        },
+        (extendErr) => {
+          if (extendErr) console.error(`[Abendlicht] Error hiding ${id}: ${extendErr}`);
+          else console.log(`[Abendlicht] Info: Hidden object ${id} from GHOME/Alexa`);
+        },
+      );
+    }
   });
 
   // 4. Configure color temperature (ct) states with proper unit to enable Mired -> Kelvin translation in iot.0
   const ctStates = ["hue.0.Ei.ct", "alias.0.licht.ei.ct"];
 
   ctStates.forEach((id) => {
-    getObject(id, (err, obj) => {
-      if (!err && obj) {
-        extendObject(
-          id,
-          {
-            common: {
-              role: "level.color.temperature",
-              unit: "mired",
-              min: 153,
-              max: 500,
-            },
+    if (existsObject(id)) {
+      extendObject(
+        id,
+        {
+          common: {
+            role: "level.color.temperature",
+            unit: "mired",
+            min: 153,
+            max: 500,
           },
-          (extendErr) => {
-            if (extendErr)
-              console.error(`[Abendlicht] Error updating ct config for ${id}: ${extendErr}`);
-            else console.log(`[Abendlicht] Info: Configured ct state ${id} (mired/153-500)`);
-          },
-        );
-      }
-    });
+        },
+        (extendErr) => {
+          if (extendErr)
+            console.error(`[Abendlicht] Error updating ct config for ${id}: ${extendErr}`);
+          else console.log(`[Abendlicht] Info: Configured ct state ${id} (mired/153-500)`);
+        },
+      );
+    }
   });
 }
 

@@ -71,7 +71,7 @@ function initObjects() {
   ];
 
   states.forEach(([id, type, name, unit]) => {
-    extendObject(`${path}.${id}`, {
+    setObjectNotExists(`${path}.${id}`, {
       type: "state",
       common: {
         name: name,
