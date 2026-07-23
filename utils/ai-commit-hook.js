@@ -31,8 +31,12 @@ async function generateCommitMessage(diff) {
   if (!apiKey) {
     // Falls kein Key gesetzt ist, warnen wir den Benutzer, brechen den Commit
     // aber nicht ab, damit man wie gewohnt manuell committen kann.
-    console.warn("\n⚠️ [AI-Commit-Hook] Warnung: Die Umgebungsvariable GEMINI_API_KEY ist nicht gesetzt!");
-    console.warn("Bitte erstelle einen kostenlosen Key im Google AI Studio, um automatische Commit-Nachrichten zu aktivieren.\n");
+    console.warn(
+      "\n⚠️ [AI-Commit-Hook] Warnung: Die Umgebungsvariable GEMINI_API_KEY ist nicht gesetzt!",
+    );
+    console.warn(
+      "Bitte erstelle einen kostenlosen Key im Google AI Studio, um automatische Commit-Nachrichten zu aktivieren.\n",
+    );
     return null;
   }
 
@@ -62,8 +66,8 @@ ${diff}`;
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }]
-    })
+      contents: [{ parts: [{ text: prompt }] }],
+    }),
   });
 
   if (!response.ok) {
@@ -87,9 +91,10 @@ async function main() {
   // Wir lesen die Datei ein und ignorieren alle Git-Kommentare (Zeilen mit #).
   let existingContent = "";
   if (fs.existsSync(commitMsgFile)) {
-    existingContent = fs.readFileSync(commitMsgFile, "utf-8")
+    existingContent = fs
+      .readFileSync(commitMsgFile, "utf-8")
       .split("\n")
-      .filter(line => !line.trim().startsWith("#"))
+      .filter((line) => !line.trim().startsWith("#"))
       .join("\n")
       .trim();
   }

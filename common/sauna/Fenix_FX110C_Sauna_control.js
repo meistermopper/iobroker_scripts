@@ -193,7 +193,9 @@ async function setSaunaState(stateName, value, isRetry = false) {
 
   // Vorab-Token-Check: Falls Token älter als 45 Minuten ist, proaktiv erneuern
   if (!isRetry && idToken && Date.now() - lastLoginTime > 45 * 60 * 1000) {
-    console.log("[Harvia] Token ist älter als 45 Minuten. Proaktives Refresh vor Befehlsübermittlung...");
+    console.log(
+      "[Harvia] Token ist älter als 45 Minuten. Proaktives Refresh vor Befehlsübermittlung...",
+    );
     await login();
   }
 
@@ -243,7 +245,9 @@ async function setSaunaState(stateName, value, isRetry = false) {
             failureReason = response.data ? response.data.failureReason : "Unbekannt";
             if (failureReason.includes("Device unavailable") && attempts < maxAttempts - 1) {
               attempts++;
-              console.log(`[Harvia] Cloud-Sperre (Device unavailable) bei '${stateName}'. Wiederholung ${attempts}/${maxAttempts} in 1.5s...`);
+              console.log(
+                `[Harvia] Cloud-Sperre (Device unavailable) bei '${stateName}'. Wiederholung ${attempts}/${maxAttempts} in 1.5s...`,
+              );
               await wait(1500);
               continue;
             }
@@ -253,7 +257,9 @@ async function setSaunaState(stateName, value, isRetry = false) {
           const detail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
           if (detail.includes("Device unavailable") && attempts < maxAttempts - 1) {
             attempts++;
-            console.log(`[Harvia] Cloud-Fehler (Device unavailable) bei '${stateName}'. Wiederholung ${attempts}/${maxAttempts} in 1.5s...`);
+            console.log(
+              `[Harvia] Cloud-Fehler (Device unavailable) bei '${stateName}'. Wiederholung ${attempts}/${maxAttempts} in 1.5s...`,
+            );
             await wait(1500);
             continue;
           }
@@ -304,7 +310,9 @@ async function setSaunaState(stateName, value, isRetry = false) {
           const detail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
           if (detail.includes("Device unavailable") && attempts < maxAttempts - 1) {
             attempts++;
-            console.log(`[Harvia] Cloud-Fehler (Device unavailable) bei '${stateName}'. Wiederholung ${attempts}/${maxAttempts} in 1.5s...`);
+            console.log(
+              `[Harvia] Cloud-Fehler (Device unavailable) bei '${stateName}'. Wiederholung ${attempts}/${maxAttempts} in 1.5s...`,
+            );
             await wait(1500);
             continue;
           }

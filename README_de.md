@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.3-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.4-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -100,6 +100,9 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.2.4] - 2026-07-23
+- style(global): Apply consistent code formatting (Fenix_FX110C_Sauna_control.js, setup_secrets.js, ai-commit-hook.js)
+
 ### [3.2.3] - 2026-07-23
 - feat(beleuchtung): Configure CT states for proper IoT integration and refine object hiding (switch_abendlicht.js)
 
@@ -112,10 +115,6 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 - switch to harvia-fenix Adapter (sauna control)
 
 ### [3.2.0] - 2026-07-19
-
-- feat(doorbell): Add visual doorbell alert with living room lights (anruf_klingel_terrasse.js)
-
-### [3.1.36] - 2026-07-19
 
 - feat(doorbell): Add visual doorbell alert with living room lights (anruf_klingel_terrasse.js)
 

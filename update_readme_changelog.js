@@ -21,12 +21,12 @@ if (currentBranch !== "main" && currentBranch !== "master") {
 const README_CONFIGS = [
   {
     path: path.join(__dirname, "README.md"),
-    archiveMarker: "Older entries can be found in the [Changelog Archive]"
+    archiveMarker: "Older entries can be found in the [Changelog Archive]",
   },
   {
     path: path.join(__dirname, "README_de.md"),
-    archiveMarker: "Ältere Einträge finden sich im [Changelog-Archiv]"
-  }
+    archiveMarker: "Ältere Einträge finden sich im [Changelog-Archiv]",
+  },
 ];
 const PKG_PATH = path.join(__dirname, "package.json");
 
@@ -121,7 +121,9 @@ try {
       if (!entryExists) {
         lines.splice(headerIndex + 1, 0, newEntry);
         content = lines.join("\n");
-        console.log(`[Changelog] Added entry to existing version ${currentVersion} in ${path.basename(cfg.path)}.`);
+        console.log(
+          `[Changelog] Added entry to existing version ${currentVersion} in ${path.basename(cfg.path)}.`,
+        );
       } else {
         console.log(`[Changelog] Entry already exists in ${path.basename(cfg.path)}.`);
       }
@@ -129,7 +131,9 @@ try {
       // Create a new version block
       const newSection = `\n\n${versionHeader}\n${newEntry}`;
       content = content.replace(changelogMarker, `${changelogMarker}${newSection}`);
-      console.log(`[Changelog] Created new block for version ${currentVersion} in ${path.basename(cfg.path)}.`);
+      console.log(
+        `[Changelog] Created new block for version ${currentVersion} in ${path.basename(cfg.path)}.`,
+      );
     }
 
     // 6b. Automatically limit README changelog to 5 entries and archive older ones
@@ -195,7 +199,9 @@ try {
     }
 
     fs.writeFileSync(cfg.path, content, "utf8");
-    console.log(`[Changelog] ${path.basename(cfg.path)} successfully updated to version ${currentVersion}.`);
+    console.log(
+      `[Changelog] ${path.basename(cfg.path)} successfully updated to version ${currentVersion}.`,
+    );
   }
 
   // Write updated package.json
