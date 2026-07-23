@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.1.34] - 2026-07-18
+
+- feat(abendlicht): Extend legacy HUE state hiding and improve robustness (switch_abendlicht.js)
+
 ### [3.1.33] - 2026-07-17
 
 - feat(sauna, smart-home): Implement proactive token refresh and retry logic for sauna control; enhance smartName handling (Fenix_FX110C_Sauna_control.js, switch_abendlicht.js)

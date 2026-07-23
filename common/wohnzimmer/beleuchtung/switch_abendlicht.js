@@ -43,8 +43,8 @@ function limit(val, min, max) {
 }
 
 /**
- * Repairs the alias objects and disables Google Home / Alexa synchronization.
- * Prevents "Invalid Argument" (Error 400) and "no target" errors.
+ * Repairs the alias objects and disables Google Home / Alexa synchronization for raw hardware devices.
+ * Configures color temperature states to use Mireds so iot.0 can properly translate values to Kelvin.
  */
 function repairAndHide() {
   const configs = [
@@ -52,7 +52,7 @@ function repairAndHide() {
     { id: ALIAS_EI, target: TARGET_EI },
   ];
 
-  // 1. Repair alias and hide it from Google Home / Alexa
+  // 1. Repair alias command states and hide them from Google Home / Alexa
   configs.forEach((cfg) => {
     extendObject(
       cfg.id,
@@ -75,7 +75,7 @@ function repairAndHide() {
       },
     );
 
-    // 2. Also hide the hardware target from Google Home / Alexa to prevent transition sync errors
+    // 2. Also hide the hardware target command state from Google Home / Alexa
     extendObject(
       cfg.target,
       {
@@ -92,33 +92,63 @@ function repairAndHide() {
     );
   });
 
-  // 3. Disable legacy GHOME/Alexa settings on actual HUE states to prevent sync errors during transition
-  const legacyStates = [
+  // 3. Disable GHOME/Alexa synchronization on raw hardware devices/channels and unsupported states (.xy)
+  const objectsToHide = [
+    "hue.0.Ei",
+    "hue.0.Kommode",
     "hue.0.Ei.on",
     "hue.0.Ei.level",
-    "hue.0.Ei.ct",
     "hue.0.Ei.xy",
     "hue.0.Kommode.on",
     "hue.0.Kommode.level",
-    "hue.0.Kommode.ct",
     "hue.0.Kommode.xy",
+    "alias.0.licht.ei.xy",
+    "alias.0.licht.kommode.xy",
   ];
 
-  legacyStates.forEach((stateId) => {
-    if (existsObject(stateId)) {
-      extendObject(
-        stateId,
-        {
-          common: {
-            smartName: false,
+  objectsToHide.forEach((id) => {
+    getObject(id, (err, obj) => {
+      if (!err && obj) {
+        extendObject(
+          id,
+          {
+            common: {
+              smartName: false,
+            },
           },
-        },
-        (err) => {
-          if (err) console.error(`[Abendlicht] Error hiding legacy state ${stateId}: ${err}`);
-          else console.log(`[Abendlicht] Info: Legacy state ${stateId} hidden from GHOME/Alexa`);
-        },
-      );
-    }
+          (extendErr) => {
+            if (extendErr) console.error(`[Abendlicht] Error hiding ${id}: ${extendErr}`);
+            else console.log(`[Abendlicht] Info: Hidden object ${id} from GHOME/Alexa`);
+          },
+        );
+      }
+    });
+  });
+
+  // 4. Configure color temperature (ct) states with proper unit to enable Mired -> Kelvin translation in iot.0
+  const ctStates = ["hue.0.Ei.ct", "alias.0.licht.ei.ct"];
+
+  ctStates.forEach((id) => {
+    getObject(id, (err, obj) => {
+      if (!err && obj) {
+        extendObject(
+          id,
+          {
+            common: {
+              role: "level.color.temperature",
+              unit: "mired",
+              min: 153,
+              max: 500,
+            },
+          },
+          (extendErr) => {
+            if (extendErr)
+              console.error(`[Abendlicht] Error updating ct config for ${id}: ${extendErr}`);
+            else console.log(`[Abendlicht] Info: Configured ct state ${id} (mired/153-500)`);
+          },
+        );
+      }
+    });
   });
 }
 

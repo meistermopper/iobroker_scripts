@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.2-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.3-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -100,6 +100,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.2.3] - 2026-07-23
+- feat(beleuchtung): Configure CT states for proper IoT integration and refine object hiding (switch_abendlicht.js)
+
 ### [3.2.2] - 2026-07-21
 - feat(pihole): Implement Pi-hole blocked queries percentage extraction (percent_blocked.js)
 
@@ -114,9 +117,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 ### [3.1.35] - 2026-07-18
 
 - refactor(homematic): Use optional chaining for tag_name check (homematic_all.js)
-
-### [3.1.34] - 2026-07-18
-
-- feat(abendlicht): Extend legacy HUE state hiding and improve robustness (switch_abendlicht.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
