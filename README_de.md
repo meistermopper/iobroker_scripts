@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.8-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.10-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -101,6 +101,12 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.2.10] - 2026-07-24
+- fix(vitrine): Add offline notifications and reachability check for vitrine light (licht.js)
+
+### [3.2.9] - 2026-07-24
+- fix(vitrine): Benachrichtigungen bei Offline-Status (Telegram, Gotify, SayIt) und Erreichbarkeitsprüfung in licht.js hinzugefügt
+
 ### [3.2.8] - 2026-07-24
 - fix(vitrine): Ensure vitrine colorloop starts reliably (licht.js)
 
@@ -112,13 +118,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 ### [3.2.6] - 2026-07-23
 
 - refactor(global): Introduce and apply state creation and date arithmetic best practices (energiemaster_und_sauna.js, homematic_all.js, kalender.js)
-
-### [3.2.5] - 2026-07-23
-
-- fix(global): Prevent object modification errors and improve creation (homematic_all.js, kalender.js, switch_abendlicht.js)
-
-### [3.2.4] - 2026-07-23
-
-- style(global): Apply consistent code formatting (Fenix_FX110C_Sauna_control.js, setup_secrets.js, ai-commit-hook.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

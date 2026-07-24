@@ -4,6 +4,14 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.5] - 2026-07-23
+
+- fix(global): Prevent object modification errors and improve creation (homematic_all.js, kalender.js, switch_abendlicht.js)
+
+### [3.2.4] - 2026-07-23
+
+- style(global): Apply consistent code formatting (Fenix_FX110C_Sauna_control.js, setup_secrets.js, ai-commit-hook.js)
+
 ### [3.2.3] - 2026-07-23
 
 - feat(beleuchtung): Configure CT states for proper IoT integration and refine object hiding (switch_abendlicht.js)
