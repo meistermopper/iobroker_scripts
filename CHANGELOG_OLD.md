@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.3] - 2026-07-23
+
+- feat(beleuchtung): Configure CT states for proper IoT integration and refine object hiding (switch_abendlicht.js)
+
 ### [3.2.2] - 2026-07-21
 
 - feat(pihole): Implement Pi-hole blocked queries percentage extraction (percent_blocked.js)

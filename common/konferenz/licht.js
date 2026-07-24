@@ -8,21 +8,25 @@ const ID_LAMPE = "alias.0.konferenz.licht.stehlampe.POWER";
 const ID_VITRINE_TRIGGER = "0_userdata.0.vitrine.Lichtshow";
 const ID_VITRINE_LICHT = "alias.0.konferenz.licht.vitrine.state";
 const ID_VITRINE_EFFECT = "alias.0.konferenz.licht.vitrine.effect";
+const ID_VITRINE_HEX_COLOR = "zigbee.0.00158d000819fa91.hex_color";
 
 // --- KERN-LOGIK: DIE LICHTSHOW-FUNKTION ---
 function setLichtshow(pwr) {
   // Timer löschen, um Überschneidungen zu vermeiden
   clearStateDelayed(ID_VITRINE_LICHT);
   clearStateDelayed(ID_VITRINE_EFFECT);
+  clearStateDelayed(ID_VITRINE_HEX_COLOR);
 
   if (pwr) {
+    // 1. Licht einschalten
     setState(ID_VITRINE_LICHT, true);
-    setStateDelayed(ID_VITRINE_EFFECT, "colorloop", 500);
-    //console.log("Vitrine: Lichtshow gestartet.");
+    // 2. Farbmodus erzwingen (beendet den colortemp/Weißlicht-Modus)
+    setStateDelayed(ID_VITRINE_HEX_COLOR, "#FF0000", 300);
+    // 3. Colorloop-Effekt starten
+    setStateDelayed(ID_VITRINE_EFFECT, "colorloop", 600);
   } else {
     setState(ID_VITRINE_EFFECT, "none"); // 'none' oder 'stop_colorloop'
     setStateDelayed(ID_VITRINE_LICHT, false, 700);
-    //console.log("Vitrine: Lichtshow beendet.");
   }
 }
 
