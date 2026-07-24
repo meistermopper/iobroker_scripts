@@ -1,8 +1,8 @@
 /* eslint-env es2022 */
 /**
- * Name:   Abendlicht Wohnzimmer Master (V6.4)
- * Fix:    Repariert Alias-Ziele, setzt Objekttyp 'state' und unterdrückt GHOME-Fehler.
- * Status: Benachrichtigungen gemäß Nutzer-Vorgabe angepasst.
+ * Name:   Abendlicht Wohnzimmer Master (V6.5)
+ * Zweck:  Steuerung des Abendlichts im Wohnzimmer (Kommode & Ei) mit sanftem Übergang ab 22:30 Uhr.
+ * Fix:    Verhindert GHOME 400 INVALID_ARGUMENT Fehler durch vollständiges Ausblenden aller rohen Hue-Hardware-Datenpunkte (inkl. hue.0.Ei.ct) sowie aller Hilfs-Datenpunkte.
  */
 
 // --- 1. KONFIGURATION DER DATENPUNKTE ---
@@ -43,8 +43,8 @@ function limit(val, min, max) {
 }
 
 /**
- * Repairs the alias objects and disables Google Home / Alexa synchronization for raw hardware devices.
- * Configures color temperature states to use Mireds so iot.0 can properly translate values to Kelvin.
+ * Repairs alias objects and hides all raw hardware and non-interactive states from Google Home / Alexa.
+ * Configures color temperature (ct) states with exact mired metadata to ensure iot.0 translates values cleanly to Kelvin.
  */
 function repairAndHide() {
   const configs = [
@@ -52,7 +52,7 @@ function repairAndHide() {
     { id: ALIAS_EI, target: TARGET_EI },
   ];
 
-  // 1. Repair alias command states and hide them from Google Home / Alexa
+  // 1. Repair alias command states and hide them from Google Home / Alexa smartName
   configs.forEach((cfg) => {
     if (existsObject(cfg.id)) {
       extendObject(
@@ -77,7 +77,7 @@ function repairAndHide() {
       );
     }
 
-    // 2. Also hide the hardware target command state from Google Home / Alexa
+    // 2. Hide hardware target command states from Google Home / Alexa
     if (existsObject(cfg.target)) {
       extendObject(
         cfg.target,
@@ -96,18 +96,32 @@ function repairAndHide() {
     }
   });
 
-  // 3. Disable GHOME/Alexa synchronization on raw hardware devices/channels and unsupported states (.xy)
+  // 3. Disable GHOME/Alexa synchronization on all raw hardware devices/channels and unsupported states (.xy, .ct, .command, etc.)
   const objectsToHide = [
+    // Raw Hue Hardware Devices & States
     "hue.0.Ei",
     "hue.0.Kommode",
     "hue.0.Ei.on",
     "hue.0.Ei.level",
+    "hue.0.Ei.ct",
     "hue.0.Ei.xy",
+    "hue.0.Ei.bri",
+    "hue.0.Ei.hue",
+    "hue.0.Ei.sat",
+    "hue.0.Ei.command",
     "hue.0.Kommode.on",
     "hue.0.Kommode.level",
+    "hue.0.Kommode.ct",
     "hue.0.Kommode.xy",
+    "hue.0.Kommode.bri",
+    "hue.0.Kommode.hue",
+    "hue.0.Kommode.sat",
+    "hue.0.Kommode.command",
+    // Alias non-interactive / raw sub-states
     "alias.0.licht.ei.xy",
+    "alias.0.licht.ei.command",
     "alias.0.licht.kommode.xy",
+    "alias.0.licht.kommode.command",
   ];
 
   objectsToHide.forEach((id) => {
@@ -127,10 +141,10 @@ function repairAndHide() {
     }
   });
 
-  // 4. Configure color temperature (ct) states with proper unit to enable Mired -> Kelvin translation in iot.0
-  const ctStates = ["hue.0.Ei.ct", "alias.0.licht.ei.ct"];
+  // 4. Configure alias color temperature (ct) state with proper unit to enable Mired -> Kelvin translation in iot.0
+  const aliasCtStates = ["alias.0.licht.ei.ct"];
 
-  ctStates.forEach((id) => {
+  aliasCtStates.forEach((id) => {
     if (existsObject(id)) {
       extendObject(
         id,

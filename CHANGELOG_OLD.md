@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.2] - 2026-07-21
+
+- feat(pihole): Implement Pi-hole blocked queries percentage extraction (percent_blocked.js)
+
 ### [3.2.1] - 2026-07-19
 - fix(fritzbox): Fix Hue lamp state restoration after visual alert (anruf_klingel_terrasse.js)
 - switch to harvia-fenix Adapter (sauna control)

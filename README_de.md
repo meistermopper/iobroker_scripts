@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.6-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.7-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -59,8 +59,9 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 - **Globale Benachrichtigungen (`notify.js`)**: Zentralisiert Benachrichtigungen über Telegram, Gotify und Sprachansagen auf Chromecast-Geräten inkl. intelligenter Wiedergabe-Fortsetzung (Resume-Funktion).
 - **Fußball Bundesliga**: Zeigt die aktuelle Tabelle und kommende Spiele von SGE und FCB mittels OpenLigaDB-Adapter an.
 
-### 📺🎵 Medien
+### 📺🎵 Medien & Sauna
 
+- **Sauna- & Audio-Master (`session_master.js`)**: Steuert HEOS-Wiedergabelisten und die zeitversetzte Musikwiedergabe in Sauna und Bad während des Saunabetriebs. Integriert die Lichtsynchronisation und Benachrichtigungen über den nativen `harvia-fenix`-Adapter (`harvia-fenix.0`).
 - **Medienauswahl**: Gesteuert per Sprachbefehl und Google Home.
 - **Ziegenhain Navigations-Ansage (`ziegenhain.js`)**: Löst als Reaktion auf einen bestimmten Sprachbefehl eine humorvolle Sprachansage auf allen aktiven SayIt-Instanzen im Haus aus.
 
@@ -100,19 +101,25 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.2.7] - 2026-07-24
+- feat(sauna): Integrate Harvia Fenix adapter and add sauna notifications (session_master.js, switch_abendlicht.js)
+
+- refactor(sauna): Datenpunkte des harvia-fenix Adapters in session_master.js integriert
+
 ### [3.2.6] - 2026-07-23
+
 - refactor(global): Introduce and apply state creation and date arithmetic best practices (energiemaster_und_sauna.js, homematic_all.js, kalender.js)
 
 ### [3.2.5] - 2026-07-23
+
 - fix(global): Prevent object modification errors and improve creation (homematic_all.js, kalender.js, switch_abendlicht.js)
 
 ### [3.2.4] - 2026-07-23
+
 - style(global): Apply consistent code formatting (Fenix_FX110C_Sauna_control.js, setup_secrets.js, ai-commit-hook.js)
 
 ### [3.2.3] - 2026-07-23
-- feat(beleuchtung): Configure CT states for proper IoT integration and refine object hiding (switch_abendlicht.js)
 
-### [3.2.2] - 2026-07-21
-- feat(pihole): Implement Pi-hole blocked queries percentage extraction (percent_blocked.js)
+- feat(beleuchtung): Configure CT states for proper IoT integration and refine object hiding (switch_abendlicht.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

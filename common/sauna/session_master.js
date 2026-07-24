@@ -31,10 +31,15 @@ const IDS = {
   saunaPlayer: "alias.0.sauna.media.heos", // HEOS Gerät Sauna
   saunaSender: "0_userdata.0.heos.Sauna.sender", // Auswahl-Datenpunkt Sauna
   saunaStatus: "0_userdata.0.heos.Sauna.radio_status", // An/Aus Status Sauna
-  saunaLight: "0_userdata.0.Energie.Sauna.lightOn", // Sauna Licht
+  saunaLight: "harvia-fenix.0.lightOn", // Sauna Licht (über harvia-fenix Adapter)
   badPlayer: "alias.0.bad_unten.media.heos", // HEOS Gerät Bad
   badSender: "0_userdata.0.heos.Bad.sender", // Auswahl-Datenpunkt Bad
   badStatus: "0_userdata.0.heos.Bad.radio_status", // An/Aus Status Bad
+
+  // Harvia Fenix Adapter Benachrichtigungs-Datenpunkte
+  sauna10MinNotified: "harvia-fenix.0.readyNotified10Min",
+  saunaTargetReachedNotified: "harvia-fenix.0.targetReachedNotified",
+  saunaTargetTemp: "harvia-fenix.0.targetTemp",
 };
 
 // Sender-Liste: Key -> HEOS Preset (muss in der HEOS App unter Favoriten gespeichert sein)
@@ -94,7 +99,6 @@ on({ id: ID_SAUNA_AKTIV, change: "ne" }, (obj) => {
     sendGlobalNotify("⏹️ Sauna-Modus beendet: Musik wird gestoppt.", "Radio Master", 1);
     clearAutoTimers();
 
-    // Alles aus
     // Alles ausschalten und Auswahl zurücksetzen
     setState(IDS.saunaStatus, false);
     setState(IDS.badStatus, false);
@@ -150,5 +154,29 @@ on({ id: IDS.saunaSender, change: "any" }, (obj) => {
     sendGlobalNotify(`+++ 📻 ▶️ Radio in der Sauna läuft (${sender.name}) +++`, "Radio Sauna", 1);
   } else {
     console.warn(`Sauna: Sender '${senderKey}' ist nicht in der saunaMap konfiguriert.`);
+  }
+});
+
+/**
+ * 4. SAUNA-BENACHRICHTIGUNGEN (harvia-fenix.0 Adapter)
+ */
+
+// 10-Minuten Vorwarnung
+on({ id: IDS.sauna10MinNotified, change: "ne" }, (obj) => {
+  if (obj.state.val) {
+    const targetTemp = getState(IDS.saunaTargetTemp)?.val || 80;
+    const msg = `🧖 Die Sauna erreicht in ca. 10 Minuten ihre Zieltemperatur (${targetTemp}°C).`;
+    console.log(`[Sauna] ${msg}`);
+    sendGlobalNotify(msg, "Sauna", 1);
+  }
+});
+
+// Zieltemperatur erreicht
+on({ id: IDS.saunaTargetReachedNotified, change: "ne" }, (obj) => {
+  if (obj.state.val) {
+    const targetTemp = getState(IDS.saunaTargetTemp)?.val || 80;
+    const msg = `♨️ Die Sauna hat ihre Zieltemperatur von ${targetTemp}°C erreicht und ist bereit!`;
+    console.log(`[Sauna] ${msg}`);
+    sendGlobalNotify(msg, "Sauna", 1);
   }
 });
