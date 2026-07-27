@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.8] - 2026-07-24
+- fix(vitrine): Ensure vitrine colorloop starts reliably (licht.js)
+
 ### [3.2.7] - 2026-07-24
 - feat(sauna): Integrate Harvia Fenix adapter and add sauna notifications (session_master.js, switch_abendlicht.js)
 

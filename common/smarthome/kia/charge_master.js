@@ -1,34 +1,10 @@
 /* eslint-env es2022 */
 /**
- * =============================================================================
- * SKRIPT: EV3 CHARGE-MASTER v6.6.1
- * =============================================================================
- * KONZEPT: Fokussiertes Start-/Stopp-Management für den Kia EV3.
- * STRATEGIE: Nutzung von festen 6A (ca. 3,960 kW) für zwei Betriebsmodi:
- * 1. MANUELL: Benutzer schaltet in VIS (Automatik AUS).
- * 2. PV-AUTO: Skript schaltet basierend auf PV-Überschuss (Automatik AN).
- * ÄNDERUNGEN:
- * - Beibehalt aller Statistiken und Schutzfunktionen.
- * - Umschalten von Sayit-Ansagen von Stunden auf Minuten, wenn Stunden = 0.
- * - Batterieschutz: Beim manuellen Laden wird der Min-SoC des Heimspeichers
- *   auf den aktuellen Wert gesetzt, um eine Entladung zu verhindern.
- * - Nach Ladeende (auch wenn das Fahrzeug es beendet hat) wird der originale Min-SoC wiederhergestellt.
- * - Sprachausgabe temporär deaktiviert.
- * - Wallbox-Verbindungsprüfung (OCPP Online-Status).
- * - Optimierte Zeitformatierung und Kilometerberechnung.
- * - NEU: Robuster Ladestopp-Mechanismus, der einen erzwungenen Stopp auslöst,
- *   wenn der Wallbox-Status hängt (transactionActive: false, aber Status: Charging).
- * - Fahrzeugkapazität: 81,4 kWh | Reichweite: 550km (Sommer) / 450km (Winter).
- * - 45-Sekunden-Entprellung bei Statusänderung von "Charging".
- * - Kein Ladestart, wenn das Ladeziel bereits erreicht ist.
- * - NEU: Intelligenter Wallbox-Reset vor jedem Ladevorgang, um Startprobleme zu beheben.
- * - NEU (v6.6.0): Beendet OCPP Lade-Transaktion (transactionActive: false) nach Ablauf
- *   der Entprellzeit, wenn die Ladung vom Auto suspendiert wurde (z.B. Ladeziel erreicht).
- * - NEU (v6.6.0): Modifizierte Benachrichtigungen (Telegram, Gotify, Alexa/SayIt),
- *   wenn das Ladeziel erreicht wurde.
- * - NEU (v6.6.1): Verzögerte Prüfung für erzwungenen Stopp zur Vermeidung von Race Conditions
- *   und robusterer Ladesitzungs-Wiederherstellung bei Skript-Neustarts.
- * =============================================================================
+ * Name:    EV3 Charge-Master
+ * Purpose: Start/stop management for Kia EV3 wallbox charging (fixed 6A / 3.96 kW).
+ * Modes:   1. Manual: User triggered via VIS
+ *          2. PV Auto: Automated based on PV surplus and home battery SoC
+ * Features: Home battery protection, debounced status handling, forced transaction stops.
  */
 
 // --- 1. SETUP: DIGITALE ZENTRALE (21 DATENPUNKTE) ---
@@ -96,6 +72,7 @@ let originalMinSoc = null; // Merker für Min-SoC bei manuellem Laden
 let stopTimer = null; // Timer zur Entprellung von kurzen Lade-Unterbrechungen
 let reconnectTimer = null; // Timer für Wallbox-Recovery
 let wasOfflineReported = false; // Status für Anti-Spam Meldungen
+let hasWarnedOcppOffline = false; // Flag to prevent repeated warning logs per script run
 // [NEU] Sperrvariable zur Vermeidung von Race Conditions während der Startsequenz.
 let isStartingSequenceActive = false;
 // [NEU] Sperrvariable zur Vermeidung mehrerer gleichzeitiger Ausführungen von erzwungenen Stopps.
@@ -335,8 +312,12 @@ function checkPvAutomation() {
 
   // Abbrechen, wenn Wallbox offline ist
   const isConnected = !!getState(IDS.wbConn)?.val;
-  if (!isConnected && mittel > PV_START_LIMIT)
-    console.warn("[EV3 Master] Start not possible: Wallbox connection missing (OCPP Offline)");
+  if (!isConnected && mittel > PV_START_LIMIT) {
+    if (!hasWarnedOcppOffline) {
+      console.warn("[EV3 Master] Start not possible: Wallbox connection missing (OCPP Offline)");
+      hasWarnedOcppOffline = true;
+    }
+  }
   if (!isAuto || !isConnected) return;
 
   const isTransActive = !!getState(IDS.wbTrans)?.val;
