@@ -4,6 +4,11 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.7] - 2026-07-24
+- feat(sauna): Integrate Harvia Fenix adapter and add sauna notifications (session_master.js, switch_abendlicht.js)
+
+- refactor(sauna): Integrate harvia-fenix adapter data points into session_master.js
+
 ### [3.2.6] - 2026-07-23
 
 - refactor(global): Introduce and apply state creation and date arithmetic best practices (energiemaster_und_sauna.js, homematic_all.js, kalender.js)

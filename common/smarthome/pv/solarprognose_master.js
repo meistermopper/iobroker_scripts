@@ -265,18 +265,21 @@ function fetchSolarData(ignoreToken = false) {
       if (SEND_TELEGRAM || SEND_GOTIFY) {
         setTimeout(() => {
           try {
-            const ertragHeute = getState(`${baseRef}.heute.gesamt`)?.val || 0;
-            const ertragMorgen = getState(`${baseRef}.morgen.gesamt`)?.val || 0;
+            const ertragHeuteWh = Number(getState(`${baseRef}.heute.gesamt`)?.val) || 0;
+            const ertragMorgenWh = Number(getState(`${baseRef}.morgen.gesamt`)?.val) || 0;
+
+            const ertragHeuteKWh = Math.round(ertragHeuteWh / 1000);
+            const ertragMorgenKWh = Math.round(ertragMorgenWh / 1000);
 
             const textHtml =
               `<b>PV-Prognose Update (Forecast.Solar)</b>\n\n` +
-              `• <b>Heute:</b> ${ertragHeute} Wh\n` +
-              `• <b>Morgen:</b> ${ertragMorgen} Wh`;
+              `• <b>Heute:</b> ${ertragHeuteKWh} kWh\n` +
+              `• <b>Morgen:</b> ${ertragMorgenKWh} kWh`;
 
             const textPlain =
               `PV-Prognose Update (Forecast.Solar)\n\n` +
-              `- Heute: ${ertragHeute} Wh\n` +
-              `- Morgen: ${ertragMorgen} Wh`;
+              `- Heute: ${ertragHeuteKWh} kWh\n` +
+              `- Morgen: ${ertragMorgenKWh} kWh`;
 
             sendTelegramMessage(textHtml);
             sendGotifyMessage("PV-Prognose Update", textPlain);

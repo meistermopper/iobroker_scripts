@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.12-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.13-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -101,8 +101,11 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.2.13] - 2026-07-27
+- feat(pv): Format Telegram/Gotify PV yield notifications to rounded kWh (solarprognose_master.js)
+
 ### [3.2.12] - 2026-07-27
-- feat(pv): Implement PV yield scaling factor and remove peak power tracking (solarprognose_master.js)
+- feat(pv): Format Telegram/Gotify notifications to rounded kWh without decimals ([solarprognose_master.js](file:///c:/Users/thoma/dev/active/iobroker_js/common/smarthome/pv/solarprognose_master.js))
 
 ### [3.2.11] - 2026-07-27
 
@@ -115,9 +118,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 ### [3.2.9] - 2026-07-24
 
 - fix(vitrine): Benachrichtigungen bei Offline-Status (Telegram, Gotify, SayIt) und Erreichbarkeitsprüfung in licht.js hinzugefügt
-
-### [3.2.8] - 2026-07-24
-
-- fix(vitrine): Ensure vitrine colorloop starts reliably (licht.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).
