@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.10-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.12-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -20,7 +20,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 
 - **EV Lade-Master (`charge_master.js`)**: Verwaltet den gezielten Start/Stopp für das Laden des Kia EV3 basierend auf PV-Überschuss oder manueller Eingabe. Beinhaltet Batterieschutz für den Hausspeicher bei manuellem Laden, robuste Stopp-Mechanismen für hängende Wallbox-Zustände, Verbindungsüberwachung und intelligente Wallbox-Resets, um zuverlässiges Laden zu gewährleisten. Optimiert die Zeitformatierung, Kilometerberechnung und bietet detaillierte Statistiken.
 - **Intelligentes Laden (`fully_smart_laden.js`, `smartphones_laden.js`)**: Intelligente Ladesteuerung für wandmontierte Tablets und smartphones zur Schonung der Batterie (z.B. 30-70% Strategie) und Steuerung der automatischen Display-Abschaltung. Enthält selbstheilende Datenpunkte, intelligente Benachrichtigungen und Sprachsteuerungs-Trigger.
-- **Solar-Prognose (`solarprognose_master.js`)**: Visualisiert die Solarstromproduktion von heute und morgen, vergleicht Prognosen mit Ist-Werten und unterstützt Telegram/Gotify-Benachrichtigungen bei Updates.
+- **Solar-Prognose (`solarprognose_master.js`)**: Visualisiert die Solarstromproduktion von heute und morgen mit individuellem Skalierungsfaktor (`PV_FACTOR = 1.39`), vergleicht Prognosen mit Ist-Werten (Ertrag) und unterstützt Telegram/Gotify-Benachrichtigungen bei Updates.
 - **USV Management**: Sichert den Zustand von Lichtern und Steckdosen nach einem Stromausfall und stellt diesen wieder her (`hue_zigbee_states_restore.js`).
 
 ### 💡 Licht & Präsenz
@@ -101,22 +101,23 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.2.12] - 2026-07-27
+- feat(pv): Implement PV yield scaling factor and remove peak power tracking (solarprognose_master.js)
+
+### [3.2.11] - 2026-07-27
+
+- feat(pv): Implement PV yield scaling factor (`PV_FACTOR = 1.39`) and remove peak tracking from statistics and forecast ([solarprognose_master.js](file:///c:/Users/thoma/dev/active/iobroker_js/common/smarthome/pv/solarprognose_master.js))
+
 ### [3.2.10] - 2026-07-24
+
 - fix(vitrine): Add offline notifications and reachability check for vitrine light (licht.js)
 
 ### [3.2.9] - 2026-07-24
+
 - fix(vitrine): Benachrichtigungen bei Offline-Status (Telegram, Gotify, SayIt) und Erreichbarkeitsprüfung in licht.js hinzugefügt
 
 ### [3.2.8] - 2026-07-24
+
 - fix(vitrine): Ensure vitrine colorloop starts reliably (licht.js)
-
-### [3.2.7] - 2026-07-24
-- feat(sauna): Integrate Harvia Fenix adapter and add sauna notifications (session_master.js, switch_abendlicht.js)
-
-- refactor(sauna): Datenpunkte des harvia-fenix Adapters in session_master.js integriert
-
-### [3.2.6] - 2026-07-23
-
-- refactor(global): Introduce and apply state creation and date arithmetic best practices (energiemaster_und_sauna.js, homematic_all.js, kalender.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

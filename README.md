@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.10-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.12-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -101,6 +101,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.2.12] - 2026-07-27
+- feat(pv): Implement PV yield scaling factor and remove peak power tracking (solarprognose_master.js)
+
 ### [3.2.10] - 2026-07-24
 - fix(vitrine): Add offline notifications and reachability check for vitrine light (licht.js)
 
@@ -114,9 +117,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 - feat(sauna): Integrate Harvia Fenix adapter and add sauna notifications (session_master.js, switch_abendlicht.js)
 
 - refactor(sauna): Integrate harvia-fenix adapter data points into session_master.js
-
-### [3.2.6] - 2026-07-23
-
-- refactor(global): Introduce and apply state creation and date arithmetic best practices (energiemaster_und_sauna.js, homematic_all.js, kalender.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).

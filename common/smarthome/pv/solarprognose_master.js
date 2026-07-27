@@ -1,8 +1,8 @@
 /* eslint-env es2022 */
 /**
  * Name:   Solarprognose Master (Forecast.Solar)
- * Zweck:  Stündliche PV-Prognose über Forecast.Solar für heute & morgen.
- * Version: 2.0
+ * Zweck:  Stündliche PV-Prognose über Forecast.Solar für heute & morgen mit Korrekturfaktor.
+ * Version: 2.1
  */
 
 // --- 1. KONFIGURATION ---
@@ -19,6 +19,9 @@ const AZIMUTH = 45;
 // Installierte Peak-Leistung der Anlage in kWp (z.B. 10.5 für 10.5 kWp)
 const KWP = 7.1;
 
+// Korrekturfaktor für die PV-Prognose (berechnet aus der Differenz zwischen Prognose und tatsächlichem Ertrag: 413.100 Wh / 297.879 Wh ≈ 1.39)
+const PV_FACTOR = 1.39;
+
 // Basis-Pfad für die Datenpunkte (ohne Punkt am Ende)
 const baseRef = "0_userdata.0.Energie.PV.Prognose";
 
@@ -30,10 +33,10 @@ const SEND_GOTIFY = true; // Auf true setzen, um Gotify-Nachrichten zu erhalten
 
 /**
  * Erstellt die Datenstruktur in 0_userdata.0.
- * Wir beschränken uns nun auf heute und morgen.
+ * Wir beschränken uns auf heute und morgen.
  */
 async function initDPs() {
-  const days = ["heute", "morgen"]; // 'uebermorgen' entfernt
+  const days = ["heute", "morgen"];
 
   // Basis-JSON für die Rohdaten
   await createStateAsync(`${baseRef}.Json`, "", {
@@ -69,24 +72,7 @@ async function initDPs() {
       type: "number",
       unit: "Wh",
     });
-    await createStateAsync(`${path}uhrzeit`, "", {
-      name: `Peak Zeit ${day}`,
-      type: "string",
-    });
-    await createStateAsync(`${path}leistung`, 0, {
-      name: `Peak Watt ${day}`,
-      type: "number",
-      unit: "W",
-    });
-    if (day === "heute") {
-      await createStateAsync(`${path}tatsaechlicher_peak`, 0, {
-        name: "Tatsächlicher Peak heute",
-        type: "number",
-        unit: "W",
-      });
-    }
   }
-  //console.log("[Solar-Prognose] Datenstruktur (heute/morgen) wurde geprüft/erstellt");
 }
 
 /**
@@ -128,28 +114,12 @@ schedule("58 23 * * *", () => {
   recordDailyStats();
 });
 
-// Reset des tatsächlichen Peaks um Mitternacht
-schedule("0 0 * * *", () => {
-  setState(`${baseRef}.heute.tatsaechlicher_peak`, 0, true);
-});
-
-// Trigger zur Erfassung der tatsächlichen Spitzenleistung am Tag
-on({ id: "solax.0.data.acpower", change: "ne" }, (obj) => {
-  const val = Number(obj.state.val) || 0;
-  const currentMax = Number(getState(`${baseRef}.heute.tatsaechlicher_peak`)?.val) || 0;
-  if (val > currentMax) {
-    setState(`${baseRef}.heute.tatsaechlicher_peak`, val, true);
-  }
-});
-
 // --- 4. DATENVERARBEITUNG ---
 
 /**
  * Holt die Daten von der API und verteilt sie auf die Tage.
  */
 function fetchSolarData(ignoreToken = false) {
-  //console.log("[Solar-Prognose] Starte API-Abfrage (Forecast.Solar)");
-
   let token = null;
   if (!ignoreToken) {
     // Versuche zuerst token_forecast_solar zu lesen
@@ -194,9 +164,6 @@ function fetchSolarData(ignoreToken = false) {
     );
     url = `https://api.forecast.solar/${token}/estimate/${latitude}/${longitude}/${TILT}/${AZIMUTH}/${KWP}`;
   } else {
-    //console.log(
-    //  "[Solar-Prognose] Kein API-Token gefunden (oder Wert ist leer/ungültig/ignoriert). Verwende kostenfreie API.",
-    //);
     // Falls kein Token vorhanden ist, nutzen wir die kostenfreie API
     url = `https://api.forecast.solar/estimate/${latitude}/${longitude}/${TILT}/${AZIMUTH}/${KWP}`;
   }
@@ -270,7 +237,7 @@ function fetchSolarData(ignoreToken = false) {
         return;
       }
 
-      // Forecast.Solar Datenstruktur in das alte Format übersetzen:
+      // Forecast.Solar Datenstruktur in das interne Format übersetzen & mit PV_FACTOR skalieren:
       // data[timestampInSeconds] = [leistung_watt, kumulierter_ertrag_wh]
       const data = {};
       for (const [dateTimeStr, watt] of Object.entries(obj.result.watts)) {
@@ -279,7 +246,9 @@ function fetchSolarData(ignoreToken = false) {
         if (!Number.isNaN(tsMs)) {
           const tsSec = Math.floor(tsMs / 1000);
           const wh = obj.result.watt_hours ? obj.result.watt_hours[dateTimeStr] || 0 : 0;
-          data[tsSec] = [watt, wh];
+          const scaledWatt = Math.round(watt * PV_FACTOR);
+          const scaledWh = Math.round(wh * PV_FACTOR);
+          data[tsSec] = [scaledWatt, scaledWh];
         }
       }
 
@@ -296,20 +265,18 @@ function fetchSolarData(ignoreToken = false) {
       if (SEND_TELEGRAM || SEND_GOTIFY) {
         setTimeout(() => {
           try {
-            const peakHeute = getState(`${baseRef}.heute.leistung`)?.val || 0;
             const ertragHeute = getState(`${baseRef}.heute.gesamt`)?.val || 0;
-            const peakMorgen = getState(`${baseRef}.morgen.leistung`)?.val || 0;
             const ertragMorgen = getState(`${baseRef}.morgen.gesamt`)?.val || 0;
 
             const textHtml =
               `<b>PV-Prognose Update (Forecast.Solar)</b>\n\n` +
-              `• <b>Heute:</b> ${ertragHeute} Wh (Peak: ${peakHeute} W)\n` +
-              `• <b>Morgen:</b> ${ertragMorgen} Wh (Peak: ${peakMorgen} W)`;
+              `• <b>Heute:</b> ${ertragHeute} Wh\n` +
+              `• <b>Morgen:</b> ${ertragMorgen} Wh`;
 
             const textPlain =
               `PV-Prognose Update (Forecast.Solar)\n\n` +
-              `- Heute: ${ertragHeute} Wh (Peak: ${peakHeute} W)\n` +
-              `- Morgen: ${ertragMorgen} Wh (Peak: ${peakMorgen} W)`;
+              `- Heute: ${ertragHeute} Wh\n` +
+              `- Morgen: ${ertragMorgen} Wh`;
 
             sendTelegramMessage(textHtml);
             sendGotifyMessage("PV-Prognose Update", textPlain);
@@ -327,7 +294,7 @@ function fetchSolarData(ignoreToken = false) {
 }
 
 /**
- * Berechnet Peak-Werte und Ertrag für einen Tag.
+ * Berechnet den Ertrag für einen Tag.
  */
 function processDayData(dayName, dataArray) {
   if (!dataArray || dataArray.length === 0) {
@@ -337,19 +304,6 @@ function processDayData(dayName, dataArray) {
 
   const path = `${baseRef}.${dayName}.`;
 
-  let maxWatt = 0;
-  let peakTime = "--:--";
-
-  // Suche nach der höchsten Leistung im Stunden-Array
-  dataArray.forEach((entry) => {
-    const time = entry[0];
-    const watt = entry[1];
-    if (typeof watt === "number" && watt > maxWatt) {
-      maxWatt = watt;
-      peakTime = time;
-    }
-  });
-
   // Der letzte Eintrag im Array enthält bei dieser API den kumulierten Tagesertrag
   const lastEntry = dataArray[dataArray.length - 1];
   const gesamtWh = lastEntry && lastEntry.length >= 3 ? lastEntry[2] : 0;
@@ -357,10 +311,6 @@ function processDayData(dayName, dataArray) {
   // Werte in ioBroker schreiben
   if (existsState(`${path}Json`)) setState(`${path}Json`, dataArray, true);
   if (existsState(`${path}gesamt`)) setState(`${path}gesamt`, gesamtWh, true);
-  if (existsState(`${path}uhrzeit`)) setState(`${path}uhrzeit`, peakTime, true);
-  if (existsState(`${path}leistung`)) setState(`${path}leistung`, maxWatt, true);
-
-  //console.log(`[Solar-Prognose] ${dayName.toUpperCase()}: Peak ${maxWatt}W um ${peakTime} Uhr`);
 }
 
 /**
@@ -457,8 +407,6 @@ function recordDailyStats() {
 
     const forecastYield = Number(getState(`${baseRef}.heute.gesamt`)?.val) || 0;
     const actualYield = Number(getState("0_userdata.0.Energie.PV.Tageserzeugung")?.val) || 0;
-    const forecastPeak = Number(getState(`${baseRef}.heute.leistung`)?.val) || 0;
-    const actualPeak = Number(getState(`${baseRef}.heute.tatsaechlicher_peak`)?.val) || 0;
 
     let statsList = [];
     const statsState = getState(`${baseRef}.statistik`)?.val;
@@ -472,12 +420,8 @@ function recordDailyStats() {
       datum: dateStr,
       prognose_ertrag_wh: forecastYield,
       tatsaechlich_ertrag_wh: actualYield,
-      prognose_peak_w: forecastPeak,
-      tatsaechlich_peak_w: actualPeak,
       abweichung_ertrag_prozent:
         forecastYield > 0 ? Math.round(((actualYield - forecastYield) / forecastYield) * 100) : 0,
-      abweichung_peak_prozent:
-        forecastPeak > 0 ? Math.round(((actualPeak - forecastPeak) / forecastPeak) * 100) : 0,
     };
 
     if (existingIndex !== -1) {
