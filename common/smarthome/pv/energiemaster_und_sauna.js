@@ -36,6 +36,11 @@ const IDS = {
   minSocSet: "modbus.0.holdingRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)", // Schreiben
   minSocRead: "modbus.0.inputRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)", // Lesen
 
+  // Harvia Fenix Integration (native adapter datapoints)
+  saunaHeatOn: "harvia-fenix.0.heatOn",
+  saunaHeaterPower: "harvia-fenix.0.heaterPower",
+  saunaDoorSafety: "harvia-fenix.0.doorSafety",
+
   // Wallbox-Integration
   wbStatus: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.status",
   wbLimit:
@@ -212,47 +217,38 @@ function runUpdate() {
   const sommer = d.getMonth() >= 3 && d.getMonth() <= 8 && d.getHours() >= 14 && soc >= 85;
   setState(`${PATH_PV}Wallbox_Freigabe`, sommer, true);
 
-  // --- SAUNA-LOGIK MIT ANTI-ZAPPEL-SYSTEM ---
+  // --- SAUNA-LOGIK MIT ANTI-ZAPPEL-SYSTEM (HYBRID HARVIA-FENIX INTEGRATION) ---
   const bLast = getBereinigteLast();
 
-  // Sicherheits-Check: Heizt die Sauna bei offener Tür?
-  checkSaunaSafety(bLast);
+  // Explicit status from Harvia Fenix adapter
+  const fenixHeatOn = getState(IDS.saunaHeatOn)?.val === true;
+  const fenixPower = Number(getState(IDS.saunaHeaterPower)?.val) || 0;
 
   // ECHTZEIT-STATUS: Zieht der Ofen gerade physikalisch Strom?
-  // (Unabhängig von der 35-Minuten-Logik für die Batterie)
-  setState(`${PATH_SAUNA_DATA}sauna_heizt_aktiv`, bLast > 7500, true);
+  const saunaIsHeating = fenixHeatOn && (fenixPower > 0 || bLast > 5000);
+  setState(`${PATH_SAUNA_DATA}sauna_heizt_aktiv`, saunaIsHeating, true);
+
+  // Sicherheits-Check: Heizt die Sauna bei offener Tür?
+  checkSaunaSafety(fenixHeatOn, bLast);
 
   const sL = getState(IDS.saunaLogik)?.val;
 
-  if (bLast > 7500) {
-    // Ofen heizt (oder taktet gerade wieder ein)
-
-    // ANTI-ZAPPEL: Falls der 35-Min-Reset-Timer läuft, löschen wir ihn sofort.
-    // Das verhindert, dass der SoC mitten im Saunagang auf 40% zurückfällt.
+  if (fenixHeatOn) {
+    // Harvia controller is active
     if (tSaunaReset) {
       clearTimeout(tSaunaReset);
       tSaunaReset = null;
-      //console.log("Sauna: Ofen heizt wieder, Abschalt-Timer gelöscht");
     }
 
     if (!sL && !tSaunaStart) {
-      // Sauna war aus, hohe Last erkannt -> Warte 30 Sek zur Bestätigung
-      tSaunaStart = setTimeout(() => {
-        if (getBereinigteLast() > 7500) {
-          startSauna();
-        }
-        tSaunaStart = null;
-      }, 30000);
+      startSauna();
     } else if (sL && soc > getState(IDS.minSocRead)?.val) {
       // Während der Sauna: Min-SoC kontinuierlich dem SoC folgen lassen
       setState(IDS.minSocSet, soc);
     }
-  } else if (bLast < 1000 && sL) {
-    // Ofen ist aus (Takt-Pause oder Sauna wirklich fertig)
+  } else if (!fenixHeatOn && sL) {
+    // Harvia controller is off
     if (!tSaunaReset) {
-      //console.log(
-      //   "Sauna: Ofen taktet aus, 35-Minuten-Überwachungsphase gestartet",
-      // );
       stopSauna();
     }
   }
@@ -301,6 +297,24 @@ on({ id: IDS.batSoc, change: "ne" }, (obj) => {
   runUpdate();
 });
 
+// Direct event trigger for Harvia Fenix heatOn state
+on({ id: IDS.saunaHeatOn, change: "ne" }, (obj) => {
+  if (obj.state.val === true) {
+    if (tSaunaReset) {
+      clearTimeout(tSaunaReset);
+      tSaunaReset = null;
+    }
+    if (!getState(IDS.saunaLogik)?.val) {
+      startSauna();
+    }
+  } else {
+    if (getState(IDS.saunaLogik)?.val && !tSaunaReset) {
+      stopSauna();
+    }
+  }
+  runUpdate();
+});
+
 // Trigger für Speichergröße-Änderung (falls in Objekten angepasst)
 on({ id: IDS.speicherMax, change: "ne" }, (obj) => {
   sMax = parseFloat(obj.state.val) || 9.6;
@@ -344,23 +358,21 @@ schedule("0 0 * * *", () => {
 
 /**
  * Prüft, ob ein gefährlicher Zustand vorliegt:
- * Tür ist offen UND der Ofen zieht Strom (heizt).
+ * Tür ist offen UND die Harvia-Heizung ist aktiv.
+ * @param {boolean} fenixHeatOn - Ob die Harvia Fenix Heizung aktiv ist.
  * @param {number} load - Die aktuelle bereinigte Hauslast in Watt.
  */
-function checkSaunaSafety(load) {
-  const doorOpen = getState(IDS.saunaTuer)?.val;
-  // Wir nehmen > 7500W an, um Fehlalarme durch andere Verbraucher zu vermeiden.
-  // Dies verhindert Fehlalarme durch andere Verbraucher (Föhn, Wasserkocher).
-  const isHeating = load > 7500;
+function checkSaunaSafety(fenixHeatOn, load) {
+  const doorOpen = getState(IDS.saunaTuer)?.val || getState(IDS.saunaDoorSafety)?.val === false;
+  const isHeating = fenixHeatOn && load > 5000;
 
   if (doorOpen && isHeating) {
     if (!tSaunaSafety) {
-      //console.log(
-      //  "Sauna-Safety: Kritischer Zustand, Tür offen & Heizung an, Timer gestartet",
-      //);
       tSaunaSafety = setTimeout(() => {
         // Erneute Prüfung nach Ablauf der Zeit
-        if (getState(IDS.saunaTuer)?.val && getBereinigteLast() > 7500) {
+        const currentHeatOn = getState(IDS.saunaHeatOn)?.val === true;
+        const currentDoorOpen = getState(IDS.saunaTuer)?.val || getState(IDS.saunaDoorSafety)?.val === false;
+        if (currentDoorOpen && currentHeatOn && getBereinigteLast() > 5000) {
           sendGlobalNotify(
             "Achtung: Die Sauna heizt bei offener Tür, bitte überprüfen",
             "Energiemaster",
@@ -372,16 +384,14 @@ function checkSaunaSafety(load) {
       }, 60000); // Warnung nach 1 Minute Dauer-Heizen bei offener Tür
     }
   } else if (tSaunaSafety) {
-    // Entwarnung: Tür zu oder Ofen hat abgeschaltet (Thermostat)
+    // Entwarnung: Tür zu oder Heizung aus
     clearTimeout(tSaunaSafety);
     tSaunaSafety = null;
-    //console.log(
-    //  "Sauna-Safety: Situation bereinigt (Tür zu oder Heizung aus), Timer gestoppt",
-    //);
   }
 }
 
 // Trigger für sofortige Prüfung bei Türbewegung
 on({ id: IDS.saunaTuer, change: "ne" }, () => {
-  checkSaunaSafety(getBereinigteLast());
+  const heatOn = getState(IDS.saunaHeatOn)?.val === true;
+  checkSaunaSafety(heatOn, getBereinigteLast());
 });

@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.14-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.15-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -101,6 +101,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.2.15] - 2026-07-31
+- feat(sauna): integrate Harvia Fenix native adapter (energiemaster_und_sauna.js)
+
 ### [3.2.14] - 2026-07-27
 - refactor(kia): Prevent repetitive OCPP offline warnings and update header (charge_master.js)
 
@@ -112,8 +115,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.2.10] - 2026-07-24
 - fix(vitrine): Add offline notifications and reachability check for vitrine light (licht.js)
-
-### [3.2.9] - 2026-07-24
-- fix(vitrine): Add offline notification (Telegram, Gotify, SayIt) and reachability check in licht.js
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).

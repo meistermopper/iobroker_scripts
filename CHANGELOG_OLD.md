@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.9] - 2026-07-24
+- fix(vitrine): Add offline notification (Telegram, Gotify, SayIt) and reachability check in licht.js
+
 ### [3.2.8] - 2026-07-24
 - fix(vitrine): Ensure vitrine colorloop starts reliably (licht.js)
 
