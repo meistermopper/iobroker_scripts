@@ -40,21 +40,21 @@ async function generateCommitMessage(diff) {
     return null;
   }
 
-  // Präziser Prompt für detaillierte Commit-Meldungen
+  // Präziser Prompt für detaillierte Commit-Meldungen auf Englisch
   const prompt = `Du bist ein professioneller Git-Experte. Generiere eine detaillierte und strukturierte Commit-Nachricht basierend auf dem folgenden Git-Diff der gestageten Änderungen.
 Verwende das Format "Conventional Commits".
 
 Format:
-<type>(<scope>): <kurze Zusammenfassung in Englisch>
+<type>(<scope>): <short summary in English>
 
-- <Detaillierte Änderung 1 in Deutsch>
-- <Detaillierte Änderung 2 in Deutsch (WAS wurde geändert und vor allem WARUM)>
+- <Detailed change 1 in English>
+- <Detailed change 2 in English (WHAT was changed and WHY)>
 
 Regeln:
 1. Type muss einer von: feat, fix, docs, style, refactor, perf, test, build, ci, chore sein.
 2. Der Scope entspricht dem betroffenen Bereich (z.B. unifi, fritzbox, usv, global).
-3. Die Zusammenfassung im Header soll kurz und prägnant auf Englisch sein.
-4. Die Stichpunkte im Body sollen tiefgründig und auf Deutsch beschreiben, WAS geändert wurde und WARUM (keine oberflächlichen Kommentare).
+3. Die Zusammenfassung im Header sowie die Stichpunkte im Body MÜSSEN VOLLSTÄNDIG AUF ENGLISCH sein.
+4. Die Stichpunkte im Body sollen tiefgründig und auf Englisch beschreiben, WAS geändert wurde und WARUM (keine oberflächlichen Kommentare).
 5. Antworte AUSSCHLIESSLICH mit der Commit-Nachricht. Keinen Markdown-Code-Block (\`\`\`), keine Einleitung, keine Erklärung.
 
 Hier ist der Git-Diff:
