@@ -1,28 +1,13 @@
 /* eslint-env es2022 */
 // --- KONFIGURATION ---
 const dpFritzActive = "tr-064.0.devices.Fritzbox.active";
-const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
 const CHECK_DELAY = 420000; // 7 Minuten Verzögerung
 
 let fritzTimeout = null;
-
 // --- HILFSFUNKTION (Meldung) ---
 function fritzNotify(msg) {
-  sendTo("telegram", "send", { text: msg });
   console.error(`FritzBox-Status: ${msg}`);
-  if (gotifyToken) {
-    httpPost(
-      `https://mygotify.meistermopper.de/message?token=${gotifyToken}`,
-      {
-        title: "ioBroker: Netzwerk",
-        message: msg,
-        priority: 5,
-      },
-      (error) => {
-        if (error) console.error(`[Fritz Reboot] Gotify Fehler: ${error}`);
-      },
-    );
-  }
+  sendGlobalNotify(msg, "Netzwerk", 5);
 }
 
 // --- LOGIK ---

@@ -1,26 +1,11 @@
 /* eslint-env es2022 */
 // --- KONFIGURATION ---
 const dpBatteryTemp = "modbus.0.inputRegisters.225.262_Battery_temp";
-const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
 const TEMP_LIMIT = 350; // Entspricht 35,0 °C
-
 // --- HILFSFUNKTION (Lokale Meldung) ---
 function tempNotify(msg) {
-  sendTo("telegram", "send", { text: msg });
   console.log(`Batterie-Warnung: ${msg}`);
-  if (gotifyToken) {
-    httpPost(
-      `https://mygotify.meistermopper.de/message?token=${gotifyToken}`,
-      {
-        title: "ioBroker: Batterie",
-        message: msg,
-        priority: 8,
-      },
-      (error) => {
-        if (error) console.error(`[Batteriehitzewarnung] Gotify Fehler: ${error}`);
-      },
-    );
-  }
+  sendGlobalNotify(msg, "Batterie", 5);
 }
 
 // --- LOGIK ---

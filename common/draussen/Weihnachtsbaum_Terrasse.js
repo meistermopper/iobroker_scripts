@@ -1,22 +1,8 @@
 /* eslint-env es2022 */
-// Hilfsfunktion für Benachrichtigungen (spart massiv Platz)
+// Hilfsfunktion für Benachrichtigungen
 function notifyThomas(msg) {
-  const token = getState("0_userdata.0.gotifytoken.iobroker")?.val;
-  sendTo("telegram", "send", { text: msg, user: "Thomas" });
   console.log(`Thomas: ${msg}`);
-  if (token) {
-    httpPost(
-      `https://mygotify.meistermopper.de/message?token=${token}`,
-      {
-        title: "ioBroker: 🎄",
-        message: msg,
-        priority: 1,
-      },
-      (error) => {
-        if (error) console.error(`[Weihnachtsbaum Terrasse] Gotify Fehler: ${error}`);
-      },
-    );
-  }
+  sendGlobalNotify(msg, "Draußen", 1);
 }
 
 // 1. Einschalten zur Goldenen Stunde + 30 Min

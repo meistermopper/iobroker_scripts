@@ -16,9 +16,6 @@ const ID_VITRINE_EFFECT = "alias.0.konferenz.licht.vitrine.effect";
 const ID_VITRINE_HEX_COLOR = "zigbee.0.00158d000819fa91.hex_color";
 const ID_VITRINE_AVAILABLE = "zigbee.0.00158d000819fa91.available";
 
-// Benachrichtigungen
-const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";
-
 // --- LOGIK ---
 
 /**
@@ -28,39 +25,8 @@ const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";
 function sendOfflineNotification() {
   const warnText =
     "Achtung: Die Vitrinen-Beleuchtung im Konferenzraum ist offline und kann nicht eingeschaltet werden.";
-
-  // 1. Log-Meldung
   console.warn(`[Lichtshow] ${warnText}`);
-
-  // 2. Telegram-Benachrichtigung
-  sendTo("telegram", "send", {
-    text: "⚠️ <b>Achtung Vitrine:</b> Die Vitrinen-Beleuchtung im Konferenzraum ist offline (available = false) und kann nicht eingeschaltet werden.",
-    parse_mode: "HTML",
-  });
-
-  // 3. Gotify-Benachrichtigung via native httpPost()
-  const gotifyToken = getState(ID_GOTIFY_TOKEN)?.val;
-  if (gotifyToken) {
-    httpPost(
-      `https://mygotify.meistermopper.de/message?token=${gotifyToken}`,
-      {
-        title: "Vitrine Offline",
-        message: warnText,
-        priority: 5,
-      },
-      (err) => {
-        if (err) {
-          console.error(`[Lichtshow] Gotify Fehler: ${err}`);
-        }
-      },
-    );
-  }
-
-  // 4. Sprachansage (SayIt)
-  sendTo("sayit", "say", {
-    text: "Achtung, die Vitrinen-Beleuchtung im Konferenzraum ist offline.",
-    volume: 50,
-  });
+  sendGlobalNotify(warnText, "Vitrine Offline", 5, 50);
 }
 
 /**

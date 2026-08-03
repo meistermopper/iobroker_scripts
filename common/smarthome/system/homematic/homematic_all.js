@@ -291,29 +291,6 @@ on({ id: `${PATH}.Anzahl`, change: "gt" }, (obj) => {
   const text = getState(`${PATH}.Text`)?.val;
   const anzahl = obj.state.val;
 
-  // Nachricht für Telegram (HTML)
   const msg = `⚠️ <b>Homematic Servicemeldung</b>\n\nAktuelle Meldungen (${anzahl}):\n${text.replace(/<br>/g, "\n")}`;
-
-  sendTo("telegram", "send", {
-    text: msg,
-    parse_mode: "HTML",
-  });
-
-  // Optional: Auch an Gotify senden (sofern ein Token hinterlegt ist)
-  const token = getState("0_userdata.0.gotifytoken.iobroker")?.val;
-  if (token) {
-    const url = `https://mygotify.meistermopper.de/message?token=${token}`;
-    const payload = {
-      title: "HM Service",
-      message: msg.replace(/<[^>]*>/g, ""), // HTML-Tags für Gotify entfernen
-      priority: 1,
-    };
-    const options = { headers: { "Content-Type": "application/json" }, timeout: 10000 };
-    // Native HTTP-POST Funktion von ioBroker
-    httpPost(url, payload, options, (err) => {
-      if (err) {
-        console.error(`[Homematic Service-Zentrale] Gotify Fehler: ${err}`);
-      }
-    });
-  }
+  sendGlobalNotify(msg, "HM Service", 1);
 });

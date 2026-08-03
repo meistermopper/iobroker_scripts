@@ -19,7 +19,6 @@ const ID_FAN_ONLINE = "alias.0.wohnzimmer.klima.ventilator.online"; // Erreichba
 
 // Sonstige System-Datenpunkte
 const ID_HEIZPERIODE = "0_userdata.0.Energie.heizperiode"; // Zeigt an, ob aktuell die Heizperiode aktiv ist (boolean)
-const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker"; // Token für Push-Benachrichtigungen über Gotify
 
 // --- VARIABLEN ---
 // Diese Variable verhindert, dass der Ventilator mehrfach eingeschaltet wird oder dass
@@ -39,30 +38,10 @@ function isWinter() {
 
 /**
  * Hilfsfunktion für Benachrichtigungen
- * Sendet eine Nachricht parallel an Telegram und an den lokalen Gotify-Server.
  * @param {string} msg - Die zu sendende Nachricht
  */
 function notify(msg) {
-  // 1. Nachricht über den Telegram-Adapter versenden
-  sendTo("telegram", "send", { text: msg, user: "Thomas" });
-
-  // 2. Nachricht über Gotify versenden (sofern ein Token vorhanden ist)
-  const token = getState(ID_GOTIFY_TOKEN)?.val;
-  if (token) {
-    // Native httpPost Funktion nutzen, um externe curl Aufrufe zu vermeiden
-    httpPost(
-      `https://mygotify.meistermopper.de/message?token=${token}`,
-      {
-        title: "ioBroker Fan",
-        message: msg,
-        priority: 1,
-      },
-      (error) => {
-        // Fehler im Log ausgeben, falls Gotify nicht erreichbar ist
-        if (error) console.error(`[Kachelofen Ventilator] Gotify Fehler: ${error}`);
-      },
-    );
-  }
+  sendGlobalNotify(msg, "Klima", 1);
 }
 
 /**

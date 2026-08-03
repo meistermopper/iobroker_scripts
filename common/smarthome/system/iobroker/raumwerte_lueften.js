@@ -18,7 +18,6 @@ const Dewpoint = require("dewpoint"); // Erfordert das NPM-Modul 'dewpoint'
 // --- 1. KONFIGURATION ---
 const PFAD = "Raumklima.";
 const RAUM_PFAD = "Raum.";
-const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";
 
 const HUNN = 250; // Höhe über NN
 const DEFAULT_TEMP = 18.0; // Auskühlschutz (Min-Temp für Lüften)
@@ -129,29 +128,7 @@ const RAEUME = {
 // --- 2. HILFSFUNKTIONEN (NOTIFY) ---
 
 function internalNotify(text, priority = 1) {
-  // Telegram-Versand
-  sendTo("telegram", "send", {
-    text: text,
-    parse_mode: "HTML",
-  });
-
-  // Gotify-Versand
-  const token = getState(ID_GOTIFY_TOKEN)?.val;
-  if (token) {
-    // HTML für Gotify entfernen (Reintext-Formatierung)
-    const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
-    httpPost(
-      `https://mygotify.meistermopper.de/message?token=${token}`,
-      {
-        title: "Haus-Klima",
-        message: cleanText,
-        priority: priority,
-      },
-      (error) => {
-        if (error) console.error(`[Raumwerte Lüften] Gotify Fehler: ${error}`);
-      },
-    );
-  }
+  sendGlobalNotify(text, "Haus-Klima", priority);
 }
 
 // --- 3. MORGEN-REPORT (TÄGLICH 08:00) ---

@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.14] - 2026-07-27
+- refactor(kia): Prevent repetitive OCPP offline warnings and update header (charge_master.js)
+
 ### [3.2.13] - 2026-07-27
 - feat(pv): Format Telegram/Gotify PV yield notifications to rounded kWh (solarprognose_master.js)
 

@@ -13,7 +13,6 @@
 
 const logging = true;
 const idVersionInternet = "0_userdata.0.Servicemeldungen.Verfuegbare_Tasmota-Firmware";
-const idGotifyToken = "0_userdata.0.gotifytoken.iobroker";
 const maxRetries = 3; // Maximale Anzahl der Versuche bei Fehlern
 
 async function checkTasmotaVersion(retryCount = 0) {
@@ -85,24 +84,8 @@ async function checkTasmotaVersion(retryCount = 0) {
           // Internet-Stand aktualisieren
           await setStateAsync(idVersionInternet, latestFullVersion, true);
 
-          // Telegram
-          sendTo("telegram", "send", { text: message });
-
-          // Gotify
-          const tokenState = await getStateAsync(idGotifyToken);
-          if (tokenState?.val) {
-            httpPost(
-              `https://mygotify.meistermopper.de/message?token=${tokenState.val}`,
-              {
-                title: "Tasmota Update",
-                message: message,
-                priority: 1,
-              },
-              (error) => {
-                if (error) console.error(`[Tasmota FW] Gotify Fehler: ${error}`);
-              },
-            );
-          }
+          // Benachrichtigung
+          sendGlobalNotify(message, "Tasmota Update", 1);
 
           if (logging)
             console.warn(`Tasmota: Update-Meldung versendet für ${updateDevices.length} Geräte`);

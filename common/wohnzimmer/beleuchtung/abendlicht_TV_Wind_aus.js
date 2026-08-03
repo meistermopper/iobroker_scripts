@@ -11,8 +11,6 @@ const ALIASE = {
   MARANTZ: "alias.0.wohnzimmer.media.marantz.power",
 };
 
-const GOTIFY_TOKEN_ID = "0_userdata.0.gotifytoken.iobroker";
-
 // --- LOGIK ---
 
 schedule("30 23 * * *", async () => {
@@ -34,22 +32,5 @@ schedule("30 23 * * *", async () => {
 
   // 3. Benachrichtigung
   const msg = "+++ 💡 Licht, Galaxie, Ventilator und Marantz ausgeschaltet +++";
-  sendTo("telegram", "send", { text: msg });
-
-  // Gotify Notification
-  const tokenState = getState(GOTIFY_TOKEN_ID);
-  const token = tokenState ? tokenState.val : null;
-  if (token) {
-    httpPost(
-      `https://mygotify.meistermopper.de/message?token=${token}`,
-      {
-        title: "ioBroker",
-        message: msg,
-        priority: 1,
-      },
-      (error) => {
-        if (error) console.error(`[Abendlicht TV Wind Aus] Gotify Fehler: ${error}`);
-      },
-    );
-  }
+  sendGlobalNotify(msg, "Beleuchtung", 1);
 });

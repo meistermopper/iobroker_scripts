@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.18-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.19-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -101,6 +101,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.2.19] - 2026-08-03
+- refactor(global): Centralize notification handling across scripts (Weihnachtsbaum_Terrasse.js, licht.js, anwesenheit_unifi.js, batterie_voll.js, batteriehitzewarnung.js, soh_change.js, solarprognose_master.js, stromausfall.js, fritz_reboot.js, homematic_all.js, adapter_off.js, battery_states.js, raumwerte_lueften.js, sonoff_fail.js, tasmota_fw.js, nut_client_inactive.js, connected.js, sat_tv_auto_aus.js, abendlicht_TV_Wind_aus.js, autolicht_daemmer.js, kachelofen_ventilator.js)
+
 ### [3.2.18] - 2026-08-03
 - chore(haushalt): Remove excessive console logs from household device scripts (trockner.js, waschmaschine.js)
 
@@ -112,8 +115,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.2.15] - 2026-07-31
 - feat(sauna): integrate Harvia Fenix native adapter (energiemaster_und_sauna.js)
-
-### [3.2.14] - 2026-07-27
-- refactor(kia): Prevent repetitive OCPP offline warnings and update header (charge_master.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).

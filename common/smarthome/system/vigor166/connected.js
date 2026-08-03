@@ -13,10 +13,8 @@ const DP_CONNECTED = "0_userdata.0.Vigor166.connected"; // Ziel-Datenpunkt für 
 const DP_PAYLOAD = "0_userdata.0.Vigor166.grafana_payload"; // Datenpunkt zur Sicherung des Roh-Payloads
 
 // Benachrichtigungen (Kanäle einzeln aktivierbar/deaktivierbar)
-const NOTIFY_TELEGRAM = true; // Telegram-Benachrichtigungen über dieses Skript senden
-const NOTIFY_GOTIFY = true; // Gotify-Benachrichtigungen über dieses Skript senden
-const NOTIFY_VOICE = true; // Sprachansage über Google Speaker (SayIt) senden
 const NOTIFY_TITLE = "DrayTek Vigor 166"; // Standardtitel für die Messenger-Benachrichtigungen
+const NOTIFY_VOICE = true; // Sprachansage über Google Speaker (SayIt) senden
 const VOICE_VOLUME = 50; // Lautstärke der Sprachansage (null/0 = deaktiviert)
 
 // --- LOGIK ---
@@ -48,43 +46,12 @@ createState(DP_PAYLOAD, "", {
 // --- HELPER FÜR BENACHRICHTIGUNGEN ---
 
 /**
- * Sendet Benachrichtigungen über die konfigurierten Kanäle (Telegram, Gotify, SayIt).
+ * Sendet Benachrichtigungen über sendGlobalNotify.
  * @param {string} text - Der auszugebende/zu sendende Text
  * @param {number} priority - Dringlichkeit der Nachricht (besonders relevant für Gotify)
  */
 function sendNotification(text, priority) {
-  // 1. Telegram-Benachrichtigung senden (falls in Konfiguration aktiviert)
-  if (NOTIFY_TELEGRAM) {
-    sendTo("telegram", "send", {
-      text: `[${NOTIFY_TITLE}] ${text}`,
-    });
-  }
-
-  // 2. Gotify-Push-Benachrichtigung senden (falls in Konfiguration aktiviert)
-  if (NOTIFY_GOTIFY) {
-    // Sicheres Auslesen des Gotify-Tokens aus dem vordefinierten iobroker-Datenpunkt
-    const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
-    if (gotifyToken) {
-      const url = `https://mygotify.meistermopper.de/message?token=${gotifyToken}`;
-      const cleanText = text.replace(/<\/?[^>]+(>|$)/g, ""); // HTML-Tags entfernen für reinen Text
-      const payload = { title: NOTIFY_TITLE, message: cleanText, priority: priority };
-
-      // Native ioBroker httpPost-Funktion zur Übertragung nutzen
-      httpPost(url, payload, { timeout: 5000 }, (error) => {
-        if (error) console.error(`[Grafana-Vigor] Gotify Fehler: ${error}`);
-      });
-    }
-  }
-
-  // 3. Sprachausgabe (SayIt) via Google Speaker auslösen (falls aktiviert und Lautstärke > 0)
-  if (NOTIFY_VOICE && VOICE_VOLUME !== null && VOICE_VOLUME > 0) {
-    const voiceText = text
-      .replace(/\p{Extended_Pictographic}/gu, "") // Emojis und Symbole entfernen, um Vorlesefehler zu vermeiden
-      .replace(/\s\s+/g, " ") // Doppelte Leerzeichen bereinigen
-      .trim();
-
-    sendTo("sayit", "say", { text: voiceText, volume: VOICE_VOLUME });
-  }
+  sendGlobalNotify(text, NOTIFY_TITLE, priority, NOTIFY_VOICE ? VOICE_VOLUME : null);
 }
 
 // --- EIGENER HTTP-WEBHOOK-SERVER ---

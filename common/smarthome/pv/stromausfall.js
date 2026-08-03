@@ -11,7 +11,6 @@
 
 const dpGridAlarm = "modbus.0.inputRegisters.227.64_Grid_lost_alarm";
 const dpPersistPath = "0_userdata.0.System.Netzausfall_Start";
-const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
 const sayitInstances = ["sayit.0", "sayit.1", "sayit.2", "sayit.3", "sayit.4", "sayit.5"];
 
 async function initGridMonitor() {
@@ -25,23 +24,7 @@ async function initGridMonitor() {
 }
 
 function gridNotify(msg, priority = 5) {
-  sendTo("telegram", "send", {
-    text: `<pre>🌐 NETZ-MONITOR\n\n${msg}</pre>`,
-    parse_mode: "HTML",
-  });
-  if (gotifyToken) {
-    httpPost(
-      `https://mygotify.meistermopper.de/message?token=${gotifyToken}`,
-      {
-        title: "Netzstatus Haus",
-        message: msg,
-        priority: priority,
-      },
-      (error) => {
-        if (error) console.error(`[Stromausfall] Gotify Fehler: ${error}`);
-      },
-    );
-  }
+  sendGlobalNotify(msg, "Netzstatus Haus", priority);
 }
 
 /**

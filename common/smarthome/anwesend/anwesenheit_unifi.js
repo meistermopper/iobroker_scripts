@@ -30,10 +30,6 @@ const people = [
 
 // Basispfad für die selbst erstellten ioBroker-Datenpunkte
 const basePath = "0_userdata.0.Unifi.Anwesenheit";
-// Pfad zum Gotify-Token für Benachrichtigungen
-const gotifyTokenDP = "0_userdata.0.gotifytoken.iobroker";
-// Telegram-Empfänger (Name des Benutzers im Telegram-Adapter)
-const telegramUser = "Thomas";
 
 // --- INITIALISIERUNG ---
 /**
@@ -129,24 +125,7 @@ function updateStatus(person, isOnline, silent = false) {
   // Benachrichtigungen überspringen, falls silent=true
   if (silent) return;
 
-  // 1. Benachrichtigung per Telegram senden
-  sendTo("telegram.0", { user: telegramUser, text: text });
-
-  // 2. Benachrichtigung per Gotify senden (ressourcenschonend via nativem httpPost statt curl)
-  const tokenState = existsState(gotifyTokenDP) ? getState(gotifyTokenDP) : null;
-  const token = tokenState ? tokenState.val : null;
-  if (token) {
-    const url = `https://mygotify.meistermopper.de/message?token=${token}`;
-    const payload = {
-      title: "ioBroker",
-      message: text,
-      priority: 1,
-    };
-
-    httpPost(url, payload, { timeout: 5000 }, (error) => {
-      if (error) console.error(`[Anwesenheit] Gotify Fehler: ${error}`);
-    });
-  }
+  sendGlobalNotify(text, "Anwesenheit", 1);
 }
 
 // Skript starten

@@ -36,9 +36,6 @@ const CONFIG = {
 
   dpVIS: "0_userdata.0.Tabellen.akku",
   dpAlarmCount: "0_userdata.0.Tabellen.akkuAlarm",
-  idGotifyToken: "0_userdata.0.gotifytoken.iobroker",
-  useTelegram: true,
-  useGotify: true,
 };
 
 // Definition der zu durchsuchenden Geräte
@@ -269,31 +266,7 @@ async function sendNotifications(criticalDevices) {
     `⚠️ *Kritische Akkustände!*\n\n` +
     criticalDevices.map((d) => `• ${d.name}: ${d.val}`).join("\n");
 
-  if (CONFIG.useTelegram) {
-    sendTo("telegram", "send", {
-      text: message,
-      parse_mode: "Markdown",
-      disable_notification: isQuietTime,
-    });
-  }
-
-  if (CONFIG.useGotify) {
-    const tokenState = await getStateAsync(CONFIG.idGotifyToken);
-    if (tokenState?.val) {
-      const prio = isQuietTime ? 0 : 1;
-      httpPost(
-        `https://mygotify.meistermopper.de/message?token=${tokenState.val}`,
-        {
-          title: "Batterie Alarm",
-          message: message,
-          priority: prio,
-        },
-        (error) => {
-          if (error) console.error(`[Battery States] Gotify Fehler: ${error}`);
-        },
-      );
-    }
-  }
+  sendGlobalNotify(message, "Batterie Alarm", isQuietTime ? 1 : 5);
 }
 
 async function main() {

@@ -13,27 +13,8 @@ on({ id: $(ID_SELECTOR), change: "ne" }, (obj) => {
     const deviceName = obj.channelName || "Unbekanntes Gerät";
     const message = `📡 <b>Keine MQTT-Verbindung</b> zum Schalter: <b>${deviceName}</b>!`;
 
-    // Telegram-Benachrichtigung
-    sendTo("telegram", "send", {
-      text: message,
-      parse_mode: "HTML",
-    });
-
-    // Gotify-Benachrichtigung (als Ergänzung für deine Infrastruktur)
-    const token = getState("0_userdata.0.gotifytoken.iobroker")?.val;
-    if (token) {
-      httpPost(
-        `https://mygotify.meistermopper.de/message?token=${token}`,
-        {
-          title: "Verbindungsabbruch",
-          message: `MQTT offline: ${deviceName}`,
-          priority: 2,
-        },
-        (error) => {
-          if (error) console.error(`[Sonoff Fail] Gotify Fehler: ${error}`);
-        },
-      );
-    }
+    // Benachrichtigung
+    sendGlobalNotify(message, "Verbindungsabbruch", 2);
 
     console.warn(`Watchdog: ${deviceName} ist offline`);
   }

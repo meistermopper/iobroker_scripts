@@ -4,7 +4,6 @@ const IDS = {
   batSoc: "modbus.0.inputRegisters.100.843_Battery_State_of_Charge_(System)",
   minSocWrite: "modbus.0.holdingRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
   minSocRead: "modbus.0.inputRegisters.100.2901_ESS_Minimum_SoC_(unless_grid_fails)",
-  gotifyToken: "0_userdata.0.gotifytoken.iobroker",
 };
 
 let messageSent = false;
@@ -27,33 +26,8 @@ function isWinter() {
  * @param {number} [prio=5] - Priorität für Gotify
  */
 function notify(msg, speak = false, prio = 5) {
-  // 1. Telegram
-  sendTo("telegram", "send", { text: msg });
-
-  // 2. Gotify
-  const token = getState(IDS.gotifyToken)?.val;
-  if (token) {
-    httpPost(
-      `https://mygotify.meistermopper.de/message?token=${token}`,
-      {
-        title: "ioBroker: PV",
-        message: msg,
-        priority: prio,
-      },
-      (error) => {
-        if (error) console.error(`[Batterie Voll] Gotify Fehler: ${error}`);
-      },
-    );
-  }
-
-  // 3. Sprachausgabe (SayIt) - nur tagsüber
-  if (speak && compareTime("08:00", "20:00", "between")) {
-    const cleanMsg = msg.replace(
-      /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF])/g,
-      "",
-    );
-    sendTo("sayit", "say", { text: cleanMsg });
-  }
+  const isDaytime = compareTime("08:00", "20:00", "between");
+  sendGlobalNotify(msg, "PV", prio, speak && isDaytime ? 50 : null);
 }
 
 // --- LOGIK: SCHONUNG (Golden Hour) ---

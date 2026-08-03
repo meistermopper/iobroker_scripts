@@ -2,27 +2,9 @@
 // --- Konfiguration ---
 const ID_ABENDLICHT = "0_userdata.0.Licht.Wohnzimmer.Abendlicht";
 const ID_REINIGUNG = "0_userdata.0.Licht.Reinigungsmodus";
-const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";
-
 // Funktion für Benachrichtigungen
 function notify(text) {
-  sendTo("telegram", "send", { text: text });
-  //console.log(`[Abendlicht] ${text}`);
-
-  const token = getState(ID_GOTIFY_TOKEN)?.val;
-  if (token) {
-    httpPost(
-      `https://mygotify.meistermopper.de/message?token=${token}`,
-      {
-        title: "ioBroker:",
-        message: text,
-        priority: 1,
-      },
-      (error) => {
-        if (error) console.error(`[Autolicht Dämmer] Gotify Fehler: ${error}`);
-      },
-    );
-  }
+  sendGlobalNotify(text, "Beleuchtung", 1);
 }
 
 // Zeitplan: Sonnenuntergang

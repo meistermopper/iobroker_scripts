@@ -11,8 +11,6 @@ const ID_HARMONY_CHROME = "harmony.0.Harmony_Wozi.activities.Chromecast_Video";
 const ID_TV_POWER_ON = "samsung_tizen.0.powerOn";
 const ID_TV_OFF_CMD = "samsung_tizen.0.control.KEY_POWEROFF";
 
-const GOTIFY_TOKEN_ID = "0_userdata.0.gotifytoken.iobroker";
-
 let timeout_enigma;
 
 // --- SCHEDULE: Täglich um 03:02 Uhr ---
@@ -29,22 +27,7 @@ schedule("2 3 * * *", async () => {
       "+++📡 Der Sat-Receiver wurde neu gestartet und geht nach dem Booten wieder in Standby.+++";
 
     // Benachrichtigungen
-    sendTo("telegram", "send", { text: msg });
-
-    const token = getState(GOTIFY_TOKEN_ID)?.val;
-    if (token) {
-      httpPost(
-        `https://mygotify.meistermopper.de/message?token=${token}`,
-        {
-          title: "ioBroker Wartung",
-          message: msg,
-          priority: 1,
-        },
-        (error) => {
-          if (error) console.error(`[sat_tv_auto_aus] Gotify Fehler: ${error}`);
-        },
-      );
-    }
+    sendGlobalNotify(msg, "Medien", 1);
 
     // Nach 3 Minuten (Bootzeit) zurück in den Schlaf schicken
     if (timeout_enigma) clearTimeout(timeout_enigma);

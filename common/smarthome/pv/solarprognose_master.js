@@ -271,18 +271,12 @@ function fetchSolarData(ignoreToken = false) {
             const ertragHeuteKWh = Math.round(ertragHeuteWh / 1000);
             const ertragMorgenKWh = Math.round(ertragMorgenWh / 1000);
 
-            const textHtml =
+            const msg =
               `<b>PV-Prognose Update (Forecast.Solar)</b>\n\n` +
               `• <b>Heute:</b> ${ertragHeuteKWh} kWh\n` +
               `• <b>Morgen:</b> ${ertragMorgenKWh} kWh`;
 
-            const textPlain =
-              `PV-Prognose Update (Forecast.Solar)\n\n` +
-              `- Heute: ${ertragHeuteKWh} kWh\n` +
-              `- Morgen: ${ertragMorgenKWh} kWh`;
-
-            sendTelegramMessage(textHtml);
-            sendGotifyMessage("PV-Prognose Update", textPlain);
+            sendGlobalNotify(msg, "PV-Prognose Update", 1);
           } catch (err) {
             console.error(
               `[Solar-Prognose Fail] Fehler beim Erstellen der Benachrichtigung: ${err.message}`,
@@ -348,52 +342,6 @@ function formatAndSplitData(data) {
 
 // Erster Start verzögert (gibt ioBroker Zeit zum Registrieren der Datenpunkte)
 setTimeout(fetchSolarData, 10000);
-
-/**
- * Sendet eine Nachricht über den Telegram-Adapter.
- */
-function sendTelegramMessage(msg) {
-  if (!SEND_TELEGRAM) return;
-  sendTo("telegram", "send", {
-    text: msg,
-    parse_mode: "HTML",
-  });
-}
-
-/**
- * Sendet eine Nachricht an den Gotify-Server mittels httpPost().
- */
-function sendGotifyMessage(title, message, priority = 1) {
-  if (!SEND_GOTIFY) return;
-
-  const gotifyToken = existsState("0_userdata.0.gotifytoken.iobroker")
-    ? getState("0_userdata.0.gotifytoken.iobroker")?.val
-    : null;
-  if (!gotifyToken) {
-    console.error(
-      "[Solar-Prognose Fail] Gotify-Token konnte nicht aus '0_userdata.0.gotifytoken.iobroker' gelesen werden.",
-    );
-    return;
-  }
-
-  const url = `https://mygotify.meistermopper.de/message?token=${gotifyToken}`;
-  const payload = {
-    title: title,
-    message: message,
-    priority: priority,
-  };
-
-  httpPost(
-    url,
-    JSON.stringify(payload),
-    { headers: { "Content-Type": "application/json" } },
-    (error) => {
-      if (error) {
-        console.error(`[Solar-Prognose Fail] Gotify Fehler: ${error}`);
-      }
-    },
-  );
-}
 
 /**
  * Zeichnet die täglichen Vorhersagedaten im Vergleich zur Realität auf.
