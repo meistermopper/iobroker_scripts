@@ -381,9 +381,9 @@ function recordDailyStats() {
       statsList.push(newEntry);
     }
 
-    // Begrenze auf die letzten 30 Tage
-    if (statsList.length > 30) {
-      statsList = statsList.slice(statsList.length - 30);
+    // Begrenze auf 366 Tage (1 volles Jahr inkl. Schaltjahr)
+    if (statsList.length > 366) {
+      statsList = statsList.slice(statsList.length - 366);
     }
 
     setState(`${baseRef}.statistik`, JSON.stringify(statsList), true);

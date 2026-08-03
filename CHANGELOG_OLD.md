@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.15] - 2026-07-31
+- feat(sauna): integrate Harvia Fenix native adapter (energiemaster_und_sauna.js)
+
 ### [3.2.14] - 2026-07-27
 - refactor(kia): Prevent repetitive OCPP offline warnings and update header (charge_master.js)
 
