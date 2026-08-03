@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.13] - 2026-07-27
+- feat(pv): Format Telegram/Gotify PV yield notifications to rounded kWh (solarprognose_master.js)
+
 ### [3.2.12] - 2026-07-27
 - feat(pv): Implement PV yield scaling factor and remove peak power tracking (solarprognose_master.js)
 

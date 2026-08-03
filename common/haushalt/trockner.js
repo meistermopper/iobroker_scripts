@@ -49,7 +49,6 @@ async function initTrocknerSystem() {
       role: "indicator.working",
     });
   }
-  console.log("Trockner: Initialisierung v2.9 abgeschlossen");
 }
 initTrocknerSystem();
 
@@ -58,7 +57,6 @@ initTrocknerSystem();
 function dryNotify(text) {
   const isDaytime = compareTime("08:00", "20:00", "between");
   sendGlobalNotify(text, "Haushalt", 5, isDaytime ? 50 : null);
-  console.log("Trockner: Benachrichtigung gesendet");
 }
 
 // --- 4. TAGES-RESET ---
@@ -77,20 +75,18 @@ on({ id: ID_POWER_T, change: "ne" }, (obj) => {
     if (timerEndT) {
       clearTimeout(timerEndT);
       timerEndT = null;
-      console.log("Trockner: Start erkannt, Ende-Timer abgebrochen");
     }
 
     isRunningT = true;
     startTimeT = Date.now();
     setState(ID_VIS_T, true, true);
-    console.log("Trockner: Trocknung gestartet. Lese Start-Zählerstand in 15 Sekunden");
+    console.log("Trockner: Trocknung gestartet");
 
     // Verzögertes Lesen des Zählerstands, um der Steckdose Zeit zum Aktualisieren zu geben.
     setTimeout(() => {
       const stateEnergy = getState(ID_ENERGY_T);
       if (stateEnergy && stateEnergy.val !== null) {
         startEnergyT = parseFloat(stateEnergy.val);
-        console.log(`Trockner: Start-Zählerstand erfasst: ${startEnergyT.toFixed(3)} kWh`);
       } else {
         console.warn(
           `Trockner: Konnte Start-Zählerstand nach 15s nicht lesen. startEnergyT bleibt ${startEnergyT}. Berechnung ungenau`,
@@ -103,7 +99,6 @@ on({ id: ID_POWER_T, change: "ne" }, (obj) => {
   if (isRunningT) {
     // Fall A: Leistung fällt unter Ende-Schwelle -> Timer starten
     if (watt < END_WATT_T && !timerEndT) {
-      console.log("Trockner: Leistung niedrig, warte auf Bestätigung des Endes");
       timerEndT = setTimeout(processFinishT, END_DELAY_T);
     }
 
@@ -111,7 +106,6 @@ on({ id: ID_POWER_T, change: "ne" }, (obj) => {
     if (watt >= END_WATT_T && timerEndT) {
       clearTimeout(timerEndT);
       timerEndT = null;
-      console.log("Trockner: Leistung wieder gestiegen, Timer zurückgesetzt");
     }
   }
 });

@@ -48,7 +48,6 @@ async function initWaschSystem() {
       role: "indicator.working",
     });
   }
-  console.log("Waschmaschine: Initialisierung v2.9.4 abgeschlossen");
 }
 initWaschSystem();
 
@@ -56,7 +55,6 @@ initWaschSystem();
 function washNotify(text) {
   const isDaytime = compareTime("08:00", "20:00", "between");
   sendGlobalNotify(text, "Haushalt", 5, isDaytime ? 50 : null);
-  console.log("Waschmaschine: Benachrichtigung gesendet");
 }
 
 // --- 4. TAGES-RESET ---
@@ -75,21 +73,19 @@ on({ id: ID_POWER, change: "ne" }, (obj) => {
     if (timerEnd) {
       clearTimeout(timerEnd);
       timerEnd = null;
-      console.log("Waschmaschine: Start erkannt, Ende-Timer abgebrochen");
     }
 
     // Status sofort setzen, um Logik zu starten und Mehrfach-Trigger zu verhindern
     isRunning = true;
     startTime = Date.now(); // Der Startzeitpunkt ist der erste Leistungsanstieg
     setState(ID_VIS, true, true);
-    console.log("Waschmaschine: Waschgang gestartet. Lese Start-Zählerstand in 15 Sekunden");
+    console.log("Waschmaschine: Waschgang gestartet");
 
     // Verzögertes Lesen des Zählerstands, um der Steckdose Zeit zum Aktualisieren zu geben.
     setTimeout(() => {
       const stateEnergy = getState(ID_ENERGY);
       if (stateEnergy && stateEnergy.val !== null) {
         startEnergy = parseFloat(stateEnergy.val);
-        console.log(`Waschmaschine: Start-Zählerstand erfasst: ${startEnergy.toFixed(3)} kWh`);
       } else {
         console.warn(
           `Waschmaschine: Konnte Start-Zählerstand nach 15s nicht lesen. startEnergy bleibt ${startEnergy}. Berechnung ungenau`,
@@ -102,7 +98,6 @@ on({ id: ID_POWER, change: "ne" }, (obj) => {
   if (isRunning) {
     // Fall A: Leistung fällt unter Ende-Schwelle -> Timer starten
     if (watt < END_WATT && !timerEnd) {
-      console.log("Waschmaschine: Leistung niedrig, warte auf Bestätigung des Endes");
       timerEnd = setTimeout(processFinish, END_DELAY);
     }
 
@@ -110,7 +105,6 @@ on({ id: ID_POWER, change: "ne" }, (obj) => {
     if (watt >= END_WATT && timerEnd) {
       clearTimeout(timerEnd);
       timerEnd = null;
-      console.log("Waschmaschine: Leistung wieder gestiegen, Timer zurückgesetzt");
     }
   }
 });
@@ -129,7 +123,6 @@ async function processFinish() {
   }
 
   // Sicherheits-Pause für die Übertragung der letzten Watts/kWh
-  console.log("Waschmaschine: Warte 10s auf finalen Zählerstand (Datenbank-Sync)");
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
   // Jetzt erzwingen wir ein asynchrones Lesen direkt aus dem ioBroker-Core (Bypass Cache)
