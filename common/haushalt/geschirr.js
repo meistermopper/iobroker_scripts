@@ -37,7 +37,6 @@ on({ id: "alias.0.kueche.geschirr.Programmbezeichnung_raw", change: "any" }, (ob
 on({ id: "mielecloudservice.0.000106831213.Status", change: "ne" }, async (obj) => {
   const status = obj.state.val;
   const isSpuelenAktiv = getState("0_userdata.0.Haushalt.spuelen")?.val;
-  const gotifyToken = getState("0_userdata.0.gotifytoken.iobroker")?.val;
 
   // --- START ---
   if (!isSpuelenAktiv && status === "In Betrieb") {
@@ -50,21 +49,8 @@ on({ id: "mielecloudservice.0.000106831213.Status", change: "ne" }, async (obj) 
       const endTime = getState("mielecloudservice.0.000106831213.estimatedEndTime")?.val;
       const vorhersage = `Der Geschirrspüler spült und ist voraussichtlich um ${endTime} Uhr fertig.`;
 
-      if (compareTime("08:00", "20:00", "between")) sendTo("sayit", "say", { text: vorhersage });
-      sendTo("telegram", "send", { text: vorhersage, parse_mode: "HTML" });
-      if (gotifyToken) {
-        httpPost(
-          `https://mygotify.meistermopper.de/message?token=${gotifyToken}`,
-          {
-            title: "ioBroker",
-            message: vorhersage,
-            priority: 1,
-          },
-          (error) => {
-            if (error) console.error(`[Geschirr] Gotify Fehler: ${error}`);
-          },
-        );
-      }
+      const isDaytime = compareTime("08:00", "20:00", "between");
+      sendGlobalNotify(vorhersage, "Haushalt", 1, isDaytime ? 50 : null);
     }, 10000);
   }
 
@@ -99,24 +85,7 @@ on({ id: "mielecloudservice.0.000106831213.Status", change: "ne" }, async (obj) 
       `Heute gesamt: ${energieHeute.toFixed(2)} kWh (${euroHeute} €) & ${wasser}L Wasser\n` +
       `Preis/kWh: ${Strompreis_proKWh.toFixed(3)} €</pre>`;
 
-    if (compareTime("08:00", "20:00", "between"))
-      sendTo("sayit", "say", { text: "Der Geschirrspüler kann ausgeräumt werden." });
-    sendTo("telegram", "send", { text: meldetext, parse_mode: "HTML" });
-
-    // Gotify Nachricht ohne HTML-Tags für bessere Lesbarkeit
-    const gotifyMsg = meldetext.replace(/<[^>]*>/g, "");
-    if (gotifyToken) {
-      httpPost(
-        `https://mygotify.meistermopper.de/message?token=${gotifyToken}`,
-        {
-          title: "ioBroker",
-          message: gotifyMsg,
-          priority: 1,
-        },
-        (error) => {
-          if (error) console.error(`[Geschirr] Gotify Fehler: ${error}`);
-        },
-      );
-    }
+    const isDaytime = compareTime("08:00", "20:00", "between");
+    sendGlobalNotify(meldetext, "Haushalt", 1, isDaytime ? 50 : null);
   }
 });

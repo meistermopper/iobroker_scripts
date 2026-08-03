@@ -18,7 +18,6 @@ const PATH_PRIC = "0_userdata.0.Energie.Strompreise";
 
 const ID_PRICE = `${PATH_PRIC}.akt_Preis`;
 const ID_TOTAL = `${PATH_STAT}.Waschmaschine_Tag`;
-const ID_GOTIFY = "0_userdata.0.gotifytoken.iobroker";
 
 const ID_VIS = "0_userdata.0.Haushalt.waschen";
 
@@ -55,27 +54,8 @@ initWaschSystem();
 
 // --- 3. KOMMUNIKATIONS-ZENTRALE ---
 function washNotify(text) {
-  sendTo("telegram", { text: text });
-
-  const stateGotify = getState(ID_GOTIFY);
-  const token = stateGotify ? stateGotify.val : null;
-  if (token) {
-    httpPost(
-      `https://mygotify.meistermopper.de/message?token=${token}`,
-      {
-        title: "Haushalt",
-        message: text,
-        priority: 5,
-      },
-      (error) => {
-        if (error) console.error(`[Waschmaschine] Gotify Fehler: ${error}`);
-      },
-    );
-  }
-
-  if (compareTime("08:00", "20:00", "between")) {
-    sendTo("sayit", "say", { text: "Die Waschmaschine ist fertig." });
-  }
+  const isDaytime = compareTime("08:00", "20:00", "between");
+  sendGlobalNotify(text, "Haushalt", 5, isDaytime ? 50 : null);
   console.log("Waschmaschine: Benachrichtigung gesendet");
 }
 

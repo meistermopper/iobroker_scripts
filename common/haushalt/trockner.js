@@ -17,7 +17,6 @@ const PATH_PRIC_T = "0_userdata.0.Energie.Strompreise";
 
 const ID_PRICE_T = `${PATH_PRIC_T}.akt_Preis`;
 const ID_TOTAL_T = `${PATH_STAT_T}.Trockner_Tag`;
-const ID_GOTIFY_T = "0_userdata.0.gotifytoken.iobroker";
 
 // VIS Datenpunkt für die Status-Anzeige
 const ID_VIS_T = "0_userdata.0.Haushalt.trocknen";
@@ -57,32 +56,9 @@ initTrocknerSystem();
 // --- 3. KOMMUNIKATIONS-ZENTRALE ---
 
 function dryNotify(text) {
-  // 1. Telegram
-  sendTo("telegram", { text: text });
-
-  // 2. Gotify
-  const token = getState(ID_GOTIFY_T)?.val;
-  if (token) {
-    httpPost(
-      `https://mygotify.meistermopper.de/message?token=${token}`,
-      {
-        title: "Haushalt",
-        message: text,
-        priority: 5,
-      },
-      (error) => {
-        if (error) console.error(`[Trockner] Gotify Fehler: ${error}`);
-      },
-    );
-  }
-
-  // 3. SayIt (Gekürzte Sprachausgabe)
-  if (compareTime("08:00", "20:00", "between")) {
-    const voiceMsg = "Der Trockner ist fertig.";
-    sendTo("sayit", "say", { text: voiceMsg });
-  }
-
-  console.log("Trockner: Benachrichtigungen versendet");
+  const isDaytime = compareTime("08:00", "20:00", "between");
+  sendGlobalNotify(text, "Haushalt", 5, isDaytime ? 50 : null);
+  console.log("Trockner: Benachrichtigung gesendet");
 }
 
 // --- 4. TAGES-RESET ---

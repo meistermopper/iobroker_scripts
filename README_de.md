@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.16-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.17-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -101,6 +101,9 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.2.17] - 2026-08-03
+- refactor(haushalt): use global notify script for dry, wash and dishwasher notifications (geschirr.js, trockner.js, waschmaschine.js)
+
 ### [3.2.16] - 2026-08-01
 - chore(ai-commit-hook): Enforce English language for generated commit messages (ai-commit-hook.js)
 
@@ -112,8 +115,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ### [3.2.13] - 2026-07-27
 - feat(pv): Format Telegram/Gotify PV yield notifications to rounded kWh (solarprognose_master.js)
-
-### [3.2.12] - 2026-07-27
-- feat(pv): Implement PV yield scaling factor and remove peak power tracking (solarprognose_master.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.12] - 2026-07-27
+- feat(pv): Implement PV yield scaling factor and remove peak power tracking (solarprognose_master.js)
+
 ### [3.2.10] - 2026-07-24
 - fix(vitrine): Add offline notifications and reachability check for vitrine light (licht.js)
 
