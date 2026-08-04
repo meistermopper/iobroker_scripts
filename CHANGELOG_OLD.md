@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.19] - 2026-08-03
+- refactor(global): Centralize notification handling across scripts (Weihnachtsbaum_Terrasse.js, licht.js, anwesenheit_unifi.js, batterie_voll.js, batteriehitzewarnung.js, soh_change.js, solarprognose_master.js, stromausfall.js, fritz_reboot.js, homematic_all.js, adapter_off.js, battery_states.js, raumwerte_lueften.js, sonoff_fail.js, tasmota_fw.js, nut_client_inactive.js, connected.js, sat_tv_auto_aus.js, abendlicht_TV_Wind_aus.js, autolicht_daemmer.js, kachelofen_ventilator.js)
+
 ### [3.2.18] - 2026-08-03
 - chore(haushalt): Remove excessive console logs from household device scripts (trockner.js, waschmaschine.js)
 

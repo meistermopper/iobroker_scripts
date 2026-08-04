@@ -67,8 +67,9 @@ async function sendGlobalNotify(text, title = "ioBroker", priority = 1, voiceVol
 
   // 3. Sprachausgabe (optional)
   if (voiceVol !== null) {
-    // Emojis und Symbole für die Sprachausgabe entfernen
+    // Emojis, Symbole und HTML-Tags für die Sprachausgabe entfernen
     const voiceText = text
+      .replace(/<\/?[^>]+(>|$)/g, "") // Strip HTML tags (e.g. <pre>) for TTS
       .replace(/\p{Extended_Pictographic}/gu, "") // Entfernt Emojis/Symbole
       .replace(/\s\s+/g, " ") // Bereinigt doppelte Leerzeichen
       .trim();
@@ -86,13 +87,14 @@ async function googleWatchdogAnnounce(text, vol) {
 
   const players = $(`chromecast.0.*.status.playerState`);
 
-  players.each(async (id) => {
-    const base = id.split(".status.")[0];
+  players.each((/** @type {any} */ id) => {
+    const stateId = String(id);
+    const base = stateId.split(".status.")[0];
 
     // Filter: Streamer auf der Blacklist ignorieren (Schlazi/Wozi)
     if (GOOGLE_EXCLUDE_LIST.includes(base)) return;
 
-    const isPlaying = getState(id)?.val === "playing";
+    const isPlaying = getState(stateId)?.val === "playing";
 
     // Musik nach der Wartezeit fortsetzen (Resume)
     if (isPlaying) {
