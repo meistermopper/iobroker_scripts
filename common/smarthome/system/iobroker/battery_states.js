@@ -68,10 +68,14 @@ function getSmartName(id) {
     const deviceId = `${parts[0]}.${parts[1]}.${parts[2]}`;
     const deviceObj = getObject(deviceId);
     if (deviceObj?.common?.name) {
-      name = deviceObj.common.name;
+      const rawName = deviceObj.common.name;
+      if (typeof rawName === "object" && rawName !== null) {
+        name = rawName.de || rawName.en || "";
+      } else if (typeof rawName === "string") {
+        name = rawName;
+      }
     }
   }
-  if (typeof name === "object") name = name.de || name.en;
   if (!name || /percent|battery|low_bat/i.test(name)) {
     name = parts[2] ? parts[2].replace(/_/g, " ") : id;
   }
@@ -137,7 +141,7 @@ async function collectGroupedData() {
     if (!groups[conf.name]) groups[conf.name] = [];
     const states = $(conf.selector);
 
-    states.each((id) => {
+    states.each((/** @type {any} */ id) => {
       const state = getState(id);
       if (!state || state.val === null) return;
 

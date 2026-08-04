@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.17] - 2026-08-03
+- refactor(haushalt): use global notify script for dry, wash and dishwasher notifications (geschirr.js, trockner.js, waschmaschine.js)
+
 ### [3.2.16] - 2026-08-01
 - chore(ai-commit-hook): Enforce English language for generated commit messages (ai-commit-hook.js)
 
