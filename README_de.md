@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.22-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.23-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -101,6 +101,9 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.2.23] - 2026-08-04
+- refactor(scripting): Standardize `on()` trigger ID patterns using regular expressions (adapter_off.js, sonoff_fail.js, nut_client_inactive.js)
+
 ### [3.2.22] - 2026-08-04
 - refactor(iobroker-battery-states): improve name resolution and add type hint (battery_states.js)
 
@@ -112,8 +115,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ### [3.2.19] - 2026-08-03
 - refactor(global): Centralize notification handling across scripts (Weihnachtsbaum_Terrasse.js, licht.js, anwesenheit_unifi.js, batterie_voll.js, batteriehitzewarnung.js, soh_change.js, solarprognose_master.js, stromausfall.js, fritz_reboot.js, homematic_all.js, adapter_off.js, battery_states.js, raumwerte_lueften.js, sonoff_fail.js, tasmota_fw.js, nut_client_inactive.js, connected.js, sat_tv_auto_aus.js, abendlicht_TV_Wind_aus.js, autolicht_daemmer.js, kachelofen_ventilator.js)
-
-### [3.2.18] - 2026-08-03
-- chore(haushalt): Remove excessive console logs from household device scripts (trockner.js, waschmaschine.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

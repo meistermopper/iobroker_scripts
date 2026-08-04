@@ -4,10 +4,9 @@
  * Zweck:  Überwacht die Erreichbarkeit (alive) aller Sonoff-Geräte
  */
 
-const ID_SELECTOR = "sonoff.0.*.alive";
+const ID_PATTERN = /^sonoff\.0\..*\.alive$/;
 
-// @ts-expect-error
-on({ id: $(ID_SELECTOR), change: "ne" }, (obj) => {
+on({ id: ID_PATTERN, change: "ne" }, (obj) => {
   // Wenn 'alive' auf false geht, ist das Gerät offline
   if (obj.state.val === false) {
     const deviceName = obj.channelName || "Unbekanntes Gerät";

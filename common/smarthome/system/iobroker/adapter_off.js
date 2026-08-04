@@ -1,9 +1,7 @@
 /* eslint-env es2022 */
-// Überwacht alle Adapter-Status-Datenpunkte
-const selector = "system.adapter.*.*.alive";
+const ID_PATTERN = /^system\.adapter\..*\..*\.alive$/;
 
-// @ts-expect-error
-on({ id: $(selector), change: "ne" }, async (obj) => {
+on({ id: ID_PATTERN, change: "ne" }, async (obj) => {
   // Falls der Adapter auf false geht (ausgestiegen)
   if (obj.state.val === false) {
     // Wir merken uns den Namen/ID lokal für diesen spezifischen Durchlauf
