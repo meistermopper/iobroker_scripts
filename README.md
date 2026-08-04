@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.2.20-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.2.21-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -101,6 +101,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.2.21] - 2026-08-04
+- refactor(notifications): Enable HTML parsing for Telegram and standardize message formatting (solarprognose_master.js, adapter_off.js, battery_states.js, failover_dyndns_master.js, notify.js)
+
 ### [3.2.20] - 2026-08-03
 - feat(pv): Increase solar prognosis daily stats retention to one year (solarprognose_master.js)
 
@@ -112,8 +115,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.2.17] - 2026-08-03
 - refactor(haushalt): use global notify script for dry, wash and dishwasher notifications (geschirr.js, trockner.js, waschmaschine.js)
-
-### [3.2.16] - 2026-08-01
-- chore(ai-commit-hook): Enforce English language for generated commit messages (ai-commit-hook.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).

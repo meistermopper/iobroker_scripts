@@ -47,9 +47,8 @@ on({ id: CONFIG.dpWanIp, change: "ne" }, async (obj) => {
     GUARD.startTime = Date.now();
     GUARD.failoverActive = true;
     sendGlobalNotify(
-      // Hier wird die globale Funktion verwendet
-      "Internet-Failover",
       "Hauptleitung ausgefallen, Backup-LTE ist jetzt aktiv",
+      "Internet-Failover",
       8,
     );
     return;

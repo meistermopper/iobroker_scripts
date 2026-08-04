@@ -48,7 +48,10 @@ const NOTIFY_CONFIG = {
 // biome-ignore lint/correctness/noUnusedVariables: Global function used in other scripts
 async function sendGlobalNotify(text, title = "ioBroker", priority = 1, voiceVol = null) {
   // 1. Telegram
-  sendTo(NOTIFY_CONFIG.telegramInstanz, "send", { text: `[${title}] ${text}` });
+  sendTo(NOTIFY_CONFIG.telegramInstanz, "send", {
+    text: `[${title}] ${text}`,
+    parse_mode: "HTML",
+  });
 
   // 2. Gotify
   const token = getState(NOTIFY_CONFIG.gotifyTokenId)?.val;

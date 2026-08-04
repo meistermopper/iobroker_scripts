@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.16] - 2026-08-01
+- chore(ai-commit-hook): Enforce English language for generated commit messages (ai-commit-hook.js)
+
 ### [3.2.15] - 2026-07-31
 - feat(sauna): integrate Harvia Fenix native adapter (energiemaster_und_sauna.js)
 

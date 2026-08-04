@@ -25,7 +25,7 @@ on({ id: $(selector), change: "ne" }, async (obj) => {
       const currentStatus = getState(adapterId);
 
       if (currentStatus && currentStatus.val === false) {
-        const msg = `**+++ ⚠️ Der ${adapterName} ist ausgestiegen! +++**`;
+        const msg = `<b>+++ ⚠️ Der ${adapterName} ist ausgestiegen! +++</b>`;
 
         // 1. Log-Eintrag
         console.warn(msg);

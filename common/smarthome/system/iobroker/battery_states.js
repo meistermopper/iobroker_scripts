@@ -263,7 +263,7 @@ async function sendNotifications(criticalDevices) {
   const hour = new Date().getHours();
   const isQuietTime = hour >= 20 || hour < 8;
   const message =
-    `⚠️ *Kritische Akkustände!*\n\n` +
+    `⚠️ <b>Kritische Akkustände!</b>\n\n` +
     criticalDevices.map((d) => `• ${d.name}: ${d.val}`).join("\n");
 
   sendGlobalNotify(message, "Batterie Alarm", isQuietTime ? 1 : 5);

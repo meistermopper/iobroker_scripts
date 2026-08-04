@@ -272,7 +272,7 @@ function fetchSolarData(ignoreToken = false) {
             const ertragMorgenKWh = Math.round(ertragMorgenWh / 1000);
 
             const msg =
-              `<b>PV-Prognose Update (Forecast.Solar)</b>\n\n` +
+              `☀️ <b>Forecast.Solar</b>\n` +
               `• <b>Heute:</b> ${ertragHeuteKWh} kWh\n` +
               `• <b>Morgen:</b> ${ertragMorgenKWh} kWh`;
 
