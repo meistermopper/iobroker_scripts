@@ -54,9 +54,9 @@ initTrocknerSystem();
 
 // --- 3. KOMMUNIKATIONS-ZENTRALE ---
 
-function dryNotify(text) {
+function dryNotify(text, voiceText = null) {
   const isDaytime = compareTime("08:00", "20:00", "between");
-  sendGlobalNotify(text, "Haushalt", 5, isDaytime ? 50 : null);
+  sendGlobalNotify(text, "Haushalt", 5, isDaytime ? 50 : null, voiceText);
 }
 
 // --- 4. TAGES-RESET ---
@@ -143,7 +143,7 @@ function processFinishT() {
     `Verbrauch: ${diffEnergy.toFixed(2)} kWh (${totalCost.toFixed(2)} €). ` +
     `Heute gesamt: ${newTotalT.toFixed(2)} kWh.`;
 
-  dryNotify(msg);
+  dryNotify(msg, "Der Trockner ist fertig.");
 
   setState(ID_VIS_T, false, true);
   isRunningT = false;

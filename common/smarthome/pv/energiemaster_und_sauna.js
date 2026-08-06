@@ -371,7 +371,8 @@ function checkSaunaSafety(fenixHeatOn, load) {
       tSaunaSafety = setTimeout(() => {
         // Erneute Prüfung nach Ablauf der Zeit
         const currentHeatOn = getState(IDS.saunaHeatOn)?.val === true;
-        const currentDoorOpen = getState(IDS.saunaTuer)?.val || getState(IDS.saunaDoorSafety)?.val === false;
+        const currentDoorOpen =
+          getState(IDS.saunaTuer)?.val || getState(IDS.saunaDoorSafety)?.val === false;
         if (currentDoorOpen && currentHeatOn && getBereinigteLast() > 5000) {
           sendGlobalNotify(
             "Achtung: Die Sauna heizt bei offener Tür, bitte überprüfen",

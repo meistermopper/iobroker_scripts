@@ -5,10 +5,12 @@
  * @param title - Der Titel der Nachricht (Standard: "ioBroker").
  * @param priority - Die Gotify-Priorität (1 = Info, 5 = Warnung, 8+ = Alarm).
  * @param voiceVol - Wenn gesetzt (0-100), wird zusätzlich eine Sprachausgabe mit dieser Lautstärke getriggert. Bei null erfolgt keine Sprachausgabe.
+ * @param voiceText - Optionaler abweichender Text für die Sprachausgabe (falls kurz/abweichend von text).
  */
 declare function sendGlobalNotify(
   text: string,
   title?: string,
   priority?: number,
   voiceVol?: number | null,
+  voiceText?: string | null,
 ): Promise<void>;

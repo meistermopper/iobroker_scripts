@@ -44,9 +44,16 @@ const NOTIFY_CONFIG = {
  * @param {string} title - Titel (für Gotify/Telegram)
  * @param {number} priority - Gotify Priorität (1-5)
  * @param {number} [voiceVol] - Wenn gesetzt, wird die Sprachausgabe mit dieser Lautstärke getriggert.
+ * @param {string|null} [voiceText] - Optionaler alternativer Text für die Sprachausgabe.
  */
 // biome-ignore lint/correctness/noUnusedVariables: Global function used in other scripts
-async function sendGlobalNotify(text, title = "ioBroker", priority = 1, voiceVol = null) {
+async function sendGlobalNotify(
+  text,
+  title = "ioBroker",
+  priority = 1,
+  voiceVol = null,
+  voiceText = null,
+) {
   // 1. Telegram
   sendTo(NOTIFY_CONFIG.telegramInstanz, "send", {
     text: `[${title}] ${text}`,
@@ -67,13 +74,14 @@ async function sendGlobalNotify(text, title = "ioBroker", priority = 1, voiceVol
 
   // 3. Sprachausgabe (optional)
   if (voiceVol !== null) {
+    const rawVoiceText = voiceText ?? text;
     // Emojis, Symbole und HTML-Tags für die Sprachausgabe entfernen
-    const voiceText = text
+    const cleanedVoiceText = rawVoiceText
       .replace(/<\/?[^>]+(>|$)/g, "") // Strip HTML tags (e.g. <pre>) for TTS
       .replace(/\p{Extended_Pictographic}/gu, "") // Entfernt Emojis/Symbole
       .replace(/\s\s+/g, " ") // Bereinigt doppelte Leerzeichen
       .trim();
-    await googleWatchdogAnnounce(voiceText, voiceVol);
+    await googleWatchdogAnnounce(cleanedVoiceText, voiceVol);
   }
 }
 

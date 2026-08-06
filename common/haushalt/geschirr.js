@@ -86,6 +86,12 @@ on({ id: "mielecloudservice.0.000106831213.Status", change: "ne" }, async (obj) 
       `Preis/kWh: ${Strompreis_proKWh.toFixed(3)} €</pre>`;
 
     const isDaytime = compareTime("08:00", "20:00", "between");
-    sendGlobalNotify(meldetext, "Haushalt", 1, isDaytime ? 50 : null);
+    sendGlobalNotify(
+      meldetext,
+      "Haushalt",
+      1,
+      isDaytime ? 50 : null,
+      "Der Geschirrspüler kann ausgeräumt werden.",
+    );
   }
 });

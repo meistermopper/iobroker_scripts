@@ -52,9 +52,9 @@ async function initWaschSystem() {
 initWaschSystem();
 
 // --- 3. KOMMUNIKATIONS-ZENTRALE ---
-function washNotify(text) {
+function washNotify(text, voiceText = null) {
   const isDaytime = compareTime("08:00", "20:00", "between");
-  sendGlobalNotify(text, "Haushalt", 5, isDaytime ? 50 : null);
+  sendGlobalNotify(text, "Haushalt", 5, isDaytime ? 50 : null, voiceText);
 }
 
 // --- 4. TAGES-RESET ---
@@ -170,7 +170,7 @@ async function processFinish() {
     `Verbrauch: ${diffEnergy.toFixed(2)} kWh (${totalCost.toFixed(2)} €)\n` +
     `Heute gesamt: ${newTotal.toFixed(2)} kWh.`;
 
-  washNotify(msg);
+  washNotify(msg, "Die Waschmaschine ist fertig.");
 
   setState(ID_VIS, false, true);
   isRunning = false;

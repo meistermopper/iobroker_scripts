@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.1-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.2-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -40,7 +40,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 - **Müllabfuhr-Benachrichtigung**: Sagt die Müllabfuhr für den nächsten Tag per Sprache und Nachricht am Vorabend um 18:00 Uhr an und visualisiert diese.
 - **Lüftungsempfehlungen**: Basierend auf der Innen- und Außentemperatur sowie der Luftfeuchtigkeit.
 - **Gefahrenmelder**: Akustische und nachrichtenbasierte Rauch- und Wasserwarnungen.
-- **Haushaltsgeräte**: Statusmeldungen für Waschmaschine, Spülmaschine und Trockner.
+- **Haushaltsgeräte**: Statusmeldungen für Waschmaschine, Spülmaschine und Trockner mit ausführlichen Details per Telegram/Gotify und prägnanten Sprachansagen nach Fertigstellung.
 - **Anwesenheitserkennung**: Über Smartphones im WLAN (UniFi Network Adapter).
 - **Heizungssteuerung**: Abhängig von der Anwesenheit.
 - **Homematic Service Center**: Überwacht UNREACH, LOWBAT, CONFIG_PENDING und CCU-Firmware.
@@ -56,7 +56,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
   - Überwacht die WAN-IP auf Änderungen, steuert DDNS-Updates und verwaltet Failover-Szenarien (`failover_dyndns_master.js`).
 - **Proxmox Cluster Master Watchdog**: Überwacht Temperatur, Festplatten & Status - sendet Alarme an ALLE Telegram-Nutzer und Gotify.
 - **DrayTek Vigor 166 Monitor (`connected.js`)**: Startet einen lokalen HTTP-Server für Grafana-Webhook-Alerts, um den DSL-Verbindungsstatus zu überwachen und Benachrichtigungen zu senden.
-- **Globale Benachrichtigungen (`notify.js`)**: Zentralisiert Benachrichtigungen über Telegram, Gotify und Sprachansagen auf Chromecast-Geräten inkl. intelligenter Wiedergabe-Fortsetzung (Resume-Funktion).
+- **Globale Benachrichtigungen (`notify.js`)**: Zentralisiert Benachrichtigungen über Telegram, Gotify und Sprachansagen auf Chromecast-Geräten inkl. intelligenter Wiedergabe-Fortsetzung (Resume-Funktion) sowie Unterstützung für abweichende, kurze Sprachtexte.
 - **Fußball Bundesliga**: Zeigt die aktuelle Tabelle und kommende Spiele von SGE und FCB mittels OpenLigaDB-Adapter an.
 
 ### 📺🎵 Medien & Sauna
@@ -101,6 +101,9 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.2] - 2026-08-06
+- feat(global-notifications): Introduce custom concise voice messages for notifications (geschirr.js, trockner.js, waschmaschine.js, energiemaster_und_sauna.js, notify.js)
+
 ### [3.3.1] - 2026-08-04
 - feat(global): Enhance TTS processing and improve Chromecast watchdog robustness (notify.js)
 
@@ -112,8 +115,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ### [3.2.21] - 2026-08-04
 - refactor(notifications): Enable HTML parsing for Telegram and standardize message formatting (solarprognose_master.js, adapter_off.js, battery_states.js, failover_dyndns_master.js, notify.js)
-
-### [3.2.20] - 2026-08-03
-- feat(pv): Increase solar prognosis daily stats retention to one year (solarprognose_master.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).
