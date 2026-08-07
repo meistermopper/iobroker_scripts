@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.2-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.3-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -101,6 +101,9 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.3] - 2026-08-07
+- feat(sauna): Reduce bathroom turn-on delay (session_master.js)
+
 ### [3.3.2] - 2026-08-06
 - feat(global-notifications): Introduce custom concise voice messages for notifications (geschirr.js, trockner.js, waschmaschine.js, energiemaster_und_sauna.js, notify.js)
 
@@ -112,8 +115,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ### [3.2.22] - 2026-08-04
 - refactor(iobroker-battery-states): improve name resolution and add type hint (battery_states.js)
-
-### [3.2.21] - 2026-08-04
-- refactor(notifications): Enable HTML parsing for Telegram and standardize message formatting (solarprognose_master.js, adapter_off.js, battery_states.js, failover_dyndns_master.js, notify.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

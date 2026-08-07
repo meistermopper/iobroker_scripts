@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.21] - 2026-08-04
+- refactor(notifications): Enable HTML parsing for Telegram and standardize message formatting (solarprognose_master.js, adapter_off.js, battery_states.js, failover_dyndns_master.js, notify.js)
+
 ### [3.2.20] - 2026-08-03
 - feat(pv): Increase solar prognosis daily stats retention to one year (solarprognose_master.js)
 
