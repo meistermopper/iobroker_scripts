@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.3-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.4-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -39,7 +39,7 @@ The scripts are logically organized by rooms and functions:
 - **Doorbell & Call Monitor (`anruf_klingel_terrasse.js`)**: Detects incoming phone calls or doorbell rings via the FRITZ!Box TR-064 adapter, announces them via Google Speaker (SayIt) on the terrace with dynamic volume control, dispatches notifications, and flashes the living room lights "Ei" (in blue) and "Kommode" on every doorbell ring.
 - **Waste Collection Notification**: Announces and visualizes the next day's waste collection type via voice and message at 6:00 PM the day before.
 - **Ventilation Recommendations**: Based on indoor and outdoor temperature and humidity.
-- **Alarm Detectors**: Acoustic and message-based smoke and water warnings.
+- **Alarm Detectors**: Acoustic and message-based smoke, water warnings, and carbon monoxide monitoring for the tile stove (`co_warnung_kachelofen.js`) with loud SayIt voice announcements (100%), Telegram, and Gotify.
 - **Household Appliances**: Status messages for washing machine, dishwasher, and dryer with full details sent via Telegram/Gotify and concise voice announcements upon completion.
 - **Presence Detection**: Via smartphones using WLAN (UniFi Network Adapter).
 - **Heating Control**: Depending on presence.
@@ -101,19 +101,23 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.3.4] - 2026-08-09
+- feat(co-monitoring): Introduce carbon monoxide monitoring for tile stove (co_warnung_kachelofen.js)
+
 ### [3.3.3] - 2026-08-07
+
 - feat(sauna): Reduce bathroom turn-on delay (session_master.js)
 
 ### [3.3.2] - 2026-08-06
+
 - feat(global-notifications): Introduce custom concise voice messages for notifications (geschirr.js, trockner.js, waschmaschine.js, energiemaster_und_sauna.js, notify.js)
 
 ### [3.3.1] - 2026-08-04
+
 - feat(global): Enhance TTS processing and improve Chromecast watchdog robustness (notify.js)
 
 ### [3.2.23] - 2026-08-04
-- refactor(scripting): Standardize `on()` trigger ID patterns using regular expressions (adapter_off.js, sonoff_fail.js, nut_client_inactive.js)
 
-### [3.2.22] - 2026-08-04
-- refactor(iobroker-battery-states): improve name resolution and add type hint (battery_states.js)
+- refactor(scripting): Standardize `on()` trigger ID patterns using regular expressions (adapter_off.js, sonoff_fail.js, nut_client_inactive.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).

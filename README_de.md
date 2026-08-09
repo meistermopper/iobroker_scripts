@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.3-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.4-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -39,7 +39,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 - **Terrassen-Klingel (`anruf_klingel_terrasse.js`)**: Kündigt Haustürklingeln und Telefonanrufe der FRITZ!Box über SayIt auf dem Terrassen-Google-Speaker mit dynamischer Lautstärkeanpassung an, sendet Kurznachrichten und lässt bei jedem Türklingeln die Wohnzimmer-Lampen "Ei" (in Blau) und "Kommode" zur optischen Signalisierung blinken.
 - **Müllabfuhr-Benachrichtigung**: Sagt die Müllabfuhr für den nächsten Tag per Sprache und Nachricht am Vorabend um 18:00 Uhr an und visualisiert diese.
 - **Lüftungsempfehlungen**: Basierend auf der Innen- und Außentemperatur sowie der Luftfeuchtigkeit.
-- **Gefahrenmelder**: Akustische und nachrichtenbasierte Rauch- und Wasserwarnungen.
+- **Gefahrenmelder**: Akustische und nachrichtenbasierte Rauch- und Wasserwarnungen sowie Kohlenmonoxid-Überwachung am Kachelofen (`co_warnung_kachelofen.js`) mit lautstarken SayIt-Sprachansagen (100%), Telegram und Gotify.
 - **Haushaltsgeräte**: Statusmeldungen für Waschmaschine, Spülmaschine und Trockner mit ausführlichen Details per Telegram/Gotify und prägnanten Sprachansagen nach Fertigstellung.
 - **Anwesenheitserkennung**: Über Smartphones im WLAN (UniFi Network Adapter).
 - **Heizungssteuerung**: Abhängig von der Anwesenheit.
@@ -101,19 +101,23 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.4] - 2026-08-09
+- feat(co-monitoring): Introduce carbon monoxide monitoring for tile stove (co_warnung_kachelofen.js)
+
 ### [3.3.3] - 2026-08-07
+
 - feat(sauna): Reduce bathroom turn-on delay (session_master.js)
 
 ### [3.3.2] - 2026-08-06
+
 - feat(global-notifications): Introduce custom concise voice messages for notifications (geschirr.js, trockner.js, waschmaschine.js, energiemaster_und_sauna.js, notify.js)
 
 ### [3.3.1] - 2026-08-04
+
 - feat(global): Enhance TTS processing and improve Chromecast watchdog robustness (notify.js)
 
 ### [3.2.23] - 2026-08-04
-- refactor(scripting): Standardize `on()` trigger ID patterns using regular expressions (adapter_off.js, sonoff_fail.js, nut_client_inactive.js)
 
-### [3.2.22] - 2026-08-04
-- refactor(iobroker-battery-states): improve name resolution and add type hint (battery_states.js)
+- refactor(scripting): Standardize `on()` trigger ID patterns using regular expressions (adapter_off.js, sonoff_fail.js, nut_client_inactive.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).
