@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.4-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.5-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -101,6 +101,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.3.5] - 2026-08-09
+- fix(linter): update biome schema and fix telegram instance name (co_warnung_kachelofen.js)
+
 ### [3.3.4] - 2026-08-09
 - feat(co-monitoring): Introduce carbon monoxide monitoring for tile stove (co_warnung_kachelofen.js)
 
@@ -115,9 +118,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 ### [3.3.1] - 2026-08-04
 
 - feat(global): Enhance TTS processing and improve Chromecast watchdog robustness (notify.js)
-
-### [3.2.23] - 2026-08-04
-
-- refactor(scripting): Standardize `on()` trigger ID patterns using regular expressions (adapter_off.js, sonoff_fail.js, nut_client_inactive.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).

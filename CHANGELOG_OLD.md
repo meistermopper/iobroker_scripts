@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.2.23] - 2026-08-04
+
+- refactor(scripting): Standardize `on()` trigger ID patterns using regular expressions (adapter_off.js, sonoff_fail.js, nut_client_inactive.js)
+
 ### [3.2.22] - 2026-08-04
 
 - refactor(iobroker-battery-states): improve name resolution and add type hint (battery_states.js)

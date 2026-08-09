@@ -138,7 +138,7 @@ function sendEmergencyNotify(
   } else {
     // Fallback: direct notification calls if sendGlobalNotify is unavailable
     console.error(`[CO-Warnung] sendGlobalNotify function is missing! Logging alert: ${text}`);
-    sendTo("telegram.0", "send", { text: `🚨 [${title}] ${text}`, parse_mode: "HTML" });
+    sendTo("telegram", "send", { text: `🚨 [${title}] ${text}`, parse_mode: "HTML" });
     sendTo("sayit", "say", { text: voiceText || text, volume: volume });
   }
 }
