@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.1] - 2026-08-04
+
+- feat(global): Enhance TTS processing and improve Chromecast watchdog robustness (notify.js)
+
 ### [3.2.23] - 2026-08-04
 
 - refactor(scripting): Standardize `on()` trigger ID patterns using regular expressions (adapter_off.js, sonoff_fail.js, nut_client_inactive.js)
