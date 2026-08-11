@@ -13,7 +13,7 @@ const ID_KIA_LOC = {
   url: `bluelink.0.${VIN}.vehicleLocation.position_url`,
   update: "0_userdata.0.Energie.Kia_e_niro.Aktualisierung",
   save: "0_userdata.0.Energie.Kia_e_niro.Standort",
-  forceLocation: `bluelink.0.${VIN}.control.force_location`,
+  forceLocation: `bluelink.0.${VIN}.control.force_refresh_from_car`,
 };
 
 const RAEUME = {
@@ -110,7 +110,7 @@ function getFensterStatus(user) {
 function getKia(user) {
   smartNotify(
     user,
-    "📡 <b>Aktueller Standort wird vom Fahrzeug abgefragt...</b>\nBitte einen kurzen Moment Geduld (ca. 15–30 Sek.).",
+    "📡 <b>Aktueller Standort wird vom Fahrzeug abgefragt...</b>\nBitte einen kurzen Moment Geduld (ca. 30–60 Sek.).",
   );
 
   let hasResponded = false;
@@ -156,7 +156,7 @@ function getKia(user) {
     fetchAndSendLocation(true);
   });
 
-  // Timeout fallback after 30 seconds
+  // Timeout fallback after 60 seconds
   timer = setTimeout(() => {
     if (!hasResponded) {
       console.warn(
@@ -164,7 +164,7 @@ function getKia(user) {
       );
       fetchAndSendLocation(false);
     }
-  }, 30000);
+  }, 60000);
 
   // Trigger vehicle location update button
   if (existsState(ID_KIA_LOC.forceLocation)) {

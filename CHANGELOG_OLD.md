@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.4] - 2026-08-09
+- feat(co-monitoring): Introduce carbon monoxide monitoring for tile stove (co_warnung_kachelofen.js)
+
 ### [3.3.3] - 2026-08-07
 
 - feat(sauna): Reduce bathroom turn-on delay (session_master.js)
