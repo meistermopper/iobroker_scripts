@@ -4,6 +4,14 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.3] - 2026-08-07
+
+- feat(sauna): Reduce bathroom turn-on delay (session_master.js)
+
+### [3.3.2] - 2026-08-06
+
+- feat(global-notifications): Introduce custom concise voice messages for notifications (geschirr.js, trockner.js, waschmaschine.js, energiemaster_und_sauna.js, notify.js)
+
 ### [3.3.1] - 2026-08-04
 
 - feat(global): Enhance TTS processing and improve Chromecast watchdog robustness (notify.js)

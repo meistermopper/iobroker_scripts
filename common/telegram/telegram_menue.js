@@ -13,6 +13,7 @@ const ID_KIA_LOC = {
   url: `bluelink.0.${VIN}.vehicleLocation.position_url`,
   update: "0_userdata.0.Energie.Kia_e_niro.Aktualisierung",
   save: "0_userdata.0.Energie.Kia_e_niro.Standort",
+  forceLocation: `bluelink.0.${VIN}.control.force_location`,
 };
 
 const RAEUME = {
@@ -107,20 +108,70 @@ function getFensterStatus(user) {
 }
 
 function getKia(user) {
-  const lat = getState(ID_KIA_LOC.lat)?.val;
-  const lon = getState(ID_KIA_LOC.lon)?.val;
-  const key = getState(ID_GOOGLE_KEY)?.val;
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${key}`;
-  httpGet(url, (err, res) => {
-    if (!err && res.statusCode === 200) {
-      const addr = JSON.parse(res.data).results[0].formatted_address;
-      setState(ID_KIA_LOC.save, addr, true);
-      smartNotify(
-        user,
-        `📍 <b>Kia Standort:</b>\n${addr}\n\n<a href="${getState(ID_KIA_LOC.url)?.val}">Auf Karte zeigen</a>`,
-      );
-    }
+  smartNotify(
+    user,
+    "📡 <b>Aktueller Standort wird vom Fahrzeug abgefragt...</b>\nBitte einen kurzen Moment Geduld (ca. 15–30 Sek.).",
+  );
+
+  let hasResponded = false;
+  let timer = null;
+  let listenerToken = null;
+
+  const fetchAndSendLocation = (isLive = true) => {
+    if (hasResponded) return;
+    hasResponded = true;
+
+    if (timer) clearTimeout(timer);
+    if (listenerToken) unsubscribe(listenerToken);
+
+    const lat = getState(ID_KIA_LOC.lat)?.val;
+    const lon = getState(ID_KIA_LOC.lon)?.val;
+    const key = getState(ID_GOOGLE_KEY)?.val;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${key}`;
+
+    httpGet(url, (err, res) => {
+      if (!err && res.statusCode === 200) {
+        try {
+          const data = JSON.parse(res.data);
+          const addr = data.results?.[0]?.formatted_address || "Unbekannte Adresse";
+          setState(ID_KIA_LOC.save, addr, true);
+          const title = isLive
+            ? "📍 <b>Kia Standort (aktuell):</b>"
+            : "📍 <b>Kia Standort (letzter bekannter Stand):</b>\n<i>(Fahrzeug antwortet nicht)</i>";
+          smartNotify(
+            user,
+            `${title}\n${addr}\n\n<a href="${getState(ID_KIA_LOC.url)?.val}">Auf Karte zeigen</a>`,
+          );
+        } catch (e) {
+          console.error(`[Telegram Menü] Fehler beim Verarbeiten der Standort-Daten: ${e}`);
+        }
+      } else {
+        console.error(`[Telegram Menü] Google Geocoding Fehler: ${err || res?.statusCode}`);
+      }
+    });
+  };
+
+  // Set up event listener for position state updates
+  listenerToken = on({ id: ID_KIA_LOC.lat, change: "any" }, () => {
+    fetchAndSendLocation(true);
   });
+
+  // Timeout fallback after 30 seconds
+  timer = setTimeout(() => {
+    if (!hasResponded) {
+      console.warn(
+        "[Telegram Menü] Kia Standort-Abfrage Timeout - verwende vorhandene ioBroker-Daten.",
+      );
+      fetchAndSendLocation(false);
+    }
+  }, 30000);
+
+  // Trigger vehicle location update button
+  if (existsState(ID_KIA_LOC.forceLocation)) {
+    setState(ID_KIA_LOC.forceLocation, true);
+  } else {
+    fetchAndSendLocation(false);
+  }
 }
 
 function menuMain(user) {
