@@ -7,3 +7,4 @@
 node_modules/
 # Beispiele ausschließen
 common/beispiele/
+obsidian.md

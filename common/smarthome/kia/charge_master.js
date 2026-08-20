@@ -510,6 +510,30 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
   }
 });
 
+// Dynamischer Batterieschutz bei manuellem Laden:
+// Erhöht sich der SoC des Heimspeichers während des manuellen Ladens (z. B. durch PV-Ertrag),
+// wird der Min-SoC des Wechselrichters entsprechend nach oben angepasst.
+on({ id: IDS.batSocPV, change: "ne" }, (obj) => {
+  const isAuto = !!getState(IDS.u_auto)?.val;
+  const isCharging = getState(IDS.wbStat)?.val === "Charging";
+
+  if (!isAuto && isCharging) {
+    const newSoc = Number(obj.state.val) || 0;
+    const oldSoc = Number(obj.oldState?.val) || 0;
+
+    if (newSoc > oldSoc) {
+      if (originalMinSoc === null) {
+        originalMinSoc = getState(IDS.minSocRead)?.val;
+        setState(IDS.u_origSoc, originalMinSoc, true);
+      }
+      setState(IDS.minSocSet, Math.max(0, newSoc));
+      console.log(
+        `[EV3 Master] Manual charging: Home battery SoC increased from ${oldSoc}% to ${newSoc}%. Updated MinSoC to ${newSoc}%.`,
+      );
+    }
+  }
+});
+
 // --- 7. ZUSÄTZLICHE FUNKTIONEN ---
 
 /**

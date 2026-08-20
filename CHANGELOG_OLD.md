@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.5] - 2026-08-09
+- fix(linter): update biome schema and fix telegram instance name (co_warnung_kachelofen.js)
+
 ### [3.3.4] - 2026-08-09
 - feat(co-monitoring): Introduce carbon monoxide monitoring for tile stove (co_warnung_kachelofen.js)
 
