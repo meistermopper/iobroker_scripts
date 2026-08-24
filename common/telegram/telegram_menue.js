@@ -210,17 +210,29 @@ function menuSchalter(user) {
 // --- TRIGGER ---
 
 on({ id: "telegram.0.communicate.request", change: "any" }, async (obj) => {
+  if (typeof obj?.state?.val !== "string") return;
+
   const val = obj.state.val;
-  const user = val.substring(1, val.indexOf("]"));
-  const cmd = val
-    .substring(val.indexOf("]") + 1)
+  const bracketIndex = val.indexOf("]");
+  if (bracketIndex === -1) return;
+
+  const user = val.substring(1, bracketIndex);
+  let cmd = val
+    .substring(bracketIndex + 1)
     .trim()
     .toLowerCase();
+
+  // Strip leading slash if present (e.g. "/m" -> "m")
+  if (cmd.startsWith("/")) {
+    cmd = cmd.substring(1);
+  }
 
   switch (cmd) {
     case "m":
     case "main":
+    case "menu":
     case "menu_main":
+    case "start":
       menuMain(user);
       break;
     case "menu_klima":
@@ -287,6 +299,9 @@ on({ id: "telegram.0.communicate.request", change: "any" }, async (obj) => {
     case "st_off":
       setState("sonoff.0.Terrassendose.POWER1", false);
       smartNotify(user, "⚪ Steckleiste <b>AUS</b>");
+      break;
+    default:
+      console.log(`[Telegram Menü] Unbekannter Befehl von ${user}: "${cmd}"`);
       break;
   }
 });

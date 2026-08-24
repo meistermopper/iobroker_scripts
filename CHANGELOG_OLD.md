@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.6] - 2026-08-11
+- refactor(kia): Update Kia vehicle location data paths (telegram_menue.js)
+
 ### [3.3.5] - 2026-08-09
 - fix(linter): update biome schema and fix telegram instance name (co_warnung_kachelofen.js)
 

@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.10-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.11-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -101,6 +101,9 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.11] - 2026-08-24
+- feat(telegram): Enhance command parsing and add main menu aliases (telegram_menue.js)
+
 ### [3.3.10] - 2026-08-20
 - feat(kia): Implement dynamic home battery protection during manual EV charging (charge_master.js)
 
@@ -112,8 +115,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ### [3.3.7] - 2026-08-11
 - feat(telegram): trigger live kia location update via force_location button (telegram_menue.js)
-
-### [3.3.6] - 2026-08-11
-- refactor(kia): Update Kia vehicle location data paths (telegram_menue.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).
