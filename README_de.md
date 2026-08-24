@@ -1,6 +1,9 @@
 <img src="media/iobroker.png" align="right" width="100" alt="Projekt Logo">
 
 [🇬🇧 English Version](README.md)
+<img src="media/iobroker.png" align="right" width="100" alt="Projekt Logo">
+
+[🇬🇧 English Version](README.md)
 
 # ioBroker Skript-Sammlung
 
@@ -8,7 +11,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.11-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.13-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -57,6 +60,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 - **Proxmox Cluster Master Watchdog**: Überwacht Temperatur, Festplatten & Status - sendet Alarme an ALLE Telegram-Nutzer und Gotify.
 - **DrayTek Vigor 166 Monitor (`connected.js`)**: Startet einen lokalen HTTP-Server für Grafana-Webhook-Alerts, um den DSL-Verbindungsstatus zu überwachen und Benachrichtigungen zu senden.
 - **Globale Benachrichtigungen (`notify.js`)**: Zentralisiert Benachrichtigungen über Telegram, Gotify und Sprachansagen auf Chromecast-Geräten inkl. intelligenter Wiedergabe-Fortsetzung (Resume-Funktion) sowie Unterstützung für abweichende, kurze Sprachtexte.
+- **Telegram Steuerzentrale (`telegram_menue.js`)**: Interaktives Telegram-Bot-Menü zur Überwachung von Raumklima, Fensterstatus, Kia-Standort, Terminen, Astrozeiten und Direkt-Schaltung von Terrassen-/Außengeräten.
 - **Fußball Bundesliga**: Zeigt die aktuelle Tabelle und kommende Spiele von SGE und FCB mittels OpenLigaDB-Adapter an.
 
 ### 📺🎵 Medien & Sauna
@@ -101,6 +105,12 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.13] - 2026-08-24
+- refactor(telegram): Improve chat targeting and data robustness in menu (telegram_menue.js)
+
+### [3.3.12] - 2026-08-24
+- refactor(telegram): Direkte Chat-ID-Adressierung, Null-Safety für Sensoren/GPS und JSDoc-Standardisierung (telegram_menue.js)
+
 ### [3.3.11] - 2026-08-24
 - feat(telegram): Enhance command parsing and add main menu aliases (telegram_menue.js)
 
@@ -109,11 +119,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ### [3.3.9] - 2026-08-11
 - feat(telegram): increase Kia location query timeout to 60 seconds (telegram_menue.js)
-
-### [3.3.8] - 2026-08-11
-- feat(telegram): Implement live Kia location update via force_location button (telegram_menue.js)
-
-### [3.3.7] - 2026-08-11
-- feat(telegram): trigger live kia location update via force_location button (telegram_menue.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

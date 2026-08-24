@@ -4,6 +4,12 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.8] - 2026-08-11
+- feat(telegram): Implement live Kia location update via force_location button (telegram_menue.js)
+
+### [3.3.7] - 2026-08-11
+- feat(telegram): trigger live kia location update via force_location button (telegram_menue.js)
+
 ### [3.3.6] - 2026-08-11
 - refactor(kia): Update Kia vehicle location data paths (telegram_menue.js)
 

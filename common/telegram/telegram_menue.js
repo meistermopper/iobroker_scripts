@@ -1,7 +1,11 @@
 /* eslint-env es2022 */
-// =============================================================================
-// MASTER-STEUERUNG v3.6 (CLEAN SWITCH-STRUCTURE & PRIO-FIX)
-// =============================================================================
+/**
+ * Name:   Telegram Menü Steuerung
+ * Zweck:  Interaktives Telegram-Menü zur Abfrage von Klimawerten, Fensterstatus,
+ *         Kia-Standort, Terminen, Astrozeiten und Schalten von Geräten.
+ */
+
+// --- KONFIGURATION ---
 
 const ID_GOTIFY_TOKEN = "0_userdata.0.gotifytoken.iobroker";
 const ID_GOOGLE_KEY = "0_userdata.0.google.mapsAPItoken";
@@ -33,8 +37,23 @@ const RAEUME = {
 
 // --- HILFSFUNKTIONEN ---
 
-function smartNotify(user, text, priority = 1) {
-  sendTo("telegram.0", { user: user, text: text, parse_mode: "HTML" });
+/**
+ * Sends a smart notification via Telegram and optionally Gotify.
+ *
+ * @param {string} user - Target username for Telegram.
+ * @param {string} text - Message text (HTML formatted).
+ * @param {number} priority - Notification priority for Gotify (default: 1).
+ * @param {string|number|null} chatId - Optional direct chat ID for Telegram.
+ */
+function smartNotify(user, text, priority = 1, chatId = null) {
+  const options = { text: text, parse_mode: "HTML" };
+  if (chatId) {
+    options.chatId = chatId;
+  } else if (user) {
+    options.user = user;
+  }
+  sendTo("telegram.0", "send", options);
+
   const token = getState(ID_GOTIFY_TOKEN)?.val;
   if (token) {
     const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
@@ -52,18 +71,37 @@ function smartNotify(user, text, priority = 1) {
   }
 }
 
-function showMenu(user, text, buttons) {
-  sendTo("telegram.0", {
-    user: user,
+/**
+ * Displays an inline keyboard menu in Telegram.
+ *
+ * @param {string} user - Target username for Telegram.
+ * @param {string} text - Menu title / message.
+ * @param {Array} buttons - Inline keyboard button layout matrix.
+ * @param {string|number|null} chatId - Optional direct chat ID for Telegram.
+ */
+function showMenu(user, text, buttons, chatId = null) {
+  const options = {
     text: text,
     parse_mode: "HTML",
     reply_markup: { inline_keyboard: buttons },
-  });
+  };
+  if (chatId) {
+    options.chatId = chatId;
+  } else if (user) {
+    options.user = user;
+  }
+  sendTo("telegram.0", "send", options);
 }
 
 // --- AKTIONEN ---
 
-function getKlimaStatus(user) {
+/**
+ * Collects and sends the current temperature and humidity report for all defined rooms.
+ *
+ * @param {string} user - Requesting username.
+ * @param {string|number|null} chatId - Requesting chat ID.
+ */
+function getKlimaStatus(user, chatId = null) {
   let msg = "<b>🌡️ Haus-Klima Report:</b>\n\n";
   let hasCritical = false;
 
@@ -72,25 +110,37 @@ function getKlimaStatus(user) {
     const tS = conf.type === "heizung" ? "heizung.ACTUAL_TEMPERATURE" : "klima.temperature";
     const hS = conf.type === "heizung" ? "heizung.HUMIDITY" : "klima.humidity";
 
-    if (!existsState(`alias.0.${conf.aliasName}.${tS}`)) continue;
+    const tempId = `alias.0.${conf.aliasName}.${tS}`;
+    const humId = `alias.0.${conf.aliasName}.${hS}`;
 
-    const t = getState(`alias.0.${conf.aliasName}.${tS}`)?.val;
-    const h = getState(`alias.0.${conf.aliasName}.${hS}`)?.val;
+    if (!existsState(tempId)) continue;
 
-    if (h > 60) {
+    const t = getState(tempId)?.val;
+    const h = existsState(humId) ? getState(humId)?.val : null;
+
+    const tempFormatted = typeof t === "number" ? t.toFixed(1) : "--";
+    const humFormatted = typeof h === "number" ? Math.round(h) : "--";
+
+    if (typeof h === "number" && h > 60) {
       hasCritical = true;
-      msg += `⚠️ ${raum}: <b>${t.toFixed(1)}°C / ${Math.round(h)}%</b> 💧\n`;
+      msg += `⚠️ ${raum}: <b>${tempFormatted}°C / ${humFormatted}%</b> 💧\n`;
     } else {
-      msg += `🏠 ${raum}: ${t.toFixed(1)}°C / ${Math.round(h)}%\n`;
+      msg += `🏠 ${raum}: ${tempFormatted}°C / ${humFormatted}%\n`;
     }
   }
 
   const isDay = compareTime("08:00", "20:00", "between");
   const prio = hasCritical && isDay ? 5 : 1;
-  smartNotify(user, msg, prio);
+  smartNotify(user, msg, prio, chatId);
 }
 
-function getFensterStatus(user) {
+/**
+ * Checks all window contact sensors and sends an open/closed summary.
+ *
+ * @param {string} user - Requesting username.
+ * @param {string|number|null} chatId - Requesting chat ID.
+ */
+function getFensterStatus(user, chatId = null) {
   const offene = [];
   for (const raum in RAEUME) {
     const fID = `alias.0.${RAEUME[raum].aliasName}.fenster.STATE`;
@@ -104,13 +154,21 @@ function getFensterStatus(user) {
     offene.length === 0
       ? "✅ <b>Alle Fenster/Türen sind zu.</b>"
       : `⚠️ <b>Offen:</b>\n\n- ${offene.join("\n- ")}`;
-  smartNotify(user, msg, prio);
+  smartNotify(user, msg, prio, chatId);
 }
 
-function getKia(user) {
+/**
+ * Triggers a live GPS position update from the vehicle and retrieves geocoded address.
+ *
+ * @param {string} user - Requesting username.
+ * @param {string|number|null} chatId - Requesting chat ID.
+ */
+function getKia(user, chatId = null) {
   smartNotify(
     user,
     "📡 <b>Aktueller Standort wird vom Fahrzeug abgefragt...</b>\nBitte einen kurzen Moment Geduld (ca. 30–60 Sek.).",
+    1,
+    chatId,
   );
 
   let hasResponded = false;
@@ -127,6 +185,17 @@ function getKia(user) {
     const lat = getState(ID_KIA_LOC.lat)?.val;
     const lon = getState(ID_KIA_LOC.lon)?.val;
     const key = getState(ID_GOOGLE_KEY)?.val;
+
+    if (typeof lat !== "number" || typeof lon !== "number") {
+      smartNotify(
+        user,
+        "⚠️ <b>Kia Standort:</b> Keine gültigen GPS-Koordinaten vorhanden.",
+        1,
+        chatId,
+      );
+      return;
+    }
+
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${key}`;
 
     httpGet(url, (err, res) => {
@@ -141,6 +210,8 @@ function getKia(user) {
           smartNotify(
             user,
             `${title}\n${addr}\n\n<a href="${getState(ID_KIA_LOC.url)?.val}">Auf Karte zeigen</a>`,
+            1,
+            chatId,
           );
         } catch (e) {
           console.error(`[Telegram Menü] Fehler beim Verarbeiten der Standort-Daten: ${e}`);
@@ -174,84 +245,126 @@ function getKia(user) {
   }
 }
 
-function menuMain(user) {
-  showMenu(user, "<b>🏠 ioBroker Zentrale</b>\nBitte wählen:", [
-    [{ text: "🚗 Standort Kia", callback_data: "kia_pos" }],
+/**
+ * Displays the main menu.
+ *
+ * @param {string} user - Requesting username.
+ * @param {string|number|null} chatId - Requesting chat ID.
+ */
+function menuMain(user, chatId = null) {
+  showMenu(
+    user,
+    "<b>🏠 ioBroker Zentrale</b>\nBitte wählen:",
     [
-      { text: "🌡️ Klima-Check", callback_data: "menu_klima" },
-      { text: "💡 Schaltungen", callback_data: "menu_sw" },
+      [{ text: "🚗 Standort Kia", callback_data: "kia_pos" }],
+      [
+        { text: "🌡️ Klima-Check", callback_data: "menu_klima" },
+        { text: "💡 Schaltungen", callback_data: "menu_sw" },
+      ],
+      [
+        { text: "📅 Termine", callback_data: "termine" },
+        { text: "🪟 Fenster", callback_data: "fenster" },
+      ],
+      [{ text: "☀️ Astro", callback_data: "astro" }],
     ],
-    [
-      { text: "📅 Termine", callback_data: "termine" },
-      { text: "🪟 Fenster", callback_data: "fenster" },
-    ],
-    [{ text: "☀️ Astro", callback_data: "astro" }],
-  ]);
+    chatId,
+  );
 }
 
-function menuSchalter(user) {
-  showMenu(user, "<b>💡 Schaltungen</b>\nWas soll geschaltet werden?", [
+/**
+ * Displays the switch / device control submenu.
+ *
+ * @param {string} user - Requesting username.
+ * @param {string|number|null} chatId - Requesting chat ID.
+ */
+function menuSchalter(user, chatId = null) {
+  showMenu(
+    user,
+    "<b>💡 Schaltungen</b>\nWas soll geschaltet werden?",
     [
-      { text: "🍖 Drehspieß AN", callback_data: "sp_on" },
-      { text: "⚪ OFF", callback_data: "sp_off" },
+      [
+        { text: "🍖 Drehspieß AN", callback_data: "sp_on" },
+        { text: "⚪ OFF", callback_data: "sp_off" },
+      ],
+      [
+        { text: "🌳 Terrasse AN", callback_data: "tr_on" },
+        { text: "⚪ OFF", callback_data: "tr_off" },
+      ],
+      [
+        { text: "🔌 Steckleiste AN", callback_data: "st_on" },
+        { text: "⚪ OFF", callback_data: "st_off" },
+      ],
+      [{ text: "⬅️ Hauptmenü", callback_data: "main" }],
     ],
-    [
-      { text: "🌳 Terrasse AN", callback_data: "tr_on" },
-      { text: "⚪ OFF", callback_data: "tr_off" },
-    ],
-    [
-      { text: "🔌 Steckleiste AN", callback_data: "st_on" },
-      { text: "⚪ OFF", callback_data: "st_off" },
-    ],
-    [{ text: "⬅️ Hauptmenü", callback_data: "main" }],
-  ]);
+    chatId,
+  );
 }
 
-// --- TRIGGER ---
+// --- LOGIK ---
 
 on({ id: "telegram.0.communicate.request", change: "any" }, async (obj) => {
   if (typeof obj?.state?.val !== "string") return;
 
   const val = obj.state.val;
-  const bracketIndex = val.indexOf("]");
-  if (bracketIndex === -1) return;
+  let user = "";
+  let cmd = val.trim();
 
-  const user = val.substring(1, bracketIndex);
-  let cmd = val
-    .substring(bracketIndex + 1)
-    .trim()
-    .toLowerCase();
+  // Extract username if request is formatted as "[User] command"
+  if (cmd.startsWith("[")) {
+    const bracketIndex = cmd.indexOf("]");
+    if (bracketIndex !== -1) {
+      user = cmd.substring(1, bracketIndex).trim();
+      cmd = cmd.substring(bracketIndex + 1).trim();
+    }
+  }
 
-  // Strip leading slash if present (e.g. "/m" -> "m")
+  const chatId = existsState("telegram.0.communicate.requestChatId")
+    ? getState("telegram.0.communicate.requestChatId")?.val
+    : null;
+
+  console.log(
+    `[Telegram Menü] Request empfangen von "${user || "unbekannt"}" (ChatID: ${chatId || "n/a"}): "${cmd}"`,
+  );
+
+  // Normalize command: lowercase, strip leading slash, bot handle suffix (@bot) and parameters
+  cmd = cmd.toLowerCase();
   if (cmd.startsWith("/")) {
     cmd = cmd.substring(1);
+  }
+  if (cmd.includes("@")) {
+    cmd = cmd.split("@")[0];
+  }
+  if (cmd.includes(" ")) {
+    cmd = cmd.split(" ")[0];
   }
 
   switch (cmd) {
     case "m":
     case "main":
     case "menu":
+    case "menü":
+    case "menue":
     case "menu_main":
     case "start":
-      menuMain(user);
+      menuMain(user, chatId);
       break;
     case "menu_klima":
     case "menu_heiz":
-      getKlimaStatus(user);
+      getKlimaStatus(user, chatId);
       break;
     case "fenster":
-      getFensterStatus(user);
+      getFensterStatus(user, chatId);
       break;
     case "menu_sw":
-      menuSchalter(user);
+      menuSchalter(user, chatId);
       break;
     case "kia_pos":
-      getKia(user);
+      getKia(user, chatId);
       break;
     case "termine": {
       const tState = getState("ical.1.data.table");
       if (!tState?.val) {
-        smartNotify(user, "Keine Termine.");
+        smartNotify(user, "Keine Termine.", 1, chatId);
       } else {
         const heute = new Date().setHours(0, 0, 0, 0);
         let tMsg = "";
@@ -260,7 +373,7 @@ on({ id: "telegram.0.communicate.request", change: "any" }, async (obj) => {
           if (diff >= 0 && diff <= 2)
             tMsg += `📅 <b>${diff === 0 ? "Heute: " : diff === 1 ? "Morgen: " : ""}</b> ${t.event}\n`;
         });
-        smartNotify(user, tMsg === "" ? "Keine Termine." : `<b>Termine:</b>\n${tMsg}`);
+        smartNotify(user, tMsg === "" ? "Keine Termine." : `<b>Termine:</b>\n${tMsg}`, 1, chatId);
       }
       break;
     }
@@ -273,35 +386,35 @@ on({ id: "telegram.0.communicate.request", change: "any" }, async (obj) => {
         hour: "2-digit",
         minute: "2-digit",
       });
-      smartNotify(user, `☀️ <b>Astro</b>\n🌅 Aufgang: ${sr}\n🌇 Untergang: ${ss}`);
+      smartNotify(user, `☀️ <b>Astro</b>\n🌅 Aufgang: ${sr}\n🌇 Untergang: ${ss}`, 1, chatId);
       break;
     }
     case "sp_on":
       setState("sonoff.0.Terrassendose.POWER2", true);
-      smartNotify(user, "✅ Drehspieß <b>AN</b>");
+      smartNotify(user, "✅ Drehspieß <b>AN</b>", 1, chatId);
       break;
     case "sp_off":
       setState("sonoff.0.Terrassendose.POWER2", false);
-      smartNotify(user, "⚪ Drehspieß <b>AUS</b>");
+      smartNotify(user, "⚪ Drehspieß <b>AUS</b>", 1, chatId);
       break;
     case "tr_on":
       setState("sonoff.0.Terrassendose.POWER", true);
-      smartNotify(user, "✅ Terrasse <b>AN</b>");
+      smartNotify(user, "✅ Terrasse <b>AN</b>", 1, chatId);
       break;
     case "tr_off":
       setState("sonoff.0.Terrassendose.POWER", false);
-      smartNotify(user, "⚪ Terrasse <b>AUS</b>");
+      smartNotify(user, "⚪ Terrasse <b>AUS</b>", 1, chatId);
       break;
     case "st_on":
       setState("sonoff.0.Terrassendose.POWER1", true);
-      smartNotify(user, "✅ Steckleiste <b>AN</b>");
+      smartNotify(user, "✅ Steckleiste <b>AN</b>", 1, chatId);
       break;
     case "st_off":
       setState("sonoff.0.Terrassendose.POWER1", false);
-      smartNotify(user, "⚪ Steckleiste <b>AUS</b>");
+      smartNotify(user, "⚪ Steckleiste <b>AUS</b>", 1, chatId);
       break;
     default:
-      console.log(`[Telegram Menü] Unbekannter Befehl von ${user}: "${cmd}"`);
+      console.log(`[Telegram Menü] Unbekannter Befehl${user ? ` von ${user}` : ""}: "${cmd}"`);
       break;
   }
 });

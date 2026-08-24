@@ -1,6 +1,9 @@
 <img src="media/iobroker.png" align="right" width="100" alt="Projekt Logo">
 
 [🇩🇪 Deutsche Version](README_de.md)
+<img src="media/iobroker.png" align="right" width="100" alt="Projekt Logo">
+
+[🇩🇪 Deutsche Version](README_de.md)
 
 # ioBroker Script Collection
 
@@ -8,7 +11,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.11-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.13-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -57,6 +60,7 @@ The scripts are logically organized by rooms and functions:
 - **Proxmox Cluster Master Watchdog**: Monitors temperature, hard drives & status - sends alarms to ALL Telegram users and Gotify.
 - **DrayTek Vigor 166 Monitor (`connected.js`)**: Starts a local HTTP server to receive Grafana webhook alerts for DSL connection status, setting state values, and notifying via Telegram, Gotify, or Google Speaker.
 - **Global Notifications (`notify.js`)**: Centralizes alerts and status messages across the entire smart home, sending messages via Telegram and Gotify, and broadcasting voice announcements with dynamic Chromecast resume logic and support for custom concise voice messages.
+- **Telegram Control Center (`telegram_menue.js`)**: Interactive Telegram bot menu for monitoring indoor climate, window statuses, Kia location, appointments, astro times, and quick-toggling outdoor/terrace devices.
 - **Football Bundesliga**: Displays the current table and upcoming matches for SGE and FCB using the OpenLigaDB adapter.
 
 ### 📺🎵 Media & Sauna
@@ -101,6 +105,12 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.3.13] - 2026-08-24
+- refactor(telegram): Improve chat targeting and data robustness in menu (telegram_menue.js)
+
+### [3.3.12] - 2026-08-24
+- refactor(telegram): Add chat ID targeting, null safety for sensors/GPS, and standardize structure (telegram_menue.js)
+
 ### [3.3.11] - 2026-08-24
 - feat(telegram): Enhance command parsing and add main menu aliases (telegram_menue.js)
 
@@ -109,11 +119,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.3.9] - 2026-08-11
 - feat(telegram): increase Kia location query timeout to 60 seconds (telegram_menue.js)
-
-### [3.3.8] - 2026-08-11
-- feat(telegram): Implement live Kia location update via force_location button (telegram_menue.js)
-
-### [3.3.7] - 2026-08-11
-- feat(telegram): trigger live kia location update via force_location button (telegram_menue.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
