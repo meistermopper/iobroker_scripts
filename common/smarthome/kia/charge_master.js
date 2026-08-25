@@ -26,7 +26,8 @@ const IDS = {
   conn: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.ConnectorFastening.State`, // [6] Steckerstatus
   remTime: `${VIN}.vehicleStatusRaw.Green.ChargingInformation.Charging.RemainTime`, // [7] Restzeit in Min (vom Fahrzeug gemeldet)
   targetSocSrv: `${VIN}.control.charge_limit_slow`, // [23] Ladeziel (AC) vom Fahrzeug (Steuerungspunkt)
-  refresh: `${VIN}.control.force_refresh`, // [8] Fahrzeug aufwecken
+  refreshCar: `${VIN}.control.force_refresh_from_car`, // [8] Fahrzeug aufwecken (Live-Daten)
+  refreshSrv: `${VIN}.control.force_refresh_from_server`, // [8b] Server-Status abrufen
 
   // Energie-Zentrale (Hardware-Werte)
   pvPower: "solax.0.data.acpower", // [9] Aktuelle PV-Leistung in Watt
@@ -62,6 +63,8 @@ const RANGE_WINTER = 450;
 // --- TIMING KONSTANTEN ---
 const DEBOUNCE_STOP_MS = 45000; // 45 Sek. Wartezeit vor endgültigem Stopp
 const RECONNECT_WB_MS = 180000; // 3 Min. Wartezeit vor WLAN-Neuverbindung
+const START_REFRESH_DELAY_MS = 75000; // 75 Sek. nach Ladestart: Fahrzeug aufwecken für Restzeit & SoC
+const STOP_REFRESH_DELAY_MS = 30000; // 30 Sek. nach bestätigtem Ladestopp: Finalen SoC & Status abrufen
 // [NEU] Verzögerung vor dem erneuten Versuch des Stopp-Befehls nach dem ersten Versuch.
 const FORCE_STOP_RETRY_DELAY_MS = 5000;
 // [NEU] Verzögerung während des Verfügbarkeitswechsels, um der Wallbox Zeit zur Verarbeitung zu geben.
@@ -70,6 +73,8 @@ const FORCE_STOP_AVAILABILITY_TOGGLE_DELAY_MS = 2000;
 let startZeitLaden = null; // Merker für Statistik
 let originalMinSoc = null; // Merker für Min-SoC bei manuellem Laden
 let stopTimer = null; // Timer zur Entprellung von kurzen Lade-Unterbrechungen
+let startRefreshTimer = null; // Timer für Statusabfrage nach Ladestart
+let stopRefreshTimer = null; // Timer für Statusabfrage nach Ladeende
 let reconnectTimer = null; // Timer für Wallbox-Recovery
 let wasOfflineReported = false; // Status für Anti-Spam Meldungen
 let hasWarnedOcppOffline = false; // Flag to prevent repeated warning logs per script run
@@ -221,6 +226,10 @@ async function forceStopCharging() {
       stopTimer = null;
       console.log("[EV3 Master] Cleared stopTimer after forced stop.");
     }
+    if (startRefreshTimer) {
+      clearTimeout(startRefreshTimer);
+      startRefreshTimer = null;
+    }
     setState(IDS.u_power, 0, true);
     if (startZeitLaden) {
       const stats = updateChargeStatistics(Date.now() - startZeitLaden);
@@ -238,6 +247,16 @@ async function forceStopCharging() {
       originalMinSoc = null;
       setState(IDS.u_origSoc, 0, true);
     }
+    if (stopRefreshTimer) clearTimeout(stopRefreshTimer);
+    stopRefreshTimer = setTimeout(() => {
+      console.log(
+        "[EV3 Master] Triggering post-stop vehicle refresh for final SoC and statistics.",
+      );
+      if (existsState(IDS.refreshCar)) {
+        setState(IDS.refreshCar, true);
+      }
+      stopRefreshTimer = null;
+    }, STOP_REFRESH_DELAY_MS);
   }
 }
 
@@ -432,6 +451,20 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
     if (!startZeitLaden) {
       startZeitLaden = Date.now();
       setState(IDS.u_startTs, startZeitLaden, true);
+
+      // 75 Sek. nach Ladestart Fahrzeug aufwecken, um verbleibende Ladedauer & SoC präzise abzurufen
+      if (startRefreshTimer) clearTimeout(startRefreshTimer);
+      startRefreshTimer = setTimeout(() => {
+        if (getState(IDS.wbStat)?.val === "Charging") {
+          console.log(
+            "[EV3 Master] Triggering post-start vehicle refresh to update SoC and remaining time.",
+          );
+          if (existsState(IDS.refreshCar)) {
+            setState(IDS.refreshCar, true);
+          }
+        }
+        startRefreshTimer = null;
+      }, START_REFRESH_DELAY_MS);
     }
 
     // Da die Box starr mit 6A lädt (3 Phasen * 230V * 6A = ~3,96 kW), setzen wir den festen Watt-Wert zur Anzeige
@@ -460,6 +493,10 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       status === "SuspendedEV" ||
       status === "SuspendedEVSE")
   ) {
+    if (startRefreshTimer) {
+      clearTimeout(startRefreshTimer);
+      startRefreshTimer = null;
+    }
     // Um bei kurzen Unterbrechungen nicht sofort abzubrechen, warten wir 45 Sekunden (Entprellzeit).
     // Wechselt der Status in dieser Zeit zurück auf "Charging", läuft die Ladung oben nahtlos weiter.
     if (stopTimer) clearTimeout(stopTimer);
@@ -506,6 +543,18 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       setState(IDS.wbTrans, false);
 
       stopTimer = null;
+
+      // Finalen Status nach Ladeende vom Fahrzeug abrufen
+      if (stopRefreshTimer) clearTimeout(stopRefreshTimer);
+      stopRefreshTimer = setTimeout(() => {
+        console.log(
+          "[EV3 Master] Triggering post-stop vehicle refresh for final SoC and statistics.",
+        );
+        if (existsState(IDS.refreshCar)) {
+          setState(IDS.refreshCar, true);
+        }
+        stopRefreshTimer = null;
+      }, STOP_REFRESH_DELAY_MS);
     }, DEBOUNCE_STOP_MS);
   }
 });

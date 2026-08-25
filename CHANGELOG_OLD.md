@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.9] - 2026-08-11
+- feat(telegram): increase Kia location query timeout to 60 seconds (telegram_menue.js)
+
 ### [3.3.8] - 2026-08-11
 - feat(telegram): Implement live Kia location update via force_location button (telegram_menue.js)
 
