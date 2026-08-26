@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.10] - 2026-08-20
+- feat(kia): Implement dynamic home battery protection during manual EV charging (charge_master.js)
+
 ### [3.3.9] - 2026-08-11
 - feat(telegram): increase Kia location query timeout to 60 seconds (telegram_menue.js)
 

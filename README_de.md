@@ -11,7 +11,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.14-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.15-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -105,6 +105,9 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.15] - 2026-08-26
+- feat(kia): Implement robust wallbox start sequence with verification and retry mechanism (charge_master.js)
+
 ### [3.3.14] - 2026-08-25
 - feat(kia): add automated vehicle refresh after charge start and stop (charge_master.js)
 
@@ -116,8 +119,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ### [3.3.11] - 2026-08-24
 - feat(telegram): Enhance command parsing and add main menu aliases (telegram_menue.js)
-
-### [3.3.10] - 2026-08-20
-- feat(kia): Implement dynamic home battery protection during manual EV charging (charge_master.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

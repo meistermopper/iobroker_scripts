@@ -65,6 +65,9 @@ const DEBOUNCE_STOP_MS = 45000; // 45 Sek. Wartezeit vor endgültigem Stopp
 const RECONNECT_WB_MS = 180000; // 3 Min. Wartezeit vor WLAN-Neuverbindung
 const START_REFRESH_DELAY_MS = 75000; // 75 Sek. nach Ladestart: Fahrzeug aufwecken für Restzeit & SoC
 const STOP_REFRESH_DELAY_MS = 30000; // 30 Sek. nach bestätigtem Ladestopp: Finalen SoC & Status abrufen
+const START_VERIFY_TIMEOUT_MS = 35000; // 35 Sek. maximale Wartezeit auf "Charging"-Status nach Startbefehl
+const START_AVAILABILITY_TOGGLE_DELAY_MS = 2000; // 2 Sek. Pause bei Verfügbarkeitswechsel
+const START_HANDSHAKE_DELAY_MS = 4000; // 4 Sek. Puffer für OCPP-Handshake nach Re-Aktivierung
 // [NEU] Verzögerung vor dem erneuten Versuch des Stopp-Befehls nach dem ersten Versuch.
 const FORCE_STOP_RETRY_DELAY_MS = 5000;
 // [NEU] Verzögerung während des Verfügbarkeitswechsels, um der Wallbox Zeit zur Verarbeitung zu geben.
@@ -126,7 +129,30 @@ async function initLadeSystem() {
 }
 initLadeSystem();
 
-// --- 2.1 HELPER: AKTUELLE STROM- UND LEISTUNGSWERTE ABRUFEN ---
+// --- 2.1 HELPER: ASYNCHRONE PAUSE & MESSWERTE ---
+
+/**
+ * Asynchroner Timer zur Ablaufverzögerung in async-Funktionen.
+ * @param {number} ms Millisekunden
+ */
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Wartet bis der Wallbox-Status auf "Charging" wechselt oder der Timeout abläuft.
+ * @param {number} timeoutMs Maximale Wartezeit in Millisekunden
+ * @returns {Promise<boolean>} True falls "Charging" erreicht wurde, sonst False
+ */
+async function waitForChargingState(timeoutMs) {
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeoutMs) {
+    if (getState(IDS.wbStat)?.val === "Charging") {
+      return true;
+    }
+    await wait(1000);
+  }
+  return getState(IDS.wbStat)?.val === "Charging";
+}
+
 /**
  * Sammelt alle relevanten Leistungs- und SoC-Werte aus den Datenpunkten.
  * Stellt sicher, dass die Werte Zahlen sind.
@@ -143,32 +169,86 @@ function getPowerMetrics() {
 // --- 3. KOMMUNIKATION ---
 
 /**
- * Führt die intelligente Startsequenz der Wallbox aus.
+ * Führt die intelligente Startsequenz der Wallbox inklusive Verifikations-Watchdog
+ * und automatischem Retry-Mechanismus aus.
+ * @param {string} reason Grund für den Start (z. B. "PV-Automatik", "VIS-Manual")
  */
 async function triggerStartSequence(reason = "PV-Surplus") {
-  if (isStartingSequenceActive) return;
+  if (isStartingSequenceActive) {
+    console.log(`[EV3 Master] Start sequence already active, skipping (${reason}).`);
+    return;
+  }
 
   const wbStatus = getState(IDS.wbStat)?.val;
+  if (wbStatus === "Charging") {
+    console.log(`[EV3 Master] Wallbox is already charging. Skipping start sequence.`);
+    return;
+  }
+
   const readyToStart = ["Preparing", "Finishing", "SuspendedEVSE", "SuspendedEV"].includes(
     wbStatus,
   );
 
   if (!readyToStart) {
-    if (wbStatus === "Available")
-      //console.warn(`[EV3 Master] Start (${reason}) abgebrochen: Kein Fahrzeug erkannt.`);
+    if (wbStatus === "Available") {
+      // console.warn(`[EV3 Master] Start (${reason}) aborted: No vehicle detected.`);
       return;
+    }
   }
 
   isStartingSequenceActive = true;
-  console.log(`[EV3 Master] Starting reset sequence for mode: ${reason} (Status: ${wbStatus})`);
+  console.log(
+    `[EV3 Master] Starting wallbox sequence for: ${reason} (Current Status: ${wbStatus})`,
+  );
 
   try {
+    // --- VERSUCH 1 ---
+    console.log("[EV3 Master] Start attempt 1: Toggling availability and setting wbTrans = true.");
     setState(IDS.wbAvail, false);
-    await wait(1500);
+    await wait(START_AVAILABILITY_TOGGLE_DELAY_MS);
     setState(IDS.wbAvail, true);
-    await wait(3500); // Erhöhter Puffer für den OCPP-Handshake
+    await wait(START_HANDSHAKE_DELAY_MS); // Erhöhter Puffer für den OCPP-Handshake
     setState(IDS.wbTrans, true);
-    ev3Notify(`🔋 EV3-Ladung aktiviert via ${reason} mit 6A`);
+
+    let started = await waitForChargingState(START_VERIFY_TIMEOUT_MS);
+
+    // --- VERSUCH 2 (AUTOMATISCHER RETRY BEI TIMEOUT / FEHLSCHLAG) ---
+    if (!started) {
+      const currentStatus = getState(IDS.wbStat)?.val;
+      console.warn(
+        `[EV3 Master] Start attempt 1 timed out. Wallbox status is '${currentStatus}'. Retrying reset sequence...`,
+      );
+
+      setState(IDS.wbTrans, false);
+      await wait(FORCE_STOP_RETRY_DELAY_MS);
+      setState(IDS.wbAvail, false);
+      await wait(START_AVAILABILITY_TOGGLE_DELAY_MS);
+      setState(IDS.wbAvail, true);
+      await wait(START_HANDSHAKE_DELAY_MS);
+      setState(IDS.wbTrans, true);
+
+      started = await waitForChargingState(START_VERIFY_TIMEOUT_MS);
+    }
+
+    // --- ERGEBNIS-AUSWERTUNG ---
+    if (started) {
+      console.log(`[EV3 Master] Wallbox start verified successfully (${reason}).`);
+      ev3Notify(`🔋 EV3-Ladung gestartet via ${reason} mit 6A`);
+    } else {
+      const finalStatus = getState(IDS.wbStat)?.val;
+      console.error(
+        `[EV3 Master] Start failed after retry. Wallbox did not reach 'Charging' state (Status: ${finalStatus}). Reverting wbTrans.`,
+      );
+      setState(IDS.wbTrans, false);
+      ev3Notify(
+        `⚠️ EV3 Ladestart fehlgeschlagen: Wallbox reagiert nicht (Status: ${finalStatus})`,
+        4,
+      );
+    }
+  } catch (e) {
+    console.error(`[EV3 Master] Error during start sequence: ${e.message}`);
+    setState(IDS.wbTrans, false);
+    ev3Notify(`❌ Fehler bei Ladestart-Sequenz: ${e.message}`, 5);
   } finally {
     isStartingSequenceActive = false;
   }
