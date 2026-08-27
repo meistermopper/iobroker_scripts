@@ -1,30 +1,30 @@
 /* eslint-env es2022 */
 /**
- * Name:   DrayTek Vigor 166 Online-Status (Nativer Webhook)
- * Zweck:  Erstellt die Datenpunkte und startet einen eigenen HTTP-Server
- *         für Grafana-Alerts mit konfigurierbaren Benachrichtigungskanälen.
+ * Name:    DrayTek Vigor 166 Online Status (Native Webhook)
+ * Purpose: Creates states and starts a dedicated HTTP server
+ *          for Grafana alerts with configurable notification channels.
  */
 
 const http = require("node:http");
 
-// --- KONFIGURATION ---
-const HTTP_PORT = 8088; // Port, auf dem das Skript für Grafana lauscht
-const DP_CONNECTED = "0_userdata.0.Vigor166.connected"; // Ziel-Datenpunkt für den Verbindungsstatus
-const DP_PAYLOAD = "0_userdata.0.Vigor166.grafana_payload"; // Datenpunkt zur Sicherung des Roh-Payloads
+// --- CONFIGURATION ---
+const HTTP_PORT = 8088; // Port on which the script listens for Grafana
+const DP_CONNECTED = "0_userdata.0.Vigor166.connected"; // Target state for connection status
+const DP_PAYLOAD = "0_userdata.0.Vigor166.grafana_payload"; // State for saving raw payload
 
-// Benachrichtigungen (Kanäle einzeln aktivierbar/deaktivierbar)
-const NOTIFY_TITLE = "DrayTek Vigor 166"; // Standardtitel für die Messenger-Benachrichtigungen
-const NOTIFY_VOICE = true; // Sprachansage über Google Speaker (SayIt) senden
-const VOICE_VOLUME = 50; // Lautstärke der Sprachansage (null/0 = deaktiviert)
+// Notifications (channels individually toggleable)
+const NOTIFY_TITLE = "DrayTek Vigor 166"; // Default title for messenger notifications
+const NOTIFY_VOICE = true; // Send voice notification via Google Speaker (SayIt)
+const VOICE_VOLUME = 50; // Voice notification volume (null/0 = disabled)
 
-// --- LOGIK ---
+// --- LOGIC ---
 
-// --- DATENPUNKTE AUTOMATISCH ERSTELLEN ---
+// --- AUTOMATICALLY CREATE STATES ---
 
-// Erstellung des Online-Status-Datenpunktes (Typ: Boolean)
+// Creation of the online status state (Type: Boolean)
 createState(DP_CONNECTED, true, {
-  name: "DrayTek Vigor 166 Online-Status",
-  desc: "Verbindungsstatus gesteuert durch Grafana Alerts (true = Connected, false = Disconnected)",
+  name: "DrayTek Vigor 166 Online Status",
+  desc: "Connection status managed by Grafana alerts (true = Connected, false = Disconnected)",
   type: "boolean",
   role: "indicator.connected",
   read: true,
@@ -32,10 +32,10 @@ createState(DP_CONNECTED, true, {
   def: true,
 });
 
-// Erstellung des Datenpunktes zur Speicherung des letzten rohen Webhook-Inhalts von Grafana
+// Creation of the state for storing the latest raw Grafana webhook payload
 createState(DP_PAYLOAD, "", {
   name: "Grafana Alert Raw Payload",
-  desc: "Empfängt den ungeschnittenen Webhook-Payload von Grafana",
+  desc: "Receives raw unparsed webhook payload from Grafana",
   type: "string",
   role: "json",
   read: true,
@@ -43,135 +43,135 @@ createState(DP_PAYLOAD, "", {
   def: "",
 });
 
-// --- HELPER FÜR BENACHRICHTIGUNGEN ---
+// --- NOTIFICATION HELPER ---
 
 /**
- * Sendet Benachrichtigungen über sendGlobalNotify.
- * @param {string} text - Der auszugebende/zu sendende Text
- * @param {number} priority - Dringlichkeit der Nachricht (besonders relevant für Gotify)
+ * Sends notifications via sendGlobalNotify.
+ * @param {string} text - Message text to be sent/announced
+ * @param {number} priority - Message urgency (especially relevant for Gotify)
  */
 function sendNotification(text, priority) {
   sendGlobalNotify(text, NOTIFY_TITLE, priority, NOTIFY_VOICE ? VOICE_VOLUME : null);
 }
 
-// --- EIGENER HTTP-WEBHOOK-SERVER ---
+// --- DEDICATED HTTP WEBHOOK SERVER ---
 
-// Lokalen Webserver instanziieren, der auf Webhooks von Grafana reagiert
+// Instantiate local web server responding to Grafana webhooks
 const server = http.createServer((req, res) => {
-  // Nur POST-Anfragen verarbeiten, da Grafana Alerts per POST sendet
+  // Only process POST requests since Grafana sends alerts via POST
   if (req.method === "POST") {
     let body = "";
 
-    // Datenströme (Chunks) sammeln und zusammensetzen
+    // Collect incoming data stream chunks
     req.on("data", (chunk) => {
       body += chunk.toString();
     });
 
-    // Nach vollständigem Empfang des Payloads verarbeiten
+    // Process payload after stream end
     req.on("end", () => {
-      // Rohen Payload zur Diagnose in den dafür vorgesehenen Datenpunkt schreiben
+      // Write raw payload to diagnostic state
       setState(DP_PAYLOAD, body, true);
 
       try {
         const payload = JSON.parse(body);
 
-        // Prüfen, ob der Payload einen gültigen Status enthält
+        // Check if payload contains a valid status
         if (payload?.status) {
-          // 1. Test-Alerts abfangen (Grafana-Funktion "Test" am Kontaktpunkt)
+          // 1. Intercept test alerts (Grafana "Test" button on contact point)
           const isTestAlert = payload.alerts?.some(
             (alert) => alert.labels?.alertname === "TestAlert",
           );
           if (isTestAlert) {
-            console.log("[Grafana-Vigor] Test-Alert empfangen. Keine Statusänderung vorgenommen.");
+            console.log("[Grafana-Vigor] Test alert received. No state change applied.");
             res.writeHead(200, { "Content-Type": "text/plain" });
             res.end("Test-Alert OK");
             return;
           }
 
-          // 2. Alert-Typen identifizieren
-          // Prüft, ob einer der Alarme im Payload einen Verbindungsabbruch betrifft (Disconnect oder Vigor 166 im Namen)
+          // 2. Identify alert types
+          // Check if any alert in the payload refers to a connection drop (Disconnect or Vigor 166 in name)
           const isDslDisconnect = payload.alerts?.some(
             (alert) =>
               alert.labels?.alertname?.toLowerCase()?.includes("disconnect") ||
               alert.labels?.alertname?.toLowerCase()?.includes("vigor 166"),
           );
 
-          // Prüft, ob einer der Alarme ein SNR (Signal-to-Noise Ratio / Signal-Rausch-Toleranz) Problem meldet
+          // Check if any alert reports a Signal-to-Noise Ratio (SNR) issue
           const isSnrWarning = payload.alerts?.some((alert) =>
             alert.labels?.alertname?.toLowerCase()?.includes("snr"),
           );
 
-          // 3. Statusauswertung & gezielte Benachrichtigungen
+          // 3. Status evaluation & targeted notifications
 
-          // Fall A: Alarm wird ausgelöst (status === "firing")
+          // Case A: Alert triggered (status === "firing")
           if (payload.status === "firing") {
             if (isDslDisconnect) {
-              setState(DP_CONNECTED, false, true); // Status auf "Offline/Disconnected" setzen
+              setState(DP_CONNECTED, false, true); // Set status to "Offline/Disconnected"
               console.warn(
-                `[Grafana-Vigor] Alarm FIRING (Disconnect) -> Status '${DP_CONNECTED}' auf FALSE gesetzt.`,
+                `[Grafana-Vigor] Alert FIRING (Disconnect) -> State '${DP_CONNECTED}' set to FALSE.`,
               );
               sendNotification(
                 "Achtung: Die DSL-Verbindung über den DrayTek Vigor 166 wurde getrennt!",
-                5, // Gotify-Prio: Warnung
+                5, // Gotify priority: Warning / Critical
               );
             } else if (isSnrWarning) {
-              console.warn("[Grafana-Vigor] Alarm FIRING (Low SNR Warning).");
+              console.warn("[Grafana-Vigor] Alert FIRING (Low SNR Warning).");
               sendNotification(
                 "Warnung: Die Signal-Rausch-Toleranz der DSL-Leitung ist kritisch niedrig!",
-                4, // Gotify-Prio: Warnung
+                4, // Gotify priority: Warning
               );
             } else {
-              console.log("[Grafana-Vigor] Ignoriert: Unbekannter FIRING Alert.");
+              console.log("[Grafana-Vigor] Ignored: Unknown FIRING alert.");
             }
 
-            // Fall B: Alarm wurde wieder gelöst (status === "resolved")
+            // Case B: Alert resolved (status === "resolved")
           } else if (payload.status === "resolved") {
             if (isDslDisconnect) {
-              setState(DP_CONNECTED, true, true); // Status auf "Online/Connected" setzen
+              setState(DP_CONNECTED, true, true); // Set status to "Online/Connected"
               console.log(
-                `[Grafana-Vigor] Alarm RESOLVED (Disconnect) -> Status '${DP_CONNECTED}' auf TRUE gesetzt.`,
+                `[Grafana-Vigor] Alert RESOLVED (Disconnect) -> State '${DP_CONNECTED}' set to TRUE.`,
               );
               sendNotification(
                 "Entwarnung: Der DrayTek Vigor 166 ist wieder online!",
-                1, // Gotify-Prio: Info
+                1, // Gotify priority: Info
               );
             } else if (isSnrWarning) {
-              console.log("[Grafana-Vigor] Alarm RESOLVED (Low SNR Warning).");
+              console.log("[Grafana-Vigor] Alert RESOLVED (Low SNR Warning).");
               sendNotification(
                 "Entwarnung: Die Signal-Rausch-Toleranz der DSL-Leitung ist wieder stabil.",
-                1, // Gotify-Prio: Info
+                1, // Gotify priority: Info
               );
             } else {
-              console.log("[Grafana-Vigor] Ignoriert: Unbekannter RESOLVED Alert.");
+              console.log("[Grafana-Vigor] Ignored: Unknown RESOLVED alert.");
             }
           }
         }
 
-        // Antwort an Grafana senden, dass der Webhook erfolgreich empfangen wurde
+        // Return success response to Grafana
         res.writeHead(200, { "Content-Type": "text/plain" });
         res.end("OK");
       } catch (error) {
-        console.error(`[Grafana-Vigor] Fehler beim Verarbeiten des Webhooks: ${error}`);
+        console.error(`[Grafana-Vigor] Error processing webhook: ${error}`);
         res.writeHead(400, { "Content-Type": "text/plain" });
         res.end("Bad Request");
       }
     });
   } else {
-    // Methoden ungleich POST ablehnen
+    // Reject non-POST methods
     res.writeHead(405, { "Content-Type": "text/plain" });
     res.end("Method Not Allowed");
   }
 });
 
-// Server auf gewähltem Port starten
+// Start server on configured port
 server.listen(HTTP_PORT, () => {
-  console.log(`[Grafana-Vigor] Webhook-Server lauscht auf Port ${HTTP_PORT}`);
+  console.log(`[Grafana-Vigor] Webhook server listening on port ${HTTP_PORT}`);
 });
 
-// Bei Skript-Stopp den HTTP-Server sauber schließen, um blockierte Ports zu vermeiden
+// Gracefully close HTTP server on script stop to prevent locked ports
 onStop((callback) => {
   server.close(() => {
-    console.log("[Grafana-Vigor] Webhook-Server gestoppt.");
+    console.log("[Grafana-Vigor] Webhook server stopped.");
     callback();
   });
 }, 1000);

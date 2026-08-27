@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.11] - 2026-08-24
+- feat(telegram): Enhance command parsing and add main menu aliases (telegram_menue.js)
+
 ### [3.3.10] - 2026-08-20
 - feat(kia): Implement dynamic home battery protection during manual EV charging (charge_master.js)
 
