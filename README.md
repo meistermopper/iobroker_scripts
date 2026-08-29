@@ -1,9 +1,6 @@
 <img src="media/iobroker.png" align="right" width="100" alt="Projekt Logo">
 
 [🇩🇪 Deutsche Version](README_de.md)
-<img src="media/iobroker.png" align="right" width="100" alt="Projekt Logo">
-
-[🇩🇪 Deutsche Version](README_de.md)
 
 # ioBroker Script Collection
 
