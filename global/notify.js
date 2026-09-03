@@ -67,7 +67,7 @@ async function sendGlobalNotify(
     const url = `${NOTIFY_CONFIG.gotifyUrl}?token=${token}`;
     const payload = { title: title, message: cleanText, priority: priority };
 
-    httpPost(url, payload, { timeout: 5000 }, (error) => {
+    httpPost(url, payload, { timeout: 15000 }, (error) => {
       if (error) console.error(`[GlobalNotify] Gotify Fehler: ${error}`);
     });
   }

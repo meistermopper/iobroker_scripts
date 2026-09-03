@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.13] - 2026-08-24
+- refactor(telegram): Improve chat targeting and data robustness in menu (telegram_menue.js)
+
 ### [3.3.12] - 2026-08-24
 - refactor(telegram): Add chat ID targeting, null safety for sensors/GPS, and standardize structure (telegram_menue.js)
 
