@@ -11,7 +11,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.16-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.17-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -105,6 +105,9 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.17] - 2026-09-03
+- git commit -m "fix(telegram): ignore empty request values to prevent unknown command logs (telegram_menue.js)
+
 ### [3.3.16] - 2026-08-27
 - refactor(vigor166): Translate script content and comments to English (connected.js)
 
@@ -116,8 +119,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ### [3.3.13] - 2026-08-24
 - refactor(telegram): Improve chat targeting and data robustness in menu (telegram_menue.js)
-
-### [3.3.12] - 2026-08-24
-- refactor(telegram): Direkte Chat-ID-Adressierung, Null-Safety für Sensoren/GPS und JSDoc-Standardisierung (telegram_menue.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

@@ -303,9 +303,9 @@ function menuSchalter(user, chatId = null) {
 // --- LOGIK ---
 
 on({ id: "telegram.0.communicate.request", change: "any" }, async (obj) => {
-  if (typeof obj?.state?.val !== "string") return;
+  const val = obj?.state?.val;
+  if (typeof val !== "string" || !val.trim()) return;
 
-  const val = obj.state.val;
   let user = "";
   let cmd = val.trim();
 
@@ -317,6 +317,9 @@ on({ id: "telegram.0.communicate.request", change: "any" }, async (obj) => {
       cmd = cmd.substring(bracketIndex + 1).trim();
     }
   }
+
+  // Ignore empty command payload (e.g. after adapter reset or empty bracket payload)
+  if (!cmd) return;
 
   const chatId = existsState("telegram.0.communicate.requestChatId")
     ? getState("telegram.0.communicate.requestChatId")?.val
