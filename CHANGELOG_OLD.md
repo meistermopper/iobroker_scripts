@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.14] - 2026-08-25
+- feat(kia): add automated vehicle refresh after charge start and stop (charge_master.js)
+
 ### [3.3.13] - 2026-08-24
 - refactor(telegram): Improve chat targeting and data robustness in menu (telegram_menue.js)
 

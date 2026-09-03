@@ -22,8 +22,9 @@ const ID_NEW_FW = "0_userdata.0.ccu.neue_ccu_firmware";
 // jQuery-artige Selektoren zur Überwachung aller Homematic-Gerätekanäle.
 // SelectorUNREACH: Findet alle Datenpunkte, die Verbindungsabbrüche signalisieren.
 const SelectorUNREACH = $("channel[state.id=*.UNREACH]");
-// SelectorLOWBAT: Findet alle Datenpunkte, die eine schwache Batterie melden.
+// SelectorLOWBAT: Findet alle Datenpunkte, die eine schwache Batterie melden (Homematic Classic & HmIP).
 const SelectorLOWBAT = $("channel[state.id=*.LOWBAT]");
+const SelectorLOW_BAT = $("channel[state.id=*.LOW_BAT]");
 // SelectorCONFIG: Findet alle Datenpunkte, bei denen noch Konfigurationsdaten übertragen werden müssen.
 const SelectorCONFIG = $("channel[state.id=*.CONFIG_PENDING]");
 
@@ -207,18 +208,52 @@ function checkHomematicService() {
       // Prüft ob der Datenpunkt existiert und den Zustand true (aktiv) aufweist
       if (existsState(id) && getState(id)?.val === true) {
         const obj = getObject(id);
-        // Nutzt den Namen des Geräts aus den Metadaten falls vorhanden, sonst die ID
-        const deviceName = obj?.common?.name ? obj.common.name : id;
-        const type = id.split(".").pop();
+        const parts = id.split(".");
+        const rawType = parts[parts.length - 1];
+        const type = rawType === "LOW_BAT" ? "LOWBAT" : rawType;
+
+        // Try to get clean device name:
+        // 1. Check parent device object (parts 0..2, e.g. hm-rpc.1.00185D8993315E)
+        // 2. Check parent channel object (parts 0..3, e.g. hm-rpc.1.00185D8993315E.0)
+        // 3. Fallback to state object common.name or ID
+        let deviceName = "";
+        if (parts.length >= 4) {
+          const deviceId = parts.slice(0, 3).join(".");
+          if (existsObject(deviceId)) {
+            const devObj = getObject(deviceId);
+            if (devObj?.common?.name) {
+              const dName = devObj.common.name;
+              deviceName = typeof dName === "object" ? dName.de || dName.en || "" : dName;
+            }
+          }
+        }
+
+        if (!deviceName && parts.length >= 3) {
+          const channelId = parts.slice(0, -1).join(".");
+          if (existsObject(channelId)) {
+            const chanObj = getObject(channelId);
+            if (chanObj?.common?.name) {
+              const cName = chanObj.common.name;
+              deviceName = typeof cName === "object" ? cName.de || cName.en || "" : cName;
+            }
+          }
+        }
+
+        if (!deviceName) {
+          const sName = obj?.common?.name;
+          deviceName = typeof sName === "object" ? sName.de || sName.en || id : sName || id;
+        }
+
         textList.push(`⚠️ <b>${deviceName}</b>: ${type}`);
         anzahl++;
       }
     });
   }
 
-  // Auswertung für alle drei Meldungsklassen
+  // Auswertung für alle vier Meldungsklassen
   processSelector(SelectorUNREACH);
   processSelector(SelectorLOWBAT);
+  processSelector(SelectorLOW_BAT);
   processSelector(SelectorCONFIG);
 
   // --- TEIL 2: CCU-Firmware Vergleich ---
@@ -253,24 +288,39 @@ function checkHomematicService() {
   // --- TEIL 3: Ergebnisse schreiben ---
   setState(`${PATH}.Firmware_Update`, fwUpdate, true);
   setState(ID_NEW_FW, fwUpdate, true);
-  setState(`${PATH}.Anzahl`, anzahl, true);
 
   // Generierung des finalen Zustandstextes
   const finalBuffer = anzahl > 0 ? textList.join("<br>") : "keine Service-Meldungen vorhanden";
+  // Erst Text schreiben, damit bei nachfolgender Anzahl-Änderung der Text bereits aktuell ist
   setState(`${PATH}.Text`, finalBuffer, true);
+  setState(`${PATH}.Anzahl`, anzahl, true);
 }
 
 // --- TRIGGER ---
 
+// Debounce-Timer, um mehrfache Ausführungen bei schnellen Folge-Events abzufedern
+let debounceTimer = null;
+function debouncedCheck() {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+  }
+  debounceTimer = setTimeout(() => {
+    debounceTimer = null;
+    checkHomematicService();
+  }, 1000);
+}
+
 // @ts-expect-error - Unterdrückt jQuery-Typkonflikte des javascript-Adapters
-SelectorUNREACH.on(checkHomematicService);
+SelectorUNREACH.on(debouncedCheck);
 // @ts-expect-error - Unterdrückt jQuery-Typkonflikte des javascript-Adapters
-SelectorLOWBAT.on(checkHomematicService);
+SelectorLOWBAT.on(debouncedCheck);
 // @ts-expect-error - Unterdrückt jQuery-Typkonflikte des javascript-Adapters
-SelectorCONFIG.on(checkHomematicService);
+SelectorLOW_BAT.on(debouncedCheck);
+// @ts-expect-error - Unterdrückt jQuery-Typkonflikte des javascript-Adapters
+SelectorCONFIG.on(debouncedCheck);
 
 // Reagiert auf manuelle/externe Änderungen der lokalen oder online Firmwareversion
-on({ id: [ID_LOCAL_FW, ID_ONLINE_FW], change: "ne" }, checkHomematicService);
+on({ id: [ID_LOCAL_FW, ID_ONLINE_FW], change: "ne" }, debouncedCheck);
 
 // Zyklischer Check (Backup) alle 30 Minuten
 schedule("*/30 * * * *", checkHomematicService);
@@ -286,11 +336,19 @@ setTimeout(async () => {
 }, 1000); // 1 Sekunde Verzögerung nach Skriptstart zum Einlesen aller Datenpunkte
 
 // --- TELEGRAM & GOTIFY BENACHRICHTIGUNG ---
-// Löst eine Benachrichtigung aus, wenn sich die Anzahl der Servicemeldungen erhöht
-on({ id: `${PATH}.Anzahl`, change: "gt" }, (obj) => {
-  const text = getState(`${PATH}.Text`)?.val;
-  const anzahl = obj.state.val;
+// Löst eine Benachrichtigung aus, wenn sich die Anzahl der Servicemeldungen ändert
+on({ id: `${PATH}.Anzahl`, change: "ne" }, (obj) => {
+  const anzahl = Number(obj.state?.val) || 0;
+  const oldAnzahl = Number(obj.oldState?.val) || 0;
 
-  const msg = `⚠️ <b>Homematic Servicemeldung</b>\n\nAktuelle Meldungen (${anzahl}):\n${text.replace(/<br>/g, "\n")}`;
-  sendGlobalNotify(msg, "HM Service", 1);
+  if (anzahl > oldAnzahl) {
+    const text = getState(`${PATH}.Text`)?.val || "";
+    const msg = `⚠️ <b>Homematic Servicemeldung</b>\n\nAktuelle Meldungen (${anzahl}):\n${String(text).replace(/<br>/g, "\n")}`;
+    sendGlobalNotify(msg, "HM Service", 1);
+  } else if (anzahl === 0 && oldAnzahl > 0) {
+    // Entwarnung, wenn alle Servicemeldungen behoben wurden
+    const msg =
+      "✅ <b>Homematic Entwarnung</b>\n\nAlle Servicemeldungen behoben. Alle Geräte wieder erreichbar.";
+    sendGlobalNotify(msg, "HM Service", 1);
+  }
 });
