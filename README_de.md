@@ -11,7 +11,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.20-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.22-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -105,19 +105,23 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.22] - 2026-09-04
+- git add common/bad_unten/radio.js README.md README_de.md package.json (radio.js)
+
+### [3.3.21] - 2026-09-04
+
+- fix(bad-radio): Einschaltverzögerung des Verstärkers auf 12s erhöht und Status-Synchronisation korrigiert (radio.js)
+
 ### [3.3.20] - 2026-09-04
+
 - feat(homematic): Implement UNREACH debouncing to prevent false alarms (homematic_all.js)
 
 ### [3.3.19] - 2026-09-03
+
 - git commit -m "fix(homematic): add all-clear notification, debounce triggers, and HmIP LOW_BAT support (homematic_all.js)
 
 ### [3.3.18] - 2026-09-03
+
 - git commit -m "fix: increase gotify http request timeout to 15s (notify.js)
-
-### [3.3.17] - 2026-09-03
-- git commit -m "fix(telegram): ignore empty request values to prevent unknown command logs (telegram_menue.js)
-
-### [3.3.16] - 2026-08-27
-- refactor(vigor166): Translate script content and comments to English (connected.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

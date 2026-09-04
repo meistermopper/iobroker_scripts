@@ -4,6 +4,12 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.17] - 2026-09-03
+- git commit -m "fix(telegram): ignore empty request values to prevent unknown command logs (telegram_menue.js)
+
+### [3.3.16] - 2026-08-27
+- refactor(vigor166): Translate script content and comments to English (connected.js)
+
 ### [3.3.15] - 2026-08-26
 - feat(kia): Implement robust wallbox start sequence with verification and retry mechanism (charge_master.js)
 

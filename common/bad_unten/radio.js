@@ -1,11 +1,13 @@
 /* eslint-env es2022 */
-// =============================================================================
-// RADIO BAD MASTER-STEUERUNG v2.0 (SAUNA-SAFE & REFACTORED)
-// =============================================================================
+/**
+ * Name:   Radio Bad Master-Steuerung
+ * Zweck:  Steuerung der HEOS-Wiedergabe und Denon Zone 2 im Badezimmer unten
+ */
 
 // --- KONFIGURATION ---
 const VOL_NORMAL = 25; // Lautstärke bei manuellem Einschalten
 const VOL_SAUNA = 15; // Lautstärke während des Sauna-Betriebs
+const DELAY_AMP_ON = 12000; // Wartezeit in ms nach Aktivierung des Verstärkers (Kaltstart)
 
 const SENDER_CONFIG = {
   hr1: { preset: 4, name: "HR 1" },
@@ -47,6 +49,8 @@ function stopAllTimers() {
     clearInterval(volInterval);
     volInterval = null;
   }
+  clearStateDelayed(IDS.heosCmd);
+  clearStateDelayed(IDS.userStatus);
 }
 
 function changeVolume(step) {
@@ -133,18 +137,23 @@ on({ id: IDS.userSender, change: "any" }, (obj) => {
     const targetVol = saunaLaeuft ? VOL_SAUNA : VOL_NORMAL;
 
     const isPowered = getState(IDS.denonPower)?.val;
-    const delay = isPowered ? 0 : 8000;
+    const delay = isPowered ? 0 : DELAY_AMP_ON;
 
-    if (!isPowered) setState(IDS.denonPower, true);
+    if (!isPowered) {
+      console.log(`[Radio Bad] Verstärker Kaltstart: Warte ${delay}ms vor Senderwahl...`);
+      setState(IDS.denonPower, true);
+    }
 
     const cmd = `set_volume&level=${targetVol}|play_preset&preset=${sender.preset}`;
     if (delay > 0) {
-      setStateDelayed(IDS.heosCmd, cmd, delay, false);
+      setStateDelayed(IDS.heosCmd, cmd, delay, true);
     } else {
       setState(IDS.heosCmd, cmd);
     }
 
-    setStateDelayed(IDS.userStatus, true, 1000, false);
+    // Synchronize status only after the command executes (prevents premature 'play' command via trigger 5)
+    const statusDelay = delay > 0 ? delay + 1000 : 1000;
+    setStateDelayed(IDS.userStatus, true, statusDelay, true);
     sendGlobalNotify(`▶️ ${sender.name} läuft.`, "Radio Bad", 1);
   }
 });
