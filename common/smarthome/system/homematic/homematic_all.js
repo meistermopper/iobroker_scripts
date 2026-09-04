@@ -19,6 +19,10 @@ const ID_ONLINE_FW = "0_userdata.0.ccu.Verfuegbare_CCU-Firmware";
 // Datenpunkt zur Speicherung der Verfügbarkeit einer neuen CCU-Firmware-Version (für VIS).
 const ID_NEW_FW = "0_userdata.0.ccu.neue_ccu_firmware";
 
+// Zeitverzögerung (in Millisekunden), bevor ein Gerät als dauerhaft offline (UNREACH) gewertet und gemeldet wird.
+// Verhindert Alarme bei temporären Funkabbrüchen (30 Minuten).
+const UNREACH_TIMEOUT_MS = 30 * 60 * 1000;
+
 // jQuery-artige Selektoren zur Überwachung aller Homematic-Gerätekanäle.
 // SelectorUNREACH: Findet alle Datenpunkte, die Verbindungsabbrüche signalisieren.
 const SelectorUNREACH = $("channel[state.id=*.UNREACH]");
@@ -27,6 +31,9 @@ const SelectorLOWBAT = $("channel[state.id=*.LOWBAT]");
 const SelectorLOW_BAT = $("channel[state.id=*.LOW_BAT]");
 // SelectorCONFIG: Findet alle Datenpunkte, bei denen noch Konfigurationsdaten übertragen werden müssen.
 const SelectorCONFIG = $("channel[state.id=*.CONFIG_PENDING]");
+
+// Map zur Verwaltung aktiver Entprell-Timer für UNREACH-Geräte
+const unreachTimers = new Map();
 
 // --- LOGIK ---
 
@@ -205,48 +212,89 @@ function checkHomematicService() {
   // Hilfsfunktion zur Verarbeitung der jQuery-Kanal-Selektoren
   function processSelector(selector) {
     selector.each((id) => {
-      // Prüft ob der Datenpunkt existiert und den Zustand true (aktiv) aufweist
-      if (existsState(id) && getState(id)?.val === true) {
-        const obj = getObject(id);
-        const parts = id.split(".");
-        const rawType = parts[parts.length - 1];
-        const type = rawType === "LOW_BAT" ? "LOWBAT" : rawType;
+      // Ensure the state exists
+      if (!existsState(id)) return;
 
-        // Try to get clean device name:
-        // 1. Check parent device object (parts 0..2, e.g. hm-rpc.1.00185D8993315E)
-        // 2. Check parent channel object (parts 0..3, e.g. hm-rpc.1.00185D8993315E.0)
-        // 3. Fallback to state object common.name or ID
-        let deviceName = "";
-        if (parts.length >= 4) {
-          const deviceId = parts.slice(0, 3).join(".");
-          if (existsObject(deviceId)) {
-            const devObj = getObject(deviceId);
-            if (devObj?.common?.name) {
-              const dName = devObj.common.name;
-              deviceName = typeof dName === "object" ? dName.de || dName.en || "" : dName;
-            }
+      const state = getState(id);
+      const isTrue = state?.val === true;
+      const parts = id.split(".");
+      const rawType = parts[parts.length - 1];
+      const type = rawType === "LOW_BAT" ? "LOWBAT" : rawType;
+
+      // Handle UNREACH states with a 30-minute debounce threshold
+      if (rawType === "UNREACH") {
+        if (!isTrue) {
+          // Device is reachable again; cancel any pending timer
+          if (unreachTimers.has(id)) {
+            clearTimeout(unreachTimers.get(id));
+            unreachTimers.delete(id);
           }
+          return;
         }
 
-        if (!deviceName && parts.length >= 3) {
-          const channelId = parts.slice(0, -1).join(".");
-          if (existsObject(channelId)) {
-            const chanObj = getObject(channelId);
-            if (chanObj?.common?.name) {
-              const cName = chanObj.common.name;
-              deviceName = typeof cName === "object" ? cName.de || cName.en || "" : cName;
-            }
+        // Device is currently UNREACH (offline)
+        const lastChange =
+          typeof state?.lc === "number" && state.lc > 0 ? state.lc : state?.ts || Date.now();
+        const offlineDuration = Date.now() - lastChange;
+
+        if (offlineDuration < UNREACH_TIMEOUT_MS) {
+          // Device has not been offline for the full timeout yet.
+          // Schedule a timer for the remaining duration if not already scheduled.
+          if (!unreachTimers.has(id)) {
+            const remainingMs = Math.max(1000, UNREACH_TIMEOUT_MS - offlineDuration);
+            const timer = setTimeout(() => {
+              unreachTimers.delete(id);
+              debouncedCheck();
+            }, remainingMs);
+            unreachTimers.set(id, timer);
           }
+          return;
         }
 
-        if (!deviceName) {
-          const sName = obj?.common?.name;
-          deviceName = typeof sName === "object" ? sName.de || sName.en || id : sName || id;
+        // Offline duration reached or exceeded: clean up timer entry
+        if (unreachTimers.has(id)) {
+          clearTimeout(unreachTimers.get(id));
+          unreachTimers.delete(id);
         }
-
-        textList.push(`⚠️ <b>${deviceName}</b>: ${type}`);
-        anzahl++;
+      } else if (!isTrue) {
+        return;
       }
+
+      // Try to get clean device name:
+      // 1. Check parent device object (parts 0..2, e.g. hm-rpc.1.00185D8993315E)
+      // 2. Check parent channel object (parts 0..3, e.g. hm-rpc.1.00185D8993315E.0)
+      // 3. Fallback to state object common.name or ID
+      let deviceName = "";
+      if (parts.length >= 4) {
+        const deviceId = parts.slice(0, 3).join(".");
+        if (existsObject(deviceId)) {
+          const devObj = getObject(deviceId);
+          if (devObj?.common?.name) {
+            const dName = devObj.common.name;
+            deviceName = typeof dName === "object" ? dName.de || dName.en || "" : dName;
+          }
+        }
+      }
+
+      if (!deviceName && parts.length >= 3) {
+        const channelId = parts.slice(0, -1).join(".");
+        if (existsObject(channelId)) {
+          const chanObj = getObject(channelId);
+          if (chanObj?.common?.name) {
+            const cName = chanObj.common.name;
+            deviceName = typeof cName === "object" ? cName.de || cName.en || "" : cName;
+          }
+        }
+      }
+
+      if (!deviceName) {
+        const obj = getObject(id);
+        const sName = obj?.common?.name;
+        deviceName = typeof sName === "object" ? sName.de || sName.en || id : sName || id;
+      }
+
+      textList.push(`⚠️ <b>${deviceName}</b>: ${type}`);
+      anzahl++;
     });
   }
 
@@ -311,13 +359,33 @@ function debouncedCheck() {
 }
 
 // @ts-expect-error - Unterdrückt jQuery-Typkonflikte des javascript-Adapters
-SelectorUNREACH.on(debouncedCheck);
+SelectorUNREACH.on((obj) => {
+  // Sofortige Bereinigung des Timers, wenn das Gerät vor Ablauf der 30 Minuten wieder online geht
+  if (obj?.state?.val === false && unreachTimers.has(obj.id)) {
+    clearTimeout(unreachTimers.get(obj.id));
+    unreachTimers.delete(obj.id);
+  }
+  debouncedCheck();
+});
 // @ts-expect-error - Unterdrückt jQuery-Typkonflikte des javascript-Adapters
 SelectorLOWBAT.on(debouncedCheck);
 // @ts-expect-error - Unterdrückt jQuery-Typkonflikte des javascript-Adapters
 SelectorLOW_BAT.on(debouncedCheck);
 // @ts-expect-error - Unterdrückt jQuery-Typkonflikte des javascript-Adapters
 SelectorCONFIG.on(debouncedCheck);
+
+// Ressourcen-Bereinigung beim Stoppen oder Neustarten des Skripts
+if (typeof onStop === "function") {
+  onStop(() => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+    for (const timer of unreachTimers.values()) {
+      clearTimeout(timer);
+    }
+    unreachTimers.clear();
+  });
+}
 
 // Reagiert auf manuelle/externe Änderungen der lokalen oder online Firmwareversion
 on({ id: [ID_LOCAL_FW, ID_ONLINE_FW], change: "ne" }, debouncedCheck);
