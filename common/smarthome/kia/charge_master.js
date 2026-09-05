@@ -83,7 +83,7 @@ const START_HANDSHAKE_DELAY_MS = 4000; // 4 Sek. Puffer für OCPP-Handshake nach
 const FORCE_STOP_RETRY_DELAY_MS = 5000;
 // [NEU] Verzögerung während des Verfügbarkeitswechsels, um der Wallbox Zeit zur Verarbeitung zu geben.
 const FORCE_STOP_AVAILABILITY_TOGGLE_DELAY_MS = 2000;
-const SOFT_RESET_WAIT_MS = 30000; // 30 Sek. Wartezeit für EVBox Soft-Reset / Neustart
+const SOFT_RESET_WAIT_MS = 100000; // 100 Sek. Wartezeit für vollständigen EVBox Kaltstart / Neustart
 
 let startZeitLaden = null; // Merker für Statistik
 let originalMinSoc = null; // Merker für Min-SoC bei manuellem Laden
@@ -98,6 +98,8 @@ let hasWarnedOcppOffline = false; // Flag to prevent repeated warning logs per s
 let isStartingSequenceActive = false;
 // [NEU] Sperrvariable zur Vermeidung mehrerer gleichzeitiger Ausführungen von erzwungenen Stopps.
 let isForceStopping = false;
+// [NEU] Sperrvariable während Stationslimit-Wechsel und Soft-Reset (verhindert vorzeitiges Ladeende durch stopTimer).
+let isChangingLimit = false;
 
 // --- 2. INITIALISIERUNG ---
 
@@ -184,12 +186,16 @@ initLadeSystem();
 async function waitForWallboxConnection(timeoutMs = 45000) {
   const startTime = Date.now();
   while (Date.now() - startTime < timeoutMs) {
-    if (getState(IDS.wbConn)?.val === true) {
+    const isConn = getState(IDS.wbConn)?.val === true;
+    const stat = getState(IDS.wbStat)?.val;
+    if (isConn && stat && stat !== "Unavailable") {
       return true;
     }
     await wait(1000);
   }
-  return getState(IDS.wbConn)?.val === true;
+  const finalConn = getState(IDS.wbConn)?.val === true;
+  const finalStat = getState(IDS.wbStat)?.val;
+  return finalConn && finalStat !== "Unavailable";
 }
 
 /**
@@ -203,21 +209,37 @@ async function setWallboxStationLimit(targetLimit) {
     console.log(
       `[EV3 Master] Changing wallbox limit from ${currentVal} to ${targetLimit} (deci-Ampere)...`,
     );
-    setState(IDS.wbLimit, targetLimit);
-    await wait(2000);
-    console.log("[EV3 Master] Triggering softReset on wallbox to apply configuration...");
-    setState(IDS.wbReset, true);
-    console.log(`[EV3 Master] Waiting for wallbox reboot & reconnect (base: 15s, max 45s)...`);
-    // 15 Sekunden Basislaufzeit für Neustart-Einleitung der EVBox
-    await wait(15000);
-    // Danach aktiv warten, bis die Box am OCPP-Server wieder online ist
-    const reconnected = await waitForWallboxConnection(30000);
-    if (reconnected) {
-      console.log("[EV3 Master] Wallbox successfully reconnected after soft reset with new limit.");
-      await wait(3000); // Kurzer Puffer zur Datenpunkt-Stabilisierung
-    } else {
-      console.error("[EV3 Master] Timeout waiting for wallbox reconnection after soft reset!");
-      ev3Notify("⚠️ Wallbox-Neustart: Verbindung nach Soft-Reset noch nicht wiederhergestellt!", 4);
+    isChangingLimit = true;
+    if (stopTimer) {
+      clearTimeout(stopTimer);
+      stopTimer = null;
+    }
+    try {
+      setState(IDS.wbLimit, targetLimit);
+      await wait(2000);
+      console.log("[EV3 Master] Triggering softReset on wallbox to apply configuration...");
+      setState(IDS.wbReset, true);
+      console.log(
+        `[EV3 Master] Waiting for wallbox reboot & reconnect (100s base wait for EVBox hardware boot)...`,
+      );
+      // 100 Sekunden Basislaufzeit für vollständigen Kaltstart der EVBox Elvi
+      await wait(SOFT_RESET_WAIT_MS);
+      // Danach aktiv warten, bis die Box am OCPP-Server wieder online und betriebsbereit ist
+      const reconnected = await waitForWallboxConnection(30000);
+      if (reconnected) {
+        console.log(
+          "[EV3 Master] Wallbox successfully reconnected after soft reset with new limit.",
+        );
+        await wait(5000); // 5 Sekunden Puffer zur Datenpunkt-Stabilisierung
+      } else {
+        console.error("[EV3 Master] Timeout waiting for wallbox reconnection after soft reset!");
+        ev3Notify(
+          "⚠️ Wallbox-Neustart: Verbindung nach Soft-Reset noch nicht wiederhergestellt!",
+          4,
+        );
+      }
+    } finally {
+      isChangingLimit = false;
     }
   } else {
     console.log(`[EV3 Master] Wallbox limit already at ${targetLimit}, no soft reset needed.`);
@@ -821,6 +843,12 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       status === "SuspendedEV" ||
       status === "SuspendedEVSE")
   ) {
+    if (isChangingLimit) {
+      console.log(
+        `[EV3 Master] Wallbox limit change in progress. Ignoring intermediate state '${status}'.`,
+      );
+      return;
+    }
     if (startRefreshTimer) {
       clearTimeout(startRefreshTimer);
       startRefreshTimer = null;
@@ -830,6 +858,10 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
     if (stopTimer) clearTimeout(stopTimer);
 
     stopTimer = setTimeout(async () => {
+      if (isChangingLimit) {
+        console.log("[EV3 Master] Wallbox limit change in progress, aborting stopTimer execution.");
+        return;
+      }
       // 1. Prüfen, ob der Stopp durch die Sauna ausgelöst wurde (dann Einstellungen für Resume behalten)
       const isPausedBySauna = getState(IDS.u_pausedBySauna)?.val === true;
       if (isPausedBySauna) {
@@ -841,11 +873,19 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
 
       // 2. Batterieschutz & Einstellungen wiederherstellen
       const wasFast = !!getState(IDS.u_fastCharge)?.val;
-      if (wasFast) {
+      const evSoc = Number(getState(IDS.soc)?.val) || 0;
+      const targetSoc = Number(getState(IDS.targetSocSrv)?.val) || 100;
+      const isTargetReached = evSoc >= targetSoc;
+      const isUnplugged = getState(IDS.wbStat)?.val === "Available";
+
+      // Schnellladen nur zurücksetzen, wenn das Ladeziel erreicht oder das Kabel abgezogen wurde
+      if (wasFast && (isTargetReached || isUnplugged)) {
         setState(IDS.u_fastCharge, false, true);
         await restoreFastChargingState();
-        console.log("[EV3 Master] Reset u_fastCharge and restored settings after charging ended.");
-      } else if (!isAuto && originalMinSoc !== null) {
+        console.log(
+          "[EV3 Master] Reset u_fastCharge and restored settings (target reached or cable unplugged).",
+        );
+      } else if (!isAuto && !wasFast && originalMinSoc !== null) {
         setState(IDS.minSocSet, Math.max(0, originalMinSoc));
         const msg = `EV3 Laden beendet. Hausbatterie MinSoc wieder auf ${originalMinSoc}% gestellt`;
         console.log(`[EV3 Master] ${msg}`);
@@ -860,8 +900,6 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
 
       // 3. Prüfen, ob das Auto das Ladeziel erreicht hat:
       // Vergleicht den aktuellen SoC des Kia mit dem eingestellten Ladeziel der Wallbox/des Fahrzeugs
-      const evSoc = Number(getState(IDS.soc)?.val) || 0;
-      const targetSoc = Number(getState(IDS.targetSocSrv)?.val) || 100;
 
       let msgText = `❌ EV3 Ladung beendet. Heute geladen: ${stats.formattedTime} (+approx. ${stats.kmToday} km)`;
       let spokenText = `Ladung beendet. Heute geladen: ${stats.spokenTime}. Reichweite approx. ${stats.kmToday} Kilometer.`;
