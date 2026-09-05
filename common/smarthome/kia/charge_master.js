@@ -276,16 +276,29 @@ async function restoreFastChargingState() {
 
 /**
  * Updates the charge mode status datapoint for VIS:
- * 0: Not charging
- * 1: Normal / PV Surplus charging (6A..8A)
- * 2: Fast charging (16A)
+ * 0: Not charging / Idle
+ * 1: PV Surplus charging (autoladen = true)
+ * 2: Fast charging (16A / ~11 kW)
+ * 3: Manual charging (6A / 4 kW)
+ * 4: Paused by sauna (Sauna-Interlock active)
  */
 function updateChargeModeStatus() {
   const isCharging = getState(IDS.wbStat)?.val === "Charging";
+  const isPausedBySauna = getState(IDS.u_pausedBySauna)?.val === true;
   let status = 0;
-  if (isCharging) {
+
+  if (isPausedBySauna) {
+    status = 4;
+  } else if (isCharging) {
     const isFast = !!getState(IDS.u_fastCharge)?.val || Number(getState(IDS.wbLimit)?.val) >= 160;
-    status = isFast ? 2 : 1;
+    const isAuto = !!getState(IDS.u_auto)?.val;
+    if (isFast) {
+      status = 2;
+    } else if (isAuto) {
+      status = 1;
+    } else {
+      status = 3;
+    }
   }
   setState(IDS.u_modeStatus, status, true);
 }
@@ -694,6 +707,7 @@ function handleSaunaStateChange() {
       setState(IDS.u_pausedBySauna, true, true);
       // Ladung stoppen
       setState(IDS.wbTrans, false);
+      updateChargeModeStatus();
       ev3Notify(
         "🧖 Sauna heizt: EV3-Ladung pausiert, um Hausanschluss vor Überlastung zu schützen.",
         2,
@@ -704,6 +718,7 @@ function handleSaunaStateChange() {
     if (wasPaused) {
       console.log("[EV3 Master] Sauna is off. Resuming EV3 charging session...");
       setState(IDS.u_pausedBySauna, false, true);
+      updateChargeModeStatus();
       ev3Notify("🧖 Sauna beendet: Setze EV3-Ladung automatisch fort.", 1);
 
       // Falls Schnellladen aktiv ist, wieder mit 16A starten

@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.20] - 2026-09-04
+- feat(homematic): Implement UNREACH debouncing to prevent false alarms (homematic_all.js)
+
 ### [3.3.19] - 2026-09-03
 - git commit -m "fix(homematic): add all-clear notification, debounce triggers, and HmIP LOW_BAT support (homematic_all.js)
 

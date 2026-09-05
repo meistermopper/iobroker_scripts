@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.24-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.25-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -102,6 +102,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.3.25] - 2026-09-05
+- feat(charging): expand charge mode status with granular states for PV, fast, manual, and sauna pause (charge_master.js)
+
 ### [3.3.24] - 2026-09-05
 - fix(charging): guard soft-reset reboot with isChangingLimit and 100s boot timer (charge_master.js)
 
@@ -113,8 +116,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.3.21] - 2026-09-04
 - fix(bad-radio): Increase amplifier power-on delay to 12s and synchronize status update (radio.js)
-
-### [3.3.20] - 2026-09-04
-- feat(homematic): Implement UNREACH debouncing to prevent false alarms (homematic_all.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
