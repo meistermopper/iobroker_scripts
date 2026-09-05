@@ -1164,13 +1164,30 @@ on({ id: IDS.u_fastCharge, change: "ne" }, async (obj) => {
       "[EV3 Master] Schnellladen deaktiviert: Stoppe Ladung und setze Wallbox auf Standard 6A zurück...",
     );
 
-    // 1. Ladevorgang stoppen, falls aktiv
+    // 1. Ladevorgang geordnet beenden, BEVOR der Soft-Reset ausgelöst wird
     if (getState(IDS.wbTrans)?.val === true || getState(IDS.wbStat)?.val === "Charging") {
+      console.log("[EV3 Master] Stopping active charge transaction before resetting wallbox limit...");
       setState(IDS.wbTrans, false);
+      const stopStartTime = Date.now();
+      while (Date.now() - stopStartTime < 8000) {
+        if (getState(IDS.wbStat)?.val !== "Charging") break;
+        await wait(1000);
+      }
+      await wait(2000); // Sicherheitsabstand für sauberes Schließen der Schütze
     }
 
     // 2. Wallbox-Limit, Hausbatterie und autoladen wiederherstellen
     await restoreFastChargingState();
+
+    // 3. Nach dem Neustart sicherstellen, dass die Wallbox nicht ungewollt weiterlädt
+    if (getState(IDS.wbTrans)?.val === true || getState(IDS.wbStat)?.val === "Charging") {
+      console.log("[EV3 Master] Wallbox resumed charging after reboot. Forcing stop of transaction.");
+      setState(IDS.wbTrans, false);
+      await wait(2000);
+      if (getState(IDS.wbStat)?.val === "Charging") {
+        await forceStopCharging();
+      }
+    }
 
     ev3Notify("🛑 Schnellladen beendet. Wallbox auf Standard 6A zurückgestellt.");
     updateChargeModeStatus();

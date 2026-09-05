@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.21] - 2026-09-04
+- fix(bad-radio): Increase amplifier power-on delay to 12s and synchronize status update (radio.js)
+
 ### [3.3.20] - 2026-09-04
 - feat(homematic): Implement UNREACH debouncing to prevent false alarms (homematic_all.js)
 
