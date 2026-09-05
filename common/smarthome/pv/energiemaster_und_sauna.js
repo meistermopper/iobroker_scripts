@@ -321,6 +321,11 @@ on({ id: IDS.speicherMax, change: "ne" }, (obj) => {
   runUpdate();
 });
 
+// Trigger bei Änderung des Wallbox-Stromlimits (z.B. Umschaltung 6A <-> 16A)
+on({ id: IDS.wbLimit, change: "ne" }, () => {
+  runUpdate();
+});
+
 // INTEGRIERTER MIN-SOC WATCHDOG (Telegram-Steuerung)
 on({ id: IDS.minSocRead, change: "ne" }, (obj) => {
   const newVal = obj.state.val;

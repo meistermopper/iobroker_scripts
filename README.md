@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.22-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.23-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -102,6 +102,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.3.23] - 2026-09-05
+- feat(kia-charge): Implement fast charge, sauna interlock and improved wallbox watchdog (charge_master.js, energiemaster_und_sauna.js)
+
 ### [3.3.22] - 2026-09-04
 - git add common/bad_unten/radio.js README.md README_de.md package.json (radio.js)
 
@@ -113,8 +116,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.3.19] - 2026-09-03
 - git commit -m "fix(homematic): add all-clear notification, debounce triggers, and HmIP LOW_BAT support (homematic_all.js)
-
-### [3.3.18] - 2026-09-03
-- git commit -m "fix: increase gotify http request timeout to 15s (notify.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).

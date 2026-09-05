@@ -19,6 +19,7 @@ const IDS = {
   wbAvail: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.availability", // [3] Reset / Verfügbarkeit
   wbConn: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.connected", // Verbindung zum ioBroker
   unifiReconnect: "unifi-network.0.clients.users.60:09:c3:2f:46:49.reconnect", // [22] Neu verbinden über UniFi
+  unifiIsOnline: "unifi-network.0.clients.users.60:09:c3:2f:46:49.isOnline", // [23] WLAN-Verbindungsstatus am UniFi AP
 
   // Fahrzeugdaten (Cloud)
   soc: `${VIN}.vehicleStatusRaw.Green.BatteryManagement.BatteryRemain.Ratio`, // [4] Ladestand %
@@ -40,9 +41,10 @@ const IDS = {
 
   // Steuerung & Statistiken (VIS)
   u_auto: `${PATH_USER}.autoladen`, // [14] Schalter: PV-Automatik an/aus (Boolean)
+  u_fastCharge: `${PATH_USER}.schnellladen`, // Schalter: Schnellladen 16A an/aus (Boolean)
   u_limit: `${PATH_USER}.Ladeprozent`, // [15] Ziel-SoC Schieberegler
   u_smooth: `${PATH_USER}.Glaettung_Zeit`, // [16] Trägheits-Schieberegler für EMA
-  u_power: `${PATH_USER}.Ladeleistung`, // [17] Anzeige Ladeleistung (fix 3960W)
+  u_power: `${PATH_USER}.Ladeleistung`, // [17] Anzeige Ladeleistung (dynamisch berechnet)
   u_timeDay: `${PATH_USER}.Ladezeit`, // [18] Lademinuten heute
   u_rest: `${PATH_USER}.Restladezeit`, // [19] HH:MM Anzeige
   aliasKm: "alias.0.umrechnen.kia_ladekm", // [20] Gewonnene Reichweite
@@ -50,12 +52,21 @@ const IDS = {
   u_startChargeRequest: `${PATH_USER}.Start_Charge_Request`, // [NEU] Anforderung zum Starten des Ladevorgangs
   u_startTs: `${PATH_USER}.LastStartTimestamp`, // [PERSISTENCE] Merker für Startzeit
   u_origSoc: `${PATH_USER}.LastOriginalMinSoc`, // [PERSISTENCE] Merker für Batterie-Schutz
+  u_prevAuto: `${PATH_USER}.LastPreviousAutoState`, // [PERSISTENCE] Merker für autoladen vor Schnellladen
+  u_modeStatus: `${PATH_USER}.Lademodus_Status`, // [NEU] Status für VIS (0=Aus, 1=Normal, 2=Schnell)
+  wbLimit:
+    "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.configuration.evb_MaximumStationCurrent",
+  wbReset: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.0.softReset",
+
+  // Sauna-Verriegelung (Interlock)
+  saunaHeatOn: "harvia-fenix.0.heatOn", // Status vom Sauna-Ofen
+  saunaLogik: "0_userdata.0.Haushalt.sauna_laeuft", // Status-Flag vom Energiemaster
+  u_pausedBySauna: `${PATH_USER}.PausedBySauna`, // Merker für automatische Fortsetzung nach Sauna
 };
 
 // --- PARAMETER ---
 const PV_START_LIMIT = 4600; // Startgrenze (Sonne muss > 4.6kW + Puffer liefern)
 const PV_STOP_LIMIT = 4000; // Stoppgrenze (Ladevorgang pausieren, wenn Überschuss sinkt)
-const FIXED_CHARGE_W = 3960; // Fixe Leistung bei 6A (220V * 3 Phasen * 6A)
 const CAR_CAPACITY_KWH = 81.4;
 const RANGE_SUMMER = 550;
 const RANGE_WINTER = 450;
@@ -72,14 +83,16 @@ const START_HANDSHAKE_DELAY_MS = 4000; // 4 Sek. Puffer für OCPP-Handshake nach
 const FORCE_STOP_RETRY_DELAY_MS = 5000;
 // [NEU] Verzögerung während des Verfügbarkeitswechsels, um der Wallbox Zeit zur Verarbeitung zu geben.
 const FORCE_STOP_AVAILABILITY_TOGGLE_DELAY_MS = 2000;
+const SOFT_RESET_WAIT_MS = 30000; // 30 Sek. Wartezeit für EVBox Soft-Reset / Neustart
 
 let startZeitLaden = null; // Merker für Statistik
 let originalMinSoc = null; // Merker für Min-SoC bei manuellem Laden
+let previousAutoState = null; // Merker für Status von autoladen vor Schnellladen
 let stopTimer = null; // Timer zur Entprellung von kurzen Lade-Unterbrechungen
 let startRefreshTimer = null; // Timer für Statusabfrage nach Ladestart
 let stopRefreshTimer = null; // Timer für Statusabfrage nach Ladeende
-let reconnectTimer = null; // Timer für Wallbox-Recovery
-let wasOfflineReported = false; // Status für Anti-Spam Meldungen
+let reconnectInterval = null; // Wiederkehrender Watchdog-Intervall für UniFi-Recovery
+let offlineStartTime = null; // Zeitstempel für Offline-Dauer
 let hasWarnedOcppOffline = false; // Flag to prevent repeated warning logs per script run
 // [NEU] Sperrvariable zur Vermeidung von Race Conditions während der Startsequenz.
 let isStartingSequenceActive = false;
@@ -112,24 +125,169 @@ async function initLadeSystem() {
       name: "Start Charging (Request)",
       role: "button",
     });
+  // NEU: Datenpunkt für 16A Schnellladen
+  if (!existsState(IDS.u_fastCharge))
+    await createStateAsync(IDS.u_fastCharge, false, {
+      type: "boolean",
+      name: "Schnellladen 16A",
+      role: "switch",
+    });
   if (!existsState(IDS.u_startTs))
     await createStateAsync(IDS.u_startTs, 0, { type: "number", name: "Start Timestamp" });
   if (!existsState(IDS.u_origSoc))
     await createStateAsync(IDS.u_origSoc, 0, { type: "number", name: "Original MinSoc Backup" });
+  if (!existsState(IDS.u_prevAuto))
+    await createStateAsync(IDS.u_prevAuto, false, {
+      type: "boolean",
+      name: "Previous Auto State Backup",
+    });
+  if (!existsState(IDS.u_modeStatus))
+    await createStateAsync(IDS.u_modeStatus, 0, {
+      type: "number",
+      name: "Lademodus Status (0=Aus, 1=Normal, 2=Schnell)",
+      role: "value",
+    });
+  if (!existsState(IDS.u_pausedBySauna))
+    await createStateAsync(IDS.u_pausedBySauna, false, {
+      type: "boolean",
+      name: "Ladung wegen Sauna pausiert",
+      role: "indicator",
+    });
 
   // Laufende Prozesse nach Skript-Neustart wiederherstellen
   if (getState(IDS.wbTrans)?.val === true) {
     startZeitLaden = getState(IDS.u_startTs)?.val || Date.now();
     const savedSoc = getState(IDS.u_origSoc)?.val;
     originalMinSoc = savedSoc !== null && savedSoc !== 0 ? savedSoc : null;
+    if (getState(IDS.u_fastCharge)?.val === true) {
+      previousAutoState = getState(IDS.u_prevAuto)?.val === true;
+    }
     if (getState(IDS.wbStat)?.val === "Charging") {
-      setState(IDS.u_power, FIXED_CHARGE_W, true);
+      setState(IDS.u_power, getCurrentChargePowerW(), true);
     }
   }
+  updateChargeModeStatus();
+
+  // Initialen Verbindungsstatus erfassen und Watchdog aktivieren, falls Wallbox offline ist
+  const currentConn = existsState(IDS.wbConn) ? !!getState(IDS.wbConn)?.val : false;
+  handleWallboxConnectionState(currentConn, true);
 }
 initLadeSystem();
 
-// --- 2.1 HELPER: ASYNCHRONE PAUSE & MESSWERTE ---
+// --- 2.1 HELPER: ASYNCHRONE PAUSE, LADELEISTUNG & MESSWERTE ---
+
+/**
+ * Waits for the wallbox OCPP connection to become true, up to a timeout.
+ * @param {number} timeoutMs Maximum wait time in milliseconds
+ * @returns {Promise<boolean>} True if connected, false if timeout
+ */
+async function waitForWallboxConnection(timeoutMs = 45000) {
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeoutMs) {
+    if (getState(IDS.wbConn)?.val === true) {
+      return true;
+    }
+    await wait(1000);
+  }
+  return getState(IDS.wbConn)?.val === true;
+}
+
+/**
+ * Sets the wallbox hardware station limit (60 or 160) and triggers a soft reset
+ * if the limit changed, waiting actively for the EVBox to reboot and reconnect.
+ * @param {number} targetLimit 60 (6A) or 160 (16A)
+ */
+async function setWallboxStationLimit(targetLimit) {
+  const currentVal = Number(getState(IDS.wbLimit)?.val) || 0;
+  if (currentVal !== targetLimit) {
+    console.log(
+      `[EV3 Master] Changing wallbox limit from ${currentVal} to ${targetLimit} (deci-Ampere)...`,
+    );
+    setState(IDS.wbLimit, targetLimit);
+    await wait(2000);
+    console.log("[EV3 Master] Triggering softReset on wallbox to apply configuration...");
+    setState(IDS.wbReset, true);
+    console.log(`[EV3 Master] Waiting for wallbox reboot & reconnect (base: 15s, max 45s)...`);
+    // 15 Sekunden Basislaufzeit für Neustart-Einleitung der EVBox
+    await wait(15000);
+    // Danach aktiv warten, bis die Box am OCPP-Server wieder online ist
+    const reconnected = await waitForWallboxConnection(30000);
+    if (reconnected) {
+      console.log("[EV3 Master] Wallbox successfully reconnected after soft reset with new limit.");
+      await wait(3000); // Kurzer Puffer zur Datenpunkt-Stabilisierung
+    } else {
+      console.error("[EV3 Master] Timeout waiting for wallbox reconnection after soft reset!");
+      ev3Notify("⚠️ Wallbox-Neustart: Verbindung nach Soft-Reset noch nicht wiederhergestellt!", 4);
+    }
+  } else {
+    console.log(`[EV3 Master] Wallbox limit already at ${targetLimit}, no soft reset needed.`);
+  }
+}
+
+/**
+ * Restores normal wallbox limit (60), home battery MinSoc, and previous PV automatic state
+ * when fast charging ends.
+ */
+async function restoreFastChargingState() {
+  if (originalMinSoc !== null) {
+    setState(IDS.minSocSet, Math.max(0, originalMinSoc));
+    console.log(`[EV3 Master] Restored home battery MinSoc to ${originalMinSoc}%.`);
+    originalMinSoc = null;
+    setState(IDS.u_origSoc, 0, true);
+  }
+
+  const restoreAuto =
+    previousAutoState !== null ? previousAutoState : getState(IDS.u_prevAuto)?.val === true;
+  if (restoreAuto) {
+    console.log(
+      "[EV3 Master] Fast charging ended: Restoring previous PV automatic (autoladen = true).",
+    );
+    setState(IDS.u_auto, true);
+  }
+  previousAutoState = null;
+  setState(IDS.u_prevAuto, false, true);
+  updateChargeModeStatus();
+
+  // Reset wallbox hardware limit to standard 60 (6A) and apply via soft reset
+  await setWallboxStationLimit(60);
+}
+
+/**
+ * Updates the charge mode status datapoint for VIS:
+ * 0: Not charging
+ * 1: Normal / PV Surplus charging (6A..8A)
+ * 2: Fast charging (16A)
+ */
+function updateChargeModeStatus() {
+  const isCharging = getState(IDS.wbStat)?.val === "Charging";
+  let status = 0;
+  if (isCharging) {
+    const isFast = !!getState(IDS.u_fastCharge)?.val || Number(getState(IDS.wbLimit)?.val) >= 160;
+    status = isFast ? 2 : 1;
+  }
+  setState(IDS.u_modeStatus, status, true);
+}
+
+/**
+ * Calculates current charging power dynamically based on configured wallbox station limit.
+ * Fallback to 60 (6A / ~4140W) if unset.
+ * @returns {number} Charging power in Watts.
+ */
+function getCurrentChargePowerW() {
+  const lim = Number(getState(IDS.wbLimit)?.val) || 60;
+  return Math.round((lim / 10) * 230 * 3);
+}
+
+/**
+ * Checks whether the sauna is currently active (heating or active session).
+ * Used for the mutual exclusion interlock between EV3 charging and sauna heating.
+ * @returns {boolean} True if sauna is active, false otherwise.
+ */
+function isSaunaActive() {
+  const fenix = existsState(IDS.saunaHeatOn) && getState(IDS.saunaHeatOn)?.val === true;
+  const logik = existsState(IDS.saunaLogik) && getState(IDS.saunaLogik)?.val === true;
+  return fenix || logik;
+}
 
 /**
  * Asynchroner Timer zur Ablaufverzögerung in async-Funktionen.
@@ -176,6 +334,24 @@ function getPowerMetrics() {
 async function triggerStartSequence(reason = "PV-Surplus") {
   if (isStartingSequenceActive) {
     console.log(`[EV3 Master] Start sequence already active, skipping (${reason}).`);
+    return;
+  }
+
+  // SAUNA-VERRIEGELUNG: Start abbrechen, wenn Sauna aktiv ist
+  if (isSaunaActive()) {
+    console.warn(`[EV3 Master] Start sequence aborted (${reason}): Sauna is currently active!`);
+    ev3Notify(`⚠️ EV3-Ladestart (${reason}) blockiert: Sauna ist aktiv!`, 3);
+    return;
+  }
+
+  // VERBINDUNGS-CHECK: Keine Startsequenz ausführen, wenn Wallbox offline ist
+  const isConnected = !!getState(IDS.wbConn)?.val;
+  if (!isConnected) {
+    console.warn(`[EV3 Master] Start sequence aborted (${reason}): Wallbox is offline!`);
+    ev3Notify(
+      `⚠️ EV3-Ladestart (${reason}) abgebrochen: Wallbox nicht erreichbar (OCPP offline)!`,
+      4,
+    );
     return;
   }
 
@@ -233,7 +409,8 @@ async function triggerStartSequence(reason = "PV-Surplus") {
     // --- ERGEBNIS-AUSWERTUNG ---
     if (started) {
       console.log(`[EV3 Master] Wallbox start verified successfully (${reason}).`);
-      ev3Notify(`🔋 EV3-Ladung gestartet via ${reason} mit 6A`);
+      const currentAmps = (Number(getState(IDS.wbLimit)?.val) || 60) / 10;
+      ev3Notify(`🔋 EV3-Ladung gestartet via ${reason} mit ${currentAmps}A`);
     } else {
       const finalStatus = getState(IDS.wbStat)?.val;
       console.error(
@@ -321,7 +498,11 @@ async function forceStopCharging() {
       startZeitLaden = null;
       setState(IDS.u_startTs, 0, true);
     }
-    if (originalMinSoc !== null) {
+    if (getState(IDS.u_fastCharge)?.val === true) {
+      setState(IDS.u_fastCharge, false, true);
+      await restoreFastChargingState();
+      console.log("[EV3 Master] Reset u_fastCharge and restored settings after forced stop.");
+    } else if (originalMinSoc !== null) {
       setState(IDS.minSocSet, Math.max(0, originalMinSoc));
       ev3Notify(`🔌 Hausbatterie MinSoc auf ${originalMinSoc}% nach erzwungenem Stop eingestellt`);
       originalMinSoc = null;
@@ -337,6 +518,7 @@ async function forceStopCharging() {
       }
       stopRefreshTimer = null;
     }, STOP_REFRESH_DELAY_MS);
+    updateChargeModeStatus();
   }
 }
 
@@ -406,6 +588,12 @@ schedule("* * * * *", async () => {
  * vorausgesetzt der Automatik-Schalter in VIS ist aktiv.
  */
 function checkPvAutomation() {
+  const isFast = !!getState(IDS.u_fastCharge)?.val; // Schnelllade-Schalter
+  if (isFast) return; // Schnellladen hat Vorrang vor PV-Automatik
+
+  // SAUNA-VERRIEGELUNG: Bei Saunabetrieb keine PV-Ladung starten
+  if (isSaunaActive()) return;
+
   const isAuto = !!getState(IDS.u_auto)?.val; // Automatik-Schalter
   const { pvAverage: mittel, batSoc, evSoc } = getPowerMetrics(); // Aktuelle Leistungswerte
 
@@ -463,6 +651,62 @@ on({ id: IDS.pvAverage, change: "ne" }, checkPvAutomation);
 on({ id: IDS.soc, change: "ne" }, checkPvAutomation);
 on({ id: IDS.wbConn, val: true, change: "ne" }, checkPvAutomation);
 
+// --- 5.1 SAUNA-VERRIEGELUNG (INTERLOCK) ---
+
+/**
+ * Überwacht den Status des Saunaofens (harvia-fenix und Energiemaster).
+ * Pausiert die Autoladung sofort, wenn die Sauna heizt, um eine Überlastung
+ * des Hausanschlusses zu verhindern, und setzt sie nach Saunabeendigung fort.
+ */
+function handleSaunaStateChange() {
+  const saunaOn = isSaunaActive();
+  const isCharging =
+    getState(IDS.wbStat)?.val === "Charging" || getState(IDS.wbTrans)?.val === true;
+  const wasPaused = getState(IDS.u_pausedBySauna)?.val === true;
+
+  if (saunaOn) {
+    if (isCharging && !wasPaused) {
+      console.warn(
+        "[EV3 Master] Sauna started heating! Pausing EV3 charging to avoid house overload.",
+      );
+      setState(IDS.u_pausedBySauna, true, true);
+      // Ladung stoppen
+      setState(IDS.wbTrans, false);
+      ev3Notify(
+        "🧖 Sauna heizt: EV3-Ladung pausiert, um Hausanschluss vor Überlastung zu schützen.",
+        2,
+      );
+    }
+  } else {
+    // Sauna ist aus
+    if (wasPaused) {
+      console.log("[EV3 Master] Sauna is off. Resuming EV3 charging session...");
+      setState(IDS.u_pausedBySauna, false, true);
+      ev3Notify("🧖 Sauna beendet: Setze EV3-Ladung automatisch fort.", 1);
+
+      // Falls Schnellladen aktiv ist, wieder mit 16A starten
+      const isFast = !!getState(IDS.u_fastCharge)?.val;
+      if (isFast) {
+        triggerStartSequence("Schnellladen 16A (nach Sauna)");
+      } else {
+        const isAuto = !!getState(IDS.u_auto)?.val;
+        if (isAuto) {
+          checkPvAutomation();
+        } else {
+          triggerStartSequence("Manuelles Laden (nach Sauna)");
+        }
+      }
+    }
+  }
+}
+
+if (existsState(IDS.saunaHeatOn)) {
+  on({ id: IDS.saunaHeatOn, change: "ne" }, handleSaunaStateChange);
+}
+if (existsState(IDS.saunaLogik)) {
+  on({ id: IDS.saunaLogik, change: "ne" }, handleSaunaStateChange);
+}
+
 // [NEU] Listener für den Datenpunkt wbTrans.
 // Dieser Listener ist entscheidend für das Erkennen und Beheben von "hängenden" Ladestatuse.
 // Wenn `wbTrans` auf `false` wechselt (Stopp-Befehl gesendet), prüfen wir nach einer Verzögerung
@@ -493,8 +737,9 @@ function updateChargeStatistics(sessionDurationMs) {
   const currentTotalMin = getState(IDS.u_timeDay)?.val || 0;
   const totalMinToday = currentTotalMin + dauerMin;
 
-  // Energie und Reichweite
-  const energyKWh = (totalMinToday / 60) * (FIXED_CHARGE_W / 1000);
+  // Energie und Reichweite dynamisch anhand des aktuellen Ladelimits berechnen
+  const currentPowerW = getCurrentChargePowerW();
+  const energyKWh = (totalMinToday / 60) * (currentPowerW / 1000);
   const month = new Date().getMonth();
   const rangeMax = month >= 3 && month <= 10 ? RANGE_SUMMER : RANGE_WINTER;
   const kmToday = Math.round((energyKWh / CAR_CAPACITY_KWH) * rangeMax);
@@ -547,19 +792,22 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       }, START_REFRESH_DELAY_MS);
     }
 
-    // Da die Box starr mit 6A lädt (3 Phasen * 230V * 6A = ~3,96 kW), setzen wir den festen Watt-Wert zur Anzeige
-    setState(IDS.u_power, FIXED_CHARGE_W, true);
+    // Dynamische Leistungsanzeige in Abhängigkeit des Wallbox-Limits
+    setState(IDS.u_power, getCurrentChargePowerW(), true);
+    updateChargeModeStatus();
 
-    // BATTERIESCHUTZ bei manuellem Laden (Automatik AUS):
+    // BATTERIESCHUTZ bei manuellem Laden oder Schnellladen:
     // Verhindert, dass der Hausspeicher entleert wird, indem der Min-SoC der Hausbatterie temporär
     // auf den aktuellen SoC-Wert gesetzt wird.
-    if (!isAuto && originalMinSoc === null) {
+    const isFast = !!getState(IDS.u_fastCharge)?.val;
+    if ((!isAuto || isFast) && originalMinSoc === null) {
       originalMinSoc = getState(IDS.minSocRead)?.val;
       setState(IDS.u_origSoc, originalMinSoc, true);
       const currentBatSoc = getState(IDS.batSocPV)?.val;
       // MinSoc sicherheitshalber nicht unter 0 setzen
       setState(IDS.minSocSet, Math.max(0, currentBatSoc));
-      const msg = `Manuelles Laden gestartet. MinSoc auf ${currentBatSoc}% (vorher: ${originalMinSoc}%)`;
+      const modeName = isFast ? "Schnellladen" : "Manuelles Laden";
+      const msg = `${modeName} gestartet. MinSoc auf ${currentBatSoc}% (vorher: ${originalMinSoc}%)`;
       console.log(`[EV3 Master] ${msg}`);
       ev3Notify(`🔋 ${msg}`);
     }
@@ -581,11 +829,25 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
     // Wechselt der Status in dieser Zeit zurück auf "Charging", läuft die Ladung oben nahtlos weiter.
     if (stopTimer) clearTimeout(stopTimer);
 
-    stopTimer = setTimeout(() => {
-      // 1. Batterieschutz aufheben: Min-SoC des Hausspeichers wieder auf den ursprünglichen Wert zurückstellen
-      if (!isAuto && originalMinSoc !== null) {
+    stopTimer = setTimeout(async () => {
+      // 1. Prüfen, ob der Stopp durch die Sauna ausgelöst wurde (dann Einstellungen für Resume behalten)
+      const isPausedBySauna = getState(IDS.u_pausedBySauna)?.val === true;
+      if (isPausedBySauna) {
+        console.log(
+          "[EV3 Master] Charging session is paused by sauna. Preserving fast charge & battery settings for resume.",
+        );
+        return;
+      }
+
+      // 2. Batterieschutz & Einstellungen wiederherstellen
+      const wasFast = !!getState(IDS.u_fastCharge)?.val;
+      if (wasFast) {
+        setState(IDS.u_fastCharge, false, true);
+        await restoreFastChargingState();
+        console.log("[EV3 Master] Reset u_fastCharge and restored settings after charging ended.");
+      } else if (!isAuto && originalMinSoc !== null) {
         setState(IDS.minSocSet, Math.max(0, originalMinSoc));
-        const msg = `EV3 Manuelles Laden beendet. Hausbatterie MinSoc wieder auf ${originalMinSoc}% gestellt`;
+        const msg = `EV3 Laden beendet. Hausbatterie MinSoc wieder auf ${originalMinSoc}% gestellt`;
         console.log(`[EV3 Master] ${msg}`);
         ev3Notify(`🔌 ${msg}`);
         originalMinSoc = null;
@@ -623,6 +885,7 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       setState(IDS.wbTrans, false);
 
       stopTimer = null;
+      updateChargeModeStatus();
 
       // Finalen Status nach Ladeende vom Fahrzeug abrufen
       if (stopRefreshTimer) clearTimeout(stopRefreshTimer);
@@ -666,35 +929,74 @@ on({ id: IDS.batSocPV, change: "ne" }, (obj) => {
 // --- 7. ZUSÄTZLICHE FUNKTIONEN ---
 
 /**
- * Verbindungs-Watchdog: Überwacht die Erreichbarkeit der Wallbox.
- * Meldet Statusänderungen (Anti-Spam) und löst nach 3 Min. Offline-Zeit einen Reconnect über den UniFi-AP aus.
+ * Evaluates the wallbox connection state and controls the recovery watchdog.
+ * Triggers UniFi AP reconnects every 3 minutes if offline and escalates notifications.
+ * @param {boolean} isConnected Current OCPP connection status
+ * @param {boolean} [isInitial=false] True if called during script startup
  */
-on({ id: IDS.wbConn, change: "ne" }, (obj) => {
-  const isConnected = !!obj.state.val;
-
+function handleWallboxConnectionState(isConnected, isInitial = false) {
   if (!isConnected) {
-    // Nur beim ersten Mal warnen
-    if (!wasOfflineReported) {
-      //console.warn("[EV3 Master] Wallbox-Verbindung verloren. Reconnect-Timer (3 Min) gestartet.");
-      wasOfflineReported = true;
+    if (!offlineStartTime) {
+      offlineStartTime = Date.now();
     }
-    // Reconnect-Timer starten (falls nicht schon einer läuft)
-    if (!reconnectTimer) {
-      reconnectTimer = setTimeout(() => {
-        //console.log("[EV3 Master] Führe WLAN-Neuverbindung über UniFi AP aus...");
-        setState(IDS.unifiReconnect, true);
-        reconnectTimer = null;
+    const wifiStatus = existsState(IDS.unifiIsOnline)
+      ? getState(IDS.unifiIsOnline)?.val
+        ? "WLAN OK"
+        : "WLAN Getrennt"
+      : "WLAN Unbekannt";
+
+    console.warn(
+      `[EV3 Master] Wallbox connection lost (OCPP Offline, ${wifiStatus}). Watchdog activated.`,
+    );
+
+    if (!reconnectInterval) {
+      reconnectInterval = setInterval(() => {
+        const offlineMinutes = Math.max(1, Math.round((Date.now() - offlineStartTime) / 60000));
+        console.warn(
+          `[EV3 Master] Wallbox still offline (${offlineMinutes} min, ${wifiStatus}). Triggering UniFi AP reconnect...`,
+        );
+        if (existsState(IDS.unifiReconnect)) {
+          setState(IDS.unifiReconnect, true);
+        }
+
+        // Nach 5 Minuten Offline-Zeit erste Push-Warnung senden
+        if (offlineMinutes === 5) {
+          ev3Notify(
+            `⚠️ Wallbox seit 5 Minuten nicht erreichbar! (UniFi Reconnect ausgelöst, ${wifiStatus})`,
+            4,
+          );
+        } else if (offlineMinutes >= 15 && offlineMinutes % 15 === 0) {
+          // Nach 15, 30, ... Minuten eskalieren
+          ev3Notify(
+            `🚨 Wallbox seit ${offlineMinutes} Minuten dauerhaft offline! Bitte Wallbox / Sicherungsautomat prüfen.`,
+            5,
+          );
+        }
       }, RECONNECT_WB_MS);
     }
   } else {
-    // Wieder online: Status zurücksetzen und Timer stoppen
-    if (wasOfflineReported) console.log("[EV3 Master] Wallbox connection restored.");
-    wasOfflineReported = false;
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
+    // Wieder online: Timer stoppen und Status melden
+    if (offlineStartTime && !isInitial) {
+      const offlineMinutes = Math.max(1, Math.round((Date.now() - offlineStartTime) / 60000));
+      console.log(`[EV3 Master] Wallbox connection restored after ${offlineMinutes} min.`);
+      if (offlineMinutes >= 3) {
+        ev3Notify(`✅ Wallbox wieder online (nach ${offlineMinutes} Min. Unterbrechung).`, 1);
+      }
+    }
+    offlineStartTime = null;
+    hasWarnedOcppOffline = false;
+    if (reconnectInterval) {
+      clearInterval(reconnectInterval);
+      reconnectInterval = null;
     }
   }
+}
+
+/**
+ * Verbindungs-Watchdog: Überwacht die Erreichbarkeit der Wallbox.
+ */
+on({ id: IDS.wbConn, change: "ne" }, (obj) => {
+  handleWallboxConnectionState(!!obj.state.val);
 });
 
 /**
@@ -719,11 +1021,115 @@ on({ id: IDS.targetSocSrv, change: "ne" }, (obj) => {
 
 // Handler für manuelle Start-Anforderungen
 on({ id: IDS.u_startChargeRequest, val: true, change: "any" }, () => {
+  if (isSaunaActive()) {
+    console.warn("[EV3 Master] Manuelle Startanforderung ignoriert: Sauna ist aktiv!");
+    ev3Notify("⚠️ Manuelles Laden nicht möglich: Sauna heizt aktuell!", 3);
+    setTimeout(() => {
+      setState(IDS.u_startChargeRequest, false, true);
+    }, 1000);
+    return;
+  }
+  if (!getState(IDS.wbConn)?.val) {
+    console.warn("[EV3 Master] Manuelle Startanforderung ignoriert: Wallbox offline!");
+    ev3Notify("⚠️ Manuelles Laden nicht möglich: Wallbox offline (OCPP getrennt)!", 4);
+    setTimeout(() => {
+      setState(IDS.u_startChargeRequest, false, true);
+    }, 1000);
+    return;
+  }
   console.log("[EV3 Master] Manual start request received via VIS.");
   triggerStartSequence("VIS-Manual");
   setTimeout(() => {
     setState(IDS.u_startChargeRequest, false, true);
   }, 1000);
+});
+
+// Handler für 16A-Schnellladen
+on({ id: IDS.u_fastCharge, change: "ne" }, async (obj) => {
+  const isFast = !!obj.state.val;
+
+  if (isFast) {
+    // 1. Verbindung zur Wallbox sicherstellen
+    const isConnected = !!getState(IDS.wbConn)?.val;
+    if (!isConnected) {
+      console.warn(
+        "[EV3 Master] Schnellladen abgebrochen: Wallbox nicht verbunden (OCPP offline).",
+      );
+      ev3Notify("⚠️ Schnellladen nicht möglich: Wallbox nicht verbunden!", 4);
+      setTimeout(() => {
+        setState(IDS.u_fastCharge, false, true);
+      }, 1000);
+      return;
+    }
+
+    // SAUNA-VERRIEGELUNG: Schnellladen sperren, wenn Sauna aktiv ist
+    if (isSaunaActive()) {
+      console.warn("[EV3 Master] Schnellladen abgebrochen: Sauna ist aktiv!");
+      ev3Notify("⚠️ Schnellladen nicht möglich: Sauna heizt aktuell!", 3);
+      setTimeout(() => {
+        setState(IDS.u_fastCharge, false, true);
+      }, 1000);
+      return;
+    }
+
+    // 2. Vorherigen Status von autoladen merken und autoladen ausschalten
+    const wasAuto = !!getState(IDS.u_auto)?.val;
+    previousAutoState = wasAuto;
+    setState(IDS.u_prevAuto, wasAuto, true);
+    if (wasAuto) {
+      console.log(
+        "[EV3 Master] Schnellladen gestartet: Schalte PV-Automatik (autoladen) vorübergehend aus.",
+      );
+      setState(IDS.u_auto, false);
+    }
+
+    // 3. Wallbox-Limit auf 160 (16A) setzen und bei Bedarf Soft-Reset ausführen (30s)
+    await setWallboxStationLimit(160);
+
+    // 4. Hausbatterie vor Entleerung schützen (Min-SoC einfrieren)
+    if (originalMinSoc === null) {
+      originalMinSoc = getState(IDS.minSocRead)?.val;
+      setState(IDS.u_origSoc, originalMinSoc, true);
+      const currentBatSoc = getState(IDS.batSocPV)?.val;
+      setState(IDS.minSocSet, Math.max(0, currentBatSoc));
+      console.log(
+        `[EV3 Master] Schnellladen: Heimspeicher MinSoc auf ${currentBatSoc}% eingefroren (vorher: ${originalMinSoc}%).`,
+      );
+    }
+
+    // 5. Ladevorgang starten, falls noch nicht aktiv
+    const currentStatus = getState(IDS.wbStat)?.val;
+    if (currentStatus !== "Charging") {
+      await triggerStartSequence("Schnellladen 16A");
+    } else {
+      setState(IDS.u_power, getCurrentChargePowerW(), true);
+      ev3Notify("⚡ Schnellladen aktiv: Ladestrom auf 16A erhöht (~11 kW)");
+    }
+    updateChargeModeStatus();
+  } else {
+    console.log(
+      "[EV3 Master] Schnellladen deaktiviert: Stoppe Ladung und setze Wallbox auf Standard 6A zurück...",
+    );
+
+    // 1. Ladevorgang stoppen, falls aktiv
+    if (getState(IDS.wbTrans)?.val === true || getState(IDS.wbStat)?.val === "Charging") {
+      setState(IDS.wbTrans, false);
+    }
+
+    // 2. Wallbox-Limit, Hausbatterie und autoladen wiederherstellen
+    await restoreFastChargingState();
+
+    ev3Notify("🛑 Schnellladen beendet. Wallbox auf Standard 6A zurückgestellt.");
+    updateChargeModeStatus();
+  }
+});
+
+// Sofortige Anpassung der Ladeleistungsanzeige bei Änderung des Limits während der Ladung
+on({ id: IDS.wbLimit, change: "ne" }, () => {
+  if (getState(IDS.wbStat)?.val === "Charging") {
+    setState(IDS.u_power, getCurrentChargePowerW(), true);
+  }
+  updateChargeModeStatus();
 });
 
 // Täglicher Reset der Ladestatistik um 02:05 Uhr

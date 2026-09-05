@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.18] - 2026-09-03
+- git commit -m "fix: increase gotify http request timeout to 15s (notify.js)
+
 ### [3.3.17] - 2026-09-03
 - git commit -m "fix(telegram): ignore empty request values to prevent unknown command logs (telegram_menue.js)
 
