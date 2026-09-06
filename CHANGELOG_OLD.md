@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.22] - 2026-09-04
+- git add common/bad_unten/radio.js README.md README_de.md package.json (radio.js)
+
 ### [3.3.21] - 2026-09-04
 - fix(bad-radio): Increase amplifier power-on delay to 12s and synchronize status update (radio.js)
 

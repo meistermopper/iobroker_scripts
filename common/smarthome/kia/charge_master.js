@@ -1028,13 +1028,10 @@ function handleWallboxConnectionState(isConnected, isInitial = false) {
       }, RECONNECT_WB_MS);
     }
   } else {
-    // Wieder online: Timer stoppen und Status melden
+    // Wieder online: Timer stoppen und Status loggen
     if (offlineStartTime && !isInitial) {
       const offlineMinutes = Math.max(1, Math.round((Date.now() - offlineStartTime) / 60000));
       console.log(`[EV3 Master] Wallbox connection restored after ${offlineMinutes} min.`);
-      if (offlineMinutes >= 3) {
-        ev3Notify(`✅ Wallbox wieder online (nach ${offlineMinutes} Min. Unterbrechung).`, 1);
-      }
     }
     offlineStartTime = null;
     hasWarnedOcppOffline = false;
@@ -1166,7 +1163,9 @@ on({ id: IDS.u_fastCharge, change: "ne" }, async (obj) => {
 
     // 1. Ladevorgang geordnet beenden, BEVOR der Soft-Reset ausgelöst wird
     if (getState(IDS.wbTrans)?.val === true || getState(IDS.wbStat)?.val === "Charging") {
-      console.log("[EV3 Master] Stopping active charge transaction before resetting wallbox limit...");
+      console.log(
+        "[EV3 Master] Stopping active charge transaction before resetting wallbox limit...",
+      );
       setState(IDS.wbTrans, false);
       const stopStartTime = Date.now();
       while (Date.now() - stopStartTime < 8000) {
@@ -1181,7 +1180,9 @@ on({ id: IDS.u_fastCharge, change: "ne" }, async (obj) => {
 
     // 3. Nach dem Neustart sicherstellen, dass die Wallbox nicht ungewollt weiterlädt
     if (getState(IDS.wbTrans)?.val === true || getState(IDS.wbStat)?.val === "Charging") {
-      console.log("[EV3 Master] Wallbox resumed charging after reboot. Forcing stop of transaction.");
+      console.log(
+        "[EV3 Master] Wallbox resumed charging after reboot. Forcing stop of transaction.",
+      );
       setState(IDS.wbTrans, false);
       await wait(2000);
       if (getState(IDS.wbStat)?.val === "Charging") {
