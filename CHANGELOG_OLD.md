@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.24] - 2026-09-05
+- fix(charging): guard soft-reset reboot with isChangingLimit and 100s boot timer (charge_master.js)
+
 ### [3.3.23] - 2026-09-05
 - feat(kia-charge): Implement fast charge, sauna interlock and improved wallbox watchdog (charge_master.js, energiemaster_und_sauna.js)
 
