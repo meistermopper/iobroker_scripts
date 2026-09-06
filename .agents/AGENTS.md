@@ -86,3 +86,38 @@ Jedes Skript sollte in zwei logische Abschnitte unterteilt sein:
 ## 7. Date-Arithmetik (TypeScript-Konformität)
 
 - Bei Differenzberechnungen oder Vergleichen von `Date`-Objekten verwende immer `.getTime()` (z. B. `date.getTime() - start.getTime()`), um TypeScript-Compilerfehler bezüglich arithmetischer Operatoren zu vermeiden.
+
+## 8. Asynchrone Robustheit, Race Conditions & Lifecycle (Skript-Sicherheit)
+
+Um hängende Zustände, doppelte Hardware-Aktionen und Speicherlecks zu verhindern, müssen komplexe Steuerungs- und Ladeskripte folgende Schutzmechanismen einhalten:
+
+- **Schutz vor doppelter Ausführung (Mutex / Concurrency Guards):**
+  - Funktionen, die zeitintensive oder hardwarenahe Aktionen ausführen (z. B. Soft-Resets, Ladelimit-Wechsel), müssen durch boolesche Sperrvariablen (z. B. `isRestoring`, `isChangingLimit`) vor gleichzeitigen Aufrufen geschützt werden.
+  - Wenn ein Skript selbst Datenpunkte schreibend ändert (`setState(id, val, true)`), die wiederum von eigenen Event-Listenern überwacht werden, muss im Listener geprüft werden, ob die Aktion bereits läuft (`if (isRestoring) return;`) oder ob es sich um einen externen Befehl handelt (`state.ack === false`).
+
+- **Zustandsunabhängige Wiederherstellung (State Restoration):**
+  - Werden bei Beginn einer Session Originalwerte zwischengespeichert (z. B. `originalMinSoc`, Grenzwerte), muss deren Rückstellung bei Session-Ende **ausschließlich** daran gekoppelt sein, ob ein Wert gemerkt wurde (`if (originalMinSoc !== null)`).
+  - Die Wiederherstellung darf **niemals** von variablen UI-Schaltern (wie z. B. `!isAuto`) abhängen, da der Benutzer diese während einer laufenden Session umschalten kann und der Wert sonst dauerhaft gesperrt bliebe.
+
+- **Verzögerte Watchdogs & Timer-Kollisionen:**
+  - Timer zur Fehlererkennung (z. B. 10s-Verzögerung nach Stopp-Befehl) müssen vor dem Ausführen eines Not-Stopps (`forceStop`) prüfen, ob der Stopp-Zustand immer noch vorliegt (`getState(id).val === false`). Andernfalls werden neu gestartete Aktionen versehentlich abgewürgt.
+  - Beim Starten neuer Sequenzen (z. B. Ladestart) müssen etwaige noch laufende Stopp- oder Entprell-Timer (`stopTimer`) vorher explizit gecancelt werden (`clearTimeout(stopTimer); stopTimer = null;`).
+
+- **Cloud-Latenzen berücksichtigen:**
+  - Bei Datenpunkten aus Cloud-Adaptern (z. B. Fahrzeug-SoC bei Bluelink/Connect) hinken Werte der Realität oft hinterher. Statusprüfungen für Session-Enden dürfen nicht rein auf strikte Cloud-Werte vertrauen, sondern müssen Hardware-Meldungen (`SuspendedEV`, `Finishing`, Stecker abgezogen) oder Toleranzpuffer (`evSoc >= targetSoc - 2`) einbeziehen.
+
+- **Interlocks in Not-Aus- / Exception-Pfaden:**
+  - Wenn Verriegelungen oder Pausen aktiv sind (z. B. Sauna-Interlock mit `u_pausedBySauna`), dürfen auch `finally`-Blöcke oder `forceStopCharging()`-Routinen gespeicherte Session-Parameter nicht überschreiben oder löschen, damit die automatische Wiederaufnahme nach dem Interlock funktioniert.
+
+- **Lifecycle-Cleanup mit `onStop()`:**
+  - Alle im Skript erzeugten `setInterval`- und `setTimeout`-Timer müssen in globalen Variablen gehalten und in einem `onStop()`-Handler bei Skript-Neustart oder -Beendigung explizit aufgeräumt werden:
+    ```javascript
+    onStop((callback) => {
+      if (stopTimer) clearTimeout(stopTimer);
+      if (reconnectInterval) clearInterval(reconnectInterval);
+      callback();
+    });
+    ```
+
+- **Initialisierungs-Absicherung:**
+  - Asynchrone Initialisierungsfunktionen (`initSystem()`) müssen durch ein Flag (`isSystemInitialized`) signalisieren, wenn alle Datenpunkte und Speicherwerte geladen sind. Zyklische Timer oder Trigger sollten erst agieren, wenn `isSystemInitialized === true` ist.

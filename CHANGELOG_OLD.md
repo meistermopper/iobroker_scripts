@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.23] - 2026-09-05
+- feat(kia-charge): Implement fast charge, sauna interlock and improved wallbox watchdog (charge_master.js, energiemaster_und_sauna.js)
+
 ### [3.3.22] - 2026-09-04
 - git add common/bad_unten/radio.js README.md README_de.md package.json (radio.js)
 

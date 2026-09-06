@@ -100,6 +100,12 @@ let isStartingSequenceActive = false;
 let isForceStopping = false;
 // [NEU] Sperrvariable während Stationslimit-Wechsel und Soft-Reset (verhindert vorzeitiges Ladeende durch stopTimer).
 let isChangingLimit = false;
+// Sperrvariable zur Vermeidung doppelter Ausführung von restoreFastChargingState
+let isRestoringFastCharge = false;
+// Timer-Referenz für die Verzögerung nach wbTrans = false
+let wbTransOffTimer = null;
+// Flag für abgeschlossene Initialisierung
+let isSystemInitialized = false;
 
 // --- 2. INITIALISIERUNG ---
 
@@ -156,23 +162,30 @@ async function initLadeSystem() {
       role: "indicator",
     });
 
-  // Laufende Prozesse nach Skript-Neustart wiederherstellen
-  if (getState(IDS.wbTrans)?.val === true) {
-    startZeitLaden = getState(IDS.u_startTs)?.val || Date.now();
-    const savedSoc = getState(IDS.u_origSoc)?.val;
-    originalMinSoc = savedSoc !== null && savedSoc !== 0 ? savedSoc : null;
-    if (getState(IDS.u_fastCharge)?.val === true) {
-      previousAutoState = getState(IDS.u_prevAuto)?.val === true;
+  try {
+    // Laufende Prozesse nach Skript-Neustart wiederherstellen
+    if (getState(IDS.wbTrans)?.val === true) {
+      startZeitLaden = getState(IDS.u_startTs)?.val || Date.now();
+      const savedSoc = getState(IDS.u_origSoc)?.val;
+      originalMinSoc = savedSoc !== null && savedSoc !== 0 ? savedSoc : null;
+      if (getState(IDS.u_fastCharge)?.val === true) {
+        previousAutoState = getState(IDS.u_prevAuto)?.val === true;
+      }
+      if (getState(IDS.wbStat)?.val === "Charging") {
+        setState(IDS.u_power, getCurrentChargePowerW(), true);
+      }
     }
-    if (getState(IDS.wbStat)?.val === "Charging") {
-      setState(IDS.u_power, getCurrentChargePowerW(), true);
-    }
-  }
-  updateChargeModeStatus();
+    updateChargeModeStatus();
 
-  // Initialen Verbindungsstatus erfassen und Watchdog aktivieren, falls Wallbox offline ist
-  const currentConn = existsState(IDS.wbConn) ? !!getState(IDS.wbConn)?.val : false;
-  handleWallboxConnectionState(currentConn, true);
+    // Initialen Verbindungsstatus erfassen und Watchdog aktivieren, falls Wallbox offline ist
+    const currentConn = existsState(IDS.wbConn) ? !!getState(IDS.wbConn)?.val : false;
+    handleWallboxConnectionState(currentConn, true);
+  } catch (e) {
+    console.error(`[EV3 Master] Initialization error: ${e.message}`);
+  } finally {
+    isSystemInitialized = true;
+    console.log("[EV3 Master] Initialization complete, system is ready.");
+  }
 }
 initLadeSystem();
 
@@ -251,27 +264,38 @@ async function setWallboxStationLimit(targetLimit) {
  * when fast charging ends.
  */
 async function restoreFastChargingState() {
-  if (originalMinSoc !== null) {
-    setState(IDS.minSocSet, Math.max(0, originalMinSoc));
-    console.log(`[EV3 Master] Restored home battery MinSoc to ${originalMinSoc}%.`);
-    originalMinSoc = null;
-    setState(IDS.u_origSoc, 0, true);
-  }
-
-  const restoreAuto =
-    previousAutoState !== null ? previousAutoState : getState(IDS.u_prevAuto)?.val === true;
-  if (restoreAuto) {
+  if (isRestoringFastCharge) {
     console.log(
-      "[EV3 Master] Fast charging ended: Restoring previous PV automatic (autoladen = true).",
+      "[EV3 Master] Fast charging restoration already in progress, skipping duplicate execution.",
     );
-    setState(IDS.u_auto, true);
+    return;
   }
-  previousAutoState = null;
-  setState(IDS.u_prevAuto, false, true);
-  updateChargeModeStatus();
+  isRestoringFastCharge = true;
+  try {
+    if (originalMinSoc !== null) {
+      setState(IDS.minSocSet, Math.max(0, originalMinSoc));
+      console.log(`[EV3 Master] Restored home battery MinSoc to ${originalMinSoc}%.`);
+      originalMinSoc = null;
+      setState(IDS.u_origSoc, 0, true);
+    }
 
-  // Reset wallbox hardware limit to standard 60 (6A) and apply via soft reset
-  await setWallboxStationLimit(60);
+    const restoreAuto =
+      previousAutoState !== null ? previousAutoState : getState(IDS.u_prevAuto)?.val === true;
+    if (restoreAuto) {
+      console.log(
+        "[EV3 Master] Fast charging ended: Restoring previous PV automatic (autoladen = true).",
+      );
+      setState(IDS.u_auto, true);
+    }
+    previousAutoState = null;
+    setState(IDS.u_prevAuto, false, true);
+    updateChargeModeStatus();
+
+    // Reset wallbox hardware limit to standard 60 (6A) and apply via soft reset
+    await setWallboxStationLimit(60);
+  } finally {
+    isRestoringFastCharge = false;
+  }
 }
 
 /**
@@ -370,6 +394,13 @@ async function triggerStartSequence(reason = "PV-Surplus") {
   if (isStartingSequenceActive) {
     console.log(`[EV3 Master] Start sequence already active, skipping (${reason}).`);
     return;
+  }
+
+  // Laufenden Stopp-Timer abbrechen, damit ein vorangegangener Halt die neue Ladung nicht abbricht
+  if (stopTimer) {
+    clearTimeout(stopTimer);
+    stopTimer = null;
+    console.log("[EV3 Master] Cleared pending stopTimer before starting new charge sequence.");
   }
 
   // SAUNA-VERRIEGELUNG: Start abbrechen, wenn Sauna aktiv ist
@@ -533,15 +564,22 @@ async function forceStopCharging() {
       startZeitLaden = null;
       setState(IDS.u_startTs, 0, true);
     }
-    if (getState(IDS.u_fastCharge)?.val === true) {
-      setState(IDS.u_fastCharge, false, true);
-      await restoreFastChargingState();
-      console.log("[EV3 Master] Reset u_fastCharge and restored settings after forced stop.");
-    } else if (originalMinSoc !== null) {
-      setState(IDS.minSocSet, Math.max(0, originalMinSoc));
-      ev3Notify(`🔌 Hausbatterie MinSoc auf ${originalMinSoc}% nach erzwungenem Stop eingestellt`);
-      originalMinSoc = null;
-      setState(IDS.u_origSoc, 0, true);
+    const isPausedBySauna = getState(IDS.u_pausedBySauna)?.val === true;
+    if (!isPausedBySauna) {
+      if (getState(IDS.u_fastCharge)?.val === true) {
+        setState(IDS.u_fastCharge, false, true);
+        await restoreFastChargingState();
+        console.log("[EV3 Master] Reset u_fastCharge and restored settings after forced stop.");
+      } else if (originalMinSoc !== null) {
+        setState(IDS.minSocSet, Math.max(0, originalMinSoc));
+        ev3Notify(`🔌 Hausbatterie MinSoc auf ${originalMinSoc}% nach erzwungenem Stop eingestellt`);
+        originalMinSoc = null;
+        setState(IDS.u_origSoc, 0, true);
+      }
+    } else {
+      console.log(
+        "[EV3 Master] Forced stop occurred while paused by sauna. Preserving fast charge & battery settings for resume.",
+      );
     }
     if (stopRefreshTimer) clearTimeout(stopRefreshTimer);
     stopRefreshTimer = setTimeout(() => {
@@ -623,6 +661,7 @@ schedule("* * * * *", async () => {
  * vorausgesetzt der Automatik-Schalter in VIS ist aktiv.
  */
 function checkPvAutomation() {
+  if (!isSystemInitialized) return;
   const isFast = !!getState(IDS.u_fastCharge)?.val; // Schnelllade-Schalter
   if (isFast) return; // Schnellladen hat Vorrang vor PV-Automatik
 
@@ -749,10 +788,17 @@ if (existsState(IDS.saunaLogik)) {
 // Wenn `wbTrans` auf `false` wechselt (Stopp-Befehl gesendet), prüfen wir nach einer Verzögerung
 // von 10 Sekunden, ob `wbStat` immer noch `Charging` ist, und rufen in diesem Fall `forceStopCharging()` auf.
 on({ id: IDS.wbTrans, change: "ne" }, (obj) => {
+  if (wbTransOffTimer) {
+    clearTimeout(wbTransOffTimer);
+    wbTransOffTimer = null;
+  }
   if (obj.state.val === false) {
     // 10 Sekunden Verzögerung, um der Wallbox Zeit zur Verarbeitung zu geben
-    setTimeout(async () => {
-      if (getState(IDS.wbStat)?.val === "Charging") {
+    wbTransOffTimer = setTimeout(async () => {
+      wbTransOffTimer = null;
+      const transStillInactive = getState(IDS.wbTrans)?.val === false;
+      const isStillCharging = getState(IDS.wbStat)?.val === "Charging";
+      if (transStillInactive && isStillCharging) {
         console.warn(
           "[EV3 Master] Wallbox hängt im Status 'Charging' trotz beendeter Transaktion. Erzwinge Stopp.",
         );
@@ -890,17 +936,19 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       const wasFast = !!getState(IDS.u_fastCharge)?.val;
       const evSoc = Number(getState(IDS.soc)?.val) || 0;
       const targetSoc = Number(getState(IDS.targetSocSrv)?.val) || 100;
-      const isTargetReached = evSoc >= targetSoc;
-      const isUnplugged = getState(IDS.wbStat)?.val === "Available";
+      const isTargetReached = evSoc >= targetSoc || evSoc >= targetSoc - 2; // Puffer für Kia Bluelink Cloud-Lag
+      const currentWbStat = getState(IDS.wbStat)?.val;
+      const isUnplugged = currentWbStat === "Available";
+      const isVehicleStopped = currentWbStat === "SuspendedEV" || currentWbStat === "Finishing";
 
-      // Schnellladen nur zurücksetzen, wenn das Ladeziel erreicht oder das Kabel abgezogen wurde
-      if (wasFast && (isTargetReached || isUnplugged)) {
+      // Schnellladen zurücksetzen, wenn das Ladeziel erreicht, das Fahrzeug die Ladung beendet hat oder das Kabel abgezogen wurde
+      if (wasFast && (isTargetReached || isUnplugged || isVehicleStopped)) {
         setState(IDS.u_fastCharge, false, true);
         await restoreFastChargingState();
         console.log(
-          "[EV3 Master] Reset u_fastCharge and restored settings (target reached or cable unplugged).",
+          "[EV3 Master] Reset u_fastCharge and restored settings (target reached, vehicle stopped, or cable unplugged).",
         );
-      } else if (!isAuto && !wasFast && originalMinSoc !== null) {
+      } else if (!wasFast && originalMinSoc !== null) {
         setState(IDS.minSocSet, Math.max(0, originalMinSoc));
         const msg = `EV3 Laden beendet. Hausbatterie MinSoc wieder auf ${originalMinSoc}% gestellt`;
         console.log(`[EV3 Master] ${msg}`);
@@ -1157,6 +1205,12 @@ on({ id: IDS.u_fastCharge, change: "ne" }, async (obj) => {
     }
     updateChargeModeStatus();
   } else {
+    if (isRestoringFastCharge) {
+      console.log(
+        "[EV3 Master] Fast charging deactivation already being handled, skipping duplicate listener action.",
+      );
+      return;
+    }
     console.log(
       "[EV3 Master] Schnellladen deaktiviert: Stoppe Ladung und setze Wallbox auf Standard 6A zurück...",
     );
@@ -1211,4 +1265,15 @@ schedule("5 2 * * *", () => {
 // Schutz der Kia 12V-Starterbatterie
 on({ id: IDS.bat12v, change: "ne" }, (obj) => {
   if (obj.state.val <= 50) ev3Notify(`⚠️ Kia 12V battery critical!`, 5);
+});
+
+// Ressourcen-Bereinigung beim Stoppen oder Neustart des Skripts
+onStop((callback) => {
+  console.log("[EV3 Master] Cleaning up timers and resources before script shutdown...");
+  if (stopTimer) clearTimeout(stopTimer);
+  if (startRefreshTimer) clearTimeout(startRefreshTimer);
+  if (stopRefreshTimer) clearTimeout(stopRefreshTimer);
+  if (wbTransOffTimer) clearTimeout(wbTransOffTimer);
+  if (reconnectInterval) clearInterval(reconnectInterval);
+  callback();
 });
