@@ -32,6 +32,10 @@ const START_FADE_IN_SEC = 50;
 const TRANSITION_DURATION = 27000; // 45 Minuten
 
 let transitionSchedule = null;
+let autoOffTimeout = null;
+let eiFadeInTimeout = null;
+let eiTransitionTimeout = null;
+let eiOffTimeout = null;
 
 // --- 3. HILFSFUNKTIONEN & SYSTEM-FIXES ---
 
@@ -171,12 +175,62 @@ repairAndHide();
 
 // --- 4. HAUPT-LOGIK ---
 
+/**
+ * Explicitly turns off both lamps and keeps the trigger state in sync.
+ */
+function turnOff() {
+  if (transitionSchedule) {
+    clearSchedule(transitionSchedule);
+    transitionSchedule = null;
+  }
+  if (autoOffTimeout) {
+    clearTimeout(autoOffTimeout);
+    autoOffTimeout = null;
+  }
+  if (eiFadeInTimeout) {
+    clearTimeout(eiFadeInTimeout);
+    eiFadeInTimeout = null;
+  }
+  if (eiTransitionTimeout) {
+    clearTimeout(eiTransitionTimeout);
+    eiTransitionTimeout = null;
+  }
+  if (eiOffTimeout) {
+    clearTimeout(eiOffTimeout);
+    eiOffTimeout = null;
+  }
+
+  const off = JSON.stringify({ on: false, transitiontime: 20 });
+  setState(ALIAS_KOMMODE, off);
+  eiOffTimeout = setTimeout(() => {
+    setState(ALIAS_EI, off);
+    eiOffTimeout = null;
+  }, 1500);
+
+  // Synchronize trigger state with ack: true to prevent feedback loops
+  if (getState(ID_TRIGGER)?.val) {
+    setState(ID_TRIGGER, false, true);
+  }
+}
+
 on({ id: ID_TRIGGER, change: "ne", ack: false }, (obj) => {
   const sollAn = !!obj.state.val;
 
   if (transitionSchedule) {
     clearSchedule(transitionSchedule);
     transitionSchedule = null;
+  }
+  if (autoOffTimeout) {
+    clearTimeout(autoOffTimeout);
+    autoOffTimeout = null;
+  }
+  if (eiFadeInTimeout) {
+    clearTimeout(eiFadeInTimeout);
+    eiFadeInTimeout = null;
+  }
+  if (eiOffTimeout) {
+    clearTimeout(eiOffTimeout);
+    eiOffTimeout = null;
   }
 
   if (sollAn) {
@@ -197,7 +251,10 @@ on({ id: ID_TRIGGER, change: "ne", ack: false }, (obj) => {
     });
 
     setState(ALIAS_KOMMODE, fadeInKommode);
-    setTimeout(() => setState(ALIAS_EI, fadeInEi), 1500);
+    eiFadeInTimeout = setTimeout(() => {
+      setState(ALIAS_EI, fadeInEi);
+      eiFadeInTimeout = null;
+    }, 1500);
 
     // Geplanter Übergang um 22:30 Uhr
     transitionSchedule = schedule("30 22 * * *", () => {
@@ -212,7 +269,7 @@ on({ id: ID_TRIGGER, change: "ne", ack: false }, (obj) => {
         }),
       );
 
-      setTimeout(() => {
+      eiTransitionTimeout = setTimeout(() => {
         setState(
           ALIAS_EI,
           JSON.stringify({
@@ -221,14 +278,27 @@ on({ id: ID_TRIGGER, change: "ne", ack: false }, (obj) => {
             transitiontime: limit(TRANSITION_DURATION, 0, 65535),
           }),
         );
+        eiTransitionTimeout = null;
       }, 1500);
+
+      // Nach Ablauf der 45 Min. Abdimmzeit (um 23:15 Uhr) Lampen explizit ausschalten
+      const transitionMs = (TRANSITION_DURATION / 10) * 1000;
+      autoOffTimeout = setTimeout(() => {
+        console.log(`[Abendlicht] 23:15 Uhr: Abdimmen beendet - schalte Lampen explizit aus.`);
+        turnOff();
+      }, transitionMs);
     });
   } else {
-    // Notification für Ausschalten (gemäß Vorgabe auskommentiert)
-    //console.log(`[Abendlicht] Ausschalten.`);
-
-    const off = JSON.stringify({ on: false, transitiontime: 20 });
-    setState(ALIAS_KOMMODE, off);
-    setTimeout(() => setState(ALIAS_EI, off), 1500);
+    turnOff();
   }
+});
+
+// Lifecycle cleanup when script stops
+onStop((callback) => {
+  if (transitionSchedule) clearSchedule(transitionSchedule);
+  if (autoOffTimeout) clearTimeout(autoOffTimeout);
+  if (eiFadeInTimeout) clearTimeout(eiFadeInTimeout);
+  if (eiTransitionTimeout) clearTimeout(eiTransitionTimeout);
+  if (eiOffTimeout) clearTimeout(eiOffTimeout);
+  callback();
 });
