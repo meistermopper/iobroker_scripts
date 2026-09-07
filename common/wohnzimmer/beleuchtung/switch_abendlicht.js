@@ -76,7 +76,6 @@ function repairAndHide() {
         },
         (err) => {
           if (err) console.error(`[Abendlicht] Error repairing alias ${cfg.id}: ${err}`);
-          else console.log(`[Abendlicht] Info: Alias ${cfg.id} initialized`);
         },
       );
     }
@@ -94,7 +93,6 @@ function repairAndHide() {
         },
         (err) => {
           if (err) console.error(`[Abendlicht] Error configuring target ${cfg.target}: ${err}`);
-          else console.log(`[Abendlicht] Info: Target ${cfg.target} initialized`);
         },
       );
     }
@@ -139,7 +137,6 @@ function repairAndHide() {
         },
         (extendErr) => {
           if (extendErr) console.error(`[Abendlicht] Error hiding ${id}: ${extendErr}`);
-          else console.log(`[Abendlicht] Info: Hidden object ${id} from GHOME/Alexa`);
         },
       );
     }
@@ -163,11 +160,12 @@ function repairAndHide() {
         (extendErr) => {
           if (extendErr)
             console.error(`[Abendlicht] Error updating ct config for ${id}: ${extendErr}`);
-          else console.log(`[Abendlicht] Info: Configured ct state ${id} (mired/153-500)`);
         },
       );
     }
   });
+
+  console.log("[Abendlicht] System-Check: Aliase und SmartName-Filter bereit.");
 }
 
 // Initialisierung beim Skriptstart

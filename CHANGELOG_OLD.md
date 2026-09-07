@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.26] - 2026-09-05
+- fix(charging): ensure clean transaction termination before soft-reset when fast charging is disabled (charge_master.js)
+
 ### [3.3.25] - 2026-09-05
 - feat(charging): expand charge mode status with granular states for PV, fast, manual, and sauna pause (charge_master.js)
 

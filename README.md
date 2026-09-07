@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.30-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.31-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -102,6 +102,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.3.31] - 2026-09-07
+- refactor(abendlicht): streamline startup logging to single status line (switch_abendlicht.js)
+
 ### [3.3.30] - 2026-09-07
 - feat(abendlicht): explicitly turn off lights after 45-minute dimming phase (switch_abendlicht.js)
 
@@ -113,8 +116,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.3.27] - 2026-09-06
 - refactor(kia): Refine wallbox connection output and format log messages (charge_master.js)
-
-### [3.3.26] - 2026-09-05
-- fix(charging): ensure clean transaction termination before soft-reset when fast charging is disabled (charge_master.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
