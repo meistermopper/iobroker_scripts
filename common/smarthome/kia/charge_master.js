@@ -572,7 +572,9 @@ async function forceStopCharging() {
         console.log("[EV3 Master] Reset u_fastCharge and restored settings after forced stop.");
       } else if (originalMinSoc !== null) {
         setState(IDS.minSocSet, Math.max(0, originalMinSoc));
-        ev3Notify(`🔌 Hausbatterie MinSoc auf ${originalMinSoc}% nach erzwungenem Stop eingestellt`);
+        ev3Notify(
+          `🔌 Hausbatterie MinSoc auf ${originalMinSoc}% nach erzwungenem Stop eingestellt`,
+        );
         originalMinSoc = null;
         setState(IDS.u_origSoc, 0, true);
       }
@@ -675,8 +677,8 @@ function checkPvAutomation() {
   const isConnected = !!getState(IDS.wbConn)?.val;
   if (!isConnected && mittel > PV_START_LIMIT) {
     if (!hasWarnedOcppOffline) {
-      console.warn("[EV3 Master] Start not possible: Wallbox connection missing (OCPP Offline)");
-      hasWarnedOcppOffline = true;
+      //console.warn("[EV3 Master] Start not possible: Wallbox connection missing (OCPP Offline)");
+      //hasWarnedOcppOffline = true;
     }
   }
   if (!isAuto || !isConnected) return;
@@ -1046,16 +1048,16 @@ function handleWallboxConnectionState(isConnected, isInitial = false) {
         : "WLAN Getrennt"
       : "WLAN Unbekannt";
 
-    console.warn(
-      `[EV3 Master] Wallbox connection lost (OCPP Offline, ${wifiStatus}). Watchdog activated.`,
-    );
+    //console.warn(
+    //  `[EV3 Master] Wallbox connection lost (OCPP Offline, ${wifiStatus}). Watchdog activated`,
+    //);
 
     if (!reconnectInterval) {
       reconnectInterval = setInterval(() => {
         const offlineMinutes = Math.max(1, Math.round((Date.now() - offlineStartTime) / 60000));
-        console.warn(
-          `[EV3 Master] Wallbox still offline (${offlineMinutes} min, ${wifiStatus}). Triggering UniFi AP reconnect...`,
-        );
+        //console.warn(
+        //  `[EV3 Master] Wallbox still offline (${offlineMinutes} min, ${wifiStatus}). Triggering UniFi AP reconnect`,
+        //);
         if (existsState(IDS.unifiReconnect)) {
           setState(IDS.unifiReconnect, true);
         }

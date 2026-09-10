@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.27] - 2026-09-06
+- refactor(kia): Refine wallbox connection output and format log messages (charge_master.js)
+
 ### [3.3.26] - 2026-09-05
 - fix(charging): ensure clean transaction termination before soft-reset when fast charging is disabled (charge_master.js)
 
