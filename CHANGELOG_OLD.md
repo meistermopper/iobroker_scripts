@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.28] - 2026-09-06
+- fix(charge-master): resolve race conditions, duplicate resets and state restoration bugs (charge_master.js)
+
 ### [3.3.27] - 2026-09-06
 - refactor(kia): Refine wallbox connection output and format log messages (charge_master.js)
 

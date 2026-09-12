@@ -24,7 +24,7 @@
 // Liste der zu überwachenden Personen mit Name, MAC-Adresse und Ausschaltverzögerung (in ms)
 const people = [
   { name: "Thomas", mac: "dc:e5:5b:11:b8:7e", delay: 120000 }, // 2 Minuten Puffer
-  { name: "Kiki", mac: "78:53:64:01:8b:04", delay: 120000 },
+  { name: "Kiki", mac: "c2:5e:0e:1b:0a:24", delay: 120000 },
   { name: "Thomas_6G", mac: "1e:4a:b7:65:28:3c", delay: 120000 },
 ];
 
