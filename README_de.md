@@ -11,7 +11,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.33-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.34-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -65,7 +65,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 
 ### 📺🎵 Medien & Sauna
 
-- **Sauna- & Audio-Master (`session_master.js`)**: Steuert HEOS-Wiedergabelisten und die zeitversetzte Musikwiedergabe in Sauna und Bad während des Saunabetriebs. Integriert die Lichtsynchronisation und Benachrichtigungen über den nativen `harvia-fenix`-Adapter (`harvia-fenix.0`).
+- **Sauna- & Audio-Master (`session_master.js`)**: Steuert HEOS-Wiedergabelisten und die zeitversetzte Musikwiedergabe in Sauna und Bad während des Saunabetriebs. Integriert die Lichtsynchronisation, Benachrichtigungen über den nativen `harvia-fenix`-Adapter (`harvia-fenix.0`) sowie gestaffelte Nachläufe (15 Min. Bad, 25 Min. Sauna für Musik und Licht) nach Beenden des Saunabetriebs.
 - **Medienauswahl**: Gesteuert per Sprachbefehl und Google Home.
 - **Ziegenhain Navigations-Ansage (`ziegenhain.js`)**: Löst als Reaktion auf einen bestimmten Sprachbefehl eine humorvolle Sprachansage auf allen aktiven SayIt-Instanzen im Haus aus.
 
@@ -105,19 +105,23 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.34] - 2026-09-18
+- feat(sauna): Implement staggered post-sauna cooldown for music and lights (session_master.js)
+
 ### [3.3.33] - 2026-09-12
+
 - chore(unifi-presence): Update Kiki's MAC address for presence detection (anwesenheit_unifi.js)
 
 ### [3.3.32] - 2026-09-10
+
 - chore(kia): reduce log spam and improve readability (charge_master.js)
 
 ### [3.3.31] - 2026-09-07
+
 - refactor(abendlicht): streamline startup logging to single status line (switch_abendlicht.js)
 
 ### [3.3.30] - 2026-09-07
-- feat(abendlicht): explicitly turn off lights after 45-minute dimming phase (switch_abendlicht.js)
 
-### [3.3.29] - 2026-09-06
-- git add common/sauna/sauna_guardian.js common/smarthome/pv/energiemaster.js common/smarthome/pv/energiemaster_und_sauna.js (sauna_guardian.js, energiemaster.js, energiemaster_und_sauna.js)
+- feat(abendlicht): explicitly turn off lights after 45-minute dimming phase (switch_abendlicht.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

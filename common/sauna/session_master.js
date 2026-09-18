@@ -8,23 +8,43 @@
  * sowohl auf manuelle Eingaben als auch auf den Sauna-Hauptschalter.
  *
  * FUNKTIONEN:
- * 1. Automatik: Startet zeitversetzt Radio im Bad (5 Min) und Sauna (20 Min),
+ * 1. Automatik: Startet zeitversetzt Radio im Bad und in der Sauna,
  *    sobald der Sauna-Modus aktiviert wird.
  * 2. Lautstärke-Management: Setzt beim Start individuelle Lautstärken.
  * 3. Benachrichtigung: Nutzt das globale System (sendGlobalNotify).
  * 4. Flexibilität: Favoriten-Sender am Skriptanfang konfigurierbar.
  * 5. Lichtsteuerung: Schaltet das Saunalicht synchron mit dem Radio.
+ * 6. Nachlauf: Schaltet Musik im Bad nach 15 Minuten sowie Musik und Licht
+ *    in der Sauna nach 25 Minuten automatisch aus.
  * =============================================================================
  */
 
-// --- KONFIGURATION ---
-const ID_SAUNA_AKTIV = "0_userdata.0.Haushalt.sauna_laeuft"; // Trigger für Automatik
-const PREFERED_SENDER = "smoothjazz"; // Standard-Sender für Automatik
-const VOL_SAUNA = 10; // Start-Lautstärke Sauna
-const _VOL_BAD = 15; // Start-Lautstärke Bad
+// =============================================================================
+// --- KONFIGURATION / STEUERUNGSVARIABLEN ---
+// =============================================================================
 
-const DELAY_BAD = 1 * 60 * 1000; // Einschaltverzögerung Bad
-const DELAY_SAUNA = 20 * 60 * 1000; // Einschaltverzögerung Sauna
+// 1. Trigger-Datenpunkt (wird von sauna_guardian.js geschaltet)
+const ID_SAUNA_AKTIV = "0_userdata.0.Haushalt.sauna_laeuft";
+
+// 2. Audio-Einstellungen
+const PREFERED_SENDER = "smoothjazz"; // Standard-Sender für Automatik (Schlüssel aus saunaMap)
+const VOL_SAUNA = 10; // Start-Lautstärke Sauna HEOS (0 - 100)
+const _VOL_BAD = 15; // Referenz-Lautstärke Bad während Sauna (wird in bad_unten/radio.js gesteuert)
+
+// 3. Einschaltverzögerungen (nach Aktivierung des Sauna-Modus)
+const DELAY_BAD_START = 1 * 60 * 1000; // Einschaltverzögerung Radio Bad (z. B. 1 Minute)
+const DELAY_SAUNA_START = 20 * 60 * 1000; // Einschaltverzögerung Radio Sauna (z. B. 20 Minuten)
+
+// 4. Nachlauf- und Ausschaltverzögerungen (nach Deaktivierung des Sauna-Modus)
+const DELAY_BAD_OFF = 15 * 60 * 1000; // Nachlauf Bad-Musik: Ausschalten nach 15 Minuten
+const DELAY_SAUNA_OFF = 25 * 60 * 1000; // Nachlauf Sauna (Musik & Licht): Ausschalten nach 25 Minuten
+
+// 5. Temperatur-Standardwerte
+const DEFAULT_TARGET_TEMP = 80; // Fallback-Zieltemperatur in °C bei fehlendem Adapterwert
+
+// =============================================================================
+// --- DATENPUNKTE & PRESETS ---
+// =============================================================================
 
 // Datenpunkt-Pfade
 const IDS = {
@@ -54,12 +74,17 @@ const saunaMap = {
   jazzloft: { preset: 10, name: "Jazz Loft" },
 };
 
-// Timer für die Automatik
+// =============================================================================
+// --- TIMER-VERWALTUNG ---
+// =============================================================================
+
 let tAutoBad = null;
 let tAutoSauna = null;
+let tOffBad = null;
+let tOffSauna = null;
 
 /**
- * Stoppt laufende Einschalt-Timer
+ * Stoppt alle laufenden Einschalt- und Nachlauf-Timer
  */
 function clearAutoTimers() {
   if (tAutoBad) {
@@ -69,6 +94,14 @@ function clearAutoTimers() {
   if (tAutoSauna) {
     clearTimeout(tAutoSauna);
     tAutoSauna = null;
+  }
+  if (tOffBad) {
+    clearTimeout(tOffBad);
+    tOffBad = null;
+  }
+  if (tOffSauna) {
+    clearTimeout(tOffSauna);
+    tOffSauna = null;
   }
 }
 
@@ -88,22 +121,56 @@ on({ id: ID_SAUNA_AKTIV, change: "ne" }, (obj) => {
     tAutoBad = setTimeout(() => {
       setState(IDS.badSender, PREFERED_SENDER);
       tAutoBad = null;
-    }, DELAY_BAD);
+    }, DELAY_BAD_START);
 
     // Sauna verzögert einschalten
     tAutoSauna = setTimeout(() => {
       setState(IDS.saunaSender, PREFERED_SENDER);
       tAutoSauna = null;
-    }, DELAY_SAUNA);
+    }, DELAY_SAUNA_START);
   } else {
-    sendGlobalNotify("⏹️ Sauna-Modus beendet: Musik wird gestoppt.", "Radio Master", 1);
+    sendGlobalNotify(
+      "⏹️ Sauna-Modus beendet: Musik im Bad schaltet in 15 Min. aus, Sauna (Musik & Licht) in 25 Min.",
+      "Radio Master",
+      1,
+    );
     clearAutoTimers();
 
-    // Alles ausschalten und Auswahl zurücksetzen
-    setState(IDS.saunaStatus, false);
-    setState(IDS.badStatus, false);
-    setState(IDS.saunaSender, "");
-    setState(IDS.badSender, "");
+    // Bad-Musik zeitverzögert nach 15 Minuten ausschalten
+    tOffBad = setTimeout(() => {
+      const wasPlaying = getState(IDS.badStatus)?.val;
+
+      setState(IDS.badStatus, false);
+      setState(IDS.badSender, "");
+      tOffBad = null;
+
+      if (wasPlaying) {
+        sendGlobalNotify(
+          "⏹️ Bad-Nachlauf beendet: Musik im Bad wurde nach 15 Minuten ausgeschaltet.",
+          "Radio Master",
+          1,
+        );
+      }
+    }, DELAY_BAD_OFF);
+
+    // Sauna-Musik und Licht zeitverzögert nach 25 Minuten ausschalten
+    tOffSauna = setTimeout(() => {
+      const wasPlaying = getState(IDS.saunaStatus)?.val;
+      const lightWasOn = getState(IDS.saunaLight)?.val;
+
+      setState(IDS.saunaStatus, false);
+      setState(IDS.saunaSender, "");
+      setState(IDS.saunaLight, false);
+      tOffSauna = null;
+
+      if (wasPlaying || lightWasOn) {
+        sendGlobalNotify(
+          "⏹️ Sauna-Nachlauf beendet: Musik und Licht in der Sauna wurden nach 25 Minuten ausgeschaltet.",
+          "Radio Master",
+          1,
+        );
+      }
+    }, DELAY_SAUNA_OFF);
   }
 });
 
@@ -164,7 +231,7 @@ on({ id: IDS.saunaSender, change: "any" }, (obj) => {
 // 10-Minuten Vorwarnung
 on({ id: IDS.sauna10MinNotified, change: "ne" }, (obj) => {
   if (obj.state.val) {
-    const targetTemp = getState(IDS.saunaTargetTemp)?.val || 80;
+    const targetTemp = getState(IDS.saunaTargetTemp)?.val || DEFAULT_TARGET_TEMP;
     const msg = `🧖 Die Sauna erreicht in ca. 10 Minuten ihre Zieltemperatur (${targetTemp}°C).`;
     console.log(`[Sauna] ${msg}`);
     sendGlobalNotify(msg, "Sauna", 1);
@@ -174,9 +241,18 @@ on({ id: IDS.sauna10MinNotified, change: "ne" }, (obj) => {
 // Zieltemperatur erreicht
 on({ id: IDS.saunaTargetReachedNotified, change: "ne" }, (obj) => {
   if (obj.state.val) {
-    const targetTemp = getState(IDS.saunaTargetTemp)?.val || 80;
+    const targetTemp = getState(IDS.saunaTargetTemp)?.val || DEFAULT_TARGET_TEMP;
     const msg = `♨️ Die Sauna hat ihre Zieltemperatur von ${targetTemp}°C erreicht und ist bereit!`;
     console.log(`[Sauna] ${msg}`);
     sendGlobalNotify(msg, "Sauna", 1);
   }
+});
+
+/**
+ * 5. LIFECYCLE CLEANUP
+ * Ensures all timers are cleared when the script stops or restarts.
+ */
+onStop((callback) => {
+  clearAutoTimers();
+  callback();
 });

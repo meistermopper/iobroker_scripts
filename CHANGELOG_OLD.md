@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.29] - 2026-09-06
+
+- git add common/sauna/sauna_guardian.js common/smarthome/pv/energiemaster.js common/smarthome/pv/energiemaster_und_sauna.js (sauna_guardian.js, energiemaster.js, energiemaster_und_sauna.js)
+
 ### [3.3.28] - 2026-09-06
 - fix(charge-master): resolve race conditions, duplicate resets and state restoration bugs (charge_master.js)
 
