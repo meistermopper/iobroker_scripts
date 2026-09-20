@@ -476,7 +476,8 @@ async function triggerStartSequence(reason = "PV-Surplus") {
     if (started) {
       console.log(`[EV3 Master] Wallbox start verified successfully (${reason}).`);
       const currentAmps = (Number(getState(IDS.wbLimit)?.val) || 60) / 10;
-      ev3Notify(`🔋 EV3-Ladung gestartet via ${reason} mit ${currentAmps}A`);
+      const ampSuffix = reason.includes(`${currentAmps}A`) ? "" : ` mit ${currentAmps}A`;
+      ev3Notify(`🔋 EV3-Ladung gestartet via ${reason}${ampSuffix}`);
     } else {
       const finalStatus = getState(IDS.wbStat)?.val;
       console.error(
@@ -765,7 +766,7 @@ function handleSaunaStateChange() {
       // Falls Schnellladen aktiv ist, wieder mit 16A starten
       const isFast = !!getState(IDS.u_fastCharge)?.val;
       if (isFast) {
-        triggerStartSequence("Schnellladen 16A (nach Sauna)");
+        triggerStartSequence("Schnellladen (nach Sauna)");
       } else {
         const isAuto = !!getState(IDS.u_auto)?.val;
         if (isAuto) {
@@ -1200,7 +1201,7 @@ on({ id: IDS.u_fastCharge, change: "ne" }, async (obj) => {
     // 5. Ladevorgang starten, falls noch nicht aktiv
     const currentStatus = getState(IDS.wbStat)?.val;
     if (currentStatus !== "Charging") {
-      await triggerStartSequence("Schnellladen 16A");
+      await triggerStartSequence("Schnellladen");
     } else {
       setState(IDS.u_power, getCurrentChargePowerW(), true);
       ev3Notify("⚡ Schnellladen aktiv: Ladestrom auf 16A erhöht (~11 kW)");
