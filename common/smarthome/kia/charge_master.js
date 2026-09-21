@@ -46,6 +46,7 @@ const IDS = {
   u_smooth: `${PATH_USER}.Glaettung_Zeit`, // [16] Trägheits-Schieberegler für EMA
   u_power: `${PATH_USER}.Ladeleistung`, // [17] Anzeige Ladeleistung (dynamisch berechnet)
   u_timeDay: `${PATH_USER}.Ladezeit`, // [18] Lademinuten heute
+  u_energyDay: `${PATH_USER}.Ladeenergie_Tag`, // Geladene kWh heute
   u_rest: `${PATH_USER}.Restladezeit`, // [19] HH:MM Anzeige
   aliasKm: "alias.0.umrechnen.kia_ladekm", // [20] Gewonnene Reichweite
   aliasDur: "alias.0.umrechnen.kia_ladezeit", // [21] Zeit-Objekt
@@ -86,6 +87,7 @@ const FORCE_STOP_AVAILABILITY_TOGGLE_DELAY_MS = 2000;
 const SOFT_RESET_WAIT_MS = 100000; // 100 Sek. Wartezeit für vollständigen EVBox Kaltstart / Neustart
 
 let startZeitLaden = null; // Merker für Statistik
+let sessionWasFast = false; // Merker für 16A-Schnellladung während der laufenden Session
 let originalMinSoc = null; // Merker für Min-SoC bei manuellem Laden
 let previousAutoState = null; // Merker für Status von autoladen vor Schnellladen
 let stopTimer = null; // Timer zur Entprellung von kurzen Lade-Unterbrechungen
@@ -155,6 +157,13 @@ async function initLadeSystem() {
       name: "Lademodus Status (0=Aus, 1=Normal, 2=Schnell)",
       role: "value",
     });
+  if (!existsState(IDS.u_energyDay))
+    await createStateAsync(IDS.u_energyDay, 0, {
+      type: "number",
+      name: "Ladeenergie heute",
+      role: "value.power.consumption",
+      unit: "kWh",
+    });
   if (!existsState(IDS.u_pausedBySauna))
     await createStateAsync(IDS.u_pausedBySauna, false, {
       type: "boolean",
@@ -171,6 +180,8 @@ async function initLadeSystem() {
       if (getState(IDS.u_fastCharge)?.val === true) {
         previousAutoState = getState(IDS.u_prevAuto)?.val === true;
       }
+      sessionWasFast =
+        getState(IDS.u_fastCharge)?.val === true || Number(getState(IDS.wbLimit)?.val) >= 160;
       if (getState(IDS.wbStat)?.val === "Charging") {
         setState(IDS.u_power, getCurrentChargePowerW(), true);
       }
@@ -556,13 +567,20 @@ async function forceStopCharging() {
     }
     setState(IDS.u_power, 0, true);
     if (startZeitLaden) {
-      const stats = updateChargeStatistics(Date.now() - startZeitLaden);
+      const wasFast =
+        sessionWasFast ||
+        getState(IDS.u_fastCharge)?.val === true ||
+        Number(getState(IDS.wbLimit)?.val) >= 160;
+      const sessionPowerW = wasFast ? Math.round(16 * 230 * 3) : getCurrentChargePowerW();
+      const stats = updateChargeStatistics(Date.now() - startZeitLaden, sessionPowerW);
       setState(IDS.u_timeDay, stats.totalMinToday, true);
+      setState(IDS.u_energyDay, stats.totalEnergyToday, true);
       ev3Notify(
         `❌ Ladung beendet (forced). Heute geladen: ${stats.formattedTime} (+approx. ${stats.kmToday} km)`,
         1,
       );
       startZeitLaden = null;
+      sessionWasFast = false;
       setState(IDS.u_startTs, 0, true);
     }
     const isPausedBySauna = getState(IDS.u_pausedBySauna)?.val === true;
@@ -813,22 +831,25 @@ on({ id: IDS.wbTrans, change: "ne" }, (obj) => {
 // --- 6. ÜBERWACHUNG & STATISTIKEN ---
 
 /**
- * Erfasst die Ladedauer und stellt die Leistungsanzeige ein.
- * Erfasst die Ladedauer, stellt die Leistungsanzeige ein und schützt die Hausbatterie
- * vor Entladung beim manuellen Laden.
- * Berechnet die Statistiken für den aktuellen oder abgeschlossenen Ladevorgang.
+ * Erfasst die Ladedauer und berechnet Ladeenergie und hinzugewonnene Reichweite.
+ * @param {number} sessionDurationMs Dauer der aktuellen Ladesitzung in Millisekunden
+ * @param {number} [chargePowerW] Optionale Ladeleistung der Sitzung in Watt (Fallback auf dynamisches Limit)
+ * @returns {object} Statistische Werte (totalMinToday, totalEnergyToday, formattedTime, kmToday, spokenTime)
  */
-function updateChargeStatistics(sessionDurationMs) {
+function updateChargeStatistics(sessionDurationMs, chargePowerW) {
   const dauerMin = Math.max(1, Math.round(sessionDurationMs / 60000)); // Mindestens 1 Minute zählen
   const currentTotalMin = getState(IDS.u_timeDay)?.val || 0;
   const totalMinToday = currentTotalMin + dauerMin;
 
-  // Energie und Reichweite dynamisch anhand des aktuellen Ladelimits berechnen
-  const currentPowerW = getCurrentChargePowerW();
-  const energyKWh = (totalMinToday / 60) * (currentPowerW / 1000);
+  // Energie und Reichweite anhand der tatsächlichen Ladeleistung dieser Sitzung berechnen
+  const currentPowerW = chargePowerW || getCurrentChargePowerW();
+  const sessionEnergyKWh = (dauerMin / 60) * (currentPowerW / 1000);
+  const currentTotalEnergy = Number(getState(IDS.u_energyDay)?.val) || 0;
+  const totalEnergyToday = currentTotalEnergy + sessionEnergyKWh;
+
   const month = new Date().getMonth();
   const rangeMax = month >= 3 && month <= 10 ? RANGE_SUMMER : RANGE_WINTER;
-  const kmToday = Math.round((energyKWh / CAR_CAPACITY_KWH) * rangeMax);
+  const kmToday = Math.round((totalEnergyToday / CAR_CAPACITY_KWH) * rangeMax);
 
   const h = Math.floor(totalMinToday / 60);
   const m = totalMinToday % 60;
@@ -836,6 +857,7 @@ function updateChargeStatistics(sessionDurationMs) {
 
   return {
     totalMinToday,
+    totalEnergyToday: parseFloat(totalEnergyToday.toFixed(2)),
     formattedTime,
     kmToday,
     spokenTime: h > 0 ? `${h} Stunden, ${m} Minuten` : `${m} Minuten`,
@@ -861,6 +883,8 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
     // Startzeitpunkt merken, sofern noch nicht gesetzt (für die tägliche Statistik)
     if (!startZeitLaden) {
       startZeitLaden = Date.now();
+      sessionWasFast =
+        getState(IDS.u_fastCharge)?.val === true || Number(getState(IDS.wbLimit)?.val) >= 160;
       setState(IDS.u_startTs, startZeitLaden, true);
 
       // 75 Sek. nach Ladestart Fahrzeug aufwecken, um verbleibende Ladedauer & SoC präzise abzurufen
@@ -935,8 +959,19 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
         return;
       }
 
-      // 2. Batterieschutz & Einstellungen wiederherstellen
-      const wasFast = !!getState(IDS.u_fastCharge)?.val;
+      // 2. Session-Parameter erfassen BEVOR Einstellungen zurückgesetzt werden
+      const wasFast =
+        sessionWasFast ||
+        getState(IDS.u_fastCharge)?.val === true ||
+        Number(getState(IDS.wbLimit)?.val) >= 160;
+      const sessionPowerW = wasFast ? Math.round(16 * 230 * 3) : getCurrentChargePowerW();
+
+      // 3. Ladestatistik berechnen (Dauer in Min, geladene kWh und hinzugewonnene Kilometer je nach Jahreszeit)
+      const stats = updateChargeStatistics(Date.now() - startZeitLaden, sessionPowerW);
+      setState(IDS.u_timeDay, stats.totalMinToday, true);
+      setState(IDS.u_energyDay, stats.totalEnergyToday, true);
+
+      // 4. Benachrichtigungen formulieren und SOFORT absenden (ohne 100s Wallbox-Neustart abzuwarten)
       const evSoc = Number(getState(IDS.soc)?.val) || 0;
       const targetSoc = Number(getState(IDS.targetSocSrv)?.val) || 100;
       const isTargetReached = evSoc >= targetSoc || evSoc >= targetSoc - 2; // Puffer für Kia Bluelink Cloud-Lag
@@ -944,6 +979,32 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
       const isUnplugged = currentWbStat === "Available";
       const isVehicleStopped = currentWbStat === "SuspendedEV" || currentWbStat === "Finishing";
 
+      let msgText = `❌ EV3 Ladung beendet. Heute geladen: ${stats.formattedTime} (+approx. ${stats.kmToday} km)`;
+      let spokenText = `Ladung beendet. Heute geladen: ${stats.spokenTime}. Reichweite approx. ${stats.kmToday} Kilometer.`;
+
+      // Wenn das Ladeziel erreicht wurde, ergänzen wir die Benachrichtigungen
+      if (evSoc >= targetSoc) {
+        msgText += ` - Das Ladeziel von ${targetSoc}% wurde erreicht`;
+        spokenText += ` Das Ladeziel von ${targetSoc} Prozent wurde erreicht`;
+      }
+
+      // Benachrichtigung senden (Telegram, Gotify, Alexa/SayIt)
+      ev3Notify(msgText, 1, spokenText);
+
+      // 5. Ladevariablen zurücksetzen & Ladevorgang sauber abschließen
+      startZeitLaden = null;
+      sessionWasFast = false;
+      setState(IDS.u_startTs, 0, true);
+      setState(IDS.u_power, 0, true);
+
+      // WICHTIG: Setzt transactionActive auf false, damit die Wallbox die Transaktion beendet
+      // und die VIS-Visualisierung nicht mehr "lädt..." anzeigt (Logikfehler-Behebung).
+      setState(IDS.wbTrans, false);
+
+      stopTimer = null;
+      updateChargeModeStatus();
+
+      // 6. Batterieschutz & Schnelllade-Einstellungen wiederherstellen
       // Schnellladen zurücksetzen, wenn das Ladeziel erreicht, das Fahrzeug die Ladung beendet hat oder das Kabel abgezogen wurde
       if (wasFast && (isTargetReached || isUnplugged || isVehicleStopped)) {
         setState(IDS.u_fastCharge, false, true);
@@ -959,37 +1020,6 @@ on({ id: IDS.wbStat, change: "ne" }, (obj) => {
         originalMinSoc = null;
         setState(IDS.u_origSoc, 0, true);
       }
-
-      // 2. Ladestatistik berechnen (Dauer in Min, geladene kWh und hinzugewonnene Kilometer je nach Jahreszeit)
-      const stats = updateChargeStatistics(Date.now() - startZeitLaden);
-      setState(IDS.u_timeDay, stats.totalMinToday, true);
-
-      // 3. Prüfen, ob das Auto das Ladeziel erreicht hat:
-      // Vergleicht den aktuellen SoC des Kia mit dem eingestellten Ladeziel der Wallbox/des Fahrzeugs
-
-      let msgText = `❌ EV3 Ladung beendet. Heute geladen: ${stats.formattedTime} (+approx. ${stats.kmToday} km)`;
-      let spokenText = `Ladung beendet. Heute geladen: ${stats.spokenTime}. Reichweite approx. ${stats.kmToday} Kilometer.`;
-
-      // Wenn das Ladeziel erreicht wurde, ergänzen wir die Benachrichtigungen
-      if (evSoc >= targetSoc) {
-        msgText += ` - Das Ladeziel von ${targetSoc}% wurde erreicht`;
-        spokenText += ` Das Ladeziel von ${targetSoc} Prozent wurde erreicht`;
-      }
-
-      // Benachrichtigung senden (Telegram, Gotify, Alexa/SayIt)
-      ev3Notify(msgText, 1, spokenText);
-
-      // 4. Ladevariablen zurücksetzen & Ladevorgang sauber abschließen
-      startZeitLaden = null;
-      setState(IDS.u_startTs, 0, true);
-      setState(IDS.u_power, 0, true);
-
-      // WICHTIG: Setzt transactionActive auf false, damit die Wallbox die Transaktion beendet
-      // und die VIS-Visualisierung nicht mehr "lädt..." anzeigt (Logikfehler-Behebung).
-      setState(IDS.wbTrans, false);
-
-      stopTimer = null;
-      updateChargeModeStatus();
 
       // Finalen Status nach Ladeende vom Fahrzeug abrufen
       if (stopRefreshTimer) clearTimeout(stopRefreshTimer);
@@ -1184,6 +1214,7 @@ on({ id: IDS.u_fastCharge, change: "ne" }, async (obj) => {
       setState(IDS.u_auto, false);
     }
 
+    sessionWasFast = true;
     // 3. Wallbox-Limit auf 160 (16A) setzen und bei Bedarf Soft-Reset ausführen (30s)
     await setWallboxStationLimit(160);
 
@@ -1263,6 +1294,7 @@ on({ id: IDS.wbLimit, change: "ne" }, () => {
 // Täglicher Reset der Ladestatistik um 02:05 Uhr
 schedule("5 2 * * *", () => {
   setState(IDS.u_timeDay, 0, true);
+  if (existsState(IDS.u_energyDay)) setState(IDS.u_energyDay, 0, true);
 });
 
 // Schutz der Kia 12V-Starterbatterie

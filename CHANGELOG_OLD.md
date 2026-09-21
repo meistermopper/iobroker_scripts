@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.31] - 2026-09-07
+
+- refactor(abendlicht): streamline startup logging to single status line (switch_abendlicht.js)
+
 ### [3.3.30] - 2026-09-07
 
 - feat(abendlicht): explicitly turn off lights after 45-minute dimming phase (switch_abendlicht.js)
