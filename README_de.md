@@ -11,7 +11,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.36-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.37-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -52,7 +52,7 @@ Die Skripte sind logisch nach Räumen und Funktionen gegliedert:
 ### 🛠️ System & Überwachung
 
 - **ioBroker Watchdog**:
-  - Überwacht Adapter und meldet Ausfälle nach einer Wartezeit (`adapter_off.js`).
+  - Überwacht Adapter und meldet Ausfälle nach einer Wartezeit, filtert Instanzen mit geplantem Neustart oder Schedule-Modus automatisch heraus (`adapter_off.js`).
   - Implementiert einen PIN-Schutz für sensible VIS-Ansichten (`vis_PIN.js`).
   - **SayIt AutoFix (`sayit_autofix.js`)**: Überwacht proaktiv und repariert reaktiv den Cache-Symlink des SayIt-Adapters, stellt die dauerhafte Funktion der Sprachausgabe sicher und verhindert 'ENOENT'-Fehler.
 - **Netzwerkmanagement**:
@@ -105,21 +105,23 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.37] - 2026-09-23
+- feat(iobroker): Enhance adapter watchdog with intelligent filtering (adapter_off.js)
+
 ### [3.3.36] - 2026-09-21
+
 - fix(charge_master): correct power and range calculation for fast charging sessions (charge_master.js)
 
 ### [3.3.35] - 2026-09-20
+
 - fix: remove duplicate amperage in ev3 charging start notification (charge_master.js)
 
 ### [3.3.34] - 2026-09-18
+
 - feat(sauna): Implement staggered post-sauna cooldown for music and lights (session_master.js)
 
 ### [3.3.33] - 2026-09-12
 
 - chore(unifi-presence): Update Kiki's MAC address for presence detection (anwesenheit_unifi.js)
-
-### [3.3.32] - 2026-09-10
-
-- chore(kia): reduce log spam and improve readability (charge_master.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).

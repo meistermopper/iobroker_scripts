@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.32] - 2026-09-10
+
+- chore(kia): reduce log spam and improve readability (charge_master.js)
+
 ### [3.3.31] - 2026-09-07
 
 - refactor(abendlicht): streamline startup logging to single status line (switch_abendlicht.js)
