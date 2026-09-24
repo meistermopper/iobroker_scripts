@@ -61,7 +61,7 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
     setState(ID_ENTFEUCHTEN_VOTUM, true, true); // Status für andere Skripte/VIS setzen
 
     sendGlobalNotify(
-      `♨️ Entfeuchtung im Bad unten gestartet (${luftfeuchte}% rF).\nTemperatur auf 24°C gesetzt (vorher ${vorigesTemperaturLevel}°C).`,
+      `♨️ Entfeuchtung im Bad unten gestartet (${luftfeuchte}% rF).\nTemperatur auf 24°C gesetzt (vorher ${vorigesTemperaturLevel}°C)`,
       "",
       1,
     );
@@ -91,7 +91,7 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
 
     setState(ID_SET_TEMP, neueTemp);
     sendGlobalNotify(
-      `✅ Entfeuchtung im Bad unten beendet (${luftfeuchte}% rF).\nHeizung wieder auf ${neueTemp}°C eingestellt.`,
+      `✅ Entfeuchtung im Bad unten beendet (${luftfeuchte}% rF).\nHeizung wieder auf ${neueTemp}°C eingestellt`,
       "",
       1,
     );
