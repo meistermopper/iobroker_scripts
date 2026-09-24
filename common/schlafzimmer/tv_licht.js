@@ -1,23 +1,35 @@
 /* eslint-env es2022 */
+/**
+ * Name:   TV Licht Schlafzimmer
+ * Zweck:  Automatisches Schalten der Bett-Beleuchtung basierend auf TV-Receiver und Chromecast Status
+ */
+
 // --- KONFIGURATION ---
 const ID_RECEIVER_STANDBY = "enigma2.1.enigma2.STANDBY";
+const ID_CHROMECAST_PLAYING = "chromecast.0.CC-Schlazi.status.playing";
 const ID_ZIGBEE_LICHT = "alias.0.schlafzimmer.energie.bett.state";
 
 // --- LOGIK ---
 
-on({ id: ID_RECEIVER_STANDBY, change: "ne" }, async (obj) => {
-  const isStandby = obj.state.val; // true = Gerät im Standby, false = Gerät AN
+/**
+ * Checks receiver and Chromecast states, controlling the bed light accordingly.
+ */
+function updateBedLight() {
+  const isReceiverActive = getState(ID_RECEIVER_STANDBY)?.val === false; // false = device turned on
+  const isChromecastActive = getState(ID_CHROMECAST_PLAYING)?.val === true; // true = streaming active
 
-  // WENN Gerät AN (false) UND Zeit zwischen Sonnenuntergang und 23:30 Uhr
-  if (!isStandby && compareTime(getAstroDate("sunset"), "23:30", "between")) {
+  const isMediaActive = isReceiverActive || isChromecastActive;
+
+  // Turn on light if at least one device is active and time is between sunset and 23:30
+  if (isMediaActive && compareTime(getAstroDate("sunset"), "23:30", "between")) {
     setState(ID_ZIGBEE_LICHT, true);
-    //console.log("Schlafzimmer: Receiver AN & es ist dunkel. Licht eingeschaltet.");
-  } else {
-    // In allen anderen Fällen (Receiver geht aus ODER es ist außerhalb des Zeitfensters)
-    // Das Licht soll nur automatisch ausgehen, wenn der Receiver in Standby geht
-    if (isStandby) {
-      setState(ID_ZIGBEE_LICHT, false);
-      //console.log("Schlafzimmer: Receiver Standby. Licht ausgeschaltet.");
-    }
+  } else if (!isMediaActive) {
+    // Turn off light if all media devices are inactive
+    setState(ID_ZIGBEE_LICHT, false);
   }
+}
+
+// Trigger when either the receiver standby status or the Chromecast playing status changes
+on({ id: [ID_RECEIVER_STANDBY, ID_CHROMECAST_PLAYING], change: "ne" }, () => {
+  updateBedLight();
 });
