@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.34] - 2026-09-18
+
+- feat(sauna): Implement staggered post-sauna cooldown for music and lights (session_master.js)
+
 ### [3.3.33] - 2026-09-12
 
 - chore(unifi-presence): Update Kiki's MAC address for presence detection (anwesenheit_unifi.js)

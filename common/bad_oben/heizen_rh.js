@@ -66,7 +66,7 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
     setState(ID_FEUCHTE_HOCH, true, true); // Status für andere Skripte/VIS setzen
 
     const msg =
-      `♨️ Die Entfeuchtung im Bad oben wurde gestartet (${luftfeuchte}% rL).\n` +
+      `♨️ Die Entfeuchtung im Bad oben wurde gestartet (${luftfeuchte}% rF).\n` +
       `Die Temperatur wurde auf 24°C eingestellt.\n` +
       `Vorherige Zieltemperatur: ${alteTemperatur}°C.`;
     await sendGlobalNotify(msg, "", 1, null); // Keine Sprachausgabe, da es nur eine Info ist
@@ -100,7 +100,7 @@ on({ id: ID_HUMIDITY, change: "ne" }, async (obj) => {
 
     const msg =
       `+++ ✅ Die Entfeuchtung im Bad oben wurde beendet +++\n` +
-      `(${luftfeuchte}% rL). Heizung wieder auf ${neueTemp}°C. ✔️`;
+      `(${luftfeuchte}% rF). Heizung wieder auf ${neueTemp}°C. ✔️`;
     await sendGlobalNotify(msg, "Klima Bad Oben", 1, null); // Keine Sprachausgabe, da es nur eine Info ist
   }
 });
