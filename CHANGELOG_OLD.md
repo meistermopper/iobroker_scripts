@@ -4,6 +4,10 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.36] - 2026-09-21
+
+- fix(charge_master): correct power and range calculation for fast charging sessions (charge_master.js)
+
 ### [3.3.35] - 2026-09-20
 
 - fix: remove duplicate amperage in ev3 charging start notification (charge_master.js)

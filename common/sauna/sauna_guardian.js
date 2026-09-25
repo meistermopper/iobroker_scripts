@@ -182,7 +182,6 @@ function trackBatterySoC() {
   if (currentSoc > currentMinSoc && currentSoc > (lastWrittenMinSoc || 0)) {
     setState(IDS.minSocSet, currentSoc);
     lastWrittenMinSoc = currentSoc;
-    console.log(`[Sauna Guardian] Battery charged to ${currentSoc}%. Updated MinSoC lock.`);
   }
 }
 

@@ -214,16 +214,12 @@ if (existsState(IDS.minSocRead)) {
 
     // Suppress notifications during active sauna session
     const isSaunaActive = existsState(IDS.saunaLogik) && getState(IDS.saunaLogik)?.val === true;
-    if (isSaunaActive) {
-      console.log(
-        `[Energiemaster] Min-SoC Watchdog: Sauna active, notification for ${newVal}% suppressed.`,
-      );
-    } else {
-      if (typeof sendGlobalNotify === "function") {
-        sendGlobalNotify(text, "Energiemaster", 1);
-      }
-      console.log(`[Energiemaster] Min-SoC Watchdog: ${text}`);
+    if (isSaunaActive) return;
+
+    if (typeof sendGlobalNotify === "function") {
+      sendGlobalNotify(text, "Energiemaster", 1);
     }
+    console.log(`[Energiemaster] Min-SoC Watchdog: ${text}`);
   });
 }
 
