@@ -121,3 +121,16 @@ Um hängende Zustände, doppelte Hardware-Aktionen und Speicherlecks zu verhinde
 
 - **Initialisierungs-Absicherung:**
   - Asynchrone Initialisierungsfunktionen (`initSystem()`) müssen durch ein Flag (`isSystemInitialized`) signalisieren, wenn alle Datenpunkte und Speicherwerte geladen sind. Zyklische Timer oder Trigger sollten erst agieren, wenn `isSystemInitialized === true` ist.
+
+## 9. Git Commits & Push-Autorisierung
+
+- **Vorgabe:** KI-Agenten dürfen niemals selbstständig `git commit` oder `git push` ausführen ohne vorherige ausdrückliche Zustimmung im Chat.
+- **Workflow:** Bereite Änderungen lokal vor und schlage fertige Git-Befehle im Conventional-Commits-Standard (auf Englisch) vor.
+- **Co-Author Attribution:** Alle Commits, die mit KI-Unterstützung erstellt oder vorgeschlagen werden, müssen den Git-Trailer enthalten:
+  ```git
+  Co-authored-by: Gemini <noreply@google.com>
+  ```
+  Beispiel:
+  ```bash
+  git commit -m "feat: add pv charging interlock logic" -m "Co-authored-by: Gemini <noreply@google.com>"
+  ```
