@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.37] - 2026-09-23
+- feat(iobroker): Enhance adapter watchdog with intelligent filtering (adapter_off.js)
+
 ### [3.3.36] - 2026-09-21
 
 - fix(charge_master): correct power and range calculation for fast charging sessions (charge_master.js)

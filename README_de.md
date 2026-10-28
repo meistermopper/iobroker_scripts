@@ -11,7 +11,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.41-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.42-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -105,6 +105,9 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.42] - 2026-10-28
+- chore(lighting): comment out galaxy projector for video mode (videolicht.js)
+
 ### [3.3.41] - 2026-09-25
 - refactor(monitoring): Streamline logging and notification suppression (sauna_guardian.js, energiemaster.js)
 
@@ -116,8 +119,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ### [3.3.38] - 2026-09-24
 - feat(schlafzimmer): add chromecast streaming condition to tv light control (tv_licht.js)
-
-### [3.3.37] - 2026-09-23
-- feat(iobroker): Enhance adapter watchdog with intelligent filtering (adapter_off.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).
