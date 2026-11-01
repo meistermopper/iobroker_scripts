@@ -10,7 +10,7 @@ on({ id: "0_userdata.0.Licht.Wohnzimmer.alle_Lampen", change: "ne" }, async (obj
   clearStateDelayed("alias.0.wohnzimmer.licht.Galaxie.POWER");
   clearStateDelayed("alias.0.wohnzimmer.licht.quader.on");
   clearStateDelayed("alias.0.wohnzimmer.licht.wozilampe.on");
-  clearStateDelayed("alias.0.wohnzimmer.licht.spirale.on");
+  clearStateDelayed("alias.0.wohnzimmer.licht.stehlampe.power");
 
   if (val === true || val === 1 || val === "true") {
     console.log("Wohnzimmer: Schalte ALLES AN");
@@ -28,7 +28,7 @@ on({ id: "0_userdata.0.Licht.Wohnzimmer.alle_Lampen", change: "ne" }, async (obj
     setStateDelayed("alias.0.wohnzimmer.licht.Galaxie.POWER", true, 400, true); // Zeitabstand leicht erhöht
     setStateDelayed("alias.0.wohnzimmer.licht.quader.on", true, 600, true);
     setStateDelayed("alias.0.wohnzimmer.licht.wozilampe.on", true, 800, true);
-    setStateDelayed("alias.0.wohnzimmer.licht.spirale.on", true, 1000, true);
+    setStateDelayed("alias.0.wohnzimmer.licht.stehlampe.power", true, 1000, true);
     setStateDelayed("tuya.0.bfc93beea92189ab17oopt.9", true, 1200, true);
   } else {
     console.log("Wohnzimmer: Schalte ALLES AUS");
@@ -38,7 +38,7 @@ on({ id: "0_userdata.0.Licht.Wohnzimmer.alle_Lampen", change: "ne" }, async (obj
     setStateDelayed("alias.0.wohnzimmer.licht.Galaxie.POWER", false, 200, true);
     setStateDelayed("alias.0.wohnzimmer.licht.quader.on", false, 400, true);
     setStateDelayed("alias.0.wohnzimmer.licht.wozilampe.on", false, 600, true);
-    setStateDelayed("alias.0.wohnzimmer.licht.spirale.on", false, 800, true);
+    setStateDelayed("alias.0.wohnzimmer.licht.stehlampe.power", false, 800, true);
 
     // HUE Aus
     // Hue getrennt ausschalten

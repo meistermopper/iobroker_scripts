@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.42-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.43-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -102,6 +102,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.3.43] - 2026-11-01
+- change spirale to alias alias.0.wohnzimmer.licht.stehlampe.power (musiklicht.js, switch_alle_lampen.js, videolicht.js)
+
 ### [3.3.42] - 2026-10-28
 - chore(lighting): comment out galaxy projector for video mode (videolicht.js)
 
@@ -113,8 +116,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.3.39] - 2026-09-24
 - style(humidity-control): Standardize humidity abbreviation in notification messages (heizen_rh.js, heizen_rh.js)
-
-### [3.3.38] - 2026-09-24
-- feat(schlafzimmer): add chromecast streaming condition to tv light control (tv_licht.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).

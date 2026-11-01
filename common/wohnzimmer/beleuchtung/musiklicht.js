@@ -8,7 +8,7 @@ const ID_ILLU = "alias.0.draussen.licht.CURRENT_ILLUMINATION";
 const ID_FERNSEHLICHT = "alias.0.wohnzimmer.licht.fernsehlicht.POWER";
 const ID_GALAXIE = "alias.0.wohnzimmer.licht.Galaxie.POWER";
 const ID_QUADER = "alias.0.wohnzimmer.licht.quader.on";
-const ID_SPIRALE = "alias.0.wohnzimmer.licht.spirale.on";
+const ID_SPIRALE = "alias.0.wohnzimmer.licht.stehlampe.power";
 
 // Harmony Aktivitäten (Musik-Gruppe)
 const HARMONY_MUSIK = [

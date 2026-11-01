@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.38] - 2026-09-24
+- feat(schlafzimmer): add chromecast streaming condition to tv light control (tv_licht.js)
+
 ### [3.3.37] - 2026-09-23
 - feat(iobroker): Enhance adapter watchdog with intelligent filtering (adapter_off.js)
 
