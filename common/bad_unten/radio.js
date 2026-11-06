@@ -7,7 +7,7 @@
 // --- KONFIGURATION ---
 const VOL_NORMAL = 25; // Lautstärke bei manuellem Einschalten
 const VOL_SAUNA = 15; // Lautstärke während des Sauna-Betriebs
-const DELAY_AMP_ON = 12000; // Wartezeit in ms nach Aktivierung des Verstärkers (Kaltstart)
+const DELAY_AMP_ON = 6000; // Wartezeit in ms nach Aktivierung des Verstärkers (Kaltstart)
 
 const SENDER_CONFIG = {
   hr1: { preset: 4, name: "HR 1" },

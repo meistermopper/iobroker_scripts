@@ -11,7 +11,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.43-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.44-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -105,6 +105,9 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.44] - 2026-11-06
+- Kaltstart shorted to 6000 ms (radio.js)
+
 ### [3.3.43] - 2026-11-01
 - change spirale to alias alias.0.wohnzimmer.licht.stehlampe.power (musiklicht.js, switch_alle_lampen.js, videolicht.js)
 
@@ -116,8 +119,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ### [3.3.40] - 2026-09-24
 - style(global): Remove trailing periods from notification messages (heizen_rh.js, heizen_rh.js)
-
-### [3.3.39] - 2026-09-24
-- style(humidity-control): Standardize humidity abbreviation in notification messages (heizen_rh.js, heizen_rh.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).
