@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.40] - 2026-09-24
+- style(global): Remove trailing periods from notification messages (heizen_rh.js, heizen_rh.js)
+
 ### [3.3.39] - 2026-09-24
 - style(humidity-control): Standardize humidity abbreviation in notification messages (heizen_rh.js, heizen_rh.js)
 

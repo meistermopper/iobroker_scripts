@@ -18,6 +18,10 @@ const IDS = {
   wbTrans: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.transactionActive", // [2] Steuert den Stromfluss (Transaktion aktiv)
   wbAvail: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.availability", // [3] Reset / Verfügbarkeit
   wbConn: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.connected", // Verbindung zum ioBroker
+  wbLimit:
+    "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.configuration.evb_MaximumStationCurrent", //Stromstärke (A)*10
+  wbReset: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.0.softReset", //reboot
+
   unifiReconnect: "unifi-network.0.clients.users.60:09:c3:2f:46:49.reconnect", // [22] Neu verbinden über UniFi
   unifiIsOnline: "unifi-network.0.clients.users.60:09:c3:2f:46:49.isOnline", // [23] WLAN-Verbindungsstatus am UniFi AP
 
@@ -55,9 +59,6 @@ const IDS = {
   u_origSoc: `${PATH_USER}.LastOriginalMinSoc`, // [PERSISTENCE] Merker für Batterie-Schutz
   u_prevAuto: `${PATH_USER}.LastPreviousAutoState`, // [PERSISTENCE] Merker für autoladen vor Schnellladen
   u_modeStatus: `${PATH_USER}.Lademodus_Status`, // [NEU] Status für VIS (0=Aus, 1=Normal, 2=Schnell)
-  wbLimit:
-    "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.configuration.evb_MaximumStationCurrent",
-  wbReset: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.0.softReset",
 
   // Sauna-Verriegelung (Interlock)
   saunaHeatOn: "harvia-fenix.0.heatOn", // Status vom Sauna-Ofen
