@@ -14,13 +14,12 @@ const PATH_USER = "0_userdata.0.Energie.Kia_e_niro";
 
 const IDS = {
   // Wallbox (Hardware via OCPP)
-  wbStat: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.status", // [1] Status (Charging, Preparing...)
-  wbTrans: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.transactionActive", // [2] Steuert den Stromfluss (Transaktion aktiv)
-  wbAvail: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.1.availability", // [3] Reset / Verfügbarkeit
-  wbConn: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.connected", // Verbindung zum ioBroker
-  wbLimit:
-    "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.configuration.evb_MaximumStationCurrent", //Stromstärke (A)*10
-  wbReset: "ocpp.0.http://192_168_178_80:9220/EVB-P21312507.0.softReset", //reboot
+  wbStat: "ocpp.0.EVB-P21312507.1.status", // [1] Status (Charging, Preparing...)
+  wbTrans: "ocpp.0.EVB-P21312507.1.transactionActive", // [2] Steuert den Stromfluss (Transaktion aktiv)
+  wbAvail: "ocpp.0.EVB-P21312507.1.availability", // [3] Reset / Verfügbarkeit
+  wbConn: "ocpp.0.EVB-P21312507.connected", // Verbindung zum ioBroker
+  wbLimit: "ocpp.0.EVB-P21312507.configuration.evb_MaximumStationCurrent", //Stromstärke (A)*10
+  wbReset: "ocpp.0.EVB-P21312507.0.softReset", //reboot
 
   unifiReconnect: "unifi-network.0.clients.users.60:09:c3:2f:46:49.reconnect", // [22] Neu verbinden über UniFi
   unifiIsOnline: "unifi-network.0.clients.users.60:09:c3:2f:46:49.isOnline", // [23] WLAN-Verbindungsstatus am UniFi AP

@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.41] - 2026-09-25
+- refactor(monitoring): Streamline logging and notification suppression (sauna_guardian.js, energiemaster.js)
+
 ### [3.3.40] - 2026-09-24
 - style(global): Remove trailing periods from notification messages (heizen_rh.js, heizen_rh.js)
 
