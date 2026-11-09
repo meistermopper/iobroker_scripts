@@ -84,7 +84,6 @@ const START_HANDSHAKE_DELAY_MS = 4000; // 4 Sek. Puffer für OCPP-Handshake nach
 const FORCE_STOP_RETRY_DELAY_MS = 5000;
 // [NEU] Verzögerung während des Verfügbarkeitswechsels, um der Wallbox Zeit zur Verarbeitung zu geben.
 const FORCE_STOP_AVAILABILITY_TOGGLE_DELAY_MS = 2000;
-const SOFT_RESET_WAIT_MS = 100000; // 100 Sek. Wartezeit für vollständigen EVBox Kaltstart / Neustart
 
 let startZeitLaden = null; // Merker für Statistik
 let sessionWasFast = false; // Merker für 16A-Schnellladung während der laufenden Session
@@ -100,7 +99,7 @@ let hasWarnedOcppOffline = false; // Flag to prevent repeated warning logs per s
 let isStartingSequenceActive = false;
 // [NEU] Sperrvariable zur Vermeidung mehrerer gleichzeitiger Ausführungen von erzwungenen Stopps.
 let isForceStopping = false;
-// [NEU] Sperrvariable während Stationslimit-Wechsel und Soft-Reset (verhindert vorzeitiges Ladeende durch stopTimer).
+// [NEU] Sperrvariable während Stationslimit-Wechsel (verhindert vorzeitiges Ladeende durch stopTimer).
 let isChangingLimit = false;
 // Sperrvariable zur Vermeidung doppelter Ausführung von restoreFastChargingState
 let isRestoringFastCharge = false;
@@ -203,35 +202,15 @@ initLadeSystem();
 // --- 2.1 HELPER: ASYNCHRONE PAUSE, LADELEISTUNG & MESSWERTE ---
 
 /**
- * Waits for the wallbox OCPP connection to become true, up to a timeout.
- * @param {number} timeoutMs Maximum wait time in milliseconds
- * @returns {Promise<boolean>} True if connected, false if timeout
- */
-async function waitForWallboxConnection(timeoutMs = 45000) {
-  const startTime = Date.now();
-  while (Date.now() - startTime < timeoutMs) {
-    const isConn = getState(IDS.wbConn)?.val === true;
-    const stat = getState(IDS.wbStat)?.val;
-    if (isConn && stat && stat !== "Unavailable") {
-      return true;
-    }
-    await wait(1000);
-  }
-  const finalConn = getState(IDS.wbConn)?.val === true;
-  const finalStat = getState(IDS.wbStat)?.val;
-  return finalConn && finalStat !== "Unavailable";
-}
-
-/**
- * Sets the wallbox hardware station limit (60 or 160) and triggers a soft reset
- * if the limit changed, waiting actively for the EVBox to reboot and reconnect.
+ * Sets the wallbox hardware station limit (60 or 160) on the fly.
+ * No reboot/soft reset required as EVBox applies the limit dynamically.
  * @param {number} targetLimit 60 (6A) or 160 (16A)
  */
 async function setWallboxStationLimit(targetLimit) {
   const currentVal = Number(getState(IDS.wbLimit)?.val) || 0;
   if (currentVal !== targetLimit) {
     console.log(
-      `[EV3 Master] Changing wallbox limit from ${currentVal} to ${targetLimit} (deci-Ampere)...`,
+      `[EV3 Master] Changing wallbox limit from ${currentVal} to ${targetLimit} (deci-Ampere) on the fly...`,
     );
     isChangingLimit = true;
     if (stopTimer) {
@@ -240,33 +219,13 @@ async function setWallboxStationLimit(targetLimit) {
     }
     try {
       setState(IDS.wbLimit, targetLimit);
-      await wait(2000);
-      console.log("[EV3 Master] Triggering softReset on wallbox to apply configuration...");
-      setState(IDS.wbReset, true);
-      console.log(
-        `[EV3 Master] Waiting for wallbox reboot & reconnect (100s base wait for EVBox hardware boot)...`,
-      );
-      // 100 Sekunden Basislaufzeit für vollständigen Kaltstart der EVBox Elvi
-      await wait(SOFT_RESET_WAIT_MS);
-      // Danach aktiv warten, bis die Box am OCPP-Server wieder online und betriebsbereit ist
-      const reconnected = await waitForWallboxConnection(30000);
-      if (reconnected) {
-        console.log(
-          "[EV3 Master] Wallbox successfully reconnected after soft reset with new limit.",
-        );
-        await wait(5000); // 5 Sekunden Puffer zur Datenpunkt-Stabilisierung
-      } else {
-        console.error("[EV3 Master] Timeout waiting for wallbox reconnection after soft reset!");
-        ev3Notify(
-          "⚠️ Wallbox-Neustart: Verbindung nach Soft-Reset noch nicht wiederhergestellt!",
-          4,
-        );
-      }
+      await wait(1000); // 1s settling pause for OCPP transmission
+      console.log(`[EV3 Master] Wallbox limit successfully updated to ${targetLimit}.`);
     } finally {
       isChangingLimit = false;
     }
   } else {
-    console.log(`[EV3 Master] Wallbox limit already at ${targetLimit}, no soft reset needed.`);
+    console.log(`[EV3 Master] Wallbox limit already at ${targetLimit}, no change needed.`);
   }
 }
 
@@ -302,7 +261,7 @@ async function restoreFastChargingState() {
     setState(IDS.u_prevAuto, false, true);
     updateChargeModeStatus();
 
-    // Reset wallbox hardware limit to standard 60 (6A) and apply via soft reset
+    // Reset wallbox hardware limit to standard 60 (6A) on the fly
     await setWallboxStationLimit(60);
   } finally {
     isRestoringFastCharge = false;
@@ -1215,7 +1174,7 @@ on({ id: IDS.u_fastCharge, change: "ne" }, async (obj) => {
     }
 
     sessionWasFast = true;
-    // 3. Wallbox-Limit auf 160 (16A) setzen und bei Bedarf Soft-Reset ausführen (30s)
+    // 3. Wallbox-Limit auf 160 (16A) on the fly setzen
     await setWallboxStationLimit(160);
 
     // 4. Hausbatterie vor Entleerung schützen (Min-SoC einfrieren)
