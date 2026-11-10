@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.44] - 2026-11-06
+- Kaltstart shorted to 6000 ms (radio.js)
+
 ### [3.3.43] - 2026-11-01
 - change spirale to alias alias.0.wohnzimmer.licht.stehlampe.power (musiklicht.js, switch_alle_lampen.js, videolicht.js)
 

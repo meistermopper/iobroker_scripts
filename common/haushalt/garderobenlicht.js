@@ -62,14 +62,12 @@ function einschalten() {
     setState(IDS.colorRgb, DAY_CONFIG.colorRgb);
     setState(IDS.colorTemp, DAY_CONFIG.colorTemp);
     setState(IDS.power, true);
-    console.log("[Garderobe] Präsenz erkannt (Tag) -> Licht AN (55%, 2800K)");
   } else {
     // Nacht-Modus: Bernstein-Nachtlicht sanft aufdimmen
     let currentBri = NIGHT_CONFIG.startBrightness;
     setState(IDS.colorRgb, NIGHT_CONFIG.colorRgb);
     setState(IDS.brightness, currentBri);
     setState(IDS.power, true);
-    console.log("[Garderobe] Präsenz erkannt (Nacht) -> Nachtlicht AN (#ffaa44), dimme auf...");
 
     dimmInterval = setInterval(() => {
       currentBri += NIGHT_CONFIG.stepBrightness;
@@ -91,7 +89,6 @@ function ausschalten() {
   const isPowerOn = !!getState(IDS.power)?.val;
   if (isPowerOn) {
     setState(IDS.power, false);
-    console.log("[Garderobe] Keine Präsenz -> Licht AUS");
   }
 }
 
