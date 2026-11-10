@@ -1,57 +1,122 @@
 /* eslint-env es2022 */
 /**
- * =============================================================================
- * LICHTSTEUERUNG GARDEROBE (PRESENCE FOLLOWER)
- * =============================================================================
- * ZWECK: Das Licht folgt exakt dem Zustand des Präsenzmelders.
- * OPTIMIERUNG:
- * 1. Schont den Bus/Funk: Befehle werden nur gesendet, wenn nötig.
- * 2. Status-Sync: Beim Start wird das Licht an den Ist-Zustand angepasst.
- * =============================================================================
+ * Name:    Lichtsteuerung Garderobe (Govee Presence Follower)
+ * Purpose: Controls the Govee wardrobe light based on presence detection.
+ *          - Day mode (06:00 - 22:00): Brightness 55%, RGB #ffffff, Color Temp 2800K
+ *          - Night mode (22:00 - 06:00): Warm amber nightlight (#ffaa44) with gentle ramp-up.
  */
 
 // --- 1. KONFIGURATION ---
-const ID_PRASENZ = "alias.0.garderobe.bwm.PRESENCE_DETECTION_STATE";
-const ID_LICHT = "alias.0.garderobe.licht.POWER";
+const IDS = {
+  presence: "alias.0.garderobe.bwm.PRESENCE_DETECTION_STATE",
+  power: "govee-smart.0.devices.h6008_8cda.control.power",
+  brightness: "govee-smart.0.devices.h6008_8cda.control.brightness",
+  colorRgb: "govee-smart.0.devices.h6008_8cda.control.color_rgb",
+  colorTemp: "govee-smart.0.devices.h6008_8cda.control.color_temperature",
+};
+
+// Parameter für Tag & Nacht
+const DAY_START = "06:00";
+const DAY_END = "22:00";
+
+const DAY_CONFIG = {
+  brightness: 55,
+  colorRgb: "#ffffff",
+  colorTemp: 2800,
+};
+
+const NIGHT_CONFIG = {
+  startBrightness: 2,
+  targetBrightness: 20, // Maximale Helligkeit im Nachtmodus (20%)
+  stepBrightness: 2, // Helligkeits-Schrittweite beim Aufdimmen
+  stepIntervalMs: 150, // Schritt-Intervall in ms (~1.4s sanftes Aufdimmen)
+  colorRgb: "#ffaa44", // Weiches Bernstein / Honig-Gold
+};
+
+// --- 2. ZUSTAND & TIMER ---
+let dimmInterval = null;
+
+// --- 3. HILFSFUNKTIONEN ---
 
 /**
- * --- 2. INITIALISIERUNG BEIM SKRIPTSTART ---
- * Wir sorgen dafür, dass das Licht beim Start des Skripts sofort
- * den korrekten Zustand einnimmt, basierend auf dem Melder.
+ * Stops any active dimming interval cleanly.
  */
-const aktuellerStatus = !!getState(ID_PRASENZ)?.val; // Aktuellen Sensorwert holen
-const lichtStatus = !!getState(ID_LICHT)?.val; // Aktuellen Lichtwert holen
-
-// Nur schalten, wenn der Ist-Zustand des Lichts nicht zum Melder passt
-if (lichtStatus !== aktuellerStatus) {
-  setState(ID_LICHT, aktuellerStatus);
-  console.log(`Garderobe: Initial-Sync, Licht auf ${aktuellerStatus ? "AN" : "AUS"} gesetzt`);
+function stopDimming() {
+  if (dimmInterval) {
+    clearInterval(dimmInterval);
+    dimmInterval = null;
+  }
 }
 
 /**
- * --- 3. EVENT-LOGIK ---
- * Der Trigger reagiert auf jede Statusänderung ('ne' = nicht egal) des Melders.
+ * Turns on the wardrobe light according to time of day (day mode or dimmed night mode).
  */
-on({ id: ID_PRASENZ, change: "ne" }, (obj) => {
-  // Konvertierung: Wir erzwingen einen echten Boolean-Wert (true/false)
-  // Das verhindert Fehler, falls der Melder 1/0 oder "true"/"false" liefert.
-  const istAnwesend = !!obj.state.val;
+function einschalten() {
+  stopDimming();
 
-  // Performance-Check: Wir prüfen erst den aktuellen Zustand der Lampe.
-  // Warum? Wenn die Lampe schon AN ist und wir nochmal "AN" senden,
-  // erzeugt das unnötigen Funkverkehr auf deinem Netzwerk.
-  const lichtIstAn = !!getState(ID_LICHT)?.val;
+  const isDay = compareTime(DAY_START, DAY_END, "between");
 
-  if (istAnwesend && !lichtIstAn) {
-    // Fall 1: Bewegung erkannt, aber Licht ist noch aus -> Einschalten
-    setState(ID_LICHT, true);
-    // console.log("Garderobe: Präsenz erkannt -> Licht AN");
-  } else if (!istAnwesend && lichtIstAn) {
-    // Fall 2: Keine Präsenz mehr, aber Licht brennt noch -> Ausschalten
-    setState(ID_LICHT, false);
-    // console.log("Garderobe: Keine Präsenz -> Licht AUS");
+  if (isDay) {
+    // Tag-Modus: Direkt mit gewünschter Helligkeit und Farbtemperatur einschalten
+    setState(IDS.brightness, DAY_CONFIG.brightness);
+    setState(IDS.colorRgb, DAY_CONFIG.colorRgb);
+    setState(IDS.colorTemp, DAY_CONFIG.colorTemp);
+    setState(IDS.power, true);
+    console.log("[Garderobe] Präsenz erkannt (Tag) -> Licht AN (55%, 2800K)");
+  } else {
+    // Nacht-Modus: Bernstein-Nachtlicht sanft aufdimmen
+    let currentBri = NIGHT_CONFIG.startBrightness;
+    setState(IDS.colorRgb, NIGHT_CONFIG.colorRgb);
+    setState(IDS.brightness, currentBri);
+    setState(IDS.power, true);
+    console.log("[Garderobe] Präsenz erkannt (Nacht) -> Nachtlicht AN (#ffaa44), dimme auf...");
+
+    dimmInterval = setInterval(() => {
+      currentBri += NIGHT_CONFIG.stepBrightness;
+      if (currentBri >= NIGHT_CONFIG.targetBrightness) {
+        setState(IDS.brightness, NIGHT_CONFIG.targetBrightness);
+        stopDimming();
+      } else {
+        setState(IDS.brightness, currentBri);
+      }
+    }, NIGHT_CONFIG.stepIntervalMs);
   }
+}
 
-  // Hinweis: Falls Präsenz erkannt wird UND das Licht schon an ist,
-  // passiert hier einfach gar nichts (genau so soll es sein).
+/**
+ * Turns off the wardrobe light and halts any active dimming.
+ */
+function ausschalten() {
+  stopDimming();
+  const isPowerOn = !!getState(IDS.power)?.val;
+  if (isPowerOn) {
+    setState(IDS.power, false);
+    console.log("[Garderobe] Keine Präsenz -> Licht AUS");
+  }
+}
+
+// --- 4. INITIALISIERUNG BEIM SKRIPTSTART ---
+const initialPresence = !!getState(IDS.presence)?.val;
+const initialPower = !!getState(IDS.power)?.val;
+
+if (initialPresence) {
+  einschalten();
+} else if (initialPower) {
+  ausschalten();
+}
+
+// --- 5. EVENT-LOGIK ---
+on({ id: IDS.presence, change: "ne" }, (obj) => {
+  const isPresent = !!obj.state.val;
+  if (isPresent) {
+    einschalten();
+  } else {
+    ausschalten();
+  }
+});
+
+// --- 6. LIFECYCLE CLEANUP ---
+onStop((callback) => {
+  stopDimming();
+  callback();
 });

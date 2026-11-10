@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.43] - 2026-11-01
+- change spirale to alias alias.0.wohnzimmer.licht.stehlampe.power (musiklicht.js, switch_alle_lampen.js, videolicht.js)
+
 ### [3.3.42] - 2026-10-28
 - chore(lighting): comment out galaxy projector for video mode (videolicht.js)
 
