@@ -2,7 +2,7 @@
 /**
  * Name:    Geschirrspüler-Überwachung
  * Purpose: Monitors dishwasher start (via miele-unbound) and program completion,
- *          calculating energy/water consumption, runtime, and sending notifications.
+ *          calculating energy consumption, runtime, and sending notifications.
  */
 
 // --- 1. KONFIGURATION (DATENPUNKTE & GERÄTEDATEN) ---
@@ -12,9 +12,6 @@ const IDS = {
   // Miele Unbound (Lokale Status-Erkennung)
   inUse: `miele-unbound.0.${DEVICE_ID}.state.inUse`,
   estimatedEndTime: `miele-unbound.0.${DEVICE_ID}.estimatedEndTimeText`,
-
-  // Miele Cloud Service (EcoFeedback)
-  waterConsumption: `mielecloudservice.0.${DEVICE_ID}.EcoFeedback.currentWaterConsumption`,
 
   // Energie- und Zählerdaten
   energyTotal: "alias.0.kueche.geschirr.ENERGY_Total",
@@ -134,8 +131,6 @@ on({ id: IDS.inUse, change: "ne" }, (obj) => {
     const dauerStd = Math.floor(spueldauerMin / 60);
     const dauerMin = (spueldauerMin % 60).toString().padStart(2, "0");
 
-    const wasser = getState(IDS.waterConsumption)?.val || 0;
-
     // Energie & Kosten für den heutigen Tag
     const energieHeute = getState(IDS.energyToday)?.val || 0;
     const euroHeute = (energieHeute * strompreisProKWh).toFixed(2);
@@ -148,7 +143,7 @@ on({ id: IDS.inUse, change: "ne" }, (obj) => {
       `Programm: ${programm}\n` +
       `Dauer: ${dauerStd}:${dauerMin} Std.\n` +
       `Verbrauch: ${energieKwh.toFixed(2)} kWh (${euro} €)\n` +
-      `Heute gesamt: ${energieHeute.toFixed(2)} kWh (${euroHeute} €) & ${wasser}L Wasser\n` +
+      `Heute gesamt: ${energieHeute.toFixed(2)} kWh (${euroHeute} €)\n` +
       `Preis/kWh: ${strompreisProKWh.toFixed(3)} €</pre>`;
 
     const isDaytime = compareTime(DAY_START, DAY_END, "between");

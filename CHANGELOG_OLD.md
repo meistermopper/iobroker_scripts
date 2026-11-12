@@ -4,6 +4,12 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.49] - 2026-11-10
+- chore(garderobe): remove debug logging for light switching (garderobenlicht.js)
+
+### [3.3.48] - 2026-11-10
+- feat(garderobe): integrate govee smart bulb with day and night dimming modes (garderobenlicht.js)
+
 ### [3.3.47] - 2026-11-09
 - refactor(charge-master): adjust wallbox charging limit on the fly without reboot (charge_master.js)
 
