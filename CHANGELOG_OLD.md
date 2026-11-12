@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.45] - 2026-11-09
+- refactor(charge-master): move wallbox limit and reset IDs to hardware section (charge_master.js)
+
 ### [3.3.44] - 2026-11-06
 - Kaltstart shorted to 6000 ms (radio.js)
 

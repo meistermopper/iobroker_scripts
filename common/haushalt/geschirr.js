@@ -1,4 +1,10 @@
 /* eslint-env es2022 */
+/**
+ * Name:    Geschirrspüler-Überwachung
+ * Purpose: Monitors dishwasher start (via miele-unbound) and program completion,
+ *          calculating energy/water consumption, runtime, and sending notifications.
+ */
+
 // --- PROGRAMM-MAPPING ---
 const PROGRAMME = {
   200: "eco",
@@ -21,6 +27,7 @@ const PROGRAMME = {
 
 let Strompreis_proKWh = getState("0_userdata.0.Energie.Strompreise.akt_Preis")?.val;
 let start, EnergieStart;
+let startNotifyTimer = null;
 
 // Preis-Update
 on({ id: "0_userdata.0.Energie.Strompreise.akt_Preis", change: "ne" }, (obj) => {
@@ -33,19 +40,19 @@ on({ id: "alias.0.kueche.geschirr.Programmbezeichnung_raw", change: "any" }, (ob
   setState("alias.0.kueche.geschirr.Programmbezeichnung", name, true);
 });
 
-// Hauptlogik Spülen
-on({ id: "mielecloudservice.0.000106831213.Status", change: "ne" }, async (obj) => {
-  const status = obj.state.val;
-  const isSpuelenAktiv = getState("0_userdata.0.Haushalt.spuelen")?.val;
+// Start-Logik Spülen (miele-unbound)
+on({ id: "miele-unbound.0.000106831213.state.inUse", change: "ne" }, (obj) => {
+  const inUse = !!obj.state.val;
+  const isSpuelenAktiv = !!getState("0_userdata.0.Haushalt.spuelen")?.val;
 
-  // --- START ---
-  if (!isSpuelenAktiv && status === "In Betrieb") {
+  if (inUse && !isSpuelenAktiv) {
     start = Date.now();
     // Wir merken uns den Zählerstand beim Start
     EnergieStart = getState("alias.0.kueche.geschirr.ENERGY_Total")?.val;
     setState("0_userdata.0.Haushalt.spuelen", true, true);
 
-    setTimeout(() => {
+    if (startNotifyTimer) clearTimeout(startNotifyTimer);
+    startNotifyTimer = setTimeout(() => {
       const endTime = getState("mielecloudservice.0.000106831213.estimatedEndTime")?.val;
       const vorhersage = `Der Geschirrspüler spült und ist voraussichtlich um ${endTime} Uhr fertig.`;
 
@@ -53,9 +60,14 @@ on({ id: "mielecloudservice.0.000106831213.Status", change: "ne" }, async (obj) 
       sendGlobalNotify(vorhersage, "Haushalt", 1, isDaytime ? 50 : null);
     }, 10000);
   }
+});
 
-  // --- ENDE ---
-  else if (status === "Ende" && isSpuelenAktiv) {
+// Ende-Logik Spülen
+on({ id: "mielecloudservice.0.000106831213.Status", change: "ne" }, (obj) => {
+  const status = obj.state.val;
+  const isSpuelenAktiv = !!getState("0_userdata.0.Haushalt.spuelen")?.val;
+
+  if (status === "Ende" && isSpuelenAktiv) {
     const spueldauerMin = Math.round((Date.now() - start) / 60000);
 
     // Berechnung des Verbrauchs für DIESEN Durchgang
@@ -94,4 +106,10 @@ on({ id: "mielecloudservice.0.000106831213.Status", change: "ne" }, async (obj) 
       "Der Geschirrspüler kann ausgeräumt werden.",
     );
   }
+});
+
+// Lifecycle-Cleanup
+onStop((callback) => {
+  if (startNotifyTimer) clearTimeout(startNotifyTimer);
+  callback();
 });
