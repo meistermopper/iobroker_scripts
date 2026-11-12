@@ -5,6 +5,8 @@
 # Temporäre Dateien und Logs
 *.log
 node_modules/
+scratch/
+
 # Beispiele ausschließen
 common/beispiele/
 obsidian.md
