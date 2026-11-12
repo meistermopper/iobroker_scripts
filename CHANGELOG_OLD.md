@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.47] - 2026-11-09
+- refactor(charge-master): adjust wallbox charging limit on the fly without reboot (charge_master.js)
+
 ### [3.3.46] - 2026-11-09
 - shorten object name of wallbox (charge_master.js)
 

@@ -11,10 +11,9 @@ const DEVICE_ID = "000106831213";
 const IDS = {
   // Miele Unbound (Lokale Status-Erkennung)
   inUse: `miele-unbound.0.${DEVICE_ID}.state.inUse`,
+  estimatedEndTime: `miele-unbound.0.${DEVICE_ID}.estimatedEndTimeText`,
 
-  // Miele Cloud Service
-  status: `mielecloudservice.0.${DEVICE_ID}.Status`,
-  estimatedEndTime: `mielecloudservice.0.${DEVICE_ID}.estimatedEndTime`,
+  // Miele Cloud Service (EcoFeedback)
   waterConsumption: `mielecloudservice.0.${DEVICE_ID}.EcoFeedback.currentWaterConsumption`,
 
   // Energie- und Zählerdaten
@@ -101,11 +100,12 @@ on({ id: IDS.programmRaw, change: "any" }, (obj) => {
   setState(IDS.programm, name, true);
 });
 
-// Start-Logik Spülen (miele-unbound)
+// Hauptlogik Spülen (Start & Ende über miele-unbound inUse)
 on({ id: IDS.inUse, change: "ne" }, (obj) => {
   const inUse = !!obj.state.val;
   const isSpuelenAktiv = !!getState(IDS.isSpuelenAktiv)?.val;
 
+  // --- START ---
   if (inUse && !isSpuelenAktiv) {
     startZeit = Date.now();
     // Zählerstand beim Start erfassen
@@ -115,20 +115,15 @@ on({ id: IDS.inUse, change: "ne" }, (obj) => {
     if (startNotifyTimer) clearTimeout(startNotifyTimer);
     startNotifyTimer = setTimeout(() => {
       const endTime = getState(IDS.estimatedEndTime)?.val;
-      const vorhersage = `Der Geschirrspüler spült und ist voraussichtlich um ${endTime} Uhr fertig.`;
+      const vorhersage = `Der Geschirrspüler spült und ist voraussichtlich um ${endTime} fertig.`;
 
       const isDaytime = compareTime(DAY_START, DAY_END, "between");
       sendGlobalNotify(vorhersage, "Haushalt", 1, isDaytime ? 50 : null);
     }, START_NOTIFY_DELAY_MS);
   }
-});
 
-// Ende-Logik Spülen (mielecloudservice)
-on({ id: IDS.status, change: "ne" }, (obj) => {
-  const status = obj.state.val;
-  const isSpuelenAktiv = !!getState(IDS.isSpuelenAktiv)?.val;
-
-  if (status === "Ende" && isSpuelenAktiv) {
+  // --- ENDE ---
+  else if (!inUse && isSpuelenAktiv) {
     const spueldauerMin = startZeit ? Math.round((Date.now() - startZeit) / 60000) : 0;
 
     // Berechnung des Verbrauchs für DIESEN Durchgang
