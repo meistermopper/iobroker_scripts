@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.50] - 2026-11-12
+- feat(dishwasher): use miele-unbound inUse state for immediate start detection (geschirr.js)
+
 ### [3.3.49] - 2026-11-10
 - chore(garderobe): remove debug logging for light switching (garderobenlicht.js)
 

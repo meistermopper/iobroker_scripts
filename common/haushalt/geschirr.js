@@ -10,8 +10,8 @@ const DEVICE_ID = "000106831213";
 
 const IDS = {
   // Miele Unbound (Lokale Status-Erkennung)
-  inUse: `miele-unbound.0.${DEVICE_ID}.state.inUse`,
-  estimatedEndTime: `miele-unbound.0.${DEVICE_ID}.estimatedEndTimeText`,
+  status: `miele-unbound.0.${DEVICE_ID}.state.status`,
+  estimatedEndTime: `miele-unbound.0.${DEVICE_ID}.state.estimatedEndTimeText`,
 
   // Energie- und Zählerdaten
   energyTotal: "alias.0.kueche.geschirr.ENERGY_Total",
@@ -97,13 +97,13 @@ on({ id: IDS.programmRaw, change: "any" }, (obj) => {
   setState(IDS.programm, name, true);
 });
 
-// Hauptlogik Spülen (Start & Ende über miele-unbound inUse)
-on({ id: IDS.inUse, change: "ne" }, (obj) => {
-  const inUse = !!obj.state.val;
+// Hauptlogik Spülen (Start bei Status 5 "In Betrieb", Ende bei Status 7 "Programm beendet" / 1 "Aus" / 2 "Standby" / 9 "Abgebrochen")
+on({ id: IDS.status, change: "ne" }, (obj) => {
+  const status = Number(obj.state.val);
   const isSpuelenAktiv = !!getState(IDS.isSpuelenAktiv)?.val;
 
-  // --- START ---
-  if (inUse && !isSpuelenAktiv) {
+  // --- START (Status 5 = "In Betrieb") ---
+  if (status === 5 && !isSpuelenAktiv) {
     startZeit = Date.now();
     // Zählerstand beim Start erfassen
     energieStart = getState(IDS.energyTotal)?.val || 0;
@@ -111,6 +111,7 @@ on({ id: IDS.inUse, change: "ne" }, (obj) => {
 
     if (startNotifyTimer) clearTimeout(startNotifyTimer);
     startNotifyTimer = setTimeout(() => {
+      startNotifyTimer = null;
       const endTime = getState(IDS.estimatedEndTime)?.val;
       const vorhersage = `Der Geschirrspüler spült und ist voraussichtlich um ${endTime} fertig.`;
 
@@ -119,8 +120,12 @@ on({ id: IDS.inUse, change: "ne" }, (obj) => {
     }, START_NOTIFY_DELAY_MS);
   }
 
-  // --- ENDE ---
-  else if (!inUse && isSpuelenAktiv) {
+  // --- ENDE (Status 7 = "Programm beendet", 1 = "Aus", 2 = "Standby", 9 = "Abgebrochen") ---
+  else if ([1, 2, 7, 9].includes(status) && isSpuelenAktiv) {
+    if (startNotifyTimer) {
+      clearTimeout(startNotifyTimer);
+      startNotifyTimer = null;
+    }
     const spueldauerMin = startZeit ? Math.round((Date.now() - startZeit) / 60000) : 0;
 
     // Berechnung des Verbrauchs für DIESEN Durchgang

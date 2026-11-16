@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.54-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.55-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -102,6 +102,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.3.55] - 2026-11-16
+- fix(dishwasher): detect cycle start strictly on running status 5 and fix endTime state path (geschirr.js)
+
 ### [3.3.54] - 2026-11-12
 - refactor(dishwasher): remove mielecloudservice and water consumption tracking (geschirr.js)
 
@@ -113,8 +116,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.3.51] - 2026-11-12
 - refactor(dishwasher): centralize datapoint IDs, constants, and device configuration (geschirr.js)
-
-### [3.3.50] - 2026-11-12
-- feat(dishwasher): use miele-unbound inUse state for immediate start detection (geschirr.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).
