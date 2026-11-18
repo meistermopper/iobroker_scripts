@@ -1,9 +1,10 @@
 /* eslint-env es2022 */
 /**
  * Name:    Lichtsteuerung Garderobe (Govee Presence Follower)
- * Purpose: Controls the Govee wardrobe light based on presence detection.
- *          - Day mode (06:00 - 22:00): Brightness 55%, RGB #ffffff, Color Temp 2800K
- *          - Night mode (22:00 - 06:00): Warm amber nightlight (#ffaa44) with gentle ramp-up.
+ * Purpose: Controls the Govee wardrobe light (H6008, Cloud API) based on presence detection.
+ *          Optimized to minimize Govee Cloud API requests and prevent rate-limiting (max 10 req/min):
+ *          - Day mode (06:00 - 22:00): Brightness 55%, Color Temp 2800K
+ *          - Night mode (22:00 - 06:00): Warm amber nightlight (#ffaa44), Brightness 20%
  */
 
 // --- 1. KONFIGURATION ---
@@ -21,78 +22,71 @@ const DAY_END = "22:00";
 
 const DAY_CONFIG = {
   brightness: 55,
-  colorRgb: "#ffffff",
   colorTemp: 2800,
 };
 
 const NIGHT_CONFIG = {
-  startBrightness: 2,
-  targetBrightness: 20, // Maximale Helligkeit im Nachtmodus (20%)
-  stepBrightness: 2, // Helligkeits-Schrittweite beim Aufdimmen
-  stepIntervalMs: 150, // Schritt-Intervall in ms (~1.4s sanftes Aufdimmen)
+  brightness: 20, // Sanfte Helligkeit im Nachtmodus (20%)
   colorRgb: "#ffaa44", // Weiches Bernstein / Honig-Gold
 };
 
-// --- 2. ZUSTAND & TIMER ---
-let dimmInterval = null;
+// Merker für den zuletzt gesetzten Modus ("day" | "night"), um unnötige Cloud-Calls zu sparen
+let activeMode = null;
 
-// --- 3. HILFSFUNKTIONEN ---
-
-/**
- * Stops any active dimming interval cleanly.
- */
-function stopDimming() {
-  if (dimmInterval) {
-    clearInterval(dimmInterval);
-    dimmInterval = null;
-  }
-}
+// --- 2. HILFSFUNKTIONEN ---
 
 /**
- * Turns on the wardrobe light according to time of day (day mode or dimmed night mode).
+ * Turns on the wardrobe light according to time of day.
+ * Only sends color/brightness updates when transitioning between day and night mode
+ * to stay well below Govee Cloud API rate limits.
  */
 function einschalten() {
-  stopDimming();
-
   const isDay = compareTime(DAY_START, DAY_END, "between");
+  const targetMode = isDay ? "day" : "night";
+  const isPowerOn = !!getState(IDS.power)?.val;
 
-  if (isDay) {
-    // Tag-Modus: Direkt mit gewünschter Helligkeit und Farbtemperatur einschalten
-    setState(IDS.brightness, DAY_CONFIG.brightness);
-    setState(IDS.colorRgb, DAY_CONFIG.colorRgb);
-    setState(IDS.colorTemp, DAY_CONFIG.colorTemp);
-    setState(IDS.power, true);
-  } else {
-    // Nacht-Modus: Bernstein-Nachtlicht sanft aufdimmen
-    let currentBri = NIGHT_CONFIG.startBrightness;
-    setState(IDS.colorRgb, NIGHT_CONFIG.colorRgb);
-    setState(IDS.brightness, currentBri);
-    setState(IDS.power, true);
-
-    dimmInterval = setInterval(() => {
-      currentBri += NIGHT_CONFIG.stepBrightness;
-      if (currentBri >= NIGHT_CONFIG.targetBrightness) {
-        setState(IDS.brightness, NIGHT_CONFIG.targetBrightness);
-        stopDimming();
-      } else {
-        setState(IDS.brightness, currentBri);
+  if (targetMode === "day") {
+    // Farbtemperatur und Helligkeit nur senden, wenn Modus gewechselt hat oder Werte abweichen
+    if (activeMode !== "day") {
+      if (getState(IDS.colorTemp)?.val !== DAY_CONFIG.colorTemp) {
+        setState(IDS.colorTemp, DAY_CONFIG.colorTemp);
       }
-    }, NIGHT_CONFIG.stepIntervalMs);
+      if (getState(IDS.brightness)?.val !== DAY_CONFIG.brightness) {
+        setState(IDS.brightness, DAY_CONFIG.brightness);
+      }
+      activeMode = "day";
+    }
+    if (!isPowerOn) {
+      setState(IDS.power, true);
+    }
+  } else {
+    // Nacht-Modus: Bernstein-Nachtlicht ohne Cloud-feindliche 150ms-Dimmschleife
+    if (activeMode !== "night") {
+      if (String(getState(IDS.colorRgb)?.val).toLowerCase() !== NIGHT_CONFIG.colorRgb) {
+        setState(IDS.colorRgb, NIGHT_CONFIG.colorRgb);
+      }
+      if (getState(IDS.brightness)?.val !== NIGHT_CONFIG.brightness) {
+        setState(IDS.brightness, NIGHT_CONFIG.brightness);
+      }
+      activeMode = "night";
+    }
+    if (!isPowerOn) {
+      setState(IDS.power, true);
+    }
   }
 }
 
 /**
- * Turns off the wardrobe light and halts any active dimming.
+ * Turns off the wardrobe light if it is currently on.
  */
 function ausschalten() {
-  stopDimming();
   const isPowerOn = !!getState(IDS.power)?.val;
   if (isPowerOn) {
     setState(IDS.power, false);
   }
 }
 
-// --- 4. INITIALISIERUNG BEIM SKRIPTSTART ---
+// --- 3. INITIALISIERUNG BEIM SKRIPTSTART ---
 const initialPresence = !!getState(IDS.presence)?.val;
 const initialPower = !!getState(IDS.power)?.val;
 
@@ -102,7 +96,7 @@ if (initialPresence) {
   ausschalten();
 }
 
-// --- 5. EVENT-LOGIK ---
+// --- 4. EVENT-LOGIK ---
 on({ id: IDS.presence, change: "ne" }, (obj) => {
   const isPresent = !!obj.state.val;
   if (isPresent) {
@@ -110,10 +104,4 @@ on({ id: IDS.presence, change: "ne" }, (obj) => {
   } else {
     ausschalten();
   }
-});
-
-// --- 6. LIFECYCLE CLEANUP ---
-onStop((callback) => {
-  stopDimming();
-  callback();
 });
