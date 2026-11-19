@@ -1,7 +1,7 @@
 /* eslint-env es2022 */
 /**
- * Name:   Abendlicht Wohnzimmer Master (V6.5)
- * Zweck:  Steuerung des Abendlichts im Wohnzimmer (Kommode & Ei) mit sanftem Übergang ab 22:30 Uhr.
+ * Name:   Abendlicht Wohnzimmer Master (V6.6)
+ * Zweck:  Steuerung des Abendlichts im Wohnzimmer (Kommode, Ei & Stehlampe) mit sanftem Übergang ab 22:30 Uhr.
  * Fix:    Verhindert GHOME 400 INVALID_ARGUMENT Fehler durch vollständiges Ausblenden aller rohen Hue-Hardware-Datenpunkte (inkl. hue.0.Ei.ct) sowie aller Hilfs-Datenpunkte.
  */
 
@@ -10,9 +10,17 @@
 // Der Trigger-Datenpunkt (True = An, False = Aus)
 const ID_TRIGGER = "0_userdata.0.Licht.Wohnzimmer.Abendlicht";
 
-// Pfade zu den Command-Datenpunkten (Basierend auf deinem Screenshot)
+// Pfade zu den Command-Datenpunkten (Hue)
 const ALIAS_KOMMODE = "alias.0.licht.kommode.command";
 const ALIAS_EI = "alias.0.licht.ei.command";
+
+// Pfade zu den Datenpunkten der Stehlampe
+const ALIAS_STEHLAMPE = {
+  power: "alias.0.wohnzimmer.licht.stehlampe.power",
+  brightness: "alias.0.wohnzimmer.licht.stehlampe.brightness",
+  colorRgb: "alias.0.wohnzimmer.licht.stehlampe.color_rgb",
+  colorTemp: "alias.0.wohnzimmer.licht.stehlampe.color_temperature",
+};
 
 // Hardware-Ziele für die Reparatur der Alias-Verknüpfung
 const TARGET_KOMMODE = "hue.0.Kommode.command";
@@ -23,10 +31,14 @@ const TARGET_EI = "hue.0.Ei.command";
 const START_BRI_KOMMODE = 40;
 const START_BRI_EI = 60;
 const START_CT_EI = 396; // 2525K (Warmweiß) -> 1000000 / 2525 = 396 Mireds
+const START_BRI_STEHLAMPE = 25; // Dezent & unauffällig im Hintergrund (25%)
+const START_CT_STEHLAMPE = 2200; // Sehr gemütliches, warmes Licht (2200K)
 
 const END_BRI_KOMMODE = 20;
 const END_BRI_EI = 20;
 const END_CT_EI = 500; // 2000K (Untergrenze Kelvin) -> 1000000 / 2000 = 500 Mireds
+const END_BRI_STEHLAMPE = 10; // Ab 22:30 Uhr sanft auf 10% reduziert
+const END_CT_STEHLAMPE = 2000; // Ab 22:30 Uhr noch wärmeres Kerzenlicht (2000K)
 
 const START_FADE_IN_SEC = 50;
 const TRANSITION_DURATION = 27000; // 45 Minuten
@@ -36,6 +48,9 @@ let autoOffTimeout = null;
 let eiFadeInTimeout = null;
 let eiTransitionTimeout = null;
 let eiOffTimeout = null;
+let stehlampeFadeInTimeout = null;
+let stehlampeTransitionTimeout = null;
+let stehlampeOffTimeout = null;
 
 // --- 3. HILFSFUNKTIONEN & SYSTEM-FIXES ---
 
@@ -174,7 +189,7 @@ repairAndHide();
 // --- 4. HAUPT-LOGIK ---
 
 /**
- * Explicitly turns off both lamps and keeps the trigger state in sync.
+ * Explicitly turns off all three lamps and keeps the trigger state in sync.
  */
 function turnOff() {
   if (transitionSchedule) {
@@ -197,6 +212,18 @@ function turnOff() {
     clearTimeout(eiOffTimeout);
     eiOffTimeout = null;
   }
+  if (stehlampeFadeInTimeout) {
+    clearTimeout(stehlampeFadeInTimeout);
+    stehlampeFadeInTimeout = null;
+  }
+  if (stehlampeTransitionTimeout) {
+    clearTimeout(stehlampeTransitionTimeout);
+    stehlampeTransitionTimeout = null;
+  }
+  if (stehlampeOffTimeout) {
+    clearTimeout(stehlampeOffTimeout);
+    stehlampeOffTimeout = null;
+  }
 
   const off = JSON.stringify({ on: false, transitiontime: 20 });
   setState(ALIAS_KOMMODE, off);
@@ -204,6 +231,10 @@ function turnOff() {
     setState(ALIAS_EI, off);
     eiOffTimeout = null;
   }, 1500);
+  stehlampeOffTimeout = setTimeout(() => {
+    setState(ALIAS_STEHLAMPE.power, false);
+    stehlampeOffTimeout = null;
+  }, 3000);
 
   // Synchronize trigger state with ack: true to prevent feedback loops
   if (getState(ID_TRIGGER)?.val) {
@@ -226,9 +257,25 @@ on({ id: ID_TRIGGER, change: "ne", ack: false }, (obj) => {
     clearTimeout(eiFadeInTimeout);
     eiFadeInTimeout = null;
   }
+  if (eiTransitionTimeout) {
+    clearTimeout(eiTransitionTimeout);
+    eiTransitionTimeout = null;
+  }
   if (eiOffTimeout) {
     clearTimeout(eiOffTimeout);
     eiOffTimeout = null;
+  }
+  if (stehlampeFadeInTimeout) {
+    clearTimeout(stehlampeFadeInTimeout);
+    stehlampeFadeInTimeout = null;
+  }
+  if (stehlampeTransitionTimeout) {
+    clearTimeout(stehlampeTransitionTimeout);
+    stehlampeTransitionTimeout = null;
+  }
+  if (stehlampeOffTimeout) {
+    clearTimeout(stehlampeOffTimeout);
+    stehlampeOffTimeout = null;
   }
 
   if (sollAn) {
@@ -253,6 +300,14 @@ on({ id: ID_TRIGGER, change: "ne", ack: false }, (obj) => {
       setState(ALIAS_EI, fadeInEi);
       eiFadeInTimeout = null;
     }, 1500);
+
+    // Stehlampe zeitversetzt mit unauffälligem, gemütlichem Warmlicht (2200K, 25%) einschalten
+    stehlampeFadeInTimeout = setTimeout(() => {
+      setState(ALIAS_STEHLAMPE.colorTemp, START_CT_STEHLAMPE);
+      setState(ALIAS_STEHLAMPE.brightness, limit(START_BRI_STEHLAMPE, 1, 100));
+      setState(ALIAS_STEHLAMPE.power, true);
+      stehlampeFadeInTimeout = null;
+    }, 3000);
 
     // Geplanter Übergang um 22:30 Uhr
     transitionSchedule = schedule("30 22 * * *", () => {
@@ -279,6 +334,13 @@ on({ id: ID_TRIGGER, change: "ne", ack: false }, (obj) => {
         eiTransitionTimeout = null;
       }, 1500);
 
+      // Stehlampe um 22:30 Uhr noch weiter auf gemütliches Kerzenlicht (2000K, 10%) absenken
+      stehlampeTransitionTimeout = setTimeout(() => {
+        setState(ALIAS_STEHLAMPE.colorTemp, END_CT_STEHLAMPE);
+        setState(ALIAS_STEHLAMPE.brightness, limit(END_BRI_STEHLAMPE, 1, 100));
+        stehlampeTransitionTimeout = null;
+      }, 3000);
+
       // Nach Ablauf der 45 Min. Abdimmzeit (um 23:15 Uhr) Lampen explizit ausschalten
       const transitionMs = (TRANSITION_DURATION / 10) * 1000;
       autoOffTimeout = setTimeout(() => {
@@ -298,5 +360,8 @@ onStop((callback) => {
   if (eiFadeInTimeout) clearTimeout(eiFadeInTimeout);
   if (eiTransitionTimeout) clearTimeout(eiTransitionTimeout);
   if (eiOffTimeout) clearTimeout(eiOffTimeout);
+  if (stehlampeFadeInTimeout) clearTimeout(stehlampeFadeInTimeout);
+  if (stehlampeTransitionTimeout) clearTimeout(stehlampeTransitionTimeout);
+  if (stehlampeOffTimeout) clearTimeout(stehlampeOffTimeout);
   callback();
 });
