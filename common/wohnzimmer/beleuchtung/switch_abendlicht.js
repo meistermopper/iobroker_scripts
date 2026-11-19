@@ -31,18 +31,26 @@ const TARGET_EI = "hue.0.Ei.command";
 const START_BRI_KOMMODE = 40;
 const START_BRI_EI = 60;
 const START_CT_EI = 396; // 2525K (Warmweiß) -> 1000000 / 2525 = 396 Mireds
-const START_BRI_STEHLAMPE = 25; // Dezent & unauffällig im Hintergrund (25%)
-const START_CT_STEHLAMPE = 2200; // Sehr gemütliches, warmes Licht (2200K)
 
 const END_BRI_KOMMODE = 20;
 const END_BRI_EI = 20;
 const END_CT_EI = 500; // 2000K (Untergrenze Kelvin) -> 1000000 / 2000 = 500 Mireds
-const END_BRI_STEHLAMPE = 10; // Ab 22:30 Uhr sanft auf 10% reduziert
-const END_CT_STEHLAMPE = 2000; // Ab 22:30 Uhr noch wärmeres Kerzenlicht (2000K)
+
+// Stehlampe "Sunset-Lounge" (3-stufiger Farbverlauf vor oranger Wand)
+// Phase 1 (Start / Dämmerung bis 21:00 Uhr): Warmes Pfirsich-Koralle
+const START_BRI_STEHLAMPE = 30;
+const START_COLOR_STEHLAMPE = "#ff5522";
+// Phase 2 (Ab 21:00 Uhr - Lounge-Phase): Sanftes Sunset-Magenta / Violett (3D-Kontrast zu Orange)
+const LOUNGE_BRI_STEHLAMPE = 20;
+const LOUNGE_COLOR_STEHLAMPE = "#992288";
+// Phase 3 (Ab 22:30 Uhr - Nacht-Übergang): Tiefes Kamin-Glutrot bis 23:15 Uhr
+const END_BRI_STEHLAMPE = 10;
+const END_COLOR_STEHLAMPE = "#ff1a00";
 
 const START_FADE_IN_SEC = 50;
 const TRANSITION_DURATION = 27000; // 45 Minuten
 
+let loungeSchedule = null;
 let transitionSchedule = null;
 let autoOffTimeout = null;
 let eiFadeInTimeout = null;
@@ -192,6 +200,10 @@ repairAndHide();
  * Clears all active timers and schedules to prevent overlapping transitions.
  */
 function clearAllTimers() {
+  if (loungeSchedule) {
+    clearSchedule(loungeSchedule);
+    loungeSchedule = null;
+  }
   if (transitionSchedule) {
     clearSchedule(transitionSchedule);
     transitionSchedule = null;
@@ -228,18 +240,29 @@ function clearAllTimers() {
 
 /**
  * Activates evening lighting for all configured lamps (Kommode, Ei, Stehlampe)
- * and arms the 22:30 transition schedule. Also safe to call on script startup
+ * and arms the 21:00 Lounge and 22:30 Night transition schedules. Also safe to call on script startup
  * when Abendlicht is already active so newly added lamps or rules take effect immediately.
  */
 function turnOn() {
   clearAllTimers();
 
   const isLatePhase = compareTime("22:30", "23:15", "between");
+  const isLoungePhase = compareTime("21:00", "22:30", "between");
+
   const briKommode = isLatePhase ? END_BRI_KOMMODE : START_BRI_KOMMODE;
   const briEi = isLatePhase ? END_BRI_EI : START_BRI_EI;
   const ctEi = isLatePhase ? END_CT_EI : START_CT_EI;
-  const briStehlampe = isLatePhase ? END_BRI_STEHLAMPE : START_BRI_STEHLAMPE;
-  const ctStehlampe = isLatePhase ? END_CT_STEHLAMPE : START_CT_STEHLAMPE;
+
+  // Stehlampe Phase je nach aktueller Uhrzeit wählen
+  let briStehlampe = START_BRI_STEHLAMPE;
+  let colorStehlampe = START_COLOR_STEHLAMPE;
+  if (isLatePhase) {
+    briStehlampe = END_BRI_STEHLAMPE;
+    colorStehlampe = END_COLOR_STEHLAMPE;
+  } else if (isLoungePhase) {
+    briStehlampe = LOUNGE_BRI_STEHLAMPE;
+    colorStehlampe = LOUNGE_COLOR_STEHLAMPE;
+  }
 
   const fadeInKommode = JSON.stringify({
     on: true,
@@ -260,15 +283,24 @@ function turnOn() {
     eiFadeInTimeout = null;
   }, 1500);
 
-  // Stehlampe zeitversetzt mit unauffälligem, gemütlichem Warmlicht einschalten
+  // Stehlampe zeitversetzt im Sunset-Lounge-Farbverlauf einschalten
   stehlampeFadeInTimeout = setTimeout(() => {
-    setState(ALIAS_STEHLAMPE.colorTemp, ctStehlampe);
+    setState(ALIAS_STEHLAMPE.colorRgb, colorStehlampe);
     setState(ALIAS_STEHLAMPE.brightness, limit(briStehlampe, 1, 100));
     setState(ALIAS_STEHLAMPE.power, true);
     stehlampeFadeInTimeout = null;
   }, 3000);
 
-  // Geplanter Übergang um 22:30 Uhr
+  // Phase 2 um 21:00 Uhr: Stehlampe wechselt auf Sunset-Magenta/Violett (#992288, 20%) für 3D-Kontrast vor oranger Wand
+  loungeSchedule = schedule("0 21 * * *", () => {
+    console.log(
+      `[Abendlicht] 21:00 Uhr: Stehlampe wechselt in Sunset-Lounge-Phase (${LOUNGE_COLOR_STEHLAMPE})`,
+    );
+    setState(ALIAS_STEHLAMPE.colorRgb, LOUNGE_COLOR_STEHLAMPE);
+    setState(ALIAS_STEHLAMPE.brightness, limit(LOUNGE_BRI_STEHLAMPE, 1, 100));
+  });
+
+  // Phase 3 um 22:30 Uhr: Sanfter Übergang in die Nachtphase
   transitionSchedule = schedule("30 22 * * *", () => {
     console.log(`[Abendlicht] 22:30 Uhr: Sanfter Übergang startet`);
 
@@ -292,9 +324,9 @@ function turnOn() {
       eiTransitionTimeout = null;
     }, 1500);
 
-    // Stehlampe um 22:30 Uhr noch weiter auf gemütliches Kerzenlicht (2000K, 10%) absenken
+    // Stehlampe um 22:30 Uhr auf tiefes Kamin-Glutrot (#ff1a00, 10%) absenken
     stehlampeTransitionTimeout = setTimeout(() => {
-      setState(ALIAS_STEHLAMPE.colorTemp, END_CT_STEHLAMPE);
+      setState(ALIAS_STEHLAMPE.colorRgb, END_COLOR_STEHLAMPE);
       setState(ALIAS_STEHLAMPE.brightness, limit(END_BRI_STEHLAMPE, 1, 100));
       stehlampeTransitionTimeout = null;
     }, 3000);

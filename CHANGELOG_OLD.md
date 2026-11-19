@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.55] - 2026-11-16
+- fix(dishwasher): detect cycle start strictly on running status 5 and fix endTime state path (geschirr.js)
+
 ### [3.3.54] - 2026-11-12
 - refactor(dishwasher): remove mielecloudservice and water consumption tracking (geschirr.js)
 
