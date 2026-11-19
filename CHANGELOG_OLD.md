@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.52] - 2026-11-12
+- feat(dishwasher): switch cycle end detection and end time to miele-unbound (geschirr.js)
+
 ### [3.3.51] - 2026-11-12
 - refactor(dishwasher): centralize datapoint IDs, constants, and device configuration (geschirr.js)
 

@@ -17,7 +17,7 @@ const IDS = {
 };
 
 // Parameter für Tag & Nacht
-const DAY_START = "06:00";
+const DAY_START = "06:30";
 const DAY_END = "22:00";
 
 const DAY_CONFIG = {
@@ -30,15 +30,17 @@ const NIGHT_CONFIG = {
   colorRgb: "#ffaa44", // Weiches Bernstein / Honig-Gold
 };
 
-// Merker für den zuletzt gesetzten Modus ("day" | "night"), um unnötige Cloud-Calls zu sparen
+// Merker für den zuletzt an die Lampe gesendeten Modus ("day" | "night"),
+// damit beim Wechsel Nacht -> Tag (und umgekehrt) die Farbtemperatur/Farbe
+// garantiert einmalig an die Govee-Cloud übertragen wird.
 let activeMode = null;
 
 // --- 2. HILFSFUNKTIONEN ---
 
 /**
  * Turns on the wardrobe light according to time of day.
- * Only sends color/brightness updates when transitioning between day and night mode
- * to stay well below Govee Cloud API rate limits.
+ * Sends color/brightness updates once whenever transitioning between day and night mode
+ * (or on first run after script start) to stay well below Govee Cloud API rate limits.
  */
 function einschalten() {
   const isDay = compareTime(DAY_START, DAY_END, "between");
@@ -46,28 +48,22 @@ function einschalten() {
   const isPowerOn = !!getState(IDS.power)?.val;
 
   if (targetMode === "day") {
-    // Farbtemperatur und Helligkeit nur senden, wenn Modus gewechselt hat oder Werte abweichen
+    // Beim Wechsel in den Tag-Modus einmalig zwingend Farbtemperatur & Helligkeit senden
+    // (da der Datenpunkt color_temperature im ioBroker nachts auf 2800 stehen bleibt,
+    // obwohl die Lampe physisch im RGB-Modus #ffaa44 war).
     if (activeMode !== "day") {
-      if (getState(IDS.colorTemp)?.val !== DAY_CONFIG.colorTemp) {
-        setState(IDS.colorTemp, DAY_CONFIG.colorTemp);
-      }
-      if (getState(IDS.brightness)?.val !== DAY_CONFIG.brightness) {
-        setState(IDS.brightness, DAY_CONFIG.brightness);
-      }
+      setState(IDS.colorTemp, DAY_CONFIG.colorTemp);
+      setState(IDS.brightness, DAY_CONFIG.brightness);
       activeMode = "day";
     }
     if (!isPowerOn) {
       setState(IDS.power, true);
     }
   } else {
-    // Nacht-Modus: Bernstein-Nachtlicht ohne Cloud-feindliche 150ms-Dimmschleife
+    // Beim Wechsel in den Nacht-Modus einmalig zwingend RGB-Farbe & Helligkeit senden
     if (activeMode !== "night") {
-      if (String(getState(IDS.colorRgb)?.val).toLowerCase() !== NIGHT_CONFIG.colorRgb) {
-        setState(IDS.colorRgb, NIGHT_CONFIG.colorRgb);
-      }
-      if (getState(IDS.brightness)?.val !== NIGHT_CONFIG.brightness) {
-        setState(IDS.brightness, NIGHT_CONFIG.brightness);
-      }
+      setState(IDS.colorRgb, NIGHT_CONFIG.colorRgb);
+      setState(IDS.brightness, NIGHT_CONFIG.brightness);
       activeMode = "night";
     }
     if (!isPowerOn) {
