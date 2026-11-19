@@ -134,3 +134,13 @@ Um hängende Zustände, doppelte Hardware-Aktionen und Speicherlecks zu verhinde
   ```bash
   git commit -m "feat: add pv charging interlock logic" -m "Co-authored-by: Gemini <noreply@google.com>"
   ```
+
+## 10. Kompakte Chat-Antworten (Kein kompletter Code-Abdruck im Chat)
+
+- **Vorgabe:** Wenn Dateien direkt im Workspace erstellt oder bearbeitet werden, zeige den kompletten Dateiinhalt **nicht** noch einmal im Chat an – der User sieht den Code direkt in der Datei, wenn er sie aufruft.
+- **Format:** Fasse die Änderungen im Chat kurz und prägnant zusammen und verlinke auf die geänderte Datei. (In den Dateien selbst gilt natürlich weiterhin: immer vollständiger Code ohne Platzhalter wie `// TODO`).
+
+## 11. Obsidian Vault Dokumentation (`save_note`) & Aktive GitHub-Links
+
+- **Automatische Notiz-Pflege:** Bei Änderungen oder Fixes an einem Skript wird die zugehörige Notiz unter `10_Projects/meistermopper.ioBroker-Skripte/<pfad>.md` über `obsidian-vault:save_note` aktualisiert.
+- **Klickbare Commit-Links:** Alle Commit-Hashes in Obsidian und im Chat werden als klickbare Markdown-Links dargestellt (z. B. `[`82b0565`](https://github.com/meistermopper/iobroker_scripts/commit/82b0565)`).

@@ -189,9 +189,9 @@ repairAndHide();
 // --- 4. HAUPT-LOGIK ---
 
 /**
- * Explicitly turns off all three lamps and keeps the trigger state in sync.
+ * Clears all active timers and schedules to prevent overlapping transitions.
  */
-function turnOff() {
+function clearAllTimers() {
   if (transitionSchedule) {
     clearSchedule(transitionSchedule);
     transitionSchedule = null;
@@ -224,6 +224,98 @@ function turnOff() {
     clearTimeout(stehlampeOffTimeout);
     stehlampeOffTimeout = null;
   }
+}
+
+/**
+ * Activates evening lighting for all configured lamps (Kommode, Ei, Stehlampe)
+ * and arms the 22:30 transition schedule. Also safe to call on script startup
+ * when Abendlicht is already active so newly added lamps or rules take effect immediately.
+ */
+function turnOn() {
+  clearAllTimers();
+
+  const isLatePhase = compareTime("22:30", "23:15", "between");
+  const briKommode = isLatePhase ? END_BRI_KOMMODE : START_BRI_KOMMODE;
+  const briEi = isLatePhase ? END_BRI_EI : START_BRI_EI;
+  const ctEi = isLatePhase ? END_CT_EI : START_CT_EI;
+  const briStehlampe = isLatePhase ? END_BRI_STEHLAMPE : START_BRI_STEHLAMPE;
+  const ctStehlampe = isLatePhase ? END_CT_STEHLAMPE : START_CT_STEHLAMPE;
+
+  const fadeInKommode = JSON.stringify({
+    on: true,
+    level: limit(briKommode, 0, 100),
+    transitiontime: limit(START_FADE_IN_SEC, 0, 65535),
+  });
+
+  const fadeInEi = JSON.stringify({
+    on: true,
+    level: limit(briEi, 0, 100),
+    ct: limit(ctEi, 153, 500),
+    transitiontime: limit(START_FADE_IN_SEC, 0, 65535),
+  });
+
+  setState(ALIAS_KOMMODE, fadeInKommode);
+  eiFadeInTimeout = setTimeout(() => {
+    setState(ALIAS_EI, fadeInEi);
+    eiFadeInTimeout = null;
+  }, 1500);
+
+  // Stehlampe zeitversetzt mit unauffälligem, gemütlichem Warmlicht einschalten
+  stehlampeFadeInTimeout = setTimeout(() => {
+    setState(ALIAS_STEHLAMPE.colorTemp, ctStehlampe);
+    setState(ALIAS_STEHLAMPE.brightness, limit(briStehlampe, 1, 100));
+    setState(ALIAS_STEHLAMPE.power, true);
+    stehlampeFadeInTimeout = null;
+  }, 3000);
+
+  // Geplanter Übergang um 22:30 Uhr
+  transitionSchedule = schedule("30 22 * * *", () => {
+    console.log(`[Abendlicht] 22:30 Uhr: Sanfter Übergang startet`);
+
+    setState(
+      ALIAS_KOMMODE,
+      JSON.stringify({
+        level: limit(END_BRI_KOMMODE, 0, 100),
+        transitiontime: limit(TRANSITION_DURATION, 0, 65535),
+      }),
+    );
+
+    eiTransitionTimeout = setTimeout(() => {
+      setState(
+        ALIAS_EI,
+        JSON.stringify({
+          level: limit(END_BRI_EI, 0, 100),
+          ct: limit(END_CT_EI, 153, 500),
+          transitiontime: limit(TRANSITION_DURATION, 0, 65535),
+        }),
+      );
+      eiTransitionTimeout = null;
+    }, 1500);
+
+    // Stehlampe um 22:30 Uhr noch weiter auf gemütliches Kerzenlicht (2000K, 10%) absenken
+    stehlampeTransitionTimeout = setTimeout(() => {
+      setState(ALIAS_STEHLAMPE.colorTemp, END_CT_STEHLAMPE);
+      setState(ALIAS_STEHLAMPE.brightness, limit(END_BRI_STEHLAMPE, 1, 100));
+      stehlampeTransitionTimeout = null;
+    }, 3000);
+
+    // Nach Ablauf der 45 Min. Abdimmzeit (um 23:15 Uhr) Lampen explizit ausschalten
+    const transitionMs = (TRANSITION_DURATION / 10) * 1000;
+    autoOffTimeout = setTimeout(() => {
+      console.log(`[Abendlicht] 23:15 Uhr: Abdimmen beendet - schalte Lampen explizit aus.`);
+      turnOff();
+    }, transitionMs);
+  });
+
+  // Acknowledge trigger state
+  setState(ID_TRIGGER, true, true);
+}
+
+/**
+ * Explicitly turns off all three lamps and keeps the trigger state in sync.
+ */
+function turnOff() {
+  clearAllTimers();
 
   const off = JSON.stringify({ on: false, transitiontime: 20 });
   setState(ALIAS_KOMMODE, off);
@@ -242,112 +334,18 @@ function turnOff() {
   }
 }
 
+// Initialisierung beim Skriptstart: Wenn Abendlicht bereits aktiv ist, alle Lampen & Timer sofort synchronisieren
+if (getState(ID_TRIGGER)?.val) {
+  console.log(
+    "[Abendlicht] Skriptstart bei aktivem Abendlicht: Synchronisiere Lampen und Timer...",
+  );
+  turnOn();
+}
+
 on({ id: ID_TRIGGER, change: "ne", ack: false }, (obj) => {
   const sollAn = !!obj.state.val;
-
-  if (transitionSchedule) {
-    clearSchedule(transitionSchedule);
-    transitionSchedule = null;
-  }
-  if (autoOffTimeout) {
-    clearTimeout(autoOffTimeout);
-    autoOffTimeout = null;
-  }
-  if (eiFadeInTimeout) {
-    clearTimeout(eiFadeInTimeout);
-    eiFadeInTimeout = null;
-  }
-  if (eiTransitionTimeout) {
-    clearTimeout(eiTransitionTimeout);
-    eiTransitionTimeout = null;
-  }
-  if (eiOffTimeout) {
-    clearTimeout(eiOffTimeout);
-    eiOffTimeout = null;
-  }
-  if (stehlampeFadeInTimeout) {
-    clearTimeout(stehlampeFadeInTimeout);
-    stehlampeFadeInTimeout = null;
-  }
-  if (stehlampeTransitionTimeout) {
-    clearTimeout(stehlampeTransitionTimeout);
-    stehlampeTransitionTimeout = null;
-  }
-  if (stehlampeOffTimeout) {
-    clearTimeout(stehlampeOffTimeout);
-    stehlampeOffTimeout = null;
-  }
-
   if (sollAn) {
-    // Notification für Einschalten (gemäß Vorgabe auskommentiert)
-    //console.log(`[Abendlicht] Einschalten: Start-Sequenz läuft...`);
-
-    const fadeInKommode = JSON.stringify({
-      on: true,
-      level: limit(START_BRI_KOMMODE, 0, 100),
-      transitiontime: limit(START_FADE_IN_SEC, 0, 65535),
-    });
-
-    const fadeInEi = JSON.stringify({
-      on: true,
-      level: limit(START_BRI_EI, 0, 100),
-      ct: limit(START_CT_EI, 153, 500),
-      transitiontime: limit(START_FADE_IN_SEC, 0, 65535),
-    });
-
-    setState(ALIAS_KOMMODE, fadeInKommode);
-    eiFadeInTimeout = setTimeout(() => {
-      setState(ALIAS_EI, fadeInEi);
-      eiFadeInTimeout = null;
-    }, 1500);
-
-    // Stehlampe zeitversetzt mit unauffälligem, gemütlichem Warmlicht (2200K, 25%) einschalten
-    stehlampeFadeInTimeout = setTimeout(() => {
-      setState(ALIAS_STEHLAMPE.colorTemp, START_CT_STEHLAMPE);
-      setState(ALIAS_STEHLAMPE.brightness, limit(START_BRI_STEHLAMPE, 1, 100));
-      setState(ALIAS_STEHLAMPE.power, true);
-      stehlampeFadeInTimeout = null;
-    }, 3000);
-
-    // Geplanter Übergang um 22:30 Uhr
-    transitionSchedule = schedule("30 22 * * *", () => {
-      // Notification für den Übergang (gemäß Vorgabe aktiv)
-      console.log(`[Abendlicht] 22:30 Uhr: Sanfter Übergang startet`);
-
-      setState(
-        ALIAS_KOMMODE,
-        JSON.stringify({
-          level: limit(END_BRI_KOMMODE, 0, 100),
-          transitiontime: limit(TRANSITION_DURATION, 0, 65535),
-        }),
-      );
-
-      eiTransitionTimeout = setTimeout(() => {
-        setState(
-          ALIAS_EI,
-          JSON.stringify({
-            level: limit(END_BRI_EI, 0, 100),
-            ct: limit(END_CT_EI, 153, 500),
-            transitiontime: limit(TRANSITION_DURATION, 0, 65535),
-          }),
-        );
-        eiTransitionTimeout = null;
-      }, 1500);
-
-      // Stehlampe um 22:30 Uhr noch weiter auf gemütliches Kerzenlicht (2000K, 10%) absenken
-      stehlampeTransitionTimeout = setTimeout(() => {
-        setState(ALIAS_STEHLAMPE.colorTemp, END_CT_STEHLAMPE);
-        setState(ALIAS_STEHLAMPE.brightness, limit(END_BRI_STEHLAMPE, 1, 100));
-        stehlampeTransitionTimeout = null;
-      }, 3000);
-
-      // Nach Ablauf der 45 Min. Abdimmzeit (um 23:15 Uhr) Lampen explizit ausschalten
-      const transitionMs = (TRANSITION_DURATION / 10) * 1000;
-      autoOffTimeout = setTimeout(() => {
-        console.log(`[Abendlicht] 23:15 Uhr: Abdimmen beendet - schalte Lampen explizit aus.`);
-        turnOff();
-      }, transitionMs);
-    });
+    turnOn();
   } else {
     turnOff();
   }
@@ -355,13 +353,6 @@ on({ id: ID_TRIGGER, change: "ne", ack: false }, (obj) => {
 
 // Lifecycle cleanup when script stops
 onStop((callback) => {
-  if (transitionSchedule) clearSchedule(transitionSchedule);
-  if (autoOffTimeout) clearTimeout(autoOffTimeout);
-  if (eiFadeInTimeout) clearTimeout(eiFadeInTimeout);
-  if (eiTransitionTimeout) clearTimeout(eiTransitionTimeout);
-  if (eiOffTimeout) clearTimeout(eiOffTimeout);
-  if (stehlampeFadeInTimeout) clearTimeout(stehlampeFadeInTimeout);
-  if (stehlampeTransitionTimeout) clearTimeout(stehlampeTransitionTimeout);
-  if (stehlampeOffTimeout) clearTimeout(stehlampeOffTimeout);
+  clearAllTimers();
   callback();
 });

@@ -6,7 +6,7 @@ on({ id: "0_userdata.0.Licht.Wohnzimmer.alle_Lampen", change: "ne" }, async (obj
 
   // Wir löschen alle eventuell noch laufenden Verzögerungen dieses Skripts sofort
   // um "Befehls-Salat" zu vermeiden
-  clearStateDelayed("alias.0.wohnzimmer.licht.fernsehlicht.POWER");
+  // clearStateDelayed("alias.0.wohnzimmer.licht.fernsehlicht.POWER");
   clearStateDelayed("alias.0.wohnzimmer.licht.Galaxie.POWER");
   clearStateDelayed("alias.0.wohnzimmer.licht.quader.on");
   clearStateDelayed("alias.0.wohnzimmer.licht.wozilampe.on");
@@ -24,7 +24,7 @@ on({ id: "0_userdata.0.Licht.Wohnzimmer.alle_Lampen", change: "ne" }, async (obj
     setStateDelayed("alias.0.wohnzimmer.licht.kommode.level", 100, 300, true);
 
     // SONOFF Befehle (mit 'true' am Ende um alte Timer zu löschen)
-    setStateDelayed("alias.0.wohnzimmer.licht.fernsehlicht.POWER", true, 200, true);
+    // setStateDelayed("alias.0.wohnzimmer.licht.fernsehlicht.POWER", true, 200, true);
     setStateDelayed("alias.0.wohnzimmer.licht.Galaxie.POWER", true, 400, true); // Zeitabstand leicht erhöht
     setStateDelayed("alias.0.wohnzimmer.licht.quader.on", true, 600, true);
     setStateDelayed("alias.0.wohnzimmer.licht.wozilampe.on", true, 800, true);
@@ -34,7 +34,7 @@ on({ id: "0_userdata.0.Licht.Wohnzimmer.alle_Lampen", change: "ne" }, async (obj
     console.log("Wohnzimmer: Schalte ALLES AUS");
 
     // SONOFF Aus
-    setState("alias.0.wohnzimmer.licht.fernsehlicht.POWER", false);
+    // setState("alias.0.wohnzimmer.licht.fernsehlicht.POWER", false);
     setStateDelayed("alias.0.wohnzimmer.licht.Galaxie.POWER", false, 200, true);
     setStateDelayed("alias.0.wohnzimmer.licht.quader.on", false, 400, true);
     setStateDelayed("alias.0.wohnzimmer.licht.wozilampe.on", false, 600, true);

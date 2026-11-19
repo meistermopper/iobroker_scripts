@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.54] - 2026-11-12
+- refactor(dishwasher): remove mielecloudservice and water consumption tracking (geschirr.js)
+
 ### [3.3.53] - 2026-11-12
 - refactor(dishwasher): remove mielecloudservice and water consumption tracking (geschirr.js)
 
