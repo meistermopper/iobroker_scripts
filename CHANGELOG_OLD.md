@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.56] - 2026-11-18
+- perf(garderobe): deduplicate govee cloud api calls to prevent rate limiting (garderobenlicht.js)
+
 ### [3.3.55] - 2026-11-16
 - fix(dishwasher): detect cycle start strictly on running status 5 and fix endTime state path (geschirr.js)
 

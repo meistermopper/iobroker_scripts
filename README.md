@@ -8,7 +8,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.60-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.61-success?style=flat-square)
 
 This repository contains my personal collection of automation scripts for ioBroker. These scripts control various aspects of my smart home, from energy optimization to room-specific controls.
 
@@ -102,6 +102,9 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ## 📝 Changelog
 
+### [3.3.61] - 2026-11-21
+- fix(haushalt): persist start energy and fallback to state timestamp on restart in geschirr.js (geschirr.js)
+
 ### [3.3.60] - 2026-11-19
 - feat(abendlicht): add 3-stage sunset-lounge color progression for floor lamp (switch_abendlicht.js)
 
@@ -113,8 +116,5 @@ Script management is separated between development (Antigravity IDE) and runtime
 
 ### [3.3.57] - 2026-11-19
 - fix(garderobe): force color mode command on day/night transition (garderobenlicht.js)
-
-### [3.3.56] - 2026-11-18
-- perf(garderobe): deduplicate govee cloud api calls to prevent rate limiting (garderobenlicht.js)
 
 Older entries can be found in the [Changelog Archive](CHANGELOG_OLD.md).

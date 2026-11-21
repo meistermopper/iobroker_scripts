@@ -16,6 +16,8 @@ const IDS = {
   // Energie- und Zählerdaten
   energyTotal: "alias.0.kueche.geschirr.ENERGY_Total",
   energyToday: "alias.0.kueche.geschirr.ENERGY_Today",
+  energyStartSaved: "0_userdata.0.Haushalt.spuelen_energieStart",
+  ecoEnergy: `miele-unbound.0.${DEVICE_ID}.eco.energy`,
   strompreis: "0_userdata.0.Energie.Strompreise.akt_Preis",
 
   // Visualisierung & Status
@@ -78,10 +80,29 @@ const PROGRAMME = {
   215: "Salz spülen",
 };
 
-// --- 2. ZUSTANDSVARIABLEN ---
+// --- 2. INITIALISIERUNG & ZUSTANDSVARIABLEN ---
+async function initGeschirrSystem() {
+  if (!existsState(IDS.isSpuelenAktiv)) {
+    await createStateAsync(IDS.isSpuelenAktiv, false, {
+      type: "boolean",
+      name: "Geschirrspüler läuft (VIS)",
+      role: "indicator.working",
+    });
+  }
+  if (!existsState(IDS.energyStartSaved)) {
+    await createStateAsync(IDS.energyStartSaved, 0, {
+      type: "number",
+      name: "Geschirrspüler Start-Zählerstand",
+      unit: "kWh",
+      role: "value",
+    });
+  }
+}
+initGeschirrSystem();
+
 let strompreisProKWh = getState(IDS.strompreis)?.val || 0;
 let startZeit = null;
-let energieStart = null;
+let energieStart = getState(IDS.energyStartSaved)?.val || null;
 let startNotifyTimer = null;
 
 // --- 3. EVENT-LISTENER & LOGIK ---
@@ -105,8 +126,10 @@ on({ id: IDS.status, change: "ne" }, (obj) => {
   // --- START (Status 5 = "In Betrieb") ---
   if (status === 5 && !isSpuelenAktiv) {
     startZeit = Date.now();
-    // Zählerstand beim Start erfassen
-    energieStart = getState(IDS.energyTotal)?.val || 0;
+    // Zählerstand beim Start erfassen und persistent sichern
+    const currentEnergy = getState(IDS.energyTotal)?.val;
+    energieStart = typeof currentEnergy === "number" ? currentEnergy : 0;
+    setState(IDS.energyStartSaved, energieStart, true);
     setState(IDS.isSpuelenAktiv, true, true);
 
     if (startNotifyTimer) clearTimeout(startNotifyTimer);
@@ -126,11 +149,35 @@ on({ id: IDS.status, change: "ne" }, (obj) => {
       clearTimeout(startNotifyTimer);
       startNotifyTimer = null;
     }
-    const spueldauerMin = startZeit ? Math.round((Date.now() - startZeit) / 60000) : 0;
 
-    // Berechnung des Verbrauchs für DIESEN Durchgang
-    const currentTotal = getState(IDS.energyTotal)?.val || 0;
-    const energieKwh = energieStart !== null ? Math.max(0, currentTotal - energieStart) : 0;
+    // Dauer berechnen: Fallback auf .lc Zeitstempel des Datenpunkts falls Skript zwischenzeitlich neu geladen wurde
+    const spuelState = getState(IDS.isSpuelenAktiv);
+    const startTs = startZeit || spuelState?.lc || Date.now();
+    const spueldauerMin = Math.max(0, Math.round((Date.now() - startTs) / 60000));
+
+    // Verbrauch berechnen: Fallback auf persistenten Start-Zählerstand oder Miele Unbound Eco-Feedback
+    const currentTotal = getState(IDS.energyTotal)?.val;
+    const savedStart = getState(IDS.energyStartSaved)?.val;
+    const effectiveStart =
+      energieStart !== null
+        ? energieStart
+        : typeof savedStart === "number" && savedStart > 0
+          ? savedStart
+          : null;
+
+    let energieKwh = 0;
+    if (
+      typeof currentTotal === "number" &&
+      typeof effectiveStart === "number" &&
+      currentTotal >= effectiveStart
+    ) {
+      energieKwh = currentTotal - effectiveStart;
+    } else {
+      // Fallback: Direkter Zyklus-Verbrauch aus Miele-Unbound EcoFeedback
+      const ecoVal = getState(IDS.ecoEnergy)?.val;
+      energieKwh = typeof ecoVal === "number" ? ecoVal : 0;
+    }
+
     const euro = (energieKwh * strompreisProKWh).toFixed(2);
 
     const dauerStd = Math.floor(spueldauerMin / 60);
@@ -142,6 +189,9 @@ on({ id: IDS.status, change: "ne" }, (obj) => {
 
     const programm = getState(IDS.programm)?.val || "Unbekannt";
     setState(IDS.isSpuelenAktiv, false, true);
+    startZeit = null;
+    energieStart = null;
+    setState(IDS.energyStartSaved, 0, true);
 
     const meldetext =
       `<pre>💦 Der Geschirrspüler kann ausgeräumt werden.\n\n` +
