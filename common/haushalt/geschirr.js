@@ -18,8 +18,11 @@ const IDS = {
   energyToday: "alias.0.kueche.geschirr.ENERGY_Today",
   energyStartSaved: "0_userdata.0.Haushalt.spuelen_energie_start",
   zeitStartSaved: "0_userdata.0.Haushalt.spuelen_zeit_start",
+  wasserStartSaved: "0_userdata.0.Haushalt.spuelen_wasser_start",
   dauerSaved: "0_userdata.0.Haushalt.spuelen_dauer",
   ecoEnergy: `miele-unbound.0.${DEVICE_ID}.eco.energy`,
+  ecoWater: `miele-unbound.0.${DEVICE_ID}.eco.water`,
+  totalWater: `miele-unbound.0.${DEVICE_ID}.eco.totalWater`,
   strompreis: "0_userdata.0.Energie.Strompreise.akt_Preis",
 
   // Visualisierung & Status
@@ -106,6 +109,14 @@ async function initGeschirrSystem() {
       role: "value",
     });
   }
+  if (!existsState(IDS.wasserStartSaved)) {
+    await createStateAsync(IDS.wasserStartSaved, 0, {
+      type: "number",
+      name: "Geschirrspüler Start-Wasserzähler",
+      unit: "l",
+      role: "value",
+    });
+  }
   if (!existsState(IDS.dauerSaved)) {
     await createStateAsync(IDS.dauerSaved, 0, {
       type: "number",
@@ -121,6 +132,9 @@ let strompreisProKWh = existsState(IDS.strompreis) ? getState(IDS.strompreis)?.v
 let startZeit = existsState(IDS.zeitStartSaved) ? getState(IDS.zeitStartSaved)?.val || null : null;
 let energieStart = existsState(IDS.energyStartSaved)
   ? getState(IDS.energyStartSaved)?.val || null
+  : null;
+let wasserStart = existsState(IDS.wasserStartSaved)
+  ? getState(IDS.wasserStartSaved)?.val || null
   : null;
 let startNotifyTimer = null;
 
@@ -145,11 +159,15 @@ on({ id: IDS.status, change: "ne" }, (obj) => {
   // --- START (Status 5 = "In Betrieb") ---
   if (status === 5 && !isSpuelenAktiv) {
     startZeit = Date.now();
-    // Zählerstand und Startzeit beim Start erfassen und persistent sichern
+    // Zählerstand, Wasserzähler und Startzeit beim Start erfassen und persistent sichern
     const currentEnergy = getState(IDS.energyTotal)?.val;
     energieStart = typeof currentEnergy === "number" ? currentEnergy : 0;
+    const currentWater = existsState(IDS.totalWater) ? getState(IDS.totalWater)?.val : null;
+    wasserStart = typeof currentWater === "number" ? currentWater : 0;
+
     setState(IDS.zeitStartSaved, startZeit, true);
     setState(IDS.energyStartSaved, energieStart, true);
+    setState(IDS.wasserStartSaved, wasserStart, true);
     setState(IDS.isSpuelenAktiv, true, true);
 
     if (startNotifyTimer) clearTimeout(startNotifyTimer);
@@ -206,6 +224,32 @@ on({ id: IDS.status, change: "ne" }, (obj) => {
 
     const euro = (energieKwh * strompreisProKWh).toFixed(2);
 
+    // Wasserverbrauch berechnen: Fallback auf persistenten Start-Wasserzähler oder Miele Unbound Eco-Feedback
+    const currentTotalWater = existsState(IDS.totalWater) ? getState(IDS.totalWater)?.val : null;
+    const savedStartWater = existsState(IDS.wasserStartSaved)
+      ? getState(IDS.wasserStartSaved)?.val
+      : null;
+    const effectiveStartWater =
+      wasserStart !== null
+        ? wasserStart
+        : typeof savedStartWater === "number" && savedStartWater > 0
+          ? savedStartWater
+          : null;
+
+    let wasserL = null;
+    if (
+      typeof currentTotalWater === "number" &&
+      typeof effectiveStartWater === "number" &&
+      currentTotalWater >= effectiveStartWater
+    ) {
+      wasserL = currentTotalWater - effectiveStartWater;
+    } else {
+      const ecoWaterVal = existsState(IDS.ecoWater) ? getState(IDS.ecoWater)?.val : null;
+      if (typeof ecoWaterVal === "number") {
+        wasserL = ecoWaterVal;
+      }
+    }
+
     const dauerStd = Math.floor(spueldauerMin / 60);
     const dauerMin = (spueldauerMin % 60).toString().padStart(2, "0");
 
@@ -217,14 +261,19 @@ on({ id: IDS.status, change: "ne" }, (obj) => {
     setState(IDS.isSpuelenAktiv, false, true);
     startZeit = null;
     energieStart = null;
+    wasserStart = null;
     setState(IDS.zeitStartSaved, 0, true);
     setState(IDS.energyStartSaved, 0, true);
+    setState(IDS.wasserStartSaved, 0, true);
+
+    const wasserZeile = typeof wasserL === "number" ? `Wasser: ${wasserL} l\n` : "";
 
     const meldetext =
       `<pre>💦 Der Geschirrspüler kann ausgeräumt werden.\n\n` +
       `Programm: ${programm}\n` +
       `Dauer: ${dauerStd}:${dauerMin} Std.\n` +
       `Verbrauch: ${energieKwh.toFixed(2)} kWh (${euro} €)\n` +
+      wasserZeile +
       `Heute gesamt: ${energieHeute.toFixed(2)} kWh (${euroHeute} €)\n` +
       `Preis/kWh: ${strompreisProKWh.toFixed(3)} €</pre>`;
 

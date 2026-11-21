@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.59] - 2026-11-19
+- feat(beleuchtung): sync evening light on startup and exclude tv light from all-lamps switch (switch_abendlicht.js, switch_alle_lampen.js)
+
 ### [3.3.58] - 2026-11-19
 - feat(abendlicht): integrate floor lamp with subtle warm ambient lighting (switch_abendlicht.js)
 
