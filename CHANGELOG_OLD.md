@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.57] - 2026-11-19
+- fix(garderobe): force color mode command on day/night transition (garderobenlicht.js)
+
 ### [3.3.56] - 2026-11-18
 - perf(garderobe): deduplicate govee cloud api calls to prevent rate limiting (garderobenlicht.js)
 

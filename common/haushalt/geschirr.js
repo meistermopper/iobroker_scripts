@@ -100,9 +100,11 @@ async function initGeschirrSystem() {
 }
 initGeschirrSystem();
 
-let strompreisProKWh = getState(IDS.strompreis)?.val || 0;
+let strompreisProKWh = existsState(IDS.strompreis) ? getState(IDS.strompreis)?.val || 0 : 0;
 let startZeit = null;
-let energieStart = getState(IDS.energyStartSaved)?.val || null;
+let energieStart = existsState(IDS.energyStartSaved)
+  ? getState(IDS.energyStartSaved)?.val || null
+  : null;
 let startNotifyTimer = null;
 
 // --- 3. EVENT-LISTENER & LOGIK ---
