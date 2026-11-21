@@ -4,6 +4,9 @@ This archive contains older changelog entries for the ioBroker Script Collection
 
 ---
 
+### [3.3.58] - 2026-11-19
+- feat(abendlicht): integrate floor lamp with subtle warm ambient lighting (switch_abendlicht.js)
+
 ### [3.3.57] - 2026-11-19
 - fix(garderobe): force color mode command on day/night transition (garderobenlicht.js)
 

@@ -11,7 +11,7 @@
 ![Language - JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?logo=javascript&logoColor=black&style=flat-square)
 ![Linter - Biome](https://img.shields.io/badge/Linter-Biome-60A5FA?logo=biome&logoColor=white&style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Antigravity%20IDE-blueviolet?style=flat-square)
-![Version](https://img.shields.io/badge/Version-3.3.62-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.63-success?style=flat-square)
 
 Dieses Repository enthält meine persönliche Sammlung von Automatisierungsskripten für ioBroker. Diese Skripte steuern verschiedene Aspekte meines Smart Homes, von der Energieoptimierung bis hin zur raumspezifischen Steuerung.
 
@@ -105,6 +105,9 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ## 📝 Changelog
 
+### [3.3.63] - 2026-11-21
+- feat(haushalt): harmonize dishwasher state naming with waschen/trocknen schema (geschirr.js)
+
 ### [3.3.62] - 2026-11-21
 - fix(haushalt): guard initial getState with existsState in geschirr.js (geschirr.js)
 
@@ -116,8 +119,5 @@ Die Skriptverwaltung ist aufgeteilt zwischen Entwicklung (Antigravity IDE) und L
 
 ### [3.3.59] - 2026-11-19
 - feat(beleuchtung): sync evening light on startup and exclude tv light from all-lamps switch (switch_abendlicht.js, switch_alle_lampen.js)
-
-### [3.3.58] - 2026-11-19
-- feat(abendlicht): integrate floor lamp with subtle warm ambient lighting (switch_abendlicht.js)
 
 Ältere Einträge finden sich im [Changelog-Archiv](CHANGELOG_OLD.md).
